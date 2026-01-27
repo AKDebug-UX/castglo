@@ -21,7 +21,7 @@ const options = {
         description: 'Development Server',
       },
       {
-        url: 'https://api.castglo.com/api/v1',
+        url: 'https://castglo.onrender.com/api/v1',
         description: 'Production Server',
       },
     ],
