@@ -8,6 +8,7 @@ const adminActionLogSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    enabledCountries: [String],
     actionType: {
       type: String,
       enum: [
