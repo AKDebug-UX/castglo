@@ -1,0 +1,145 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+ import { AuthProvider } from "@/contexts/AuthContext";
+ import { ProtectedRoute } from "@/components/ProtectedRoute";
+
+// Public pages
+import Index from "./pages/Index";
+import Browse from "./pages/Browse";
+import SignIn from "./pages/SignIn";
+import Join from "./pages/Join";
+import SignUp from "./pages/SignUp";
+ import ForgotPassword from "./pages/ForgotPassword";
+ import ResetPassword from "./pages/ResetPassword";
+import NotFound from "./pages/NotFound";
+ import News from "./pages/News";
+ import NewsArticle from "./pages/NewsArticle";
+
+// Talent Dashboard
+import { DashboardLayout } from "./components/dashboard/DashboardLayout";
+import Dashboard from "./pages/dashboard/Dashboard";
+import Profile from "./pages/dashboard/Profile";
+import BrowseCastings from "./pages/dashboard/BrowseCastings";
+import CastingDetail from "./pages/dashboard/CastingDetail";
+import SubmitAudition from "./pages/dashboard/SubmitAudition";
+import Submissions from "./pages/dashboard/Submissions";
+import Messages from "./pages/dashboard/Messages";
+import InstantAudition from "./pages/dashboard/InstantAudition";
+
+// Director Dashboard
+import { DirectorLayout } from "./components/dashboard/DirectorLayout";
+import DirectorDashboard from "./pages/director/DirectorDashboard";
+import MyProjects from "./pages/director/MyProjects";
+import CreateCasting from "./pages/director/CreateCasting";
+import DirectorSubmissions from "./pages/director/DirectorSubmissions";
+import DirectorMessages from "./pages/director/DirectorMessages";
+
+// Professional Dashboard
+ import { AdminLayout } from "./components/dashboard/AdminLayout";
+ import AdminDashboard from "./pages/admin/AdminDashboard";
+ import ModerationQueue from "./pages/admin/ModerationQueue";
+ import AdminAnalytics from "./pages/admin/AdminAnalytics";
+ import UsersManagement from "./pages/admin/UsersManagement";
+ import AdminSubmissions from "./pages/admin/AdminSubmissions";
+ import AdminBookings from "./pages/admin/AdminBookings";
+ 
+ // Professional Dashboard
+import { ProfessionalLayout } from "./components/dashboard/ProfessionalLayout";
+import ProfessionalDashboard from "./pages/professional/ProfessionalDashboard";
+import ProfessionalProfile from "./pages/professional/ProfessionalProfile";
+import ProfessionalServices from "./pages/professional/ProfessionalServices";
+import BrowseTalents from "./pages/professional/BrowseTalents";
+import ProfessionalBookings from "./pages/professional/ProfessionalBookings";
+import ProfessionalMessages from "./pages/professional/ProfessionalMessages";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+     <AuthProvider>
+       <TooltipProvider>
+         <Toaster />
+         <Sonner />
+         <BrowserRouter>
+           <Routes>
+             {/* Public Routes */}
+             <Route path="/" element={<Index />} />
+             <Route path="/browse" element={<Browse />} />
+             <Route path="/sign-in" element={<SignIn />} />
+             <Route path="/join" element={<Join />} />
+             <Route path="/join/:type" element={<SignUp />} />
+             <Route path="/forgot-password" element={<ForgotPassword />} />
+             <Route path="/reset-password" element={<ResetPassword />} />
+             <Route path="/news" element={<News />} />
+             <Route path="/news/:id" element={<NewsArticle />} />
+             
+             {/* Talent Dashboard Routes */}
+             <Route path="/dashboard" element={
+               <ProtectedRoute allowedRoles={["talent"]}>
+                 <DashboardLayout />
+               </ProtectedRoute>
+             }>
+               <Route index element={<Dashboard />} />
+               <Route path="profile" element={<Profile />} />
+               <Route path="browse" element={<BrowseCastings />} />
+               <Route path="browse/:id" element={<CastingDetail />} />
+               <Route path="browse/:id/submit" element={<SubmitAudition />} />
+               <Route path="submissions" element={<Submissions />} />
+               <Route path="messages" element={<Messages />} />
+               <Route path="audition" element={<InstantAudition />} />
+             </Route>
+ 
+             {/* Director Dashboard Routes */}
+             <Route path="/director" element={
+               <ProtectedRoute allowedRoles={["director"]}>
+                 <DirectorLayout />
+               </ProtectedRoute>
+             }>
+               <Route index element={<DirectorDashboard />} />
+               <Route path="projects" element={<MyProjects />} />
+               <Route path="create" element={<CreateCasting />} />
+               <Route path="submissions" element={<DirectorSubmissions />} />
+               <Route path="messages" element={<DirectorMessages />} />
+             </Route>
+ 
+             {/* Professional Dashboard Routes */}
+             <Route path="/professional" element={
+               <ProtectedRoute allowedRoles={["professional"]}>
+                 <ProfessionalLayout />
+               </ProtectedRoute>
+             }>
+               <Route index element={<ProfessionalDashboard />} />
+               <Route path="profile" element={<ProfessionalProfile />} />
+               <Route path="services" element={<ProfessionalServices />} />
+               <Route path="talents" element={<BrowseTalents />} />
+               <Route path="bookings" element={<ProfessionalBookings />} />
+               <Route path="messages" element={<ProfessionalMessages />} />
+             </Route>
+             
+             {/* Admin Dashboard Routes */}
+             <Route path="/admin" element={
+               <ProtectedRoute allowedRoles={["admin"]}>
+                 <AdminLayout />
+               </ProtectedRoute>
+             }>
+               <Route index element={<AdminDashboard />} />
+               <Route path="moderation" element={<ModerationQueue />} />
+               <Route path="analytics" element={<AdminAnalytics />} />
+               <Route path="users" element={<UsersManagement />} />
+               <Route path="submissions" element={<AdminSubmissions />} />
+               <Route path="bookings" element={<AdminBookings />} />
+             </Route>
+             
+             {/* Catch-all */}
+             <Route path="*" element={<NotFound />} />
+           </Routes>
+         </BrowserRouter>
+       </TooltipProvider>
+     </AuthProvider>
+  </QueryClientProvider>
+);
+
+export default App;

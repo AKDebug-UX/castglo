@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { Logo } from "./Logo";
 
 const footerLinks = {
@@ -43,8 +43,8 @@ export function Footer() {
             <ul className="space-y-2">
               {footerLinks.company.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
+                  <Link 
+                    to={link.href} 
                     className="text-xs text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
@@ -59,8 +59,8 @@ export function Footer() {
             <ul className="space-y-2">
               {footerLinks.support.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
+                  <Link 
+                    to={link.href} 
                     className="text-xs text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
@@ -75,8 +75,8 @@ export function Footer() {
             <ul className="space-y-2">
               {footerLinks.resources.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
+                  <Link 
+                    to={link.href} 
                     className="text-xs text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
@@ -91,8 +91,8 @@ export function Footer() {
             <ul className="space-y-2">
               {footerLinks.legal.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
+                  <Link 
+                    to={link.href} 
                     className="text-xs text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}

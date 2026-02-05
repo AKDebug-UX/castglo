@@ -1,38 +1,36 @@
-"use client";
-
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link } from "react-router-dom";
+ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Menu, Bell, Settings, LogOut } from "lucide-react";
 import userAvatar from "@/assets/user-avatar.jpg";
-import { useAuth } from "@/contexts/AuthContext";
+ import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardHeaderProps {
   onMenuClick?: () => void;
 }
 
 export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
-  const router = useRouter();
-  const { user, signOut } = useAuth();
-
-  const handleSignOut = () => {
-    signOut();
-    router.push("/");
-  };
-
+   const navigate = useNavigate();
+   const { user, signOut } = useAuth();
+ 
+   const handleSignOut = () => {
+     signOut();
+     navigate("/");
+   };
+ 
   return (
     <header className="h-16 border-b border-border bg-card px-4 flex items-center justify-between">
-      <Button
-        variant="ghost"
-        size="icon"
+      <Button 
+        variant="ghost" 
+        size="icon" 
         className="lg:hidden"
         onClick={onMenuClick}
       >
@@ -57,20 +55,20 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <div className="px-2 py-1.5 text-sm font-medium truncate">
-              {user?.email}
-            </div>
-            <DropdownMenuSeparator />
+             <div className="px-2 py-1.5 text-sm font-medium truncate">
+               {user?.email}
+             </div>
+             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/profile" className="cursor-pointer">
+              <Link to="/dashboard/profile" className="cursor-pointer">
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+             <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+               <LogOut className="w-4 h-4 mr-2" />
+               Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

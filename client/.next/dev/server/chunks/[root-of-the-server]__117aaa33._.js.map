@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 46, "column": 0}, "map": {"version":3,"sources":["file:///D:/Real-Project/NextJS/TechThoth_PR/castglo/client/src/proxy.ts"],"sourcesContent":["import { NextResponse } from 'next/server'\nimport type { NextRequest } from 'next/server'\n\n// This function can be marked `async` if using `await` inside\nexport default function proxy(request: NextRequest) {\n    // Add authentication or role checking logic here\n    // For now, it just passes through\n    return NextResponse.next()\n}\n\n// See \"Matching Paths\" below to learn more\nexport const config = {\n    matcher: [\n        /*\n         * Match all request paths except for the ones starting with:\n         * - api (API routes)\n         * - _next/static (static files)\n         * - _next/image (image optimization files)\n         * - favicon.ico (favicon file)\n         */\n        '/((?!api|_next/static|_next/image|favicon.ico).*)',\n    ],\n}\n"],"names":[],"mappings":";;;;;;AAAA;;AAIe,SAAS,MAAM,OAAoB;IAC9C,iDAAiD;IACjD,kCAAkC;IAClC,OAAO,8IAAY,CAAC,IAAI;AAC5B;AAGO,MAAM,SAAS;IAClB,SAAS;QACL;;;;;;SAMC,GACD;KACH;AACL"}}]
-}

@@ -1,7 +1,0 @@
-
-> vite_react_shadcn_ts@0.0.0 build
-> next build
-
-⚠ `images.domains` is deprecated in favor of `images.remotePatterns`. Please update next.config.mjs to protect your application from malicious users.
-⨯ Unable to acquire lock at D:\Real-Project\NextJS\TechThoth_PR\castglo\client\.next\lock, is another instance of next build running?
-  Suggestion: If you intended to restart next build, terminate the other process, and then try again.

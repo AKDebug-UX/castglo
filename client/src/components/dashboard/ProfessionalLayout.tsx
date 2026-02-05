@@ -1,11 +1,10 @@
-"use client";
-
 import { useState } from "react";
+import { Outlet } from "react-router-dom";
 import { ProfessionalSidebar } from "./ProfessionalSidebar";
 import { DashboardHeader } from "./DashboardHeader";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
-export function ProfessionalLayout({ children }: { children: React.ReactNode }) {
+export function ProfessionalLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -24,7 +23,7 @@ export function ProfessionalLayout({ children }: { children: React.ReactNode }) 
       <div className="flex-1 flex flex-col min-w-0">
         <DashboardHeader onMenuClick={() => setMobileMenuOpen(true)} />
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>

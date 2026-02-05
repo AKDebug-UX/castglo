@@ -1,7 +1,5 @@
-"use client";
-import React from "react";
-import Link from "next/link";
-import Image from "next/image";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -54,7 +52,7 @@ const newsArticles = [
 ];
 
 export function HeroSection() {
-  const [activeTab, setActiveTab] = React.useState("casting");
+  const [activeTab, setActiveTab] = useState("casting");
 
   return (
     <section className="hero-gradient py-12 lg:py-16">
@@ -76,21 +74,21 @@ export function HeroSection() {
 
             {/* Tab Buttons */}
             <div className="flex flex-wrap gap-2">
-              <Button
+              <Button 
                 variant={activeTab === "talent" ? "tab" : "tab-outline"}
                 size="sm"
                 onClick={() => setActiveTab("talent")}
               >
                 Talent Hub
               </Button>
-              <Button
+              <Button 
                 variant={activeTab === "casting" ? "tab" : "tab-outline"}
                 size="sm"
                 onClick={() => setActiveTab("casting")}
               >
                 Casting Hub
               </Button>
-              <Button
+              <Button 
                 variant={activeTab === "professional" ? "tab" : "tab-outline"}
                 size="sm"
                 onClick={() => setActiveTab("professional")}
@@ -178,12 +176,10 @@ export function HeroSection() {
               <div className="grid gap-5 sm:grid-cols-2">
                 {newsArticles.map((article) => (
                   <article key={article.id} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
-                    <Image
-                      src={article.image}
+                    <img 
+                      src={article.image} 
                       alt={article.title}
                       className="w-full h-32 object-cover"
-                      width={400}
-                      height={128}
                     />
                     <div className="p-4">
                       <div className="text-xs text-muted-foreground mb-1.5">
@@ -191,7 +187,7 @@ export function HeroSection() {
                       </div>
                       <h3 className="font-semibold text-sm mb-1.5 line-clamp-2">{article.title}</h3>
                       <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">{article.excerpt}</p>
-                      <Link href="/news" className="text-xs text-primary font-medium mt-2 inline-block hover:underline">
+                      <Link to="/news" className="text-xs text-primary font-medium mt-2 inline-block hover:underline">
                         Read More
                       </Link>
                     </div>
@@ -210,12 +206,10 @@ export function HeroSection() {
               {talents.map((talent) => (
                 <div key={talent.id} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                   <div className="relative h-44">
-                    <Image
-                      src={talent.image}
+                    <img 
+                      src={talent.image} 
                       alt={talent.name}
                       className="w-full h-full object-cover"
-                      width={300}
-                      height={176}
                     />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
                       <h4 className="font-semibold text-white text-sm">{talent.name}</h4>
@@ -224,7 +218,7 @@ export function HeroSection() {
                   </div>
                   <div className="p-2">
                     <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
-                      <Link href={`/talent/${talent.id}`}>View Profile</Link>
+                      <Link to={`/talent/${talent.id}`}>View Profile</Link>
                     </Button>
                   </div>
                 </div>
