@@ -17,12 +17,12 @@
     --popover-foreground: 220 20% 10%;
 
     /* Primary - Teal */
-    --primary: 174 62% 47%;
+    --primary: 185 100% 30%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Light teal/cyan */
-    --secondary: 180 40% 94%;
-    --secondary-foreground: 174 62% 35%;
+    /* Secondary - Pink */
+    --secondary: 317 56% 70%;
+    --secondary-foreground: 220 20% 10%;
 
     /* Muted */
     --muted: 210 20% 96%;
@@ -39,7 +39,7 @@
     /* Borders and inputs */
     --border: 214 20% 88%;
     --input: 214 20% 88%;
-    --ring: 174 62% 47%;
+    --ring: 185 100% 30%;
 
     --radius: 0.625rem;
 
@@ -61,12 +61,12 @@
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 10% 40%;
-    --sidebar-primary: 174 62% 47%;
+    --sidebar-primary: 185 100% 30%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 180 40% 94%;
-    --sidebar-accent-foreground: 174 62% 35%;
+    --sidebar-accent: 317 56% 70%;
+    --sidebar-accent-foreground: 220 20% 10%;
     --sidebar-border: 214 20% 92%;
-    --sidebar-ring: 174 62% 47%;
+    --sidebar-ring: 185 100% 30%;
   }
 
   .dark {
@@ -96,7 +96,7 @@
 
     --border: 220 15% 25%;
     --input: 220 15% 25%;
-    --ring: 174 62% 50%;
+    --ring: 185 100% 40%;
 
     --sidebar-background: 220 15% 12%;
     --sidebar-foreground: 210 20% 80%;
@@ -111,7 +111,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
 
   body {
@@ -123,6 +123,7 @@
     @apply font-semibold tracking-tight;
   }
 }
+
 
 @layer components {
   /* Logo gradient text */
