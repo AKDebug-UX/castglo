@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 16, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/src/middleware.ts"],"sourcesContent":["import { NextResponse } from 'next/server'\r\nimport type { NextRequest } from 'next/server'\r\n\r\n// This function can be marked `async` if using `await` inside\r\nexport function middleware(request: NextRequest) {\r\n    // Add authentication or role checking logic here\r\n    // For now, it just passes through\r\n    return NextResponse.next()\r\n}\r\n\r\n// See \"Matching Paths\" below to learn more\r\nexport const config = {\r\n    matcher: [\r\n        /*\r\n         * Match all request paths except for the ones starting with:\r\n         * - api (API routes)\r\n         * - _next/static (static files)\r\n         * - _next/image (image optimization files)\r\n         * - favicon.ico (favicon file)\r\n         */\r\n        '/((?!api|_next/static|_next/image|favicon.ico).*)',\r\n    ],\r\n}\r\n"],"names":[],"mappings":";;;;;;AAAA;AAAA;;AAIO,SAAS,WAAW,OAAoB;IAC3C,iDAAiD;IACjD,kCAAkC;IAClC,OAAO,gMAAY,CAAC,IAAI;AAC5B;AAGO,MAAM,SAAS;IAClB,SAAS;QACL;;;;;;SAMC,GACD;KACH;AACL"}}]
+}
