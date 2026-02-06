@@ -52,10 +52,9 @@ const newsArticles = [
 ];
 
 export function HeroSection() {
-  const [activeTab, setActiveTab] = useState("casting");
 
   return (
-    <section className="hero-gradient py-12 lg:py-16">
+    <section className="bg-[#DEFCFE] py-12 lg:py-16">
       <div className="container">
         <div className="grid gap-8 lg:grid-cols-[1fr,320px] lg:gap-8">
           {/* Left Content */}
@@ -75,23 +74,22 @@ export function HeroSection() {
             {/* Tab Buttons */}
             <div className="flex flex-wrap gap-2">
               <Button 
-                variant={activeTab === "talent" ? "tab" : "tab-outline"}
+                variant={"tab-outline"}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
                 size="sm"
-                onClick={() => setActiveTab("talent")}
               >
                 Talent Hub
               </Button>
               <Button 
-                variant={activeTab === "casting" ? "tab" : "tab-outline"}
+                variant={"tab-outline"}
+                className="bg-secondary text-white hover:text-secondary-foreground"
                 size="sm"
-                onClick={() => setActiveTab("casting")}
               >
                 Casting Hub
               </Button>
               <Button 
-                variant={activeTab === "professional" ? "tab" : "tab-outline"}
+                variant={"tab-outline"}
                 size="sm"
-                onClick={() => setActiveTab("professional")}
               >
                 Professional Hub
               </Button>
@@ -129,14 +127,14 @@ export function HeroSection() {
                   <Input type="text" placeholder="dd/mm/yy" className="h-9 text-sm" />
                 </div>
               </div>
-              <Button className="w-full mt-4" size="default">
+              <Button className="w-full bg-[#5443DB] text-white mt-4" size="default">
                 Search Casting Calls
               </Button>
             </div>
 
             {/* Feature Cards */}
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-xl bg-card p-5 text-center shadow-card card-elevated">
+              <div className="rounded-xl bg-[#F1FBFB] p-5 text-center shadow-card card-elevated">
                 <div className="feature-icon-teal mx-auto mb-3">
                   <User className="w-6 h-6" />
                 </div>
@@ -145,7 +143,7 @@ export function HeroSection() {
                   Showcase your skills, build your portfolio, and connect with industry professionals.
                 </p>
               </div>
-              <div className="rounded-xl bg-card p-5 text-center shadow-card card-elevated">
+              <div className="rounded-xl bg-[#F9F3FF] p-5 text-center shadow-card card-elevated">
                 <div className="feature-icon-purple mx-auto mb-3">
                   <Search className="w-6 h-6" />
                 </div>
@@ -154,7 +152,7 @@ export function HeroSection() {
                   Discover exceptional talent, streamline your casting process, and manage auditions.
                 </p>
               </div>
-              <div className="rounded-xl bg-card p-5 text-center shadow-card card-elevated">
+              <div className="rounded-xl bg-[#FFF2E0] p-5 text-center shadow-card card-elevated">
                 <div className="feature-icon-orange mx-auto mb-3">
                   <Video className="w-6 h-6" />
                 </div>
@@ -198,14 +196,14 @@ export function HeroSection() {
           </div>
 
           {/* Right Sidebar - Hot Pick Talent */}
-          <div className="space-y-3">
-            <div className="rounded-xl bg-primary p-3">
-              <h3 className="font-semibold text-primary-foreground text-sm">Hot Pick Talent</h3>
+          <div className="bg-[#F1FBFB] shadow-xl rounded-xl p-3 space-y-3">
+            <div className="rounded-xl p-2">
+              <h3 className="font-semibold text-black text-md">Hot Pick Talent</h3>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {talents.map((talent) => (
                 <div key={talent.id} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
-                  <div className="relative h-44">
+                  <div className="relative h-54">
                     <img 
                       src={talent.image} 
                       alt={talent.name}

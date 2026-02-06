@@ -43,7 +43,7 @@ export default function SignIn() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="flex flex-col items-center mx-auto text-center mb-4">
           <Logo className="justify-center" />
         </div>
 
@@ -81,27 +81,7 @@ export default function SignIn() {
             </div>
           </div>
 
-           {/* Role Selection */}
-           <div className="space-y-3 mb-6">
-             <label className="text-sm font-medium block">I am a...</label>
-             <div className="grid grid-cols-3 gap-2">
-              {(["talent", "director", "professional", "admin"] as UserRole[]).map((role) => (
-                 <button
-                   key={role}
-                   type="button"
-                   onClick={() => setSelectedRole(role)}
-                   className={`px-3 py-2 text-sm rounded-lg border transition-colors capitalize ${
-                     selectedRole === role
-                       ? "border-primary bg-primary/10 text-primary"
-                       : "border-border hover:border-primary/50"
-                   }`}
-                 >
-                   {role}
-                 </button>
-               ))}
-             </div>
-           </div>
- 
+           {/* Role Selection */} 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Email</label>
