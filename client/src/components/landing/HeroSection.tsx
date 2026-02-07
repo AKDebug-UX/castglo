@@ -127,9 +127,11 @@ export function HeroSection() {
                   <Input type="text" placeholder="dd/mm/yy" className="h-9 text-sm" />
                 </div>
               </div>
-              <Button className="w-full bg-[#5443DB] text-white mt-4" size="default">
-                Search Casting Calls
-              </Button>
+              <Link to="https://www.backstage.com/talent/" className="w-full block">
+                <Button className="w-full bg-[#5443DB] text-white mt-4" size="default">
+                  Search Casting Calls
+                </Button>
+              </Link>
             </div>
 
             {/* Feature Cards */}

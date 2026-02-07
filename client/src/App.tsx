@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
  import { AuthProvider } from "@/contexts/AuthContext";
  import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ScrollToTop } from "./components/ScrollToTop";
+import TalentProfile from "./pages/TalentProfile";
 
 // Public pages
 import Index from "./pages/Index";
@@ -17,6 +19,8 @@ import SignUp from "./pages/SignUp";
 import NotFound from "./pages/NotFound";
  import News from "./pages/News";
  import NewsArticle from "./pages/NewsArticle";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 
 // Talent Dashboard
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
@@ -64,18 +68,22 @@ const App = () => (
          <Toaster />
          <Sonner />
          <BrowserRouter>
+          <ScrollToTop />
            <Routes>
              {/* Public Routes */}
              <Route path="/" element={<Index />} />
              <Route path="/browse" element={<Browse />} />
              <Route path="/sign-in" element={<SignIn />} />
++            <Route path="/about" element={<About />} />
++            <Route path="/contact" element={<Contact />} />
              <Route path="/join" element={<Join />} />
              <Route path="/join/:type" element={<SignUp />} />
              <Route path="/forgot-password" element={<ForgotPassword />} />
              <Route path="/reset-password" element={<ResetPassword />} />
              <Route path="/news" element={<News />} />
              <Route path="/news/:id" element={<NewsArticle />} />
-             
++             <Route path="/talent/:id" element={<TalentProfile />} />
+              
              {/* Talent Dashboard Routes */}
              <Route path="/dashboard" element={
                <ProtectedRoute allowedRoles={["talent"]}>

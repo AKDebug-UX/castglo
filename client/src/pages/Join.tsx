@@ -1,85 +1,70 @@
 import { Link } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
- import { User, Search, Briefcase, Shield } from "lucide-react";
-
-const userTypes = [
-  {
-    id: "talent",
-    title: "Join as Talent",
-    description: "Showcase your skills and connect with casting directors",
-    icon: User,
-    href: "/join/talent",
-    color: "primary",
-  },
-  {
-    id: "director",
-    title: "Join as Casting Director",
-    description: "Discover exceptional talent for your productions",
-    icon: Search,
-    href: "/join/director",
-    color: "accent",
-  },
-  {
-    id: "professional",
-    title: "Join as Industry Professional",
-    description: "Showcase your craft and get hired for your next production",
-    icon: Briefcase,
-    href: "/join/professional",
-    color: "info",
-  },
-   {
-     id: "admin",
-     title: "Join as Admin",
-     description: "Manage and moderate the platform",
-     icon: Shield,
-     href: "/join/admin",
-     color: "accent",
-   },
-];
+import { Input } from "@/components/ui/input";
 
 export default function Join() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-2xl">
-        <div className="text-center mb-8">
-          <Logo className="justify-center" />
-        </div>
-
-        <div className="bg-card rounded-2xl shadow-card p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold">Ready to Get Started?</h1>
-            <p className="text-muted-foreground mt-2">
-              Join Castglo to unlock full access to talent profiles and connect with industry professionals
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            {userTypes.map((type) => (
-              <Link 
-                key={type.id} 
-                to={type.href}
-                className="group rounded-xl border-2 border-border p-6 text-center hover:border-primary transition-colors card-elevated"
-              >
-                <div className={`w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center bg-${type.color}/10`}>
-                  <type.icon className={`w-6 h-6 text-${type.color}`} />
-                </div>
-                <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                  {type.title.replace("Join as ", "")}
-                </h3>
-                <p className="text-sm text-muted-foreground">{type.description}</p>
-              </Link>
-            ))}
-          </div>
-
-          <p className="text-center text-sm mt-8">
-            Already have an account?{" "}
-            <Link to="/sign-in" className="text-primary font-medium hover:underline">
-              Sign In
+    <div className="min-h-screen bg-primary/10">
+      {/* Top Nav */}
+      <header className="border-b bg-background/70 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+          <Logo />
+          <nav className="hidden md:flex items-center gap-8 text-sm">
+            <Link to="/browse" className="text-foreground hover:text-primary">Browse</Link>
+            <Link to="/about" className="text-foreground hover:text-primary">About</Link>
+            <Link to="/contact" className="text-foreground hover:text-primary">Contact</Link>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Link to="/sign-in">
+              <Button variant="outline" size="sm">Sign In</Button>
             </Link>
-          </p>
+            <Link to="/join">
+              <Button variant="hero" size="sm">Join Now</Button>
+            </Link>
+          </div>
         </div>
-      </div>
+      </header>
+
+      {/* Hero */}
+      <section className="mx-auto max-w-4xl px-4 pt-10 pb-8">
+        <h1 className="text-center text-2xl font-semibold">Discover Amazing Talent</h1>
+        <p className="mt-2 text-center text-muted-foreground">
+          Browse profiles, watch demo reels, and find your next favorite performer
+        </p>
+
+        {/* Search Bar */}
+        <div className="mx-auto mt-6 flex max-w-xl items-center gap-3">
+          <Input
+            className="h-12 flex-1"
+            placeholder="Search for talent, skills or location"
+          />
+          <Button variant="secondary" size="lg">Search</Button>
+        </div>
+      </section>
+
+      {/* Get Started Card */}
+      <section className="mx-auto max-w-3xl px-4 pb-12">
+        <div className="rounded-2xl border bg-card p-6 shadow-card md:p-8">
+          <h2 className="text-center text-lg font-semibold">Ready to Get Started?</h2>
+          <p className="mt-2 text-center text-sm text-muted-foreground">
+            Join Castglo to unlock full access to talent profiles and connect with
+            industry professionals
+          </p>
+
+          <div className="mt-6 mb-4 grid gap-3 sm:grid-cols-2">
+            <Link to="/join/talent">
+              <Button variant="secondary" size="lg" className="w-full">Join as Talent</Button>
+            </Link>
+            <Link to="/join/director">
+              <Button variant="default" size="lg" className="w-full">Join as Casting Director</Button>
+            </Link>
+          </div>
+            <Link to="/join/professional">
+              <Button variant="outline" size="lg" className="w-full">Join as Industrial Professional</Button>
+            </Link>
+        </div>
+      </section>
     </div>
   );
 }

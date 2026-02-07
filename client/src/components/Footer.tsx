@@ -106,7 +106,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-6 pt-4 border-t border-border">
           <p className="text-center text-xs text-muted-foreground">
-            © 2024 Castglo. All rights reserved.
+            © 2026 Castglo. All rights reserved.
           </p>
         </div>
       </div>
