@@ -27,7 +27,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
    };
  
   return (
-    <header className="h-16 border-b border-border bg-card px-4 flex items-center justify-between">
+    <header className="sticky top-0 z-30 h-16 border-b border-border bg-card/90 backdrop-blur px-4 flex items-center justify-between">
       <Button 
         variant="ghost" 
         size="icon" 

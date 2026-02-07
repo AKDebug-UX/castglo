@@ -8,9 +8,9 @@ export function ProfessionalLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-[#DEFCFE]">
       {/* Desktop Sidebar */}
-      <ProfessionalSidebar className="hidden lg:flex" />
+      <ProfessionalSidebar className="hidden lg:flex fixed top-0 left-0 h-screen w-64 overflow-y-auto z-40" />
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -20,7 +20,7 @@ export function ProfessionalLayout() {
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <DashboardHeader onMenuClick={() => setMobileMenuOpen(true)} />
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           <Outlet />

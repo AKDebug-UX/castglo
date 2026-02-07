@@ -32,13 +32,13 @@ export default function Profile() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-          {["Basic Info", "Physical", "Skills", "Education", "Portfolio"].map((tab) => (
-            <TabsTrigger 
-              key={tab} 
+          {["Basic", "Physical", "Skills", "Education", "Portfolio"].map((tab) => (
+            <TabsTrigger
+              key={tab}
               value={tab.toLowerCase().replace(" ", "-")}
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 pb-3"
             >
-              {tab}
+              {tab} {tab === "Basic" ? "Info" : ""}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -57,9 +57,9 @@ export default function Profile() {
                     <AvatarImage src={userAvatar} />
                     <AvatarFallback>SC</AvatarFallback>
                   </Avatar>
-                  <Button 
-                    size="icon" 
-                    variant="secondary" 
+                  <Button
+                    size="icon"
+                    variant="secondary"
                     className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full"
                   >
                     <Camera className="h-3.5 w-3.5" />
@@ -87,7 +87,7 @@ export default function Profile() {
                 <label className="text-sm font-medium mb-1.5 block">
                   About Me <span className="text-muted-foreground font-normal">(65/500)</span>
                 </label>
-                <Textarea 
+                <Textarea
                   rows={4}
                   defaultValue="Passionate actor with 5+ years of experience in theater and film. Specializing in dramatic roles with a background in method acting and improvisation."
                 />
@@ -97,7 +97,7 @@ export default function Profile() {
                 <label className="text-sm font-medium mb-1.5 block">
                   Career Highlights <span className="text-muted-foreground font-normal">(88/1500)</span>
                 </label>
-                <Textarea 
+                <Textarea
                   rows={3}
                   defaultValue="Award-winning performer. Featured in multiple independent films and theater productions."
                 />
@@ -291,8 +291,8 @@ export default function Profile() {
 
               <div className="space-y-3">
                 {skills.map((skill) => (
-                  <div 
-                    key={skill.name} 
+                  <div
+                    key={skill.name}
                     className="flex items-center justify-between p-3 rounded-lg border border-border"
                   >
                     <span className="font-medium">{skill.name}</span>

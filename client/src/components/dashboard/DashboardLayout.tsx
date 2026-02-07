@@ -8,9 +8,9 @@ export function DashboardLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Desktop Sidebar */}
-      <DashboardSidebar className="hidden lg:flex" />
+    <div className="min-h-screen bg-[#DEFCFE]">
+      {/* Desktop Sidebar (fixed) */}
+      <DashboardSidebar className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:z-40" />
 
       {/* Mobile Sidebar */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -20,8 +20,10 @@ export function DashboardLayout() {
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <DashboardHeader onMenuClick={() => setMobileMenuOpen(true)} />
+      <div className="lg:ml-64 flex flex-col min-h-screen min-w-0">
+        <div className="sticky top-0 z-30">
+          <DashboardHeader onMenuClick={() => setMobileMenuOpen(true)} />
+        </div>
         <main className="flex-1 p-4 lg:p-6 overflow-auto">
           <Outlet />
         </main>
