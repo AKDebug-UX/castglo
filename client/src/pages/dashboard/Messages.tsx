@@ -177,7 +177,7 @@ export default function Messages() {
           {/* Chat Area */}
           <div className="flex-1 flex flex-col">
             {/* Chat Header */}
-            <div className="p-4 border-b border-border flex items-center justify-between">
+            <div className="p-3 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarImage src={selectedContact.avatar} />

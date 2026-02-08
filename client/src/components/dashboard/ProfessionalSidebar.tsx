@@ -28,7 +28,7 @@ export function ProfessionalSidebar({ className }: ProfessionalSidebarProps) {
 
   return (
     <aside className={cn("w-64 bg-card border-r border-border flex flex-col", className)}>
-      <div className="p-4 border-b border-border">
+      <div className="p-3 border-b border-border">
         <Logo />
       </div>
       

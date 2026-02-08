@@ -33,7 +33,7 @@
          className
        )}
      >
-       <div className="p-4 border-b border-border">
+       <div className="p-3 border-b border-border">
          <Logo />
        </div>
  
