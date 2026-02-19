@@ -5,22 +5,21 @@ const footerLinks = {
   company: [
     { label: "About Us", href: "/about" },
     { label: "Careers", href: "/careers" },
-    { label: "Press", href: "/press" },
+    { label: "Audition Guides", href: "/guides" },
+    // { label: "Press", href: "/press" },
   ],
   support: [
     { label: "Contact", href: "/contact" },
     { label: "Help Centre", href: "/help" },
     { label: "FAQ", href: "/faq" },
   ],
-  resources: [
-    { label: "Glo Hub", href: "/hub" },
-    { label: "Glo Chat", href: "/chat" },
-    { label: "Audition Guides", href: "/guides" },
-  ],
+  // resources: [
+  //   { label: "Glo Hub", href: "/hub" },
+  //   { label: "Glo Chat", href: "/chat" },
+  // ],
   legal: [
     { label: "Terms of Service", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
-    { label: "Cookie Policy", href: "/cookies" },
   ],
 };
 
@@ -28,7 +27,7 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-[#F1FBFB]">
       <div className="container py-8">
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Logo />
@@ -70,7 +69,7 @@ export function Footer() {
             </ul>
           </div>
 
-          <div>
+          {/* <div>
             <h4 className="font-semibold text-foreground text-sm mb-3">Resources</h4>
             <ul className="space-y-2">
               {footerLinks.resources.map((link) => (
@@ -84,7 +83,7 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> */}
 
           <div>
             <h4 className="font-semibold text-foreground text-sm mb-3">Legal</h4>
