@@ -32,6 +32,30 @@ const talents = [
   },
 ];
 
+const featuredCalls = [
+  {
+    id: 1,
+    title: "Lead Actor for Indie Film",
+    location: "Los Angeles, CA",
+    category: "Film",
+    image: newsProduction,
+  },
+  {
+    id: 2,
+    title: "Commercial Voice Talent",
+    location: "Remote",
+    category: "Commercial",
+    image: newsAudition,
+  },
+  {
+    id: 3,
+    title: "Stage Performer",
+    location: "New York, NY",
+    category: "Theater",
+    image: talentMichael,
+  },
+];
+
 const newsArticles = [
   {
     id: 1,
@@ -56,8 +80,37 @@ export function HeroSection() {
   return (
     <section className="bg-[#DEFCFE] py-12 lg:py-16">
       <div className="container">
-        <div className="grid gap-8 lg:grid-cols-[1fr,320px] lg:gap-8">
-          {/* Left Content */}
+        <div className="grid gap-8 xl:grid-cols-[320px,1fr,320px] lg:gap-8">
+          {/* Left Sidebar - Featured Casting Calls */}
+          <div className="bg-[#F1FBFB] xl:block hidden shadow-xl rounded-xl p-3 space-y-3">
+            <div className="rounded-xl p-2">
+              <h3 className="font-semibold text-black text-md">Featured Castings</h3>
+            </div>
+            <div className="space-y-2">
+              {featuredCalls.map((call) => (
+                <div key={call.id} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
+                  <div className="relative h-48">
+                    <img 
+                      src={call.image} 
+                      alt={call.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                      <h4 className="font-semibold text-white text-xs">{call.title}</h4>
+                      <p className="text-[10px] text-white/80">{call.location} • {call.category}</p>
+                    </div>
+                  </div>
+                  <div className="p-2">
+                    <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
+                      <Link to={`/browse`}>View Details</Link>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Main Content */}
           <div className="space-y-8">
             {/* Hero Text */}
             <div className="space-y-3">
@@ -77,21 +130,32 @@ export function HeroSection() {
                 variant={"tab-outline"}
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
                 size="sm"
+                asChild
               >
-                Talent Hub
+                <Link to="/dashboard">Talent Hub</Link>
               </Button>
               <Button 
                 variant={"tab-outline"}
                 className="bg-secondary text-white hover:text-secondary-foreground"
                 size="sm"
+                asChild
               >
-                Casting Hub
+                <Link to="/director">Casting Hub</Link>
               </Button>
               <Button 
                 variant={"tab-outline"}
                 size="sm"
+                asChild
               >
-                Professional Hub
+                <Link to="/professional">Professional Hub</Link>
+              </Button>
+              <Button 
+                variant={"tab-outline"}
+                className="bg-[#5443DB] text-white hover:bg-[#5443DB]/90"
+                size="sm"
+                asChild
+              >
+                <Link to="/director/create">Post a Job</Link>
               </Button>
             </div>
 
@@ -198,7 +262,7 @@ export function HeroSection() {
           </div>
 
           {/* Right Sidebar - Hot Pick Talent */}
-          <div className="bg-[#F1FBFB] shadow-xl rounded-xl p-3 space-y-3">
+          <div className="bg-[#F1FBFB] lg:block hidden shadow-xl rounded-xl p-3 space-y-3">
             <div className="rounded-xl p-2">
               <h3 className="font-semibold text-black text-md">Hot Pick Talent</h3>
             </div>
