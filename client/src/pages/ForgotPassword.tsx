@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { forgotPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,16 +23,13 @@ export default function ForgotPassword() {
 
     setIsLoading(true);
 
-    // Mock password reset - simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const { error } = await forgotPassword(email);
 
-    // Store reset token in localStorage for demo purposes
-    const resetToken = crypto.randomUUID();
-    localStorage.setItem("castglo_reset_token", JSON.stringify({
-      email,
-      token: resetToken,
-      expires: Date.now() + 3600000 // 1 hour
-    }));
+    if (error) {
+      toast.error(error);
+      setIsLoading(false);
+      return;
+    }
 
     setIsLoading(false);
     setIsSubmitted(true);

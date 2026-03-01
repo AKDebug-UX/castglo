@@ -1,6 +1,9 @@
+import axios from 'axios';
+
 export const API_BASE_URL = 'https://castglo.onrender.com/api/v1'
 
 export const API_ENDPOINTS = {
+  // ... (keeping existing API_ENDPOINTS as reference but wrapping in the same structure)
   ADMIN: {
     USERS: '/admin/users',
     SUSPEND_USER: (userId: string) => `/admin/users/${userId}/suspend`,
@@ -76,3 +79,114 @@ export const API_ENDPOINTS = {
     GET_ONE: (userId: string) => `/users/${userId}`,
   },
 }
+
+// Axios instance
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor for Auth Token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      // Redirect to login if necessary or handle session expiration
+    }
+    return Promise.reject(error);
+  }
+);
+
+// --- AUTH ENDPOINTS ---
+export const authAPI = {
+  register: (data: any) => api.post(API_ENDPOINTS.AUTH.REGISTER, data),
+  login: (data: any) => api.post(API_ENDPOINTS.AUTH.LOGIN, data),
+  verifyEmail: (data: any) => api.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, data),
+  forgotPassword: (data: any) => api.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, data),
+  resetPassword: (data: any) => api.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data),
+  getMe: () => api.get(API_ENDPOINTS.AUTH.ME),
+};
+
+// --- PROFILE ENDPOINTS ---
+export const profileAPI = {
+  create: (data: any) => api.post(API_ENDPOINTS.PROFILES.CREATE, data),
+  getMe: () => api.get(API_ENDPOINTS.PROFILES.ME),
+  updateMe: (data: any) => api.put(API_ENDPOINTS.PROFILES.UPDATE_ME, data),
+  addHeadshot: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.ADD_HEADSHOT, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deleteHeadshot: (id: string) => api.delete(API_ENDPOINTS.PROFILES.DELETE_HEADSHOT(id)),
+  uploadShowreel: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.UPLOAD_SHOWREEL, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  search: (params: any) => api.get(API_ENDPOINTS.PROFILES.SEARCH, { params }),
+  getOne: (userId: string) => api.get(API_ENDPOINTS.PROFILES.GET_ONE(userId)),
+};
+
+// --- CASTING CALL ENDPOINTS ---
+export const castingCallAPI = {
+  getAll: (params: any) => api.get(API_ENDPOINTS.CASTING_CALLS.GET_ALL, { params }),
+  create: (data: any) => api.post(API_ENDPOINTS.CASTING_CALLS.CREATE, data),
+  getMyListings: () => api.get(API_ENDPOINTS.CASTING_CALLS.MY_LISTINGS),
+  getOne: (id: string) => api.get(API_ENDPOINTS.CASTING_CALLS.GET_ONE(id)),
+  update: (id: string, data: any) => api.put(API_ENDPOINTS.CASTING_CALLS.UPDATE(id), data),
+  delete: (id: string) => api.delete(API_ENDPOINTS.CASTING_CALLS.DELETE(id)),
+  close: (id: string) => api.put(API_ENDPOINTS.CASTING_CALLS.CLOSE(id)),
+};
+
+// --- APPLICATION ENDPOINTS ---
+export const applicationAPI = {
+  create: (data: any) => api.post(API_ENDPOINTS.APPLICATIONS.CREATE, data),
+  getMe: () => api.get(API_ENDPOINTS.APPLICATIONS.ME),
+  getByCastingCall: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.BY_CASTING_CALL(id)),
+  getDetails: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.DETAILS(id)),
+  shortlist: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.SHORTLIST(id)),
+  reject: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.REJECT(id)),
+  accept: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.ACCEPT(id)),
+  addCommunication: (id: string, message: string) => api.post(API_ENDPOINTS.APPLICATIONS.COMMUNICATION(id), { message }),
+  withdraw: (id: string) => api.delete(API_ENDPOINTS.APPLICATIONS.WITHDRAW(id)),
+};
+
+// --- SUBSCRIPTION ENDPOINTS ---
+export const subscriptionAPI = {
+  getPlans: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.PLANS),
+  createCheckoutSession: (data: any) => api.post(API_ENDPOINTS.SUBSCRIPTIONS.CREATE_CHECKOUT_SESSION, data),
+  getStatus: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.STATUS),
+  getDetails: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.DETAILS),
+  upgrade: (data: any) => api.post(API_ENDPOINTS.SUBSCRIPTIONS.UPGRADE, data),
+  cancel: () => api.post(API_ENDPOINTS.SUBSCRIPTIONS.CANCEL),
+};
+
+// --- ADMIN ENDPOINTS ---
+export const adminAPI = {
+  getUsers: (params: any) => api.get(API_ENDPOINTS.ADMIN.USERS, { params }),
+  suspendUser: (id: string, reason: string) => api.put(API_ENDPOINTS.ADMIN.SUSPEND_USER(id), { reason }),
+  unsuspendUser: (id: string) => api.put(API_ENDPOINTS.ADMIN.UNSUSPEND_USER(id)),
+  verifyUser: (id: string) => api.put(API_ENDPOINTS.ADMIN.VERIFY_USER(id)),
+  deleteUser: (id: string) => api.delete(API_ENDPOINTS.ADMIN.DELETE_USER(id)),
+  getActionLogs: (params: any) => api.get(API_ENDPOINTS.ADMIN.ACTION_LOGS, { params }),
+  getAnalytics: () => api.get(API_ENDPOINTS.ADMIN.ANALYTICS),
+  getLeads: (params: any) => api.get(API_ENDPOINTS.ADMIN.LEADS, { params }),
+};
+
+// --- LEAD ENDPOINTS ---
+export const leadAPI = {
+  create: (data: any) => api.post(API_ENDPOINTS.LEADS.CREATE, data),
+};
+
+export default api;

@@ -1,20 +1,37 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const { resetPassword } = useAuth();
+
+  useEffect(() => {
+    if (!token) {
+      toast.error("Invalid reset link. Please request a new one.");
+      navigate("/forgot-password");
+    }
+  }, [token, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!token) {
+      toast.error("Invalid reset link. Please request a new one.");
+      navigate("/forgot-password");
+      return;
+    }
 
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters");
@@ -28,29 +45,13 @@ export default function ResetPassword() {
 
     setIsLoading(true);
 
-    // Verify reset token exists (mock validation)
-    const storedReset = localStorage.getItem("castglo_reset_token");
-    if (!storedReset) {
-      toast.error("Reset link has expired. Please request a new one.");
+    const { error } = await resetPassword(password, token);
+
+    if (error) {
+      toast.error(error);
       setIsLoading(false);
-      navigate("/forgot-password");
       return;
     }
-
-    const resetData = JSON.parse(storedReset);
-    if (Date.now() > resetData.expires) {
-      toast.error("Reset link has expired. Please request a new one.");
-      localStorage.removeItem("castglo_reset_token");
-      setIsLoading(false);
-      navigate("/forgot-password");
-      return;
-    }
-
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Clear the reset token
-    localStorage.removeItem("castglo_reset_token");
 
     setIsLoading(false);
     setIsSuccess(true);
