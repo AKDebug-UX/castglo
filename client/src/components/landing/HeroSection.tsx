@@ -30,6 +30,12 @@ const talents = [
     role: "Voice Actor • Animation",
     image: talentSarah,
   },
+  {
+    id: 4,
+    name: "Sarah Johnson",
+    role: "Voice Actor • Animation",
+    image: talentSarah,
+  },
 ];
 
 const featuredCalls = [
@@ -80,33 +86,35 @@ export function HeroSection() {
   return (
     <section className="bg-[#DEFCFE] py-12 lg:py-16">
       <div className="container">
-        <div className="grid gap-8 xl:grid-cols-[320px,1fr,320px] lg:gap-8">
+        <div className="grid gap-8 md:grid-cols-[1fr,300px] xl:grid-cols-[300px,1fr,300px]">
           {/* Left Sidebar - Featured Casting Calls */}
-          <div className="bg-[#F1FBFB] xl:block hidden shadow-xl rounded-xl p-3 space-y-3">
-            <div className="rounded-xl p-2">
+          <div className="bg-[#F1FBFB] xl:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
+            <div className="rounded-xl p-2 mb-2">
               <h3 className="font-semibold text-black text-md">Featured Castings</h3>
             </div>
-            <div className="space-y-2">
-              {featuredCalls.map((call) => (
-                <div key={call.id} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
-                  <div className="relative h-48">
-                    <img 
-                      src={call.image} 
-                      alt={call.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                      <h4 className="font-semibold text-white text-xs">{call.title}</h4>
-                      <p className="text-[10px] text-white/80">{call.location} • {call.category}</p>
+            <div className="flex-1 overflow-hidden h-[620px]">
+              <div className="animate-scroll-vertical space-y-2">
+                {[...featuredCalls, ...featuredCalls].map((call, index) => (
+                  <div key={`${call.id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
+                    <div className="relative h-48">
+                      <img 
+                        src={call.image} 
+                        alt={call.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                        <h4 className="font-semibold text-white text-xs">{call.title}</h4>
+                        <p className="text-[10px] text-white/80">{call.location} • {call.category}</p>
+                      </div>
+                    </div>
+                    <div className="p-2">
+                      <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
+                        <Link to={`/browse`}>View Details</Link>
+                      </Button>
                     </div>
                   </div>
-                  <div className="p-2">
-                    <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
-                      <Link to={`/browse`}>View Details</Link>
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
@@ -262,31 +270,33 @@ export function HeroSection() {
           </div>
 
           {/* Right Sidebar - Hot Pick Talent */}
-          <div className="bg-[#F1FBFB] lg:block hidden shadow-xl rounded-xl p-3 space-y-3">
-            <div className="rounded-xl p-2">
+          <div className="bg-[#F1FBFB] md:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
+            <div className="rounded-xl p-2 mb-2">
               <h3 className="font-semibold text-black text-md">Hot Pick Talent</h3>
             </div>
-            <div className="space-y-2">
-              {talents.map((talent) => (
-                <div key={talent.id} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
-                  <div className="relative h-54">
-                    <img 
-                      src={talent.image} 
-                      alt={talent.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                      <h4 className="font-semibold text-white text-sm">{talent.name}</h4>
-                      <p className="text-xs text-white/80">{talent.role}</p>
+            <div className="flex-1 overflow-hidden h-[620px]">
+              <div className="animate-scroll-vertical-reverse space-y-2">
+                {[...talents, ...talents].map((talent, index) => (
+                  <div key={`${talent.id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
+                    <div className="relative h-54">
+                      <img 
+                        src={talent.image} 
+                        alt={talent.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                        <h4 className="font-semibold text-white text-sm">{talent.name}</h4>
+                        <p className="text-xs text-white/80">{talent.role}</p>
+                      </div>
+                    </div>
+                    <div className="p-2">
+                      <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
+                        <Link to={`/talent/${talent.id}`}>View Profile</Link>
+                      </Button>
                     </div>
                   </div>
-                  <div className="p-2">
-                    <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
-                      <Link to={`/talent/${talent.id}`}>View Profile</Link>
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>

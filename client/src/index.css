@@ -219,3 +219,22 @@
     display: none;
   }
 }
+
+/* Auto-scroll animation */
+@keyframes scroll-vertical {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
+.animate-scroll-vertical {
+  animation: scroll-vertical 20s linear infinite;
+}
+
+.animate-scroll-vertical-reverse {
+  animation: scroll-vertical 20s linear infinite reverse;
+}
+
+.animate-scroll-vertical:hover,
+.animate-scroll-vertical-reverse:hover {
+  animation-play-state: paused;
+}
