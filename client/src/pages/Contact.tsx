@@ -1,10 +1,60 @@
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { leadAPI } from "@/lib/api";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export default function Contact() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const payload = {
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      };
+
+      const response = await leadAPI.create(payload);
+      if (response.data.success) {
+        toast.success("Message sent successfully!");
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          subject: "",
+          message: "",
+        });
+      } else {
+        toast.error(response.data.message || "Failed to send message");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -17,30 +67,71 @@ export default function Contact() {
             </p>
 
             <div className="mt-6 rounded-xl bg-card p-6 shadow-card">
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">First Name</label>
-                    <Input placeholder="John" />
+                    <Input 
+                      id="firstName"
+                      placeholder="John" 
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Last Name</label>
-                    <Input placeholder="Doe" />
+                    <Input 
+                      id="lastName"
+                      placeholder="Doe" 
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      required
+                    />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Email</label>
-                  <Input type="email" placeholder="you@example.com" />
+                  <Input 
+                    id="email"
+                    type="email" 
+                    placeholder="you@example.com" 
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Subject</label>
-                  <Input placeholder="I’d like to learn more" />
+                  <Input 
+                    id="subject"
+                    placeholder="I’d like to learn more" 
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Message</label>
-                  <Textarea placeholder="Tell us how we can help" className="min-h-[120px]" />
+                  <Textarea 
+                    id="message"
+                    placeholder="Tell us how we can help" 
+                    className="min-h-[120px]" 
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
-                <Button className="w-full" variant="hero">Send Message</Button>
+                <Button className="w-full" variant="hero" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send Message"
+                  )}
+                </Button>
               </form>
             </div>
           </div>

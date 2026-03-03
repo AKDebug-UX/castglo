@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,90 +13,52 @@ import {
   MapPin, 
   Calendar,
   DollarSign,
-  ArrowUpRight
+  ArrowUpRight,
+  Loader2
 } from "lucide-react";
+import { castingCallAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 import castingIndieDrama from "@/assets/casting-indie-drama.jpg";
 import castingCommercial from "@/assets/casting-commercial.jpg";
 
-const castings = [
-  {
-    id: 1,
-    title: "Lead Role - Indie Drama",
-    company: "Moonlight Studios",
-    description: "Seeking passionate actor for lead role in upcoming indie drama about family relationships.",
-    location: "Los Angeles, CA",
-    deadline: "15/01/2024",
-    budget: "$50K - $100K",
-    type: "Film",
-    status: "Open",
-    image: castingIndieDrama,
-  },
-  {
-    id: 2,
-    title: "Commercial - Tech Brand",
-    company: "Creative Agency",
-    description: "Looking for diverse talent for national tech commercial campaign.",
-    location: "New York, NY",
-    deadline: "12/01/2024",
-    budget: "$50K - $100K",
-    type: "Commercial",
-    status: "Open",
-    image: castingCommercial,
-  },
-  {
-    id: 3,
-    title: "Lead Role - Indie Drama",
-    company: "Moonlight Studios",
-    description: "Seeking passionate actor for lead role in upcoming indie drama about family relationships.",
-    location: "Los Angeles, CA",
-    deadline: "15/01/2024",
-    budget: "$50K - $100K",
-    type: "Drama",
-    status: "Open",
-    image: castingIndieDrama,
-  },
-  {
-    id: 4,
-    title: "Commercial - Tech Brand",
-    company: "Creative Agency",
-    description: "Looking for diverse talent for national tech commercial campaign.",
-    location: "New York, NY",
-    deadline: "12/01/2024",
-    budget: "$50K - $100K",
-    type: "Commercial",
-    status: "Open",
-    image: castingCommercial,
-  },
-  {
-    id: 5,
-    title: "Lead Role - Indie Drama",
-    company: "Moonlight Studios",
-    description: "Seeking passionate actor for lead role in upcoming indie drama about family relationships.",
-    location: "Los Angeles, CA",
-    deadline: "15/01/2024",
-    budget: "$50K - $100K",
-    type: "Film",
-    status: "Open",
-    image: castingIndieDrama,
-  },
-  {
-    id: 6,
-    title: "Commercial - Tech Brand",
-    company: "Creative Agency",
-    description: "Looking for diverse talent for national tech commercial campaign.",
-    location: "New York, NY",
-    deadline: "12/01/2024",
-    budget: "$50K - $100K",
-    type: "Commercial",
-    status: "Open",
-    image: castingCommercial,
-  },
-];
-
 export default function BrowseCastings() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [showFilters, setShowFilters] = useState(false);
+  const [castings, setCastings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [location, setLocation] = useState("all");
+  const [genre, setGenre] = useState("all");
+  const [status, setStatus] = useState("all");
+
+  const fetchCastings = async () => {
+    setIsLoading(true);
+    try {
+      const params: any = {};
+      if (search) params.search = search;
+      if (location !== "all") params.location = location;
+      if (genre !== "all") params.category = genre;
+      if (status !== "all") params.status = status;
+
+      const response = await castingCallAPI.getAll(params);
+      if (response.data.success) {
+        setCastings(response.data.data);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to fetch casting calls");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCastings();
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchCastings();
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -136,12 +98,17 @@ export default function BrowseCastings() {
               <label className="text-xs text-muted-foreground mb-1.5 block">Search</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Search Casting Call" className="pl-9" />
+                <Input 
+                  placeholder="Search Casting Call" 
+                  className="pl-9" 
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
               </div>
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1.5 block">Locations</label>
-              <Select>
+              <Select value={location} onValueChange={setLocation}>
                 <SelectTrigger>
                   <SelectValue placeholder="All locations" />
                 </SelectTrigger>
@@ -156,7 +123,7 @@ export default function BrowseCastings() {
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1.5 block">Genre</label>
-              <Select>
+              <Select value={genre} onValueChange={setGenre}>
                 <SelectTrigger>
                   <SelectValue placeholder="All genres" />
                 </SelectTrigger>
@@ -171,7 +138,7 @@ export default function BrowseCastings() {
             </div>
             <div>
               <label className="text-xs text-muted-foreground mb-1.5 block">Status</label>
-              <Select>
+              <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
@@ -184,8 +151,8 @@ export default function BrowseCastings() {
               </Select>
             </div>
             <div className="flex items-end">
-              <Button className="w-full">
-                <Search className="w-4 h-4 mr-2" />
+              <Button className="w-full" onClick={() => fetchCastings()} disabled={isLoading}>
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
                 Search
               </Button>
             </div>
@@ -194,16 +161,18 @@ export default function BrowseCastings() {
       </Card>
 
       {/* Results Count */}
-      <p className="text-sm text-muted-foreground">Showing 6 of 6 casting calls</p>
+      <p className="text-sm text-muted-foreground">
+        {isLoading ? "Loading..." : `Showing ${castings.length} casting calls`}
+      </p>
 
       {/* Grid View */}
-      {viewMode === "grid" ? (
+      {!isLoading && viewMode === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {castings.map((casting) => (
-            <Card key={casting.id} className="overflow-hidden card-elevated">
+          {castings.length > 0 ? castings.map((casting) => (
+            <Card key={casting._id || casting.id} className="overflow-hidden card-elevated">
               <div className="relative h-40">
                 <img 
-                  src={casting.image} 
+                  src={casting.image || castingIndieDrama} 
                   alt={casting.title}
                   className="w-full h-full object-cover"
                 />
@@ -211,7 +180,7 @@ export default function BrowseCastings() {
               </div>
               <CardContent className="p-4">
                 <h3 className="font-semibold mb-1">{casting.title}</h3>
-                <p className="text-sm text-muted-foreground mb-1">{casting.company}</p>
+                <p className="text-sm text-muted-foreground mb-1">{casting.company || casting.postedBy?.fullName}</p>
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{casting.description}</p>
                 
                 <div className="space-y-1 text-xs text-muted-foreground mb-3">
@@ -221,7 +190,7 @@ export default function BrowseCastings() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    Deadline: {casting.deadline}
+                    Deadline: {casting.deadline ? new Date(casting.deadline).toLocaleDateString() : "N/A"}
                   </div>
                   <div className="flex items-center gap-1">
                     <DollarSign className="w-3 h-3" />
@@ -230,9 +199,9 @@ export default function BrowseCastings() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Badge variant="secondary">{casting.type}</Badge>
+                  <Badge variant="secondary">{casting.type || casting.category}</Badge>
                   <Button size="sm" asChild>
-                    <Link to={`/dashboard/browse/${casting.id}`}>
+                    <Link to={`/dashboard/browse/${casting._id || casting.id}`}>
                       View Details
                       <ArrowUpRight className="w-3 h-3 ml-1" />
                     </Link>
@@ -240,17 +209,21 @@ export default function BrowseCastings() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )) : (
+            <div className="col-span-full py-12 text-center text-muted-foreground">
+              No casting calls found matching your filters.
+            </div>
+          )}
         </div>
-      ) : (
+      ) : !isLoading && (
         /* List View */
         <div className="space-y-3">
-          {castings.map((casting) => (
-            <Card key={casting.id} className="card-elevated">
+          {castings.length > 0 ? castings.map((casting) => (
+            <Card key={casting._id || casting.id} className="card-elevated">
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   <img 
-                    src={casting.image} 
+                    src={casting.image || castingIndieDrama} 
                     alt={casting.title}
                     className="w-24 h-24 rounded-lg object-cover flex-shrink-0"
                   />
@@ -258,7 +231,7 @@ export default function BrowseCastings() {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <h3 className="font-semibold">{casting.title}</h3>
-                        <p className="text-sm text-muted-foreground">{casting.company}</p>
+                        <p className="text-sm text-muted-foreground">{casting.company || casting.postedBy?.fullName}</p>
                       </div>
                       <Badge className="bg-success flex-shrink-0">{casting.status}</Badge>
                     </div>
@@ -270,24 +243,35 @@ export default function BrowseCastings() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {casting.deadline}
+                        {casting.deadline ? new Date(casting.deadline).toLocaleDateString() : "N/A"}
                       </span>
                       <span className="flex items-center gap-1">
                         <DollarSign className="w-3 h-3" />
                         {casting.budget}
                       </span>
-                      <Badge variant="secondary">{casting.type}</Badge>
+                      <Badge variant="secondary">{casting.type || casting.category}</Badge>
                     </div>
                   </div>
                   <Button size="sm" className="flex-shrink-0 self-center" asChild>
-                    <Link to={`/dashboard/browse/${casting.id}`}>
+                    <Link to={`/dashboard/browse/${casting._id || casting.id}`}>
                       View Details
                     </Link>
                   </Button>
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )) : (
+            <div className="py-12 text-center text-muted-foreground">
+              No casting calls found matching your filters.
+            </div>
+          )}
+        </div>
+      )}
+      
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground animate-pulse">Fetching latest casting calls...</p>
         </div>
       )}
     </div>

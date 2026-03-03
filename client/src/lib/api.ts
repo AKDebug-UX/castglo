@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API_BASE_URL = 'https://castglo.onrender.com/api/v1'
+export const API_BASE_URL = 'https://castgl0.onrender.com/api/v1'
 
 export const API_ENDPOINTS = {
   // ... (keeping existing API_ENDPOINTS as reference but wrapping in the same structure)
