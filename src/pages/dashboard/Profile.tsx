@@ -32,7 +32,7 @@ export default function Profile() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-          {["Basic", "Physical", "Skills", "Education", "Portfolio"].map((tab) => (
+          {["Basic", "Physical", "Skills", "Education", "Equipment", "Portfolio"].map((tab) => (
             <TabsTrigger
               key={tab}
               value={tab.toLowerCase().replace(" ", "-")}
@@ -81,6 +81,11 @@ export default function Profile() {
                   <label className="text-sm font-medium mb-1.5 block">Last Name</label>
                   <Input defaultValue="Davis" />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Professional Roles (comma separated)</label>
+                <Input defaultValue="Editor, Colorist, Sound Designer, DP" />
               </div>
 
               <div>
@@ -348,6 +353,41 @@ export default function Profile() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Education Entry
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="equipment" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Production Equipment & Gear</CardTitle>
+              <p className="text-sm text-muted-foreground">List the equipment you own and can bring to set</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Add Equipment</label>
+                <div className="flex gap-2">
+                  <Input placeholder="e.g. Cinema Camera, Easy Rig, Lenses..." className="flex-1" />
+                  <Button variant="outline">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Equipment
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {["Cinema Camera", "Easy Rig", "Lenses", "Lights", "Sound Equipment"].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center justify-between p-3 rounded-lg border border-border"
+                  >
+                    <span className="font-medium">{item}</span>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

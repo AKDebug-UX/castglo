@@ -2,8 +2,27 @@ import { Link } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Join() {
+  const { user } = useAuth();
+
+  const getDashboardLink = () => {
+    if (!user) return "/sign-in";
+    
+    switch (user.role) {
+      case "admin":
+        return "/admin";
+      case "director":
+        return "/director";
+      case "professional":
+        return "/professional";
+      case "talent":
+      default:
+        return "/dashboard";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-primary/10">
       {/* Top Nav */}
@@ -16,12 +35,20 @@ export default function Join() {
             <Link to="/contact" className="text-foreground hover:text-primary">Contact</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Link to="/sign-in">
-              <Button variant="outline" size="sm">Sign In</Button>
-            </Link>
-            <Link to="/join">
-              <Button variant="hero" size="sm">Join Now</Button>
-            </Link>
+            {user ? (
+              <Link to={getDashboardLink()}>
+                <Button variant="default" size="sm">Dashboard</Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/sign-in">
+                  <Button variant="outline" size="sm">Sign In</Button>
+                </Link>
+                <Link to="/join">
+                  <Button variant="hero" size="sm">Join Now</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

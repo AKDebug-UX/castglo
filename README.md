@@ -1,45 +1,49 @@
-# API Integration Status
+# Castglo
 
-This project uses a centralized API architecture in `client/src/lib/api.ts`. Below is the status of integration across the application.
+## Project info
 
-## ✅ Completed Integrations
+**Castglo** - The Future of Casting & Talent Discovery
 
-- **Authentication**: Fully integrated in `SignIn.tsx`, `SignUp.tsx`, `ForgotPassword.tsx`, `ResetPassword.tsx`, and `AuthContext.tsx`.
-- **Contact/Leads**: Integrated in `Contact.tsx`.
-- **Browse Casting Calls**: Fully integrated in `dashboard/BrowseCastings.tsx` with search, filtering (location, genre, status), and real-time loading states.
+## How can I edit this code?
 
-## 🚧 Remaining Integrations
+There are several ways of editing your application.
 
-### Core Functionality
-- [ ] **Talent Profile**: Integrate `profileAPI.getMe` and `profileAPI.updateMe` in `dashboard/Profile.tsx`.
-- [ ] **Casting Details**: Integrate `castingCallAPI.getOne` in `dashboard/CastingDetail.tsx`.
-- [ ] **Audition Submissions**: Integrate `applicationAPI.create` in `dashboard/SubmitAudition.tsx`.
-- [ ] **Director Dashboard**: Integrate `castingCallAPI.getMyListings` in `director/DirectorDashboard.tsx`.
-- [ ] **Casting Management**: Integrate `applicationAPI.getByCastingCall` in `director/DirectorSubmissions.tsx`.
+**Use your preferred IDE**
 
-### Messaging & Social
-- [ ] **Messages**: Integrate `applicationAPI.addCommunication` or a dedicated messaging endpoint in `dashboard/Messages.tsx`.
-- [ ] **Talent Search**: Integrate `profileAPI.search` in `professional/BrowseTalents.tsx`.
+If you want to work locally using your own IDE, you can clone this repo and push changes.
 
-### Admin
-- [ ] **User Management**: Integrate `adminAPI.getUsers` and `adminAPI.suspendUser` in `admin/UsersManagement.tsx`.
-- [ ] **Analytics**: Integrate `adminAPI.getAnalytics` in `admin/AdminAnalytics.tsx`.
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-### Subscriptions
-- [ ] **Checkout**: Integrate `subscriptionAPI.createCheckoutSession` in `dashboard/Subscription.tsx` (if applicable).
-- [ ] **Status**: Integrate `subscriptionAPI.getStatus` in profile/settings pages.
+Follow these steps:
 
-## Usage Guide
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
 
-To use the API in a new page:
+# Step 2: Navigate to the project directory.
+cd castglo/client
 
-```tsx
-import { castingCallAPI } from "@/lib/api";
+# Step 3: Install the necessary dependencies.
+npm i
 
-const fetchData = async () => {
-  const response = await castingCallAPI.getAll();
-  if (response.data.success) {
-    // Handle data
-  }
-};
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
+```
+
+## What technologies are used for this project?
+
+This project is built with:
+
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
+
+## How can I deploy this project?
+
+You can deploy this project using any standard static site hosting service like Vercel, Netlify, or GitHub Pages.
+
+```sh
+npm run build
 ```

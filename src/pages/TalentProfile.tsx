@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 import talentMichael from "@/assets/talent-michael.jpg";
 import talentTom from "@/assets/talent-tom.jpg";
@@ -55,38 +56,38 @@ export default function TalentProfile() {
               <div className="rounded-xl bg-card p-6 shadow-card">
                 <h2 className="font-semibold text-lg">About</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Jataun Gilbert is a full-service production creative and Emmy award-winning editor
-                  with experience across film, television, and voiceover. Their work spans editing,
-                  color, sound design, scoring, and graphic design, with a strong focus on telling
-                  grounded, emotionally resonant stories and delivering polished final masters.
-                </p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  On set, Jataun regularly works as a director of photography and camera operator,
-                  bringing their own cinema camera, easy rig, lenses, and lighting package. They
-                  also operate as a production sound mixer with their own sound equipment, and have
-                  earned awards as a director while supporting sets as an assistant director and
-                  production team member.
+                  Hey My name is Jataun Gilbert and I am a Full Service Production, I am a Emmy award winning Editor, colorist, Sound Design and Scorer. I do Graphic Design as well. In regards to Being on set I have done a lot of DP work I have my own Cinema Camera, Easy Rig, Lenses and Lights. I have also done Sound as well and have my own sound Equipment. I have won Some awards as a Director, I have also been an Assistant Director. I pride myself on being able to get the job done in the absolute best way possible!
                 </p>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-lg bg-muted p-4">
                     <div className="text-xs text-muted-foreground">Experience</div>
-                    <div className="text-sm">3–6 years • Film, TV, Voiceover</div>
+                    <div className="text-sm">3–6 years • Experienced</div>
                   </div>
                   <div className="rounded-lg bg-muted p-4">
                     <div className="text-xs text-muted-foreground">Location</div>
                     <div className="text-sm">Los Angeles, CA</div>
                   </div>
                   <div className="rounded-lg bg-muted p-4">
-                    <div className="text-xs text-muted-foreground">Departments</div>
+                    <div className="text-xs text-muted-foreground">Roles</div>
                     <div className="text-sm">
-                      Post-Production, Camera, Sound, Producing, Directing, Art & Locations
+                      Audio (Sound & Music), Sound Operator / Engineer, Dubbing Editor / Mixer, Composer, Sound Assistant, Sound Designer
                     </div>
                   </div>
                   <div className="rounded-lg bg-muted p-4">
                     <div className="text-xs text-muted-foreground">Equipment</div>
                     <div className="text-sm">
-                      Cinema camera, easy rig, lenses, lights, Zoom H6 recorder, sound kit
+                      Cinema Camera, Easy Rig, Lenses, Lights, Zoom H6 Recorder, Sound Equipment
                     </div>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Software & Programs
+                  </h3>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {["Adobe Premiere Pro", "Adobe After Effects", "Zoom Recorders"].map((s) => (
+                      <Badge key={s} variant="secondary">{s}</Badge>
+                    ))}
                   </div>
                 </div>
                 <div className="mt-6">
@@ -94,22 +95,12 @@ export default function TalentProfile() {
                     Selected Credits
                   </h3>
                   <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    <li>Intende Parents – Producer / Editor</li>
-                    <li>Down For The Count – Producer / Actor / Casting Director</li>
-                    <li>Peace Brother – DP / Editor</li>
-                    <li>The Girl in Apartment 15 – Editor / Colorist / Sound Design</li>
-                    <li>No Promises – Director / Editor / Sound Design / Colorist</li>
-                    <li>Hello E.P. – DP / Producer / Casting Director</li>
-                    <li>Manhood Talkshow – Editor / Colorist / Sound Design</li>
+                    <li>Emmy Award-Winning Editor</li>
+                    <li>Award-Winning Director</li>
+                    <li>Assistant Director</li>
+                    <li>DP / Camera Operator</li>
+                    <li>Production Sound Mixer</li>
                   </ul>
-                </div>
-                <div className="mt-6">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Software & Programs
-                  </h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Adobe Premiere Pro, Adobe After Effects, Zoom recorders (including Zoom H6).
-                  </p>
                 </div>
               </div>
             </div>
