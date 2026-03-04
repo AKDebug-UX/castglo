@@ -171,6 +171,85 @@ export default function Profile() {
                   </Select>
                 </div>
               </div>
+
+              <div className="border-t pt-6">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
+                  Websites & Social Media
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Website URL</label>
+                    <Input placeholder="https://yourwebsite.com" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Instagram</label>
+                    <Input placeholder="@username" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Demo Reel URL</label>
+                    <Input placeholder="https://vimeo.com/..." />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
+                  Representation
+                </h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Agency Name</label>
+                    <Input placeholder="Lost Child Entertainment" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Agent Name</label>
+                    <Input placeholder="Gerard" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Agent Email</label>
+                    <Input type="email" placeholder="gerard@lostchildent.com" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Agency Location</label>
+                    <Input placeholder="New York, NY" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
+                  Professional Details
+                </h3>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Union Membership</label>
+                    <Select defaultValue="non-union">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="non-union">Nonunion</SelectItem>
+                        <SelectItem value="sag-aftra">SAG-AFTRA</SelectItem>
+                        <SelectItem value="equity">Actors' Equity</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-3 pt-2">
+                    <label className="text-sm font-medium block">Legal Documents</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" className="rounded border-gray-300" defaultChecked />
+                        <span className="text-sm">Driver's License</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" className="rounded border-gray-300" defaultChecked />
+                        <span className="text-sm">Passport</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

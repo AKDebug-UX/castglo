@@ -18,6 +18,29 @@ const allTalents = [
   },
   { id: 2, name: "Tom Andy", role: "Lead Actor • Drama", image: talentTom },
   { id: 3, name: "Sarah Johnson", role: "Voice Actor • Animation", image: talentSarah },
+  {
+    id: 4,
+    name: "New Talent",
+    role: "Actor • Professional",
+    image: talentMichael,
+    about: "Professional talent with extensive experience in the industry.",
+    experience: "5+ years • Professional",
+    location: "New York, NY",
+    roles: "Actor, Commercial, Voiceover",
+    equipment: "Home Studio, Professional Mic",
+    software: ["Adobe Audition", "Pro Tools"],
+    credits: ["Major Commercial Campaign", "Lead in Indie Film"],
+    representation: {
+      agency: "Lost Child Entertainment",
+      email: "gerard@lostchildent.com",
+      location: "New York, NY"
+    },
+    unionStatus: "Nonunion",
+    documents: {
+      hasDriversLicense: true,
+      hasPassport: true
+    }
+  },
 ];
 
 export default function TalentProfile() {
@@ -56,36 +79,89 @@ export default function TalentProfile() {
               <div className="rounded-xl bg-card p-6 shadow-card">
                 <h2 className="font-semibold text-lg">About</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Hey My name is Jataun Gilbert and I am a Full Service Production, I am a Emmy award winning Editor, colorist, Sound Design and Scorer. I do Graphic Design as well. In regards to Being on set I have done a lot of DP work I have my own Cinema Camera, Easy Rig, Lenses and Lights. I have also done Sound as well and have my own sound Equipment. I have won Some awards as a Director, I have also been an Assistant Director. I pride myself on being able to get the job done in the absolute best way possible!
+                  {talent.about || "Hey My name is Jataun Gilbert and I am a Full Service Production, I am a Emmy award winning Editor, colorist, Sound Design and Scorer. I do Graphic Design as well. In regards to Being on set I have done a lot of DP work I have my own Cinema Camera, Easy Rig, Lenses and Lights. I have also done Sound as well and have my own sound Equipment. I have won Some awards as a Director, I have also been an Assistant Director. I pride myself on being able to get the job done in the absolute best way possible!"}
                 </p>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-lg bg-muted p-4">
                     <div className="text-xs text-muted-foreground">Experience</div>
-                    <div className="text-sm">3–6 years • Experienced</div>
+                    <div className="text-sm">{talent.experience || "3–6 years • Experienced"}</div>
                   </div>
                   <div className="rounded-lg bg-muted p-4">
                     <div className="text-xs text-muted-foreground">Location</div>
-                    <div className="text-sm">Los Angeles, CA</div>
+                    <div className="text-sm">{talent.location || "Los Angeles, CA"}</div>
                   </div>
                   <div className="rounded-lg bg-muted p-4">
                     <div className="text-xs text-muted-foreground">Roles</div>
                     <div className="text-sm">
-                      Audio (Sound & Music), Sound Operator / Engineer, Dubbing Editor / Mixer, Composer, Sound Assistant, Sound Designer
+                      {talent.roles || "Audio (Sound & Music), Sound Operator / Engineer, Dubbing Editor / Mixer, Composer, Sound Assistant, Sound Designer"}
                     </div>
                   </div>
                   <div className="rounded-lg bg-muted p-4">
                     <div className="text-xs text-muted-foreground">Equipment</div>
                     <div className="text-sm">
-                      Cinema Camera, Easy Rig, Lenses, Lights, Zoom H6 Recorder, Sound Equipment
+                      {talent.equipment || "Cinema Camera, Easy Rig, Lenses, Lights, Zoom H6 Recorder, Sound Equipment"}
                     </div>
                   </div>
                 </div>
-                <div className="mt-6">
+
+                {talent.representation && (
+                  <div className="mt-6 border-t pt-6">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Representation
+                    </h3>
+                    <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                      <div className="rounded-lg bg-muted p-4">
+                        <div className="text-xs text-muted-foreground">Agency</div>
+                        <div className="text-sm font-medium">{talent.representation.agency}</div>
+                      </div>
+                      <div className="rounded-lg bg-muted p-4">
+                        <div className="text-xs text-muted-foreground">Contact</div>
+                        <div className="text-sm">{talent.representation.email}</div>
+                        <div className="text-xs text-muted-foreground">{talent.representation.location}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-6 border-t pt-6 grid gap-6 sm:grid-cols-2">
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Union Membership
+                    </h3>
+                    <div className="mt-2">
+                      <Badge variant="outline" className="text-sm py-1 px-3">
+                        {talent.unionStatus || "Nonunion"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Legal Documents
+                    </h3>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {talent.documents?.hasDriversLicense && (
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-none">
+                          Driver's License
+                        </Badge>
+                      )}
+                      {talent.documents?.hasPassport && (
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-none">
+                          Passport
+                        </Badge>
+                      )}
+                      {!talent.documents && (
+                        <span className="text-sm text-muted-foreground italic">None specified</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 border-t pt-6">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     Software & Programs
                   </h3>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {["Adobe Premiere Pro", "Adobe After Effects", "Zoom Recorders"].map((s) => (
+                    {(talent.software || ["Adobe Premiere Pro", "Adobe After Effects", "Zoom Recorders"]).map((s) => (
                       <Badge key={s} variant="secondary">{s}</Badge>
                     ))}
                   </div>
@@ -95,11 +171,15 @@ export default function TalentProfile() {
                     Selected Credits
                   </h3>
                   <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    <li>Emmy Award-Winning Editor</li>
-                    <li>Award-Winning Director</li>
-                    <li>Assistant Director</li>
-                    <li>DP / Camera Operator</li>
-                    <li>Production Sound Mixer</li>
+                    {(talent.credits || [
+                      "Emmy Award-Winning Editor",
+                      "Award-Winning Director",
+                      "Assistant Director",
+                      "DP / Camera Operator",
+                      "Production Sound Mixer"
+                    ]).map((credit, index) => (
+                      <li key={index}>{credit}</li>
+                    ))}
                   </ul>
                 </div>
               </div>
