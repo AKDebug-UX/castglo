@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,51 +10,79 @@ import {
   TrendingUp,
   MapPin,
   Calendar,
-  ArrowUpRight
+  ArrowUpRight,
+  Loader2
 } from "lucide-react";
-
-import castingIndieDrama from "@/assets/casting-indie-drama.jpg";
-import castingCommercial from "@/assets/casting-commercial.jpg";
-
-const stats = [
-  { label: "Active Applications", value: "12", change: "+2 from last week", icon: FileText },
-  { label: "Callbacks", value: "5", change: "This week", icon: Phone },
-  { label: "Profile views", value: "89", change: "+12% from last week", icon: Eye },
-  { label: "Success rate", value: "26%", change: "Above average", icon: TrendingUp },
-];
-
-const upcomingCastings = [
-  {
-    id: 1,
-    title: "Lead Role - Indie Drama",
-    description: "Seeking passionate actor for lead role in upcoming indie drama about family relationships.",
-    location: "Los Angeles, CA",
-    deadline: "18/01/2024",
-    type: "Film",
-    image: castingIndieDrama,
-  },
-  {
-    id: 2,
-    title: "Commercial - Tech Brand",
-    description: "Looking for diverse talent for national tech commercial campaign.",
-    location: "New York, NY",
-    deadline: "20/01/2024",
-    type: "Commercial",
-    image: castingCommercial,
-  },
-];
-
-const recentSubmissions = [
-  { id: 1, title: "Romantic Comedy Lead", date: "12/01/2024", status: "In Review" },
-  { id: 2, title: "TV Series Pilot", date: "08/01/2024", status: "Callback" },
-  { id: 3, title: "Commercial Campaign", date: "03/01/2024", status: "Rejected" },
-];
+import { applicationAPI, castingCallAPI, authAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function Dashboard() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<any[]>([]);
+  const [upcomingCastings, setUpcomingCastings] = useState<any[]>([]);
+  const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [userRes, appsRes, castingsRes] = await Promise.all([
+          authAPI.getMe(),
+          applicationAPI.getMe(),
+          castingCallAPI.getAll({ limit: 2 })
+        ]);
+
+        if (userRes.data.success) {
+          setUserName(userRes.data.data.fullName);
+        }
+
+        if (appsRes.data.success) {
+          const apps = appsRes.data.data;
+          setRecentSubmissions(apps.slice(0, 3).map((app: any) => ({
+            id: app._id,
+            title: app.castingCall?.title || "Unknown Position",
+            date: new Date(app.createdAt).toLocaleDateString(),
+            status: app.status
+          })));
+
+          // Calculate stats
+          const activeApps = apps.filter((a: any) => a.status === "applied" || a.status === "shortlisted").length;
+          const callbacks = apps.filter((a: any) => a.status === "accepted").length;
+          
+          setStats([
+            { label: "Active Applications", value: activeApps.toString(), change: "Live data", icon: FileText },
+            { label: "Callbacks", value: callbacks.toString(), change: "Total accepted", icon: Phone },
+            { label: "Profile views", value: "0", change: "Coming soon", icon: Eye },
+            { label: "Success rate", value: apps.length > 0 ? `${Math.round((callbacks / apps.length) * 100)}%` : "0%", change: "Based on applications", icon: TrendingUp },
+          ]);
+        }
+
+        if (castingsRes.data.success) {
+          setUpcomingCastings(castingsRes.data.data.slice(0, 2));
+        }
+
+      } catch (error: any) {
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold">Welcome back, Sarah!</h1>
+        <h1 className="text-2xl font-bold">Welcome back, {userName || "User"}!</h1>
         <p className="text-muted-foreground">Here's what's happening with your casting opportunities</p>
       </div>
 
@@ -88,14 +117,14 @@ export default function Dashboard() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
             {upcomingCastings.map((casting) => (
-              <div key={casting.id} className="rounded-lg border border-border overflow-hidden card-elevated">
+              <div key={casting._id} className="rounded-lg border border-border overflow-hidden card-elevated">
                 <div className="relative h-40">
                   <img 
-                    src={casting.image} 
+                    src={casting.image || "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=400"} 
                     alt={casting.title}
                     className="w-full h-full object-cover"
                   />
-                  <Badge className="absolute top-2 right-2 bg-primary">{casting.type}</Badge>
+                  <Badge className="absolute top-2 right-2 bg-primary">{casting.category}</Badge>
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold mb-1">{casting.title}</h3>
@@ -107,11 +136,11 @@ export default function Dashboard() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      Deadline: {casting.deadline}
+                      Deadline: {new Date(casting.deadline).toLocaleDateString()}
                     </span>
                   </div>
                   <Button size="sm" asChild>
-                    <Link to={`/dashboard/browse/${casting.id}`}>
+                    <Link to={`/dashboard/browse/${casting._id}`}>
                       View Details
                       <ArrowUpRight className="w-3 h-3 ml-1" />
                     </Link>
@@ -131,7 +160,7 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {recentSubmissions.map((submission) => (
+            {recentSubmissions.length > 0 ? recentSubmissions.map((submission) => (
               <div 
                 key={submission.id} 
                 className="flex items-center justify-between p-3 rounded-lg border border-border"
@@ -142,15 +171,17 @@ export default function Dashboard() {
                 </div>
                 <Badge 
                   variant={
-                    submission.status === "Callback" ? "default" : 
-                    submission.status === "Rejected" ? "destructive" : 
+                    submission.status === "accepted" ? "default" : 
+                    submission.status === "rejected" ? "destructive" : 
                     "secondary"
                   }
                 >
                   {submission.status}
                 </Badge>
               </div>
-            ))}
+            )) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No submissions yet.</p>
+            )}
           </div>
         </CardContent>
       </Card>

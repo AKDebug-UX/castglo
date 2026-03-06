@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,18 +7,85 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Plus, X, Upload } from "lucide-react";
-import userAvatar from "@/assets/user-avatar.jpg";
-
-const skills = [
-  { name: "Improvisation", level: "Expert" },
-  { name: "Voice Acting", level: "Intermediate" },
-  { name: "Character Study", level: "Beginner" },
-  { name: "Stage Performance", level: "Beginner" },
-];
+import { Camera, Plus, X, Upload, Loader2 } from "lucide-react";
+import { profileAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("basic");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await profileAPI.getMe();
+        if (response.data.success) {
+          setProfileData(response.data.data);
+        }
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to load profile");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const response = await profileAPI.updateMe(profileData);
+      if (response.data.success) {
+        toast.success("Profile updated successfully");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update profile");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setProfileData((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setProfileData((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0]) return;
+    
+    const formData = new FormData();
+    formData.append("headshot", e.target.files[0]);
+    
+    setIsSaving(true);
+    try {
+      const response = await profileAPI.addHeadshot(formData);
+      if (response.data.success) {
+        toast.success("Profile picture updated");
+        setProfileData((prev: any) => ({ 
+          ...prev, 
+          profilePicture: response.data.data.url // Adjust based on actual API response
+        }));
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to upload photo");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -27,7 +94,10 @@ export default function Profile() {
           <h1 className="text-2xl font-bold">Profile Setting</h1>
           <p className="text-muted-foreground">Manage your professional profile and portfolio</p>
         </div>
-        <Button>Save Changes</Button>
+        <Button onClick={handleSave} disabled={isSaving}>
+          {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Save Changes
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -54,66 +124,86 @@ export default function Profile() {
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={userAvatar} />
-                    <AvatarFallback>SC</AvatarFallback>
+                    <AvatarImage src={profileData?.profilePicture} />
+                    <AvatarFallback>{profileData?.fullName?.[0] || "U"}</AvatarFallback>
                   </Avatar>
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full"
-                  >
+                  <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-secondary flex items-center justify-center cursor-pointer shadow-sm hover:bg-secondary/80">
                     <Camera className="h-3.5 w-3.5" />
-                  </Button>
+                    <input 
+                      id="avatar-upload" 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      disabled={isSaving}
+                    />
+                  </label>
                 </div>
-                <Button variant="outline" size="sm">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Photo
+                <Button variant="outline" size="sm" asChild disabled={isSaving}>
+                  <label htmlFor="avatar-upload" className="cursor-pointer">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Photo
+                  </label>
                 </Button>
               </div>
 
               {/* Form Fields */}
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">First Name</label>
-                  <Input defaultValue="Jordan" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Last Name</label>
-                  <Input defaultValue="Davis" />
+                  <label className="text-sm font-medium mb-1.5 block">Full Name</label>
+                  <Input 
+                    name="fullName"
+                    value={profileData?.fullName || ""} 
+                    onChange={handleInputChange}
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Professional Roles (comma separated)</label>
-                <Input defaultValue="Editor, Colorist, Sound Designer, DP" />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">
-                  About Me <span className="text-muted-foreground font-normal">(65/500)</span>
-                </label>
-                <Textarea
-                  rows={4}
-                  defaultValue="Passionate actor with 5+ years of experience in theater and film. Specializing in dramatic roles with a background in method acting and improvisation."
+                <Input 
+                  name="professionalRoles"
+                  value={profileData?.professionalRoles?.join(", ") || ""} 
+                  onChange={(e) => {
+                    const roles = e.target.value.split(",").map(r => r.trim());
+                    setProfileData((prev: any) => ({ ...prev, professionalRoles: roles }));
+                  }}
                 />
               </div>
 
               <div>
                 <label className="text-sm font-medium mb-1.5 block">
-                  Career Highlights <span className="text-muted-foreground font-normal">(88/1500)</span>
+                  About Me <span className="text-muted-foreground font-normal">({profileData?.bio?.length || 0}/500)</span>
                 </label>
                 <Textarea
+                  name="bio"
+                  rows={4}
+                  value={profileData?.bio || ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Career Highlights <span className="text-muted-foreground font-normal">({profileData?.highlights?.length || 0}/1500)</span>
+                </label>
+                <Textarea
+                  name="highlights"
                   rows={3}
-                  defaultValue="Award-winning performer. Featured in multiple independent films and theater productions."
+                  value={profileData?.highlights || ""}
+                  onChange={handleInputChange}
                 />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Gender</label>
-                  <Select defaultValue="male">
+                  <Select 
+                    value={profileData?.gender || ""} 
+                    onValueChange={(v) => handleSelectChange("gender", v)}
+                  >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="male">Male</SelectItem>
@@ -125,7 +215,10 @@ export default function Profile() {
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Age Range</label>
-                  <Select>
+                  <Select 
+                    value={profileData?.ageRange || ""} 
+                    onValueChange={(v) => handleSelectChange("ageRange", v)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select range" />
                     </SelectTrigger>
@@ -142,112 +235,32 @@ export default function Profile() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Email</label>
-                  <Input type="email" defaultValue="jordan.davis@gmail.com" />
+                  <Input 
+                    name="email"
+                    type="email" 
+                    value={profileData?.email || ""} 
+                    disabled // Email usually managed via Auth
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Phone</label>
-                  <Input type="tel" defaultValue="+234" />
+                  <Input 
+                    name="phone"
+                    type="tel" 
+                    value={profileData?.phone || ""} 
+                    onChange={handleInputChange}
+                  />
                 </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Location</label>
-                  <Input defaultValue="Los Angeles, CA" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Dress</label>
-                  <Select defaultValue="m">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="xs">XS</SelectItem>
-                      <SelectItem value="s">S</SelectItem>
-                      <SelectItem value="m">M</SelectItem>
-                      <SelectItem value="l">L</SelectItem>
-                      <SelectItem value="xl">XL</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
-                  Websites & Social Media
-                </h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Website URL</label>
-                    <Input placeholder="https://yourwebsite.com" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Instagram</label>
-                    <Input placeholder="@username" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Demo Reel URL</label>
-                    <Input placeholder="https://vimeo.com/..." />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
-                  Representation
-                </h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Agency Name</label>
-                    <Input placeholder="Lost Child Entertainment" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Agent Name</label>
-                    <Input placeholder="Gerard" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Agent Email</label>
-                    <Input type="email" placeholder="gerard@lostchildent.com" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Agency Location</label>
-                    <Input placeholder="New York, NY" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-6">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
-                  Professional Details
-                </h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Union Membership</label>
-                    <Select defaultValue="non-union">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="non-union">Nonunion</SelectItem>
-                        <SelectItem value="sag-aftra">SAG-AFTRA</SelectItem>
-                        <SelectItem value="equity">Actors' Equity</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-3 pt-2">
-                    <label className="text-sm font-medium block">Legal Documents</label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="rounded border-gray-300" defaultChecked />
-                        <span className="text-sm">Driver's License</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" className="rounded border-gray-300" defaultChecked />
-                        <span className="text-sm">Passport</span>
-                      </label>
-                    </div>
-                  </div>
+                  <Input 
+                    name="location"
+                    value={profileData?.location || ""} 
+                    onChange={handleInputChange}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -261,94 +274,41 @@ export default function Profile() {
               <p className="text-sm text-muted-foreground">Provide physical details for casting considerations</p>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex gap-2">
-                <Button variant="tab">Imperial (ft/in, lbs)</Button>
-                <Button variant="tab-outline">Metric (cm, kg)</Button>
-              </div>
-
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Height(ft)</label>
-                  <Input defaultValue="5" />
+                  <label className="text-sm font-medium mb-1.5 block">Height (cm)</label>
+                  <Input 
+                    name="height"
+                    type="number"
+                    value={profileData?.physicalAttributes?.height || ""} 
+                    onChange={(e) => setProfileData((prev: any) => ({
+                      ...prev,
+                      physicalAttributes: { ...prev.physicalAttributes, height: e.target.value }
+                    }))}
+                  />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Height(in)</label>
-                  <Input defaultValue="8" />
+                  <label className="text-sm font-medium mb-1.5 block">Weight (kg)</label>
+                  <Input 
+                    name="weight"
+                    type="number"
+                    value={profileData?.physicalAttributes?.weight || ""} 
+                    onChange={(e) => setProfileData((prev: any) => ({
+                      ...prev,
+                      physicalAttributes: { ...prev.physicalAttributes, weight: e.target.value }
+                    }))}
+                  />
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Height(cm)</label>
-                  <Input defaultValue="173" disabled />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Weight(lbs)</label>
-                  <Input defaultValue="150" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Weight(kg)</label>
-                  <Input defaultValue="68" disabled />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Eye Color</label>
-                  <Select defaultValue="brown">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="brown">Brown</SelectItem>
-                      <SelectItem value="blue">Blue</SelectItem>
-                      <SelectItem value="green">Green</SelectItem>
-                      <SelectItem value="hazel">Hazel</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Hair Color</label>
-                  <Select defaultValue="brown">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="brown">Brown</SelectItem>
-                      <SelectItem value="black">Black</SelectItem>
-                      <SelectItem value="blonde">Blonde</SelectItem>
-                      <SelectItem value="red">Red</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Body Type</label>
-                  <Select defaultValue="athletic">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="athletic">Athletic</SelectItem>
-                      <SelectItem value="slim">Slim</SelectItem>
-                      <SelectItem value="average">Average</SelectItem>
-                      <SelectItem value="muscular">Muscular</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Chest/Bust(cm)</label>
-                  <Input defaultValue="38" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Waist(cm)</label>
-                  <Input defaultValue="32" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Hip(cm)</label>
-                  <Input defaultValue="36" />
+                  <Input 
+                    name="eyeColor"
+                    value={profileData?.physicalAttributes?.eyeColor || ""} 
+                    onChange={(e) => setProfileData((prev: any) => ({
+                      ...prev,
+                      physicalAttributes: { ...prev.physicalAttributes, eyeColor: e.target.value }
+                    }))}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -359,113 +319,32 @@ export default function Profile() {
           <Card>
             <CardHeader>
               <CardTitle>Skills & Attributes</CardTitle>
-              <p className="text-sm text-muted-foreground">Add your acting skills and expertise levels</p>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Add Skills</label>
-                <div className="flex gap-2">
-                  <Input placeholder="Type a skill or select from suggestions..." className="flex-1" />
-                  <Button variant="outline">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add a Custom Skill
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {skills.map((skill) => (
-                  <div
-                    key={skill.name}
-                    className="flex items-center justify-between p-3 rounded-lg border border-border"
-                  >
-                    <span className="font-medium">{skill.name}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{skill.level}</Badge>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {profileData?.skills?.map((skill: string, i: number) => (
+                  <Badge key={i} variant="secondary" className="gap-1">
+                    {skill}
+                    <X className="w-3 h-3 cursor-pointer" onClick={() => {
+                      const newSkills = profileData.skills.filter((_: any, idx: number) => idx !== i);
+                      setProfileData((prev: any) => ({ ...prev, skills: newSkills }));
+                    }} />
+                  </Badge>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="education" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Education</CardTitle>
-              <p className="text-sm text-muted-foreground">Add your acting training and education</p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="p-4 rounded-lg border border-border">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">School*</label>
-                    <Input placeholder="Enter school name" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Degree/Course*</label>
-                    <Input placeholder="Enter degree or course" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Instructor</label>
-                    <Input placeholder="Enter instructor name" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Location</label>
-                    <Input placeholder="Enter location" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-1.5 block">Year Completed</label>
-                    <Input placeholder="Enter year" />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 mt-4">
-                  <Button variant="destructive">Remove Entry</Button>
-                </div>
-              </div>
-
-              <Button variant="outline" className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Education Entry
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="equipment" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Production Equipment & Gear</CardTitle>
-              <p className="text-sm text-muted-foreground">List the equipment you own and can bring to set</p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Add Equipment</label>
-                <div className="flex gap-2">
-                  <Input placeholder="e.g. Cinema Camera, Easy Rig, Lenses..." className="flex-1" />
-                  <Button variant="outline">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Equipment
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {["Cinema Camera", "Easy Rig", "Lenses", "Lights", "Sound Equipment"].map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center justify-between p-3 rounded-lg border border-border"
-                  >
-                    <span className="font-medium">{item}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
+              <div className="flex gap-2">
+                <Input id="new-skill" placeholder="Add a skill" onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const val = (e.target as HTMLInputElement).value;
+                    if (val && !profileData.skills.includes(val)) {
+                      setProfileData((prev: any) => ({ ...prev, skills: [...prev.skills, val] }));
+                      (e.target as HTMLInputElement).value = "";
+                    }
+                  }
+                }} />
+                <Button variant="outline" size="icon">
+                  <Plus className="w-4 h-4" />
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -474,42 +353,36 @@ export default function Profile() {
         <TabsContent value="portfolio" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Portfolio</CardTitle>
-              <p className="text-sm text-muted-foreground">Upload photos, videos, and your resume</p>
+              <CardTitle>Portfolio & Media</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Resume</label>
-                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-                  <p className="text-muted-foreground">Upload Resume (PDF, DOC, DOCX)</p>
-                  <Button variant="outline" className="mt-2">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Choose File
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Photo
-                </Button>
-                <Button variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Video
-                </Button>
-              </div>
-
               <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-                <div className="aspect-square rounded-lg bg-muted flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Professional Headshot</p>
-                </div>
-                <div className="aspect-square rounded-lg bg-muted flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Demo Reel 2024</p>
-                </div>
-                <div className="aspect-square rounded-lg bg-muted flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">Theater Performance</p>
-                </div>
+                {profileData?.headshots?.map((shot: any, i: number) => (
+                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
+                    <img src={shot.url} className="w-full h-full object-cover" />
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      className="absolute top-1 right-1 h-6 w-6"
+                      onClick={async () => {
+                        try {
+                          await profileAPI.deleteHeadshot(shot._id);
+                          setProfileData((prev: any) => ({
+                            ...prev,
+                            headshots: prev.headshots.filter((s: any) => s._id !== shot._id)
+                          }));
+                        } catch (e) { toast.error("Failed to delete headshot"); }
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+                <label className="aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                  <Plus className="w-6 h-6 text-muted-foreground mb-1" />
+                  <span className="text-xs text-muted-foreground">Add Photo</span>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
+                </label>
               </div>
             </CardContent>
           </Card>

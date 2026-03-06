@@ -1,74 +1,56 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Eye, Star } from "lucide-react";
-
-const stats = [
-  { label: "Total Submissions", value: "12", sublabel: "All time", icon: FileText },
-  { label: "In Review", value: "7", sublabel: "Pending Review", icon: Eye },
-  { label: "Shortlisted", value: "3", sublabel: "Callbacks Pending", icon: Star },
-];
-
-const submissions = [
-  {
-    id: 1,
-    projectTitle: "Lead Role - Indie Drama",
-    company: "Moonlight Studios",
-    role: "Lead Actor",
-    submissionDate: "1/12/2024",
-    status: "In Review",
-  },
-  {
-    id: 2,
-    projectTitle: "Commercial - Tech Brand",
-    company: "Creative Agency",
-    role: "Spokesperson",
-    submissionDate: "1/11/2024",
-    status: "Shortlisted",
-  },
-  {
-    id: 3,
-    projectTitle: "Supporting Actor - Netflix Series",
-    company: "Netflix Originals",
-    role: "Supporting Character",
-    submissionDate: "1/09/2024",
-    status: "Rejected",
-  },
-  {
-    id: 4,
-    projectTitle: "Voice Over - Animation",
-    company: "Animation Studio",
-    role: "Character Voice",
-    submissionDate: "2/08/2024",
-    status: "Awarded",
-  },
-  {
-    id: 5,
-    projectTitle: "TV Series Pilot",
-    company: "HBO Productions",
-    role: "Guest Star",
-    submissionDate: "6/07/2024",
-    status: "Submitted",
-  },
-];
-
-const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-  "In Review": "secondary",
-  "Shortlisted": "default",
-  "Rejected": "destructive",
-  "Awarded": "default",
-  "Submitted": "outline",
-};
+import { FileText, Eye, Star, Loader2 } from "lucide-react";
+import { applicationAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
-  "In Review": "bg-info text-info-foreground",
-  "Shortlisted": "bg-primary text-primary-foreground",
-  "Rejected": "bg-destructive text-destructive-foreground",
-  "Awarded": "bg-success text-success-foreground",
-  "Submitted": "bg-muted text-muted-foreground",
+  "in_review": "bg-info text-info-foreground",
+  "shortlisted": "bg-primary text-primary-foreground",
+  "rejected": "bg-destructive text-destructive-foreground",
+  "accepted": "bg-success text-success-foreground",
+  "applied": "bg-muted text-muted-foreground",
 };
 
 export default function Submissions() {
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      try {
+        const response = await applicationAPI.getMe();
+        if (response.data.success) {
+          const apps = response.data.data;
+          setSubmissions(apps);
+
+          // Calculate stats
+          setStats([
+            { label: "Total Submissions", value: apps.length.toString(), sublabel: "All time", icon: FileText },
+            { label: "In Review", value: apps.filter((a: any) => a.status === "applied").length.toString(), sublabel: "Pending Review", icon: Eye },
+            { label: "Shortlisted", value: apps.filter((a: any) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", icon: Star },
+          ]);
+        }
+      } catch (error: any) {
+        toast.error("Failed to load submissions");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSubmissions();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -108,26 +90,32 @@ export default function Submissions() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Project Title</TableHead>
-                  <TableHead>Project Title</TableHead>
+                  <TableHead>Company</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Submission Date</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {submissions.map((submission) => (
-                  <TableRow key={submission.id}>
-                    <TableCell className="font-medium">{submission.projectTitle}</TableCell>
-                    <TableCell>{submission.company}</TableCell>
-                    <TableCell>{submission.role}</TableCell>
-                    <TableCell>{submission.submissionDate}</TableCell>
+                {submissions.length > 0 ? submissions.map((submission) => (
+                  <TableRow key={submission._id}>
+                    <TableCell className="font-medium">{submission.castingCall?.title}</TableCell>
+                    <TableCell>{submission.castingCall?.postedBy?.fullName || "Unknown"}</TableCell>
+                    <TableCell>{submission.castingCall?.category}</TableCell>
+                    <TableCell>{new Date(submission.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell>
-                      <Badge className={statusColors[submission.status]}>
+                      <Badge className={statusColors[submission.status] || "bg-muted"}>
                         {submission.status}
                       </Badge>
                     </TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      No submissions found.
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
