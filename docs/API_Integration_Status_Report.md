@@ -13,17 +13,27 @@ The following modules and pages are now fully functional and connected to live b
 - **Password Security**: "Forgot Password" and "Reset Password" workflows are active.
 - **Session Handling**: JWT-based authentication ensures persistent user sessions.
 
+#### Test Credentials for Client Review
+The following credentials can be used to test the platform's role-specific features:
+
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Admin** | `akoredesalaudeen54@gmail.com` | `12345678` |
+| **Talent** | `dannyt@gmail.com` | `SecurePassword` |
+| **Industry Professional** | `dannyip@gmail.com` | `SecurePassword` |
+| **Casting Director** | `danny@gmail.com` | `SecurePassword` |
+
 ### 2.2 Public Discovery Experience
-- **Landing Page ([Index.tsx](file:///D:/Real-Project/NextJS/TechThoth_PR/castglo/src/pages/Index.tsx))**: Live fetching of Featured Castings and Discoverable Talent.
-- **Talent Search ([Browse.tsx](file:///D:/Real-Project/NextJS/TechThoth_PR/castglo/src/pages/Browse.tsx))**: Real-time searching and filtering for talent profiles.
-- **Public Profiles ([TalentProfile.tsx](file:///D:/Real-Project/NextJS/TechThoth_PR/castglo/src/pages/TalentProfile.tsx))**: Detailed public view of talent credentials, portfolio, and skills.
-- **Lead Capture ([Contact.tsx](file:///D:/Real-Project/NextJS/TechThoth_PR/castglo/src/pages/Contact.tsx))**: Direct contact form integration for business inquiries.
+- **Landing Page ([Index](https://castglo.vercel.app/))**: Live fetching of Featured Castings and Discoverable Talent.
+- **Talent Search ([Browse](https://castglo.vercel.app/browse))**: Real-time searching and filtering for talent profiles.
+- **Public Profiles ([Talent Profile](https://castglo.vercel.app/talent/example-id))**: Detailed public view of talent credentials, portfolio, and skills.
+- **Lead Capture ([Contact](https://castglo.vercel.app/contact))**: Direct contact form integration for business inquiries.
 
 ### 2.3 Dashboard Systems
-- **Admin Dashboard**: Real-time platform analytics, user verification controls, and action logs.
-- **Talent Dashboard**: Complete profile editing, headshot/showreel uploads, job browsing, and audition submission tracking.
-- **Director Dashboard**: Project creation, submission review, and applicant communication.
-- **Professional Dashboard**: Service management and industry-specific discovery tools.
+- **Admin Dashboard ([Admin](https://castglo.vercel.app/admin))**: Real-time platform analytics, user verification controls, and action logs.
+- **Talent Dashboard ([Talent](https://castglo.vercel.app/dashboard))**: Complete profile editing, headshot/showreel uploads, job browsing, and audition submission tracking.
+- **Director Dashboard ([Director](https://castglo.vercel.app/director))**: Project creation, submission review, and applicant communication.
+- **Professional Dashboard ([Professional](https://castglo.vercel.app/professional))**: Service management and industry-specific discovery tools.
 
 ---
 

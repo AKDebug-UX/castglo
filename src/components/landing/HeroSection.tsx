@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, User, Video, Users, Loader2 } from "lucide-react";
 import { castingCallAPI, profileAPI } from "@/lib/api";
+import { MOCK_CASTINGS, MOCK_TALENTS } from "@/lib/data";
 
 import talentMichael from "@/assets/talent-michael.jpg";
 import talentTom from "@/assets/talent-tom.jpg";
@@ -77,7 +78,7 @@ export function HeroSection() {
                 </div>
               ) : (
                 <div className="animate-scroll-vertical space-y-2">
-                  {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : []).map((call, index) => (
+                  {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : [...MOCK_CASTINGS, ...MOCK_CASTINGS]).map((call, index) => (
                     <div key={`${call._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                       <div className="relative h-48">
                         <img 
@@ -255,7 +256,7 @@ export function HeroSection() {
           </div>
 
           {/* Right Sidebar - Discover Talent */}
-          <div className="bg-[#F9F3FF] xl:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
+          <div className="bg-[#F9F3FF] md:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
             <div className="rounded-xl p-2 mb-2">
               <h3 className="font-semibold text-black text-md">Discover Talent</h3>
             </div>
@@ -266,7 +267,7 @@ export function HeroSection() {
                 </div>
               ) : (
                 <div className="animate-scroll-vertical-reverse space-y-2">
-                  {(featuredTalents.length > 0 ? [...featuredTalents, ...featuredTalents] : []).map((talent, index) => (
+                  {(featuredTalents.length > 0 ? [...featuredTalents, ...featuredTalents] : [...MOCK_TALENTS, ...MOCK_TALENTS]).map((talent, index) => (
                     <div key={`${talent._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                       <div className="relative h-48">
                         <img 
