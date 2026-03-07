@@ -65,7 +65,7 @@ export function HeroSection() {
   return (
     <section className="bg-[#DEFCFE] py-12 lg:py-16">
       <div className="container">
-        <div className="grid gap-8 md:grid-cols-[1fr,300px] xl:grid-cols-[300px,1fr,300px]">
+        <div className="grid gap-8 lg:grid-cols-[1fr,300px] xl:grid-cols-[300px,1fr,300px]">
           {/* Left Sidebar - Featured Casting Calls */}
           <div className="bg-[#F1FBFB] xl:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
             <div className="rounded-xl p-2 mb-2">
@@ -256,7 +256,7 @@ export function HeroSection() {
           </div>
 
           {/* Right Sidebar - Discover Talent */}
-          <div className="bg-[#F9F3FF] md:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
+          <div className="bg-[#F9F3FF] lg:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
             <div className="rounded-xl p-2 mb-2">
               <h3 className="font-semibold text-black text-md">Discover Talent</h3>
             </div>
