@@ -65,7 +65,7 @@ export function HeroSection() {
   return (
     <section className="bg-[#DEFCFE] py-12 lg:py-16">
       <div className="container">
-        <div className="grid gap-8 lg:grid-cols-[1fr,300px] xl:grid-cols-[300px,1fr,300px]">
+        <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1fr,300px] xl:grid-cols-[300px,1fr,300px]">
           {/* Left Sidebar - Featured Casting Calls */}
           <div className="bg-[#F1FBFB] xl:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
             <div className="rounded-xl p-2 mb-2">
@@ -256,7 +256,7 @@ export function HeroSection() {
           </div>
 
           {/* Right Sidebar - Discover Talent */}
-          <div className="bg-[#F9F3FF] lg:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
+          <div className="bg-[#F9F3FF] lg:block shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
             <div className="rounded-xl p-2 mb-2">
               <h3 className="font-semibold text-black text-md">Discover Talent</h3>
             </div>
@@ -266,7 +266,7 @@ export function HeroSection() {
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <div className="animate-scroll-vertical-reverse space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 animate-scroll-vertical-reverse space-y-2">
                   {(featuredTalents.length > 0 ? [...featuredTalents, ...featuredTalents] : [...MOCK_TALENTS, ...MOCK_TALENTS]).map((talent, index) => (
                     <div key={`${talent._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                       <div className="relative h-48">
