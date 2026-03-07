@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, MapPin, Star, Briefcase, Mail, ShieldCheck } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { MOCK_TALENTS } from "@/lib/data";
 
 export default function TalentProfile() {
   const { id } = useParams();
@@ -18,6 +19,37 @@ export default function TalentProfile() {
     const fetchTalent = async () => {
       if (!id) return;
       setIsLoading(true);
+
+      // Handle mock data
+      if (id.startsWith('mock-')) {
+        const mockTalent = MOCK_TALENTS.find(t => t._id === id);
+        if (mockTalent) {
+          // Adapt mock data to the structure expected by the component
+          setTalent({
+            ...mockTalent,
+            professionalRoles: [mockTalent.category, mockTalent.subCategory],
+            bio: "This is a mock talent profile for demonstration purposes. In a real scenario, this would contain the talent's full biography and professional history.",
+            location: "Los Angeles, CA",
+            email: "contact@mocktalent.com",
+            isVerified: true,
+            skills: ["Acting", "Singing", "Dancing", "Public Speaking"],
+            physicalAttributes: {
+              height: "180cm",
+              weight: "75kg",
+              eyeColor: "Brown",
+              hairColor: "Black"
+            },
+            headshots: [
+              { _id: 'h1', url: mockTalent.profilePicture },
+              { _id: 'h2', url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=400&fit=crop" },
+              { _id: 'h3', url: "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=400&h=400&fit=crop" }
+            ]
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
       try {
         const response = await profileAPI.getOne(id);
         if (response.data.success) {

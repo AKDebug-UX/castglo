@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, User, Briefcase, MapPin, Star, Loader2 } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { MOCK_TALENTS } from "@/lib/data";
 
 export default function Browse() {
   const [search, setSearch] = useState("");
@@ -20,11 +21,14 @@ export default function Browse() {
     setIsLoading(true);
     try {
       const response = await profileAPI.search({ limit: 6, userRole: "talent" });
-      if (response.data.success) {
+      if (response.data.success && Array.isArray(response.data.data) && response.data.data.length > 0) {
         setTalents(response.data.data);
+      } else {
+        setTalents(MOCK_TALENTS);
       }
     } catch (error) {
-      console.error("Failed to fetch talents");
+      console.error("Failed to fetch talents", error);
+      setTalents(MOCK_TALENTS);
     } finally {
       setIsLoading(false);
     }
@@ -39,11 +43,14 @@ export default function Browse() {
     setIsLoading(true);
     try {
       const response = await profileAPI.search({ search, userRole: "talent" });
-      if (response.data.success) {
+      if (response.data.success && Array.isArray(response.data.data)) {
         setTalents(response.data.data);
+      } else {
+        setTalents([]);
       }
     } catch (error) {
       toast.error("Search failed");
+      setTalents([]);
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +85,7 @@ export default function Browse() {
 
           {/* Results Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-16">
-            {talents.map((talent) => (
+            {Array.isArray(talents) && talents.map((talent) => (
               <Card key={talent._id} className="card-elevated group overflow-hidden">
                 <CardContent className="p-0">
                   <div className="relative h-48 bg-muted">

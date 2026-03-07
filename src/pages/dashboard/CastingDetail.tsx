@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { MOCK_CASTINGS } from "@/lib/data";
 
 export default function CastingDetail() {
   const { id } = useParams();
@@ -23,6 +24,26 @@ export default function CastingDetail() {
   useEffect(() => {
     const fetchCasting = async () => {
       if (!id) return;
+      setIsLoading(true);
+
+      // Handle mock data
+      if (id.startsWith('mock-')) {
+        const mockCasting = MOCK_CASTINGS.find(c => c._id === id);
+        if (mockCasting) {
+          setCasting({
+            ...mockCasting,
+            status: "Open",
+            description: "This is a mock casting call for demonstration purposes. It includes all the necessary details to showcase how a real casting call would look on the platform.",
+            requirements: ["Professional attitude", "Available for travel", "Previous experience preferred"],
+            payRate: "$500 - $1,000 per day",
+            postedBy: { fullName: "Mock Casting Agency" },
+            deadline: "2026-12-31"
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
       try {
         const response = await castingCallAPI.getOne(id);
         if (response.data.success) {

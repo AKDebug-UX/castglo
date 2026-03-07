@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Video, Upload, Loader2 } from "lucide-react";
 import { castingCallAPI, applicationAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { MOCK_CASTINGS } from "@/lib/data";
 
 export default function SubmitAudition() {
   const { id } = useParams();
@@ -20,6 +21,26 @@ export default function SubmitAudition() {
   useEffect(() => {
     const fetchCasting = async () => {
       if (!id) return;
+      setIsLoading(true);
+
+      // Handle mock data
+      if (id.startsWith('mock-')) {
+        const mockCasting = MOCK_CASTINGS.find(c => c._id === id);
+        if (mockCasting) {
+          setCasting({
+            ...mockCasting,
+            status: "Open",
+            description: "Mock casting call for audition submission testing.",
+            requirements: ["Professional attitude", "Available for travel", "Previous experience preferred"],
+            payRate: "$500 - $1,000 per day",
+            postedBy: { fullName: "Mock Casting Agency" },
+            deadline: "2026-12-31"
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
       try {
         const response = await castingCallAPI.getOne(id);
         if (response.data.success) {
@@ -42,6 +63,17 @@ export default function SubmitAudition() {
     }
 
     setIsSubmitting(true);
+
+    // Mock submission for mock IDs
+    if (id.startsWith('mock-')) {
+      setTimeout(() => {
+        toast.success("Mock audition submitted successfully!");
+        setIsSubmitting(false);
+        navigate("/dashboard/submissions");
+      }, 1500);
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("castingCallId", id);
