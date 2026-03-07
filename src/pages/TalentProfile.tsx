@@ -1,52 +1,48 @@
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-import talentMichael from "@/assets/talent-michael.jpg";
-import talentTom from "@/assets/talent-tom.jpg";
-import talentSarah from "@/assets/talent-sarah.jpg";
-
-const allTalents = [
-  {
-    id: 1,
-    name: "Jataun Gilbert",
-    role: "Emmy Award-Winning Editor • Colorist • Sound Designer • DP",
-    image: talentMichael,
-  },
-  { id: 2, name: "Tom Andy", role: "Lead Actor • Drama", image: talentTom },
-  { id: 3, name: "Sarah Johnson", role: "Voice Actor • Animation", image: talentSarah },
-  {
-    id: 4,
-    name: "New Talent",
-    role: "Actor • Professional",
-    image: talentMichael,
-    about: "Professional talent with extensive experience in the industry.",
-    experience: "5+ years • Professional",
-    location: "New York, NY",
-    roles: "Actor, Commercial, Voiceover",
-    equipment: "Home Studio, Professional Mic",
-    software: ["Adobe Audition", "Pro Tools"],
-    credits: ["Major Commercial Campaign", "Lead in Indie Film"],
-    representation: {
-      agency: "Lost Child Entertainment",
-      email: "gerard@lostchildent.com",
-      location: "New York, NY"
-    },
-    unionStatus: "Nonunion",
-    documents: {
-      hasDriversLicense: true,
-      hasPassport: true
-    }
-  },
-];
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, MapPin, Star, Briefcase, Mail, ShieldCheck } from "lucide-react";
+import { profileAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function TalentProfile() {
-  const params = useParams();
-  const id = Number(params.id);
-  const talent = useMemo(() => allTalents.find(t => t.id === id), [id]);
+  const { id } = useParams();
+  const [talent, setTalent] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTalent = async () => {
+      if (!id) return;
+      setIsLoading(true);
+      try {
+        const response = await profileAPI.getOne(id);
+        if (response.data.success) {
+          setTalent(response.data.data);
+        }
+      } catch (error) {
+        toast.error("Failed to load talent profile");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTalent();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -54,133 +50,132 @@ export default function TalentProfile() {
       <main className="flex-1 bg-[#F1FBFB]">
         <section className="container py-8">
           {!talent ? (
-            <div className="rounded-xl bg-card p-6 shadow-card">
+            <div className="rounded-xl bg-card p-6 shadow-card text-center max-w-md mx-auto mt-12">
               <h1 className="text-xl font-semibold">Talent not found</h1>
               <p className="mt-2 text-sm text-muted-foreground">Please go back and select a profile again.</p>
-              <Button className="mt-4" variant="outline" asChild>
-                <Link to="/">Go Home</Link>
+              <Button className="mt-6" variant="outline" asChild>
+                <Link to="/browse">Back to Browse</Link>
               </Button>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-[280px,1fr]">
-              <div className="rounded-xl bg-card overflow-hidden shadow-card">
-                <img src={talent.image} alt={talent.name} className="w-full h-64 object-cover" />
-                <div className="p-4">
-                  <h1 className="text-xl font-bold">{talent.name}</h1>
-                  <p className="text-sm text-muted-foreground">{talent.role}</p>
-                  <div className="mt-4 flex gap-2">
-                    <Button variant="hero">Book Talent</Button>
-                    <Button variant="outline" asChild>
-                      <Link to="/browse">Back to Browse</Link>
-                    </Button>
+            <div className="grid gap-6 md:grid-cols-[320px,1fr]">
+              {/* Profile Sidebar */}
+              <div className="space-y-6">
+                <div className="rounded-2xl bg-card overflow-hidden shadow-card">
+                  <img 
+                    src={talent.profilePicture || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
+                    alt={talent.fullName} 
+                    className="w-full aspect-square object-cover" 
+                  />
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold">{talent.fullName}</h1>
+                    <p className="text-sm text-primary font-medium capitalize mt-1">
+                      {talent.professionalRoles?.join(" • ") || "Talent"}
+                    </p>
+                    <div className="flex items-center gap-1 text-sm mt-3">
+                      <Star className="w-4 h-4 fill-warning text-warning" />
+                      <span className="font-medium">{talent.rating || "0.0"}</span>
+                      <span className="text-muted-foreground">({talent.reviewCount || 0} reviews)</span>
+                    </div>
+                    <div className="mt-6 flex flex-col gap-2">
+                      <Button variant="hero" className="w-full">Book Talent</Button>
+                      <Button variant="outline" className="w-full" asChild>
+                        <Link to="/browse">Back to Browse</Link>
+                      </Button>
+                    </div>
                   </div>
                 </div>
+
+                {/* Additional Sidebar Info */}
+                <Card className="rounded-2xl shadow-card">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex items-center gap-3 text-sm">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <span>{talent.location || "Remote / Worldwide"}</span>
+                    </div>
+                    {talent.email && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        <span className="truncate">{talent.email}</span>
+                      </div>
+                    )}
+                    {talent.isVerified && (
+                      <div className="flex items-center gap-3 text-sm text-success">
+                        <ShieldCheck className="w-4 h-4" />
+                        <span className="font-medium">Verified Profile</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
-              <div className="rounded-xl bg-card p-6 shadow-card">
-                <h2 className="font-semibold text-lg">About</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {talent.about || "Hey My name is Jataun Gilbert and I am a Full Service Production, I am a Emmy award winning Editor, colorist, Sound Design and Scorer. I do Graphic Design as well. In regards to Being on set I have done a lot of DP work I have my own Cinema Camera, Easy Rig, Lenses and Lights. I have also done Sound as well and have my own sound Equipment. I have won Some awards as a Director, I have also been an Assistant Director. I pride myself on being able to get the job done in the absolute best way possible!"}
-                </p>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-lg bg-muted p-4">
-                    <div className="text-xs text-muted-foreground">Experience</div>
-                    <div className="text-sm">{talent.experience || "3–6 years • Experienced"}</div>
-                  </div>
-                  <div className="rounded-lg bg-muted p-4">
-                    <div className="text-xs text-muted-foreground">Location</div>
-                    <div className="text-sm">{talent.location || "Los Angeles, CA"}</div>
-                  </div>
-                  <div className="rounded-lg bg-muted p-4">
-                    <div className="text-xs text-muted-foreground">Roles</div>
-                    <div className="text-sm">
-                      {talent.roles || "Audio (Sound & Music), Sound Operator / Engineer, Dubbing Editor / Mixer, Composer, Sound Assistant, Sound Designer"}
-                    </div>
-                  </div>
-                  <div className="rounded-lg bg-muted p-4">
-                    <div className="text-xs text-muted-foreground">Equipment</div>
-                    <div className="text-sm">
-                      {talent.equipment || "Cinema Camera, Easy Rig, Lenses, Lights, Zoom H6 Recorder, Sound Equipment"}
-                    </div>
-                  </div>
-                </div>
 
-                {talent.representation && (
-                  <div className="mt-6 border-t pt-6">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                      Representation
-                    </h3>
-                    <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                      <div className="rounded-lg bg-muted p-4">
-                        <div className="text-xs text-muted-foreground">Agency</div>
-                        <div className="text-sm font-medium">{talent.representation.agency}</div>
+              {/* Profile Main Content */}
+              <div className="space-y-6">
+                <div className="rounded-2xl bg-card p-8 shadow-card">
+                  <h2 className="font-bold text-xl mb-4">About</h2>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {talent.bio || "No biography provided."}
+                  </p>
+                  
+                  {talent.highlights && (
+                    <div className="mt-8">
+                      <h3 className="font-semibold text-lg mb-3">Career Highlights</h3>
+                      <p className="text-muted-foreground whitespace-pre-wrap">{talent.highlights}</p>
+                    </div>
+                  )}
+
+                  <div className="mt-10 grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl bg-muted/50 p-5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Briefcase className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Experience</span>
                       </div>
-                      <div className="rounded-lg bg-muted p-4">
-                        <div className="text-xs text-muted-foreground">Contact</div>
-                        <div className="text-sm">{talent.representation.email}</div>
-                        <div className="text-xs text-muted-foreground">{talent.representation.location}</div>
+                      <div className="text-sm font-medium">{talent.experience || "Not specified"}</div>
+                    </div>
+                    
+                    <div className="rounded-xl bg-muted/50 p-5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Star className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Skills</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {talent.skills?.map((skill: string) => (
+                          <Badge key={skill} variant="secondary" className="text-[10px]">{skill}</Badge>
+                        )) || <span className="text-sm text-muted-foreground">None specified</span>}
                       </div>
                     </div>
                   </div>
-                )}
 
-                <div className="mt-6 border-t pt-6 grid gap-6 sm:grid-cols-2">
-                  <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                      Union Membership
-                    </h3>
-                    <div className="mt-2">
-                      <Badge variant="outline" className="text-sm py-1 px-3">
-                        {talent.unionStatus || "Nonunion"}
-                      </Badge>
+                  {/* Portfolio Gallery */}
+                  {talent.headshots && talent.headshots.length > 0 && (
+                    <div className="mt-10 border-t pt-8">
+                      <h3 className="font-bold text-xl mb-6">Portfolio</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {talent.headshots.map((shot: any) => (
+                          <div key={shot._id} className="aspect-square rounded-xl overflow-hidden border bg-muted">
+                            <img src={shot.url} className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" alt="Portfolio" />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                      Legal Documents
-                    </h3>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {talent.documents?.hasDriversLicense && (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-none">
-                          Driver's License
-                        </Badge>
-                      )}
-                      {talent.documents?.hasPassport && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-none">
-                          Passport
-                        </Badge>
-                      )}
-                      {!talent.documents && (
-                        <span className="text-sm text-muted-foreground italic">None specified</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  )}
 
-                <div className="mt-6 border-t pt-6">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Software & Programs
-                  </h3>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {(talent.software || ["Adobe Premiere Pro", "Adobe After Effects", "Zoom Recorders"]).map((s) => (
-                      <Badge key={s} variant="secondary">{s}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-6">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Selected Credits
-                  </h3>
-                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    {(talent.credits || [
-                      "Emmy Award-Winning Editor",
-                      "Award-Winning Director",
-                      "Assistant Director",
-                      "DP / Camera Operator",
-                      "Production Sound Mixer"
-                    ]).map((credit, index) => (
-                      <li key={index}>{credit}</li>
-                    ))}
-                  </ul>
+                  {/* Physical Attributes */}
+                  {talent.physicalAttributes && (
+                    <div className="mt-10 border-t pt-8">
+                      <h3 className="font-bold text-xl mb-6">Physical Attributes</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                        {Object.entries(talent.physicalAttributes).map(([key, value]: [string, any]) => (
+                          value && (
+                            <div key={key}>
+                              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1 capitalize">{key.replace(/([A-Z])/g, ' $1')}</div>
+                              <div className="text-sm font-semibold">{value}</div>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

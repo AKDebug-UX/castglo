@@ -1,130 +1,128 @@
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Grid3X3, 
   List, 
-  Plus,
   Play,
   MapPin,
-  Star,
   CheckCircle,
   XCircle,
-  Award
+  Award,
+  Loader2,
+  ArrowLeft
 } from "lucide-react";
-
-const submissions = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    initials: "SJ",
-    location: "Los Angeles, CA",
-    role: "Lead Role - Indie Drama",
-    date: "Submitted 1/12/2024",
-    experience: "5+ years",
-    status: "pending",
-    feedback: "Strong emotional range, perfect for the character arc.",
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    initials: "MC",
-    location: "New York, NY",
-    role: "Supporting Actor - Netflix Series",
-    date: "Submitted 1/11/2024",
-    experience: "8+ years",
-    status: "approved",
-    feedback: "Excellent screen presence and chemistry with lead actors.",
-  },
-  {
-    id: 3,
-    name: "Emma Rodriguez",
-    initials: "ER",
-    location: "Chicago, IL",
-    role: "Lead Role - Indie Drama",
-    date: "Submitted 1/10/2024",
-    experience: "3+ years",
-    status: "pending",
-    feedback: "Great energy and natural charisma for this.",
-  },
-  {
-    id: 4,
-    name: "David Kim",
-    initials: "DK",
-    location: "Atlanta, GA",
-    role: "Commercial - Tech Brand",
-    date: "Submitted 1/9/2024",
-    experience: "6+ years",
-    status: "rejected",
-    feedback: "Good performance but not quite the right fit for this particular role.",
-  },
-  {
-    id: 5,
-    name: "Lisa Park",
-    initials: "LP",
-    location: "Los Angeles, CA",
-    role: "Voice Over - Animation",
-    date: "Submitted 1/8/2024",
-    experience: "4+ years",
-    status: "pending",
-    feedback: "Versatile voice with great character range.",
-  },
-  {
-    id: 6,
-    name: "James Wilson",
-    initials: "JW",
-    location: "Vancouver, BC",
-    role: "Supporting Actor - Netflix Series",
-    date: "Submitted 1/7/2024",
-    experience: "8+ years",
-    status: "approved",
-    feedback: "Strong dramatic skills and professional attitude.",
-  },
-];
-
-const statusColors: Record<string, string> = {
-  pending: "bg-warning text-warning-foreground",
-  approved: "bg-success text-success-foreground",
-  rejected: "bg-destructive text-destructive-foreground",
-};
+import { applicationAPI, castingCallAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function DirectorSubmissions() {
+  const { id } = useParams(); // castingCallId
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState("all");
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [castingCall, setCastingCall] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    if (!id) return;
+    setIsLoading(true);
+    try {
+      const [subsRes, castingRes] = await Promise.all([
+        applicationAPI.getByCastingCall(id),
+        castingCallAPI.getOne(id)
+      ]);
+
+      if (subsRes.data.success) {
+        setSubmissions(subsRes.data.data);
+      }
+      if (castingRes.data.success) {
+        setCastingCall(castingRes.data.data);
+      }
+    } catch (error: any) {
+      toast.error("Failed to load submissions");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [id]);
+
+  const handleAction = async (appId: string, action: 'shortlist' | 'accept' | 'reject') => {
+    setActionLoading(appId);
+    try {
+      let response;
+      if (action === 'shortlist') response = await applicationAPI.shortlist(appId);
+      else if (action === 'accept') response = await applicationAPI.accept(appId);
+      else response = await applicationAPI.reject(appId);
+
+      if (response.data.success) {
+        toast.success(`Application ${action}ed`);
+        setSubmissions(prev => prev.map(s => s._id === appId ? { ...s, status: action === 'shortlist' ? 'shortlisted' : action === 'accept' ? 'accepted' : 'rejected' } : s));
+      }
+    } catch (error: any) {
+      toast.error(`Failed to ${action} application`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const statusColors: Record<string, string> = {
+    applied: "bg-warning text-warning-foreground",
+    shortlisted: "bg-primary text-primary-foreground",
+    accepted: "bg-success text-success-foreground",
+    rejected: "bg-destructive text-destructive-foreground",
+  };
 
   const filteredSubmissions = submissions.filter((sub) => {
     if (activeTab === "all") return true;
-    if (activeTab === "open") return sub.status === "pending";
-    if (activeTab === "closed") return sub.status === "approved";
-    if (activeTab === "drafts") return sub.status === "rejected";
+    if (activeTab === "pending") return sub.status === "applied";
+    if (activeTab === "shortlisted") return sub.status === "shortlisted";
+    if (activeTab === "accepted") return sub.status === "accepted";
+    if (activeTab === "rejected") return sub.status === "rejected";
     return true;
   });
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
+      <Link 
+        to="/director/projects" 
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to My Projects
+      </Link>
+
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">My Projects</h1>
-          <p className="text-muted-foreground">Manage all your casting calls and projects</p>
+          <h1 className="text-2xl font-bold">{castingCall?.title || "Project Submissions"}</h1>
+          <p className="text-muted-foreground">Review and manage talent applications</p>
         </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          New Casting Call
-        </Button>
       </div>
 
       {/* Tabs and View Toggle */}
       <div className="flex items-center justify-between">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
-            <TabsTrigger value="all">All Projects</TabsTrigger>
-            <TabsTrigger value="open">Open</TabsTrigger>
-            <TabsTrigger value="closed">Closed</TabsTrigger>
-            <TabsTrigger value="drafts">Drafts</TabsTrigger>
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="shortlisted">Shortlisted</TabsTrigger>
+            <TabsTrigger value="accepted">Accepted</TabsTrigger>
+            <TabsTrigger value="rejected">Rejected</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex items-center gap-2">
@@ -148,125 +146,138 @@ export default function DirectorSubmissions() {
       {/* Grid View */}
       {viewMode === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredSubmissions.map((submission) => (
-            <Card key={submission.id} className="card-elevated overflow-hidden">
+          {filteredSubmissions.length > 0 ? filteredSubmissions.map((submission) => (
+            <Card key={submission._id} className="card-elevated overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarFallback className="bg-primary/10 text-primary">
-                        {submission.initials}
+                        {submission.talent?.fullName?.[0] || 'T'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold">{submission.name}</p>
+                      <p className="font-semibold">{submission.talent?.fullName}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
-                        {submission.location}
+                        {submission.talent?.location || "Remote"}
                       </p>
                     </div>
                   </div>
-                  <Badge className={statusColors[submission.status]}>
+                  <Badge className={statusColors[submission.status] || "bg-muted"}>
                     {submission.status}
                   </Badge>
                 </div>
 
                 <div className="mb-3">
-                  <p className="text-sm text-muted-foreground">{submission.role}</p>
-                  <p className="text-xs text-muted-foreground">{submission.date}</p>
+                  <p className="text-xs text-muted-foreground">Submitted: {new Date(submission.createdAt).toLocaleDateString()}</p>
                 </div>
 
-                <div className="flex items-center gap-2 mb-3 text-xs">
-                  <span className="text-muted-foreground">Experience:</span>
-                  <span className="font-medium">{submission.experience}</span>
-                </div>
-
-                {/* Video Preview Placeholder */}
-                <div className="relative aspect-video rounded-lg bg-muted mb-3 flex items-center justify-center group cursor-pointer">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-lg" />
-                  <Button variant="ghost" size="icon" className="z-10 bg-white/20 hover:bg-white/30 rounded-full w-12 h-12">
-                    <Play className="w-5 h-5 text-white" fill="white" />
-                  </Button>
+                {/* Video Preview */}
+                <div className="relative aspect-video rounded-lg bg-muted mb-3 flex items-center justify-center group cursor-pointer overflow-hidden">
+                  {submission.auditionVideo ? (
+                    <video src={submission.auditionVideo} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-lg flex items-center justify-center">
+                       <Play className="w-8 h-8 text-white" />
+                    </div>
+                  )}
                   <span className="absolute bottom-2 left-2 text-xs text-white/80 flex items-center gap-1">
                     <Play className="w-3 h-3" />
-                    Preview Audition
+                    Review Audition
                   </span>
                 </div>
 
-                <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{submission.feedback}</p>
+                <p className="text-xs text-muted-foreground line-clamp-2 mb-4 italic">
+                  "{submission.notes || "No notes provided"}"
+                </p>
 
-                {submission.status === "pending" ? (
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1">
+                <div className="flex flex-wrap gap-2">
+                  {submission.status === "applied" && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        className="flex-1" 
+                        onClick={() => handleAction(submission._id, 'shortlist')}
+                        disabled={!!actionLoading}
+                      >
+                        {actionLoading === submission._id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Star className="w-3 h-3 mr-1" />}
+                        Shortlist
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleAction(submission._id, 'reject')}
+                        disabled={!!actionLoading}
+                      >
+                        <XCircle className="w-3 h-3 mr-1" />
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                  {submission.status === "shortlisted" && (
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-success hover:bg-success/90"
+                      onClick={() => handleAction(submission._id, 'accept')}
+                      disabled={!!actionLoading}
+                    >
                       <CheckCircle className="w-3 h-3 mr-1" />
-                      Approve
+                      Accept Talent
                     </Button>
-                    <Button variant="destructive" size="sm" className="flex-1">
-                      <XCircle className="w-3 h-3 mr-1" />
-                      Reject
-                    </Button>
-                  </div>
-                ) : submission.status === "approved" ? (
-                  <Button size="sm" className="w-full bg-success hover:bg-success/90">
-                    <Award className="w-3 h-3 mr-1" />
-                    Award Role
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="sm" className="w-full" disabled>
-                    Rejected
-                  </Button>
-                )}
+                  )}
+                  {submission.status === "accepted" && (
+                    <Badge variant="outline" className="w-full justify-center py-1">
+                       <Award className="w-3 h-3 mr-1 text-success" />
+                       Role Awarded
+                    </Badge>
+                  )}
+                </div>
               </CardContent>
             </Card>
-          ))}
+          )) : (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+               No submissions found in this category.
+            </div>
+          )}
         </div>
       ) : (
         /* List View */
         <div className="space-y-3">
-          {filteredSubmissions.map((submission) => (
-            <Card key={submission.id} className="card-elevated">
+          {filteredSubmissions.length > 0 ? filteredSubmissions.map((submission) => (
+            <Card key={submission._id} className="card-elevated">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <Avatar className="w-12 h-12">
                       <AvatarFallback className="bg-primary/10 text-primary">
-                        {submission.initials}
+                        {submission.talent?.fullName?.[0] || 'T'}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold">{submission.name}</p>
-                        <Badge className={statusColors[submission.status]}>
+                        <p className="font-semibold">{submission.talent?.fullName}</p>
+                        <Badge className={statusColors[submission.status] || "bg-muted"}>
                           {submission.status}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{submission.role}</p>
-                      <p className="text-xs text-muted-foreground">{submission.date}</p>
+                      <p className="text-sm text-muted-foreground">Submitted: {new Date(submission.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {submission.status === "pending" ? (
-                      <>
-                        <Button size="sm">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Approve
-                        </Button>
-                        <Button variant="destructive" size="sm">
-                          <XCircle className="w-3 h-3 mr-1" />
-                          Reject
-                        </Button>
-                      </>
-                    ) : submission.status === "approved" ? (
-                      <Button size="sm" className="bg-success hover:bg-success/90">
-                        <Award className="w-3 h-3 mr-1" />
-                        Award Role
-                      </Button>
-                    ) : null}
+                    <Button variant="outline" size="sm" asChild>
+                       <Link to={`/director/submissions/${submission._id}`}>Review</Link>
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )) : (
+            <div className="text-center py-12 text-muted-foreground">
+               No submissions found in this category.
+            </div>
+          )}
         </div>
       )}
     </div>

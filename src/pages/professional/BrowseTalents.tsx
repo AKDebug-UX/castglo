@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
@@ -11,68 +12,52 @@ import {
   MapPin, 
   Star,
   Mail,
-  Eye
+  Eye,
+  Loader2
 } from "lucide-react";
-
-const talents = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    initials: "S",
-    role: "Actor",
-    rating: 4.9,
-    reviews: 24,
-    location: "Los Angeles, CA",
-    experience: "8 years experience",
-    skills: ["Drama", "Comedy", "Voice Acting"],
-    bio: "Versatile actor with extensive experience in film, television, and theater. Passionate about bringing authentic characters to life.",
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    initials: "M",
-    role: "Model",
-    rating: 4.8,
-    reviews: 18,
-    location: "New York, NY",
-    experience: "5 years experience",
-    skills: ["Fashion", "Commercial", "Editorial"],
-    bio: "Professional model specializing in fashion and commercial work. Available for print, runway, and digital campaigns.",
-  },
-  {
-    id: 3,
-    name: "Emma Rodriguez",
-    initials: "S",
-    role: "Dancer",
-    rating: 5.0,
-    reviews: 24,
-    location: "Miami, FL",
-    experience: "10 years experience",
-    skills: ["Contemporary", "Ballet", "Hip Hop"],
-    bio: "Award-winning dancer with classical training and contemporary expertise. Choreographer and performer.",
-  },
-  {
-    id: 4,
-    name: "David Kim",
-    initials: "D",
-    role: "Voice Actor",
-    rating: 4.8,
-    reviews: 22,
-    location: "Chicago, IL",
-    experience: "6 years experience",
-    skills: ["Animation", "Commercial", "Audiobooks"],
-    bio: "Professional voice actor with a versatile range. Experienced in character voices, narration, and commercial work.",
-  },
-];
+import { profileAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function BrowseTalents() {
-  const [selectedTalent, setSelectedTalent] = useState<typeof talents[0] | null>(null);
+  const [talents, setTalents] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [role, setRole] = useState("all");
+  const [location, setLocation] = useState("all");
+  const [selectedTalent, setSelectedTalent] = useState<any | null>(null);
+
+  const fetchTalents = async () => {
+    setIsLoading(true);
+    try {
+      const params: any = {};
+      if (search) params.search = search;
+      if (role !== "all") params.role = role;
+      if (location !== "all") params.location = location;
+      params.userRole = "talent"; // Only browse talents
+
+      const response = await profileAPI.search(params);
+      if (response.data.success) {
+        setTalents(response.data.data);
+      }
+    } catch (error: any) {
+      toast.error("Failed to load talents");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchTalents();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search, role, location]);
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold">Welcome back, Sarah!</h1>
-        <p className="text-muted-foreground">Here's what's happening with your casting opportunities</p>
+        <h1 className="text-2xl font-bold">Browse Talent</h1>
+        <p className="text-muted-foreground">Discover and connect with amazing performers</p>
       </div>
 
       {/* Search and Filters */}
@@ -85,10 +70,12 @@ export default function BrowseTalents() {
                 <Input 
                   placeholder="Search talents by name, skill, or location" 
                   className="pl-9"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
             </div>
-            <Select>
+            <Select value={role} onValueChange={setRole}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Role" />
               </SelectTrigger>
@@ -100,7 +87,7 @@ export default function BrowseTalents() {
                 <SelectItem value="voice">Voice Actor</SelectItem>
               </SelectContent>
             </Select>
-            <Select>
+            <Select value={location} onValueChange={setLocation}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Location" />
               </SelectTrigger>
@@ -117,118 +104,133 @@ export default function BrowseTalents() {
       </Card>
 
       {/* Results Count */}
-      <p className="text-sm text-muted-foreground">Showing {talents.length} talents</p>
+      <p className="text-sm text-muted-foreground">
+        {isLoading ? "Searching..." : `Showing ${talents.length} talents`}
+      </p>
 
       {/* Talents Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {talents.map((talent) => (
-          <Card key={talent.id} className="card-elevated">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-4">
-                <Avatar className="w-12 h-12">
-                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                    {talent.initials}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">{talent.name}</h3>
-                    <div className="flex items-center gap-1 text-sm">
-                      <Star className="w-4 h-4 fill-warning text-warning" />
-                      <span>{talent.rating}</span>
-                      <span className="text-muted-foreground">({talent.reviews})</span>
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {talents.length > 0 ? talents.map((talent) => (
+            <Card key={talent._id} className="card-elevated">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-4">
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={talent.profilePicture} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                      {talent.fullName?.[0] || 'T'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold truncate">{talent.fullName}</h3>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Star className="w-4 h-4 fill-warning text-warning" />
+                        <span>{talent.rating || "0.0"}</span>
+                        <span className="text-muted-foreground">({talent.reviewCount || 0})</span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground capitalize">{talent.professionalRoles?.join(", ") || "Performer"}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <MapPin className="w-3 h-3" />
+                      {talent.location || "Remote"}
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-1 mt-3">
+                      {talent.skills?.slice(0, 3).map((skill: string) => (
+                        <Badge key={skill} variant="secondary" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
+                      {talent.bio || "No bio provided."}
+                    </p>
+
+                    <div className="flex gap-2 mt-4">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="sm" className="flex-1" onClick={() => setSelectedTalent(talent)}>
+                            <Eye className="w-3 h-3 mr-1" />
+                            View Profile
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Talent Profile</DialogTitle>
+                            <p className="text-sm text-muted-foreground">Detailed information about this talent</p>
+                          </DialogHeader>
+                          {selectedTalent && (
+                            <div className="space-y-4 mt-4">
+                              <div className="flex items-center gap-4">
+                                <Avatar className="w-16 h-16">
+                                  <AvatarImage src={selectedTalent.profilePicture} />
+                                  <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                                    {selectedTalent.fullName?.[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <h3 className="font-semibold text-lg">{selectedTalent.fullName}</h3>
+                                  <p className="text-muted-foreground capitalize">{selectedTalent.professionalRoles?.join(", ")}</p>
+                                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                    <Star className="w-3 h-3 fill-warning text-warning" />
+                                    {selectedTalent.rating || "0.0"} ({selectedTalent.reviewCount || 0} reviews) • 
+                                    <MapPin className="w-3 h-3 ml-1" />
+                                    {selectedTalent.location || "Remote"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div>
+                                <h4 className="font-medium mb-1">About</h4>
+                                <p className="text-sm text-muted-foreground">{selectedTalent.bio || "No bio provided."}</p>
+                              </div>
+
+                              {selectedTalent.skills?.length > 0 && (
+                                <div>
+                                  <h4 className="font-medium mb-2">Skills</h4>
+                                  <div className="flex flex-wrap gap-1">
+                                    {selectedTalent.skills.map((skill: string) => (
+                                      <Badge key={skill} variant="secondary">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              <Button className="w-full" asChild>
+                                <Link to={`/professional/messages?talentId=${selectedTalent._id}`}>
+                                  <Mail className="w-4 h-4 mr-2" />
+                                  Send Message
+                                </Link>
+                              </Button>
+                            </div>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                      <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                        <Link to={`/professional/messages?talentId=${talent._id}`}>
+                          <Mail className="w-4 h-4" />
+                        </Link>
+                      </Button>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">{talent.role}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                    <MapPin className="w-3 h-3" />
-                    {talent.location} • {talent.experience}
-                  </p>
-                  
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {talent.skills.map((skill) => (
-                      <Badge key={skill} variant="secondary" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
-                    {talent.bio}
-                  </p>
-
-                  <div className="flex gap-2 mt-4">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="flex-1" onClick={() => setSelectedTalent(talent)}>
-                          <Eye className="w-3 h-3 mr-1" />
-                          View Profile
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Talent Profile</DialogTitle>
-                          <p className="text-sm text-muted-foreground">View detailed information about this talent</p>
-                        </DialogHeader>
-                        {selectedTalent && (
-                          <div className="space-y-4 mt-4">
-                            <div className="flex items-center gap-4">
-                              <Avatar className="w-16 h-16">
-                                <AvatarFallback className="bg-primary/10 text-primary text-xl">
-                                  {selectedTalent.initials}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <h3 className="font-semibold text-lg">{selectedTalent.name}</h3>
-                                <p className="text-muted-foreground">{selectedTalent.role}</p>
-                                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                  <Star className="w-3 h-3 fill-warning text-warning" />
-                                  {selectedTalent.rating} ({selectedTalent.reviews} reviews) • 
-                                  <MapPin className="w-3 h-3 ml-1" />
-                                  {selectedTalent.location}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div>
-                              <h4 className="font-medium mb-1">About</h4>
-                              <p className="text-sm text-muted-foreground">{selectedTalent.bio}</p>
-                            </div>
-
-                            <div>
-                              <h4 className="font-medium mb-1">Experience</h4>
-                              <p className="text-sm text-muted-foreground">{selectedTalent.experience}</p>
-                            </div>
-
-                            <div>
-                              <h4 className="font-medium mb-2">Skills</h4>
-                              <div className="flex flex-wrap gap-1">
-                                {selectedTalent.skills.map((skill) => (
-                                  <Badge key={skill} variant="secondary">
-                                    {skill}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-
-                            <Button className="w-full">
-                              <Mail className="w-4 h-4 mr-2" />
-                              Send Message
-                            </Button>
-                          </div>
-                        )}
-                      </DialogContent>
-                    </Dialog>
-                    <Button variant="outline" size="icon" className="h-8 w-8">
-                      <Mail className="w-4 h-4" />
-                    </Button>
-                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          )) : (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+              No talents found matching your criteria.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

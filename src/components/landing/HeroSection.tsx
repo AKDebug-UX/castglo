@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, User, Video, Users } from "lucide-react";
+import { Search, User, Video, Users, Loader2 } from "lucide-react";
+import { castingCallAPI, profileAPI } from "@/lib/api";
 
 import talentMichael from "@/assets/talent-michael.jpg";
 import talentTom from "@/assets/talent-tom.jpg";
@@ -11,77 +12,54 @@ import talentSarah from "@/assets/talent-sarah.jpg";
 import newsProduction from "@/assets/news-production.jpg";
 import newsAudition from "@/assets/news-audition.jpg";
 
-const talents = [
-  {
-    id: 1,
-    name: "Michael Chen",
-    role: "Character Actor • Comedy",
-    image: talentMichael,
-  },
-  {
-    id: 2,
-    name: "Tom Andy",
-    role: "Lead Actor • Drama",
-    image: talentTom,
-  },
-  {
-    id: 3,
-    name: "Sarah Johnson",
-    role: "Voice Actor • Animation",
-    image: talentSarah,
-  },
-  {
-    id: 4,
-    name: "Sarah Johnson",
-    role: "Voice Actor • Animation",
-    image: talentSarah,
-  },
-];
-
-const featuredCalls = [
-  {
-    id: 1,
-    title: "Lead Actor for Indie Film",
-    location: "Los Angeles, CA",
-    category: "Film",
-    image: newsProduction,
-  },
-  {
-    id: 2,
-    title: "Commercial Voice Talent",
-    location: "Remote",
-    category: "Commercial",
-    image: newsAudition,
-  },
-  {
-    id: 3,
-    title: "Stage Performer",
-    location: "New York, NY",
-    category: "Theater",
-    image: talentMichael,
-  },
-];
-
-const newsArticles = [
-  {
-    id: 1,
-    date: "March 15, 2025",
-    readTime: "5 min read",
-    title: "The Rise of Virtual Productions in 2025",
-    excerpt: "Discover how virtual production technology is revolutionizing the film industry and creating new opportunities for talent and directors alike.",
-    image: newsProduction,
-  },
-  {
-    id: 2,
-    date: "March 12, 2025",
-    readTime: "7 min read",
-    title: "10 Tips for Nailing Your Self-Tape Audition",
-    excerpt: "Master the art of self-tape auditions with expert advice from industry professionals on lighting, framing, and performance techniques.",
-    image: newsAudition,
-  },
-];
-
 export function HeroSection() {
+  const [featuredCalls, setFeaturedCalls] = useState<any[]>([]);
+  const [featuredTalents, setFeaturedTalents] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [callsRes, profilesRes] = await Promise.all([
+          castingCallAPI.getAll({ limit: 5, status: 'open' }),
+          profileAPI.search({ limit: 4 })
+        ]);
+
+        if (callsRes.data.success) {
+          setFeaturedCalls(callsRes.data.data.slice(0, 5));
+        }
+        if (profilesRes.data.success) {
+          setFeaturedTalents(profilesRes.data.data.slice(0, 4));
+        }
+      } catch (error) {
+        console.error("Error fetching landing page data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const newsArticles = [
+    {
+      id: 1,
+      date: "March 15, 2025",
+      readTime: "5 min read",
+      title: "The Rise of Virtual Productions in 2025",
+      excerpt: "Discover how virtual production technology is revolutionizing the film industry and creating new opportunities for talent and directors alike.",
+      image: newsProduction,
+    },
+    {
+      id: 2,
+      date: "March 12, 2025",
+      readTime: "7 min read",
+      title: "10 Tips for Nailing Your Self-Tape Audition",
+      excerpt: "Master the art of self-tape auditions with expert advice from industry professionals on lighting, framing, and performance techniques.",
+      image: newsAudition,
+    },
+  ];
 
   return (
     <section className="bg-[#DEFCFE] py-12 lg:py-16">
@@ -93,28 +71,34 @@ export function HeroSection() {
               <h3 className="font-semibold text-black text-md">Featured Castings</h3>
             </div>
             <div className="flex-1 overflow-hidden h-[620px]">
-              <div className="animate-scroll-vertical space-y-2">
-                {[...featuredCalls, ...featuredCalls].map((call, index) => (
-                  <div key={`${call.id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
-                    <div className="relative h-48">
-                      <img 
-                        src={call.image} 
-                        alt={call.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                        <h4 className="font-semibold text-white text-xs">{call.title}</h4>
-                        <p className="text-[10px] text-white/80">{call.location} • {call.category}</p>
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="animate-scroll-vertical space-y-2">
+                  {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : []).map((call, index) => (
+                    <div key={`${call._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
+                      <div className="relative h-48">
+                        <img 
+                          src={call.image || newsProduction} 
+                          alt={call.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                          <h4 className="font-semibold text-white text-xs line-clamp-1">{call.title}</h4>
+                          <p className="text-[10px] text-white/80">{call.location} • {call.category}</p>
+                        </div>
+                      </div>
+                      <div className="p-2">
+                        <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
+                          <Link to={`/browse`}>View Details</Link>
+                        </Button>
                       </div>
                     </div>
-                    <div className="p-2">
-                      <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
-                        <Link to={`/browse`}>View Details</Link>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -169,19 +153,24 @@ export function HeroSection() {
 
             {/* Search Card */}
             <div className="rounded-xl bg-card p-5 shadow-card">
-              <h3 className="font-semibold mb-3 text-sm">Search Casting Cals</h3>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <h3 className="font-semibold mb-3 text-sm">Search Talent</h3>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const keyword = formData.get("keyword");
+                window.location.href = `/browse?search=${keyword}`;
+              }} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Keyword</label>
-                  <Input placeholder="e.g. Lead Actor" className="h-9 text-sm" />
+                  <Input name="keyword" placeholder="e.g. Actor, Model" className="h-9 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Location</label>
-                  <Input placeholder="e.g. Los Angeles" className="h-9 text-sm" />
+                  <Input name="location" placeholder="e.g. Los Angeles" className="h-9 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Category</label>
-                  <Select>
+                  <Select name="category">
                     <SelectTrigger className="h-9 text-sm">
                       <SelectValue placeholder="Select Category" />
                     </SelectTrigger>
@@ -194,16 +183,12 @@ export function HeroSection() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Deadline</label>
-                  <Input type="text" placeholder="dd/mm/yy" className="h-9 text-sm" />
+                <div className="flex items-end">
+                  <Button type="submit" className="w-full bg-[#5443DB] text-white h-9" size="sm">
+                    Search Talent
+                  </Button>
                 </div>
-              </div>
-              <Link to="https://www.backstage.com/talent/" className="w-full block">
-                <Button className="w-full bg-[#5443DB] text-white mt-4" size="default">
-                  Search Casting Calls
-                </Button>
-              </Link>
+              </form>
             </div>
 
             {/* Feature Cards */}
@@ -269,34 +254,42 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Right Sidebar - Hot Pick Talent */}
-          <div className="bg-[#F1FBFB] md:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
+          {/* Right Sidebar - Discover Talent */}
+          <div className="bg-[#F9F3FF] xl:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
             <div className="rounded-xl p-2 mb-2">
-              <h3 className="font-semibold text-black text-md">Hot Pick Talent</h3>
+              <h3 className="font-semibold text-black text-md">Discover Talent</h3>
             </div>
             <div className="flex-1 overflow-hidden h-[620px]">
-              <div className="animate-scroll-vertical-reverse space-y-2">
-                {[...talents, ...talents].map((talent, index) => (
-                  <div key={`${talent.id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
-                    <div className="relative h-54">
-                      <img 
-                        src={talent.image} 
-                        alt={talent.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                        <h4 className="font-semibold text-white text-sm">{talent.name}</h4>
-                        <p className="text-xs text-white/80">{talent.role}</p>
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="animate-scroll-vertical-reverse space-y-2">
+                  {(featuredTalents.length > 0 ? [...featuredTalents, ...featuredTalents] : []).map((talent, index) => (
+                    <div key={`${talent._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
+                      <div className="relative h-48">
+                        <img 
+                          src={talent.profilePicture || talentMichael} 
+                          alt={talent.fullName}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                          <h4 className="font-semibold text-white text-xs">{talent.fullName}</h4>
+                          <p className="text-[10px] text-white/80 line-clamp-1">
+                            {talent.category} • {talent.subCategory}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="p-2">
+                        <Button variant="outline" size="sm" className="w-full text-xs h-8 text-secondary border-secondary hover:bg-secondary/5" asChild>
+                          <Link to={`/talent/${talent.userId?._id || talent.userId}`}>View Profile</Link>
+                        </Button>
                       </div>
                     </div>
-                    <div className="p-2">
-                      <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
-                        <Link to={`/talent/${talent.id}`}>View Profile</Link>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
