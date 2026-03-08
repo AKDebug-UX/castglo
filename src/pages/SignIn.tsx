@@ -59,8 +59,8 @@ export default function SignIn() {
       if (result.role) {
         const roleRoutes: Record<string, string> = {
           talent: "/dashboard",
-          director: "/director",
-          professional: "/professional",
+          casting_director: "/director",
+          industry_professional: "/professional",
           admin: "/admin",
         };
         navigate(roleRoutes[result.role] || "/");

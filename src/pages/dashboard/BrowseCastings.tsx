@@ -34,18 +34,18 @@ export default function BrowseCastings() {
   const fetchCastings = async () => {
     setIsLoading(true);
     try {
-      const params: any = {};
-      if (search) params.search = search;
-      if (location !== "all") params.location = location;
-      if (genre !== "all") params.category = genre;
-      if (status !== "all") params.status = status;
-
-      const response = await castingCallAPI.getAll(params);
-      if (response.data.success) {
+      const response = await castingCallAPI.getAll({ 
+        search, 
+        status: "open", // Use the backend enum status: "open"
+        page: 1 
+      });
+      if (response.data.success && Array.isArray(response.data.data)) {
         setCastings(response.data.data);
+      } else {
+        setCastings([]);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to fetch casting calls");
+      toast.error(error.response?.data?.message || "Failed to load casting calls");
     } finally {
       setIsLoading(false);
     }

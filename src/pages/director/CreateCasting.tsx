@@ -18,6 +18,8 @@ export default function CreateCasting() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
+    projectName: "",
+    projectType: "film",
     title: "",
     description: "",
     requirements: "",
@@ -36,6 +38,8 @@ export default function CreateCasting() {
           if (response.data.success) {
             const data = response.data.data;
             setFormData({
+              projectName: data.projectName || "",
+              projectType: data.projectType || "film",
               title: data.title || "",
               description: data.description || "",
               requirements: Array.isArray(data.requirements) ? data.requirements.join("\n") : (data.requirements || ""),
@@ -66,17 +70,24 @@ export default function CreateCasting() {
 
   const handleSubmit = async (e: React.FormEvent, status: string = "open") => {
     e.preventDefault();
-    if (!formData.title || !formData.deadline) {
+    if (!formData.title || !formData.deadline || !formData.projectName) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const requirementsArray = formData.requirements.split("\n").filter(r => r.trim() !== "");
+      
       const payload = {
         ...formData,
-        requirements: formData.requirements.split("\n").filter(r => r.trim() !== ""),
-        status: status
+        requirements: requirementsArray,
+        status: status,
+        roles: [{
+          roleName: formData.title,
+          description: formData.description,
+          requirements: requirementsArray
+        }]
       };
 
       let response;
@@ -129,13 +140,46 @@ export default function CreateCasting() {
               <p className="text-sm text-muted-foreground">Provide the essential details for your casting call</p>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Project Name *</label>
+                  <Input 
+                    name="projectName"
+                    value={formData.projectName}
+                    onChange={handleChange}
+                    placeholder="e.g., The Midnight Echo" 
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Project Type *</label>
+                  <Select 
+                    value={formData.projectType}
+                    onValueChange={(v) => handleSelectChange("projectType", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="film">Film</SelectItem>
+                      <SelectItem value="tv">TV Series</SelectItem>
+                      <SelectItem value="commercial">Commercial</SelectItem>
+                      <SelectItem value="web_series">Web Series</SelectItem>
+                      <SelectItem value="theater">Theater</SelectItem>
+                      <SelectItem value="music_video">Music Video</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Title *</label>
+                <label className="text-sm font-medium mb-1.5 block">Role Title *</label>
                 <Input 
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  placeholder="e.g., Lead Role - Indie Drama" 
+                  placeholder="e.g., Lead Role - Male (20-30)" 
                   required
                 />
               </div>

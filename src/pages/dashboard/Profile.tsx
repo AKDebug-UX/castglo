@@ -7,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Plus, X, Upload, Loader2 } from "lucide-react";
-import { profileAPI } from "@/lib/api";
+import { Camera, Plus, X, Upload, Loader2, ShieldCheck, FileCheck, History } from "lucide-react";
+import { profileAPI, userAPI, blockchainAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function Profile() {
@@ -16,34 +16,82 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
+  
+  // Blockchain states
+  const [verificationHistory, setVerificationHistory] = useState<any[]>([]);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileData = async () => {
       try {
-        const response = await profileAPI.getMe();
-        if (response.data.success) {
-          setProfileData(response.data.data);
+        const [profileRes, historyRes] = await Promise.all([
+          profileAPI.getMe(),
+          blockchainAPI.getHistory({ limit: 5 })
+        ]);
+
+        if (profileRes.data.success) {
+          setProfileData(profileRes.data.data);
+        }
+        
+        if (historyRes.data.success) {
+          setVerificationHistory(historyRes.data.data.records || []);
         }
       } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to load profile");
+        toast.error("Failed to load profile data");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchProfile();
+    fetchProfileData();
   }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await profileAPI.updateMe(profileData);
-      if (response.data.success) {
-        toast.success("Profile updated successfully");
-      }
+      // Update both User profile and Talent profile
+      const userUpdate = userAPI.updateProfile({
+        fullName: profileData.fullName,
+        bio: profileData.bio,
+        location: profileData.location,
+        phoneNumber: profileData.phone
+      });
+
+      const profileUpdate = profileAPI.updateMe({
+        bio: profileData.bio,
+        skills: profileData.skills,
+        experience: profileData.experience,
+        // Add other fields as supported by backend
+      });
+
+      await Promise.all([userUpdate, profileUpdate]);
+      toast.success("Profile updated successfully");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleBlockchainVerify = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0]) return;
+    
+    const formData = new FormData();
+    formData.append("document", e.target.files[0]);
+    formData.append("documentType", "identity"); // Default for demo
+
+    setIsVerifying(true);
+    try {
+      const response = await blockchainAPI.verify(formData);
+      if (response.data.success) {
+        toast.success("Document anchored to blockchain successfully!");
+        // Refresh history
+        const historyRes = await blockchainAPI.getHistory({ limit: 5 });
+        setVerificationHistory(historyRes.data.data.records || []);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Blockchain anchoring failed");
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -101,16 +149,14 @@ export default function Profile() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-          {["Basic", "Physical", "Skills", "Education", "Equipment", "Portfolio"].map((tab) => (
-            <TabsTrigger
-              key={tab}
-              value={tab.toLowerCase().replace(" ", "-")}
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 pb-3"
-            >
-              {tab} {tab === "Basic" ? "Info" : ""}
-            </TabsTrigger>
-          ))}
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 h-auto p-1 gap-1">
+          <TabsTrigger value="basic" className="py-2">Basic</TabsTrigger>
+          <TabsTrigger value="physical" className="py-2">Physical</TabsTrigger>
+          <TabsTrigger value="skills" className="py-2">Skills</TabsTrigger>
+          <TabsTrigger value="education" className="py-2">Education</TabsTrigger>
+          <TabsTrigger value="equipment" className="py-2">Equipment</TabsTrigger>
+          <TabsTrigger value="portfolio" className="py-2">Portfolio</TabsTrigger>
+          <TabsTrigger value="verification" className="py-2">Verification</TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="mt-6">
@@ -383,6 +429,76 @@ export default function Profile() {
                   <span className="text-xs text-muted-foreground">Add Photo</span>
                   <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} />
                 </label>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="verification" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                Blockchain Credential Verification
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Anchor your professional documents, awards, and identity to the blockchain for immutable, investor-ready verification.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-6 border-2 border-dashed rounded-xl text-center space-y-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                  <FileCheck className="w-6 h-6 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-medium">Anchor New Document</p>
+                  <p className="text-sm text-muted-foreground">Upload certificates, contracts, or identity documents</p>
+                </div>
+                <div className="relative inline-block">
+                  <input
+                    type="file"
+                    id="blockchain-upload"
+                    className="hidden"
+                    onChange={handleBlockchainVerify}
+                    disabled={isVerifying}
+                  />
+                  <Button asChild disabled={isVerifying}>
+                    <label htmlFor="blockchain-upload" className="cursor-pointer flex items-center gap-2">
+                      {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      Select & Anchor Document
+                    </label>
+                  </Button>
+                </div>
+              </div>
+
+              {/* History */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <History className="w-4 h-4" />
+                  Verification History
+                </h3>
+                <div className="space-y-2">
+                  {verificationHistory.length > 0 ? (
+                    verificationHistory.map((record: any) => (
+                      <div key={record._id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-green-500/10 rounded flex items-center justify-center">
+                            <ShieldCheck className="w-4 h-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{record.documentName || "Identity Verification"}</p>
+                            <p className="text-xs text-muted-foreground">Hash: {record.documentHash?.substring(0, 16)}...</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {new Date(record.createdAt).toLocaleDateString()}
+                        </Badge>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">No verification records found.</p>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

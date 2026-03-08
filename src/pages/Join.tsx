@@ -13,9 +13,9 @@ export default function Join() {
     switch (user.role) {
       case "admin":
         return "/admin";
-      case "director":
+      case "casting_director":
         return "/director";
-      case "professional":
+      case "industry_professional":
         return "/professional";
       case "talent":
       default:
@@ -79,7 +79,7 @@ export default function Join() {
             industry professionals
           </p>
 
-          <div className="mt-6 mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <Link to="/join/talent">
               <Button variant="secondary" size="lg" className="w-full">Join as Talent</Button>
             </Link>

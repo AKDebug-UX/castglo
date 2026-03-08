@@ -36,7 +36,7 @@ export default function DirectorDashboard() {
           setUser(userRes.data.data);
         }
 
-        if (listingsRes.data.success) {
+        if (listingsRes.data.success && Array.isArray(listingsRes.data.data)) {
           const myCastings = listingsRes.data.data;
           setListings(myCastings);
 
@@ -52,13 +52,20 @@ export default function DirectorDashboard() {
           ]);
 
           // Fetch recent applications for these listings (simplified)
-          // In a real app, you might have a dedicated endpoint for "recent applications for director"
           if (myCastings.length > 0) {
              const allAppsPromises = myCastings.slice(0, 3).map((c: any) => applicationAPI.getByCastingCall(c._id));
              const appsResults = await Promise.all(allAppsPromises);
-             const allApps = appsResults.flatMap(res => res.data.success ? res.data.data : []);
+             const allApps = appsResults.flatMap(res => (res.data.success && Array.isArray(res.data.data)) ? res.data.data : []);
              setRecentApps(allApps.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5));
           }
+        } else {
+          setListings([]);
+          setStats([
+            { label: "Active Casting Calls", value: "0", change: "Live", icon: Clapperboard },
+            { label: "Total Submissions", value: "0", change: "Across all projects", icon: FileText },
+            { label: "Pending Reviews", value: "0", change: "Needs attention", icon: Clock },
+            { label: "Roles Filled", value: "0", change: "This quarter", icon: CheckCircle },
+          ]);
         }
       } catch (error: any) {
         toast.error("Failed to load dashboard data");

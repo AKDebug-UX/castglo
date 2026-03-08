@@ -11,7 +11,8 @@ import {
   MapPin,
   Calendar,
   ArrowUpRight,
-  Loader2
+  Loader2,
+  Star
 } from "lucide-react";
 import { applicationAPI, castingCallAPI, authAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -36,7 +37,7 @@ export default function Dashboard() {
           setUserName(userRes.data.data.fullName);
         }
 
-        if (appsRes.data.success) {
+        if (appsRes.data.success && Array.isArray(appsRes.data.data)) {
           const apps = appsRes.data.data;
           setRecentSubmissions(apps.slice(0, 3).map((app: any) => ({
             id: app._id,
@@ -45,19 +46,28 @@ export default function Dashboard() {
             status: app.status
           })));
 
-          // Calculate stats
-          const activeApps = apps.filter((a: any) => a.status === "applied" || a.status === "shortlisted").length;
-          const callbacks = apps.filter((a: any) => a.status === "accepted").length;
+          // Calculate stats based on actual application status from schema:
+          // submitted, viewed, shortlisted, rejected, accepted, withdrawn
+          const activeApps = apps.filter((a: any) => ["submitted", "viewed", "shortlisted"].includes(a.status)).length;
+          const accepted = apps.filter((a: any) => a.status === "accepted").length;
+          const shortlisted = apps.filter((a: any) => a.status === "shortlisted").length;
           
           setStats([
-            { label: "Active Applications", value: activeApps.toString(), change: "Live data", icon: FileText },
-            { label: "Callbacks", value: callbacks.toString(), change: "Total accepted", icon: Phone },
-            { label: "Profile views", value: "0", change: "Coming soon", icon: Eye },
-            { label: "Success rate", value: apps.length > 0 ? `${Math.round((callbacks / apps.length) * 100)}%` : "0%", change: "Based on applications", icon: TrendingUp },
+            { label: "Active Applications", value: activeApps.toString(), change: "In progress", icon: FileText },
+            { label: "Shortlisted", value: shortlisted.toString(), change: "Next steps", icon: Star },
+            { label: "Accepted", value: accepted.toString(), change: "Hired", icon: Phone },
+            { label: "Success Rate", value: apps.length > 0 ? `${Math.round((accepted / apps.length) * 100)}%` : "0%", change: "Total efficiency", icon: TrendingUp },
+          ]);
+        } else {
+          setStats([
+            { label: "Active Applications", value: "0", change: "In progress", icon: FileText },
+            { label: "Shortlisted", value: "0", change: "Next steps", icon: Star },
+            { label: "Accepted", value: "0", change: "Hired", icon: Phone },
+            { label: "Success Rate", value: "0%", change: "Total efficiency", icon: TrendingUp },
           ]);
         }
 
-        if (castingsRes.data.success) {
+        if (castingsRes.data.success && Array.isArray(castingsRes.data.data)) {
           setUpcomingCastings(castingsRes.data.data.slice(0, 2));
         }
 

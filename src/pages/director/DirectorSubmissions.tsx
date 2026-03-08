@@ -37,8 +37,10 @@ export default function DirectorSubmissions() {
         castingCallAPI.getOne(id)
       ]);
 
-      if (subsRes.data.success) {
+      if (subsRes.data.success && Array.isArray(subsRes.data.data)) {
         setSubmissions(subsRes.data.data);
+      } else {
+        setSubmissions([]);
       }
       if (castingRes.data.success) {
         setCastingCall(castingRes.data.data);

@@ -28,11 +28,14 @@ export default function MyProjects() {
     setIsLoading(true);
     try {
       const response = await castingCallAPI.getMyListings();
-      if (response.data.success) {
+      if (response.data.success && Array.isArray(response.data.data)) {
         setProjects(response.data.data);
+      } else {
+        setProjects([]);
       }
     } catch (error: any) {
       toast.error("Failed to load projects");
+      setProjects([]);
     } finally {
       setIsLoading(false);
     }

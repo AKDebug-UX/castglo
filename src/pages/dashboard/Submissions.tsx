@@ -23,8 +23,19 @@ export default function Submissions() {
     const fetchSubmissions = async () => {
       try {
         const response = await applicationAPI.getMe();
-        if (response.data.success) {
-          const apps = response.data.data;
+        if (response.data.success && Array.isArray(response.data.data)) {
+          const apps = response.data.data.map((app: any) => ({
+            _id: app._id,
+            status: app.status, // submitted, viewed, shortlisted, rejected, accepted, withdrawn
+            createdAt: app.createdAt,
+            castingCall: {
+              title: app.castingCall?.title || "Unknown Position",
+              category: app.castingCall?.category || "Other",
+              postedBy: {
+                fullName: app.castingCall?.postedBy?.fullName || "Casting Team"
+              }
+            }
+          }));
           setSubmissions(apps);
 
           // Calculate stats
@@ -32,6 +43,13 @@ export default function Submissions() {
             { label: "Total Submissions", value: apps.length.toString(), sublabel: "All time", icon: FileText },
             { label: "In Review", value: apps.filter((a: any) => a.status === "applied").length.toString(), sublabel: "Pending Review", icon: Eye },
             { label: "Shortlisted", value: apps.filter((a: any) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", icon: Star },
+          ]);
+        } else {
+          setSubmissions([]);
+          setStats([
+            { label: "Total Submissions", value: "0", sublabel: "All time", icon: FileText },
+            { label: "In Review", value: "0", sublabel: "Pending Review", icon: Eye },
+            { label: "Shortlisted", value: "0", sublabel: "Callbacks Pending", icon: Star },
           ]);
         }
       } catch (error: any) {

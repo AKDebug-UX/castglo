@@ -1,13 +1,47 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, Info } from "lucide-react";
+import { ArrowLeft, Upload, Info, Loader2 } from "lucide-react";
+import { livestreamAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function InstantAudition() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    category: "audition",
+    isRecordingEnabled: true,
+  });
+
+  const handleCreate = async () => {
+    if (!formData.title) {
+      toast.error("Please enter an audition title");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await livestreamAPI.create(formData);
+      if (response.data.success) {
+        toast.success("Virtual audition created successfully!");
+        // In a real app, we might redirect to the stream page
+        // For now, let's go back to dashboard
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to create audition");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       <Link 
@@ -32,7 +66,11 @@ export default function InstantAudition() {
         <CardContent className="space-y-4">
           <div>
             <label className="text-sm font-medium mb-1.5 block">Audition Title *</label>
-            <Input placeholder="e.g., Monologue Performance - Shakespeare" />
+            <Input 
+              placeholder="e.g., Monologue Performance - Shakespeare" 
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            />
           </div>
 
           <div>
@@ -40,6 +78,8 @@ export default function InstantAudition() {
             <Textarea 
               rows={3}
               placeholder="Describe what you'll be performing and any special requirements..."
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
 
@@ -55,41 +95,32 @@ export default function InstantAudition() {
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Duration</label>
-            <Select defaultValue="30">
+            <label className="text-sm font-medium mb-1.5 block">Category</label>
+            <Select 
+              value={formData.category} 
+              onValueChange={(v) => setFormData({ ...formData, category: v })}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="15">15 minutes</SelectItem>
-                <SelectItem value="30">30 minutes</SelectItem>
-                <SelectItem value="45">45 minutes</SelectItem>
-                <SelectItem value="60">60 minutes</SelectItem>
+                <SelectItem value="audition">Audition</SelectItem>
+                <SelectItem value="masterclass">Masterclass</SelectItem>
+                <SelectItem value="interview">Interview</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex items-center justify-between p-4 rounded-lg border border-border">
             <div>
-              <p className="font-medium">Public Audition</p>
-              <p className="text-sm text-muted-foreground">Allow anyone with the link to view this audition</p>
+              <p className="font-medium">Enable Recording</p>
+              <p className="text-sm text-muted-foreground">Automatically record this session for later review</p>
             </div>
-            <Switch defaultChecked />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Participant Limit</label>
-            <Select defaultValue="5">
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 people</SelectItem>
-                <SelectItem value="10">10 people</SelectItem>
-                <SelectItem value="20">20 people</SelectItem>
-                <SelectItem value="50">50 people</SelectItem>
-              </SelectContent>
-            </Select>
+            <Switch 
+              checked={formData.isRecordingEnabled} 
+              onCheckedChange={(checked) => setFormData({ ...formData, isRecordingEnabled: checked })}
+            />
           </div>
 
           <div>
@@ -108,8 +139,16 @@ export default function InstantAudition() {
 
       {/* Action Buttons */}
       <div className="flex gap-3">
-        <Button className="flex-1" size="lg">Create Virtual Audition</Button>
-        <Button variant="outline" size="lg">Cancel</Button>
+        <Button 
+          className="flex-1" 
+          size="lg" 
+          onClick={handleCreate} 
+          disabled={isLoading}
+        >
+          {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Create Virtual Audition
+        </Button>
+        <Button variant="outline" size="lg" onClick={() => navigate("/dashboard")}>Cancel</Button>
       </div>
 
       {/* Tips */}

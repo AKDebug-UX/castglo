@@ -115,7 +115,7 @@ const App = () => (
  
              {/* Director Dashboard Routes */}
              <Route path="/director" element={
-               <ProtectedRoute allowedRoles={["director"]}>
+               <ProtectedRoute allowedRoles={["casting_director"]}>
                  <DirectorLayout />
                </ProtectedRoute>
              }>
@@ -128,7 +128,7 @@ const App = () => (
  
              {/* Professional Dashboard Routes */}
              <Route path="/professional" element={
-               <ProtectedRoute allowedRoles={["professional"]}>
+               <ProtectedRoute allowedRoles={["industry_professional"]}>
                  <ProfessionalLayout />
                </ProtectedRoute>
              }>

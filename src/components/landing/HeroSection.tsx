@@ -27,11 +27,16 @@ export function HeroSection() {
           profileAPI.search({ limit: 4 })
         ]);
 
-        if (callsRes.data.success) {
+        if (callsRes.data.success && Array.isArray(callsRes.data.data)) {
           setFeaturedCalls(callsRes.data.data.slice(0, 5));
+        } else {
+          setFeaturedCalls([]);
         }
-        if (profilesRes.data.success) {
+
+        if (profilesRes.data.success && Array.isArray(profilesRes.data.data)) {
           setFeaturedTalents(profilesRes.data.data.slice(0, 4));
+        } else {
+          setFeaturedTalents([]);
         }
       } catch (error) {
         console.error("Error fetching landing page data:", error);
