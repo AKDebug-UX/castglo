@@ -16,6 +16,7 @@ import Join from "./pages/Join";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
 import NotFound from "./pages/NotFound";
 import News from "./pages/News";
 import NewsArticle from "./pages/NewsArticle";
@@ -90,6 +91,7 @@ const App = () => (
             <Route path="/join/:type" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/news" element={<News />} />
             <Route path="/news/:id" element={<NewsArticle />} />
             <Route path="/privacy" element={<Privacy />} />

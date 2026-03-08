@@ -4,8 +4,9 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
- import { useAuth, UserRole } from "@/contexts/AuthContext";
- import { toast } from "sonner";
+import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { Mail, CheckCircle, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 
 const typeLabels: Record<string, { title: string; description: string }> = {
   talent: {
@@ -28,46 +29,87 @@ const typeLabels: Record<string, { title: string; description: string }> = {
 
 export default function SignUp() {
   const { type = "talent" } = useParams();
-   const navigate = useNavigate();
-   const { signUp } = useAuth();
+  const navigate = useNavigate();
+  const { signUp } = useAuth();
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
-   const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const { title, description } = typeLabels[type] || typeLabels.talent;
 
-   const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
- 
-     if (password !== confirmPassword) {
-       toast.error("Passwords do not match");
-       return;
-     }
- 
-     setIsLoading(true);
- 
-     const role = (type as UserRole) || "talent";
-     const { error } = await signUp(email, password, role);
- 
-     if (error) {
-       toast.error(error);
-       setIsLoading(false);
-       return;
-     }
- 
-     toast.success("Account created successfully!");
- 
-     // Route based on role
-      const roleRoutes: Record<UserRole, string> = {
-        talent: "/dashboard",
-        director: "/director",
-        professional: "/professional",
-        admin: "/admin",
-      };
-     navigate(roleRoutes[role]);
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (!agreed) {
+      toast.error("Please agree to the terms and conditions");
+      return;
+    }
+
+    setIsLoading(true);
+
+    const role = (type as UserRole) || "talent";
+    const { error } = await signUp({ 
+      email, 
+      password, 
+      role, 
+      fullName 
+    });
+
+    if (error) {
+      toast.error(error);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsSuccess(true);
+    toast.success("Account created successfully!");
   };
+
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md">
+          <div className="flex flex-col items-center mx-auto text-center mb-8">
+            <Logo className="justify-center" />
+          </div>
+
+          <div className="bg-card rounded-2xl shadow-card p-8 text-center border">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Check Your Email</h1>
+            <p className="text-muted-foreground mb-6">
+              We've sent a verification link to <strong>{email}</strong>. 
+              Please verify your account to start exploring.
+            </p>
+            <div className="space-y-3">
+              <Button asChild className="w-full" size="lg">
+                <Link to="/sign-in">
+                  Go to Sign In
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="w-full">
+                <Link to="/">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Home
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -111,6 +153,16 @@ export default function SignUp() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Full Name</label>
+              <Input 
+                type="text" 
+                placeholder="Enter your full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+            </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Email</label>
               <Input 

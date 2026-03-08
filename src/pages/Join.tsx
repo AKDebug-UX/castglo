@@ -79,17 +79,17 @@ export default function Join() {
             industry professionals
           </p>
 
-          <div className="mt-6 mb-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-6 mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Link to="/join/talent">
               <Button variant="secondary" size="lg" className="w-full">Join as Talent</Button>
             </Link>
             <Link to="/join/director">
               <Button variant="default" size="lg" className="w-full">Join as Casting Director</Button>
             </Link>
-          </div>
             <Link to="/join/professional">
-              <Button variant="outline" size="lg" className="w-full">Join as Industrial Professional</Button>
+              <Button variant="outline" size="lg" className="w-full">Join as Industry Professional</Button>
             </Link>
+          </div>
         </div>
       </section>
     </div>

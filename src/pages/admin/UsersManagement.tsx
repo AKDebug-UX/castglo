@@ -82,7 +82,12 @@ export default function UsersManagement() {
         fetchUsers();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to verify user");
+      const message = error.response?.data?.message || "Failed to verify user";
+      if (message.toLowerCase().includes("profile not found")) {
+        toast.error("User cannot be verified yet: They haven't created their profile.");
+      } else {
+        toast.error(message);
+      }
     } finally {
       setIsActionLoading(false);
     }

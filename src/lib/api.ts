@@ -34,6 +34,34 @@ export const API_ENDPOINTS = {
     RESET_PASSWORD: '/auth/reset-password',
     CHANGE_PASSWORD: '/auth/change-password',
     ME: '/auth/me',
+    RESEND_VERIFICATION: '/auth/resend-verification-email',
+    LOGOUT: '/auth/logout',
+  },
+  BLOCKCHAIN: {
+    VERIFY: '/blockchain/verify',
+    HISTORY: '/blockchain/history',
+    VALIDATE: (hash: string) => `/blockchain/validate/${hash}`,
+  },
+  LIVESTREAM: {
+    CREATE: '/livestream',
+    GET_ACTIVE: '/livestream',
+    START: (id: string) => `/livestream/${id}/start`,
+    JOIN: (id: string) => `/livestream/${id}/join`,
+    LEAVE: (id: string) => `/livestream/${id}/leave`,
+    END: (id: string) => `/livestream/${id}/end`,
+  },
+  MESSAGING: {
+    GET_OR_CREATE_CONVERSATION: '/messaging/conversations',
+    GET_MY_CONVERSATIONS: '/messaging/conversations',
+    SEND_MESSAGE: '/messaging/messages',
+    GET_MESSAGES: (id: string) => `/messaging/conversations/${id}/messages`,
+  },
+  NOTIFICATIONS: {
+    REGISTER_DEVICE: '/notifications/register-device',
+    SEND: '/notifications/send',
+    GET_ALL: '/notifications',
+    READ_ALL: '/notifications/read-all',
+    MARK_READ: (id: string) => `/notifications/${id}/read`,
   },
   CASTING_CALLS: {
     GET_ALL: '/casting-calls',
@@ -78,7 +106,7 @@ export const API_ENDPOINTS = {
     SEARCH: '/users/search',
     GET_ONE: (userId: string) => `/users/${userId}`,
   },
-}
+};
 
 // Axios instance
 const api = axios.create({
@@ -87,6 +115,18 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// --- USER ENDPOINTS ---
+export const userAPI = {
+  getProfile: () => api.get(API_ENDPOINTS.USERS.PROFILE),
+  updateProfile: (data: any) => api.put(API_ENDPOINTS.USERS.UPDATE_PROFILE, data),
+  updateProfilePicture: (formData: FormData) => api.put(API_ENDPOINTS.USERS.UPDATE_PROFILE_PICTURE, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deleteAccount: () => api.delete(API_ENDPOINTS.USERS.DELETE_ACCOUNT),
+  search: (params: any) => api.get(API_ENDPOINTS.USERS.SEARCH, { params }),
+  getOne: (userId: string) => api.get(API_ENDPOINTS.USERS.GET_ONE(userId)),
+};
 
 // Request interceptor for Auth Token
 api.interceptors.request.use(
@@ -119,7 +159,49 @@ export const authAPI = {
   verifyEmail: (data: any) => api.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, data),
   forgotPassword: (data: any) => api.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, data),
   resetPassword: (data: any) => api.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data),
+  changePassword: (data: any) => api.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, data),
   getMe: () => api.get(API_ENDPOINTS.AUTH.ME),
+  resendVerification: (email: string) => api.post(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, { email }),
+  logout: () => api.post(API_ENDPOINTS.AUTH.LOGOUT),
+};
+
+// --- BLOCKCHAIN ENDPOINTS ---
+export const blockchainAPI = {
+  verify: (formData: FormData) => api.post(API_ENDPOINTS.BLOCKCHAIN.VERIFY, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  getHistory: (params: any) => api.get(API_ENDPOINTS.BLOCKCHAIN.HISTORY, { params }),
+  validate: (hash: string) => api.get(API_ENDPOINTS.BLOCKCHAIN.VALIDATE(hash)),
+};
+
+// --- LIVESTREAM ENDPOINTS ---
+export const livestreamAPI = {
+  create: (data: any) => api.post(API_ENDPOINTS.LIVESTREAM.CREATE, data),
+  getActive: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_ACTIVE),
+  start: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.START(id)),
+  join: (id: string) => api.get(API_ENDPOINTS.LIVESTREAM.JOIN(id)),
+  leave: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.LEAVE(id)),
+  end: (id: string) => api.patch(API_ENDPOINTS.LIVESTREAM.END(id)),
+};
+
+// --- MESSAGING ENDPOINTS ---
+export const messagingAPI = {
+  getOrCreateConversation: (participantId: string, castingCallId?: string) => 
+    api.post(API_ENDPOINTS.MESSAGING.GET_OR_CREATE_CONVERSATION, { participantId, castingCallId }),
+  getMyConversations: () => api.get(API_ENDPOINTS.MESSAGING.GET_MY_CONVERSATIONS),
+  sendMessage: (data: { conversationId: string, text: string, mediaUrl?: string }) => 
+    api.post(API_ENDPOINTS.MESSAGING.SEND_MESSAGE, data),
+  getMessages: (id: string, params: any) => api.get(API_ENDPOINTS.MESSAGING.GET_MESSAGES(id), { params }),
+};
+
+// --- NOTIFICATION ENDPOINTS ---
+export const notificationAPI = {
+  registerDevice: (data: { deviceToken: string, platform: 'ios' | 'android' | 'web' }) => 
+    api.post(API_ENDPOINTS.NOTIFICATIONS.REGISTER_DEVICE, data),
+  send: (data: any) => api.post(API_ENDPOINTS.NOTIFICATIONS.SEND, data),
+  getAll: (params: any) => api.get(API_ENDPOINTS.NOTIFICATIONS.GET_ALL, { params }),
+  readAll: () => api.patch(API_ENDPOINTS.NOTIFICATIONS.READ_ALL),
+  markRead: (id: string) => api.patch(API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id)),
 };
 
 // --- PROFILE ENDPOINTS ---

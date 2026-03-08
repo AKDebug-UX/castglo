@@ -45,7 +45,11 @@ export default function ResetPassword() {
 
     setIsLoading(true);
 
-    const { error } = await resetPassword(password, token);
+    const { error } = await resetPassword({ 
+      token, 
+      newPassword: password, 
+      confirmPassword: confirmPassword 
+    });
 
     if (error) {
       toast.error(error);
