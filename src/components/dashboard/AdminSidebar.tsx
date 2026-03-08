@@ -11,12 +11,12 @@
  } from "lucide-react";
  
  const navItems = [
-   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
-   { icon: Shield, label: "Moderation Queue", href: "/admin/moderation" },
-   { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
-   { icon: Users, label: "Users Management", href: "/admin/users" },
-   { icon: FileVideo, label: "Submissions", href: "/admin/submissions" },
-   { icon: Calendar, label: "Bookings", href: "/admin/bookings" },
+   { Icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
+   { Icon: Shield, label: "Moderation Queue", href: "/admin/moderation" },
+   { Icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
+   { Icon: Users, label: "Users Management", href: "/admin/users" },
+   { Icon: FileVideo, label: "Submissions", href: "/admin/submissions" },
+   { Icon: Calendar, label: "Bookings", href: "/admin/bookings" },
  ];
  
  interface AdminSidebarProps {
@@ -55,7 +55,7 @@
                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                )}
              >
-               <item.icon className="w-5 h-5" />
+               <item.Icon className="w-5 h-5" />
                {item.label}
              </Link>
            );

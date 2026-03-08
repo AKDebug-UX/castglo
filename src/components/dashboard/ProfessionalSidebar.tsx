@@ -11,12 +11,12 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { title: "Dashboard", href: "/professional", icon: LayoutDashboard },
-  { title: "Profile", href: "/professional/profile", icon: User },
-  { title: "Services", href: "/professional/services", icon: Briefcase },
-  { title: "Browse Talents", href: "/professional/talents", icon: Search },
-  { title: "Bookings", href: "/professional/bookings", icon: Calendar },
-  { title: "Messages", href: "/professional/messages", icon: MessageSquare },
+  { title: "Dashboard", href: "/professional", Icon: LayoutDashboard },
+  { title: "Profile", href: "/professional/profile", Icon: User },
+  { title: "Services", href: "/professional/services", Icon: Briefcase },
+  { title: "Browse Talents", href: "/professional/talents", Icon: Search },
+  { title: "Bookings", href: "/professional/bookings", Icon: Calendar },
+  { title: "Messages", href: "/professional/messages", Icon: MessageSquare },
 ];
 
 interface ProfessionalSidebarProps {
@@ -48,7 +48,7 @@ export function ProfessionalSidebar({ className }: ProfessionalSidebarProps) {
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <item.icon className="w-5 h-5" />
+              <item.Icon className="w-5 h-5" />
               {item.title}
             </Link>
           );

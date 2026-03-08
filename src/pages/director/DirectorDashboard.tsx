@@ -45,10 +45,10 @@ export default function DirectorDashboard() {
           const totalSubmissions = myCastings.reduce((acc: number, c: any) => acc + (c.applicationCount || 0), 0);
           
           setStats([
-            { label: "Active Casting Calls", value: activeCount.toString(), change: "Live", icon: Clapperboard },
-            { label: "Total Submissions", value: totalSubmissions.toString(), change: "Across all projects", icon: FileText },
-            { label: "Pending Reviews", value: "0", change: "Needs attention", icon: Clock },
-            { label: "Roles Filled", value: "0", change: "This quarter", icon: CheckCircle },
+            { label: "Active Casting Calls", value: activeCount.toString(), change: "Live", Icon: Clapperboard },
+            { label: "Total Submissions", value: totalSubmissions.toString(), change: "Across all projects", Icon: FileText },
+            { label: "Pending Reviews", value: "0", change: "Needs attention", Icon: Clock },
+            { label: "Roles Filled", value: "0", change: "This quarter", Icon: CheckCircle },
           ]);
 
           // Fetch recent applications for these listings (simplified)
@@ -61,10 +61,10 @@ export default function DirectorDashboard() {
         } else {
           setListings([]);
           setStats([
-            { label: "Active Casting Calls", value: "0", change: "Live", icon: Clapperboard },
-            { label: "Total Submissions", value: "0", change: "Across all projects", icon: FileText },
-            { label: "Pending Reviews", value: "0", change: "Needs attention", icon: Clock },
-            { label: "Roles Filled", value: "0", change: "This quarter", icon: CheckCircle },
+            { label: "Active Casting Calls", value: "0", change: "Live", Icon: Clapperboard },
+            { label: "Total Submissions", value: "0", change: "Across all projects", Icon: FileText },
+            { label: "Pending Reviews", value: "0", change: "Needs attention", Icon: Clock },
+            { label: "Roles Filled", value: "0", change: "This quarter", Icon: CheckCircle },
           ]);
         }
       } catch (error: any) {
@@ -111,7 +111,7 @@ export default function DirectorDashboard() {
                   <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
                 </div>
                 <div className="icon-circle-primary w-10 h-10">
-                  <stat.icon className="w-5 h-5" />
+                  <stat.Icon className="w-5 h-5" />
                 </div>
               </div>
             </CardContent>

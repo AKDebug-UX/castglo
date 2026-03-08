@@ -40,16 +40,16 @@ export default function Submissions() {
 
           // Calculate stats
           setStats([
-            { label: "Total Submissions", value: apps.length.toString(), sublabel: "All time", icon: FileText },
-            { label: "In Review", value: apps.filter((a: any) => a.status === "applied").length.toString(), sublabel: "Pending Review", icon: Eye },
-            { label: "Shortlisted", value: apps.filter((a: any) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", icon: Star },
+            { label: "Total Submissions", value: apps.length.toString(), sublabel: "All time", Icon: FileText },
+            { label: "In Review", value: apps.filter((a: any) => a.status === "applied").length.toString(), sublabel: "Pending Review", Icon: Eye },
+            { label: "Shortlisted", value: apps.filter((a: any) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", Icon: Star },
           ]);
         } else {
           setSubmissions([]);
           setStats([
-            { label: "Total Submissions", value: "0", sublabel: "All time", icon: FileText },
-            { label: "In Review", value: "0", sublabel: "Pending Review", icon: Eye },
-            { label: "Shortlisted", value: "0", sublabel: "Callbacks Pending", icon: Star },
+            { label: "Total Submissions", value: "0", sublabel: "All time", Icon: FileText },
+            { label: "In Review", value: "0", sublabel: "Pending Review", Icon: Eye },
+            { label: "Shortlisted", value: "0", sublabel: "Callbacks Pending", Icon: Star },
           ]);
         }
       } catch (error: any) {
@@ -88,7 +88,7 @@ export default function Submissions() {
                   <p className="text-xs text-muted-foreground mt-1">{stat.sublabel}</p>
                 </div>
                 <div className="icon-circle-primary w-10 h-10">
-                  <stat.icon className="w-5 h-5" />
+                  <stat.Icon className="w-5 h-5" />
                 </div>
               </div>
             </CardContent>

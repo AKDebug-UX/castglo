@@ -59,25 +59,25 @@ export default function AdminDashboard() {
       label: "Total Users",
       value: analytics?.summary?.totalUsers?.toLocaleString() || "0",
       change: analytics?.userGrowthRate || "0%",
-      icon: Users,
+      Icon: Users,
     },
     {
       label: "Active Castings",
       value: analytics?.activeCastingCalls?.toLocaleString() || "0",
       change: "+8.2%",
-      icon: FileText,
+      Icon: FileText,
     },
     {
       label: "Applications",
       value: analytics?.totalApplications?.toLocaleString() || "0",
       change: "+18.3%",
-      icon: ThumbsUp,
+      Icon: ThumbsUp,
     },
     {
       label: "Total Revenue",
       value: `$${analytics?.totalRevenue?.toLocaleString() || "0"}`,
       change: "+5.7%",
-      icon: Calendar,
+      Icon: Calendar,
     },
   ];
 
@@ -112,7 +112,7 @@ export default function AdminDashboard() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-muted-foreground">{stat.label}</span>
-                <stat.icon className="w-5 h-5 text-muted-foreground" />
+                <stat.Icon className="w-5 h-5 text-muted-foreground" />
               </div>
               <div className="text-2xl font-bold">{stat.value}</div>
               <div className="flex items-center gap-1 text-sm text-success">

@@ -40,10 +40,10 @@ export default function ProfessionalDashboard() {
 
           // Calculate basic stats
           setStats([
-            { label: "Total Bookings", value: "0", change: "Live data", icon: Calendar },
-            { label: "Revenue", value: "$0", change: "This month", icon: DollarSign },
-            { label: "Profile Views", value: profileData.views?.toString() || "0", change: "Total views", icon: Eye },
-            { label: "Rating", value: profileData.rating?.toString() || "0.0", change: "From reviews", icon: Star },
+            { label: "Total Bookings", value: "0", change: "Live data", Icon: Calendar },
+            { label: "Revenue", value: "$0", change: "This month", Icon: DollarSign },
+            { label: "Profile Views", value: profileData.views?.toString() || "0", change: "Total views", Icon: Eye },
+            { label: "Rating", value: profileData.rating?.toString() || "0.0", change: "From reviews", Icon: Star },
           ]);
         }
       } catch (error: any) {
@@ -83,7 +83,7 @@ export default function ProfessionalDashboard() {
                   <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
                 </div>
                 <div className="icon-circle-primary w-10 h-10">
-                  <stat.icon className="w-5 h-5" />
+                  <stat.Icon className="w-5 h-5" />
                 </div>
               </div>
             </CardContent>

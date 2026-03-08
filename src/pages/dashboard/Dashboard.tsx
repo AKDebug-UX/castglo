@@ -53,17 +53,17 @@ export default function Dashboard() {
           const shortlisted = apps.filter((a: any) => a.status === "shortlisted").length;
           
           setStats([
-            { label: "Active Applications", value: activeApps.toString(), change: "In progress", icon: FileText },
-            { label: "Shortlisted", value: shortlisted.toString(), change: "Next steps", icon: Star },
-            { label: "Accepted", value: accepted.toString(), change: "Hired", icon: Phone },
-            { label: "Success Rate", value: apps.length > 0 ? `${Math.round((accepted / apps.length) * 100)}%` : "0%", change: "Total efficiency", icon: TrendingUp },
+            { label: "Active Applications", value: activeApps.toString(), change: "In progress", Icon: FileText },
+            { label: "Shortlisted", value: shortlisted.toString(), change: "Next steps", Icon: Star },
+            { label: "Accepted", value: accepted.toString(), change: "Hired", Icon: Phone },
+            { label: "Success Rate", value: apps.length > 0 ? `${Math.round((accepted / apps.length) * 100)}%` : "0%", change: "Total efficiency", Icon: TrendingUp },
           ]);
         } else {
           setStats([
-            { label: "Active Applications", value: "0", change: "In progress", icon: FileText },
-            { label: "Shortlisted", value: "0", change: "Next steps", icon: Star },
-            { label: "Accepted", value: "0", change: "Hired", icon: Phone },
-            { label: "Success Rate", value: "0%", change: "Total efficiency", icon: TrendingUp },
+            { label: "Active Applications", value: "0", change: "In progress", Icon: FileText },
+            { label: "Shortlisted", value: "0", change: "Next steps", Icon: Star },
+            { label: "Accepted", value: "0", change: "Hired", Icon: Phone },
+            { label: "Success Rate", value: "0%", change: "Total efficiency", Icon: TrendingUp },
           ]);
         }
 
@@ -108,7 +108,7 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
                 </div>
                 <div className="icon-circle-primary w-10 h-10">
-                  <stat.icon className="w-5 h-5" />
+                  <stat.Icon className="w-5 h-5" />
                 </div>
               </div>
             </CardContent>
