@@ -10,11 +10,11 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { title: "Dashboard", href: "/director", icon: LayoutDashboard },
-  { title: "My Projects", href: "/director/projects", icon: FolderOpen },
-  { title: "Create Casting Calls", href: "/director/create", icon: Plus },
-  { title: "Submissions", href: "/director/submissions", icon: Users },
-  { title: "Messages", href: "/director/messages", icon: MessageSquare },
+  { title: "Dashboard", href: "/director", Icon: LayoutDashboard },
+  { title: "My Projects", href: "/director/projects", Icon: FolderOpen },
+  { title: "Create Casting Calls", href: "/director/create", Icon: Plus },
+  { title: "Submissions", href: "/director/submissions", Icon: Users },
+  { title: "Messages", href: "/director/messages", Icon: MessageSquare },
 ];
 
 interface DirectorSidebarProps {
@@ -46,7 +46,7 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <item.icon className="w-5 h-5" />
+              <item.Icon className="w-5 h-5" />
               {item.title}
             </Link>
           );

@@ -11,12 +11,12 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Profile", href: "/dashboard/profile", icon: User },
-  { title: "Browse Casting Calls", href: "/dashboard/browse", icon: Search },
-  { title: "My Submissions", href: "/dashboard/submissions", icon: FileText },
-  { title: "Messages", href: "/dashboard/messages", icon: MessageSquare },
-  { title: "Instant Audition", href: "/dashboard/audition", icon: Video },
+  { title: "Dashboard", href: "/dashboard", Icon: LayoutDashboard },
+  { title: "Profile", href: "/dashboard/profile", Icon: User },
+  { title: "Browse Casting Calls", href: "/dashboard/browse", Icon: Search },
+  { title: "My Submissions", href: "/dashboard/submissions", Icon: FileText },
+  { title: "Messages", href: "/dashboard/messages", Icon: MessageSquare },
+  { title: "Instant Audition", href: "/dashboard/audition", Icon: Video },
 ];
 
 interface DashboardSidebarProps {
@@ -48,7 +48,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <item.icon className="w-5 h-5" />
+              <item.Icon className="w-5 h-5" />
               {item.title}
             </Link>
           );
