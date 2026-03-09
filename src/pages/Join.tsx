@@ -83,10 +83,10 @@ export default function Join() {
             <Link to="/join/talent">
               <Button variant="secondary" size="lg" className="w-full">Join as Talent</Button>
             </Link>
-            <Link to="/join/director">
+            <Link to="/join/casting_director">
               <Button variant="default" size="lg" className="w-full">Join as Casting Director</Button>
             </Link>
-            <Link to="/join/professional">
+            <Link to="/join/industry_professional">
               <Button variant="outline" size="lg" className="w-full">Join as Industry Professional</Button>
             </Link>
           </div>
