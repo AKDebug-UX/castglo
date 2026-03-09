@@ -7,7 +7,8 @@ import {
   Briefcase, 
   Search,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Bell
 } from "lucide-react";
 
 const navItems = [
@@ -17,6 +18,7 @@ const navItems = [
   { title: "Browse Talents", href: "/professional/talents", Icon: Search },
   { title: "Bookings", href: "/professional/bookings", Icon: Calendar },
   { title: "Messages", href: "/professional/messages", Icon: MessageSquare },
+  { title: "Notifications", href: "/professional/notifications", Icon: Bell },
 ];
 
 interface ProfessionalSidebarProps {

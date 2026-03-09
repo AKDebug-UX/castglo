@@ -6,7 +6,8 @@ import {
   FolderOpen, 
   Plus, 
   Users,
-  MessageSquare
+  MessageSquare,
+  Bell
 } from "lucide-react";
 
 const navItems = [
@@ -15,6 +16,7 @@ const navItems = [
   { title: "Create Casting Calls", href: "/director/create", Icon: Plus },
   { title: "Submissions", href: "/director/submissions", Icon: Users },
   { title: "Messages", href: "/director/messages", Icon: MessageSquare },
+  { title: "Notifications", href: "/director/notifications", Icon: Bell },
 ];
 
 interface DirectorSidebarProps {

@@ -12,9 +12,9 @@ export function Header() {
     switch (user.role) {
       case "admin":
         return "/admin";
-      case "director":
+      case "casting_director":
         return "/director";
-      case "professional":
+      case "industry_professional":
         return "/professional";
       case "talent":
       default:

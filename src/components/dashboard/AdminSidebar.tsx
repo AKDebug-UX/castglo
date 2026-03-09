@@ -8,6 +8,7 @@
    Users,
    FileVideo,
    Calendar,
+   Bell,
  } from "lucide-react";
  
  const navItems = [
@@ -17,6 +18,7 @@
    { Icon: Users, label: "Users Management", href: "/admin/users" },
    { Icon: FileVideo, label: "Submissions", href: "/admin/submissions" },
    { Icon: Calendar, label: "Bookings", href: "/admin/bookings" },
+   { Icon: Bell, label: "Notifications", href: "/admin/notifications" },
  ];
  
  interface AdminSidebarProps {

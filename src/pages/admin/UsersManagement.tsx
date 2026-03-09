@@ -25,9 +25,9 @@ const getRoleBadgeVariant = (role: string) => {
   switch (role?.toLowerCase()) {
     case "talent":
       return "default";
-    case "director":
+    case "casting_director":
       return "secondary";
-    case "professional":
+    case "industry_professional":
       return "outline";
     default:
       return "outline";

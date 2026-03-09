@@ -7,6 +7,7 @@ import {
   Search, 
   FileText, 
   MessageSquare,
+  Bell,
   Video
 } from "lucide-react";
 
@@ -16,6 +17,7 @@ const navItems = [
   { title: "Browse Casting Calls", href: "/dashboard/browse", Icon: Search },
   { title: "My Submissions", href: "/dashboard/submissions", Icon: FileText },
   { title: "Messages", href: "/dashboard/messages", Icon: MessageSquare },
+  { title: "Notifications", href: "/dashboard/notifications", Icon: Bell },
   { title: "Instant Audition", href: "/dashboard/audition", Icon: Video },
 ];
 

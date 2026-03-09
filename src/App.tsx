@@ -38,6 +38,7 @@ import CastingDetail from "./pages/dashboard/CastingDetail";
 import SubmitAudition from "./pages/dashboard/SubmitAudition";
 import Submissions from "./pages/dashboard/Submissions";
 import Messages from "./pages/dashboard/Messages";
+import Notifications from "./pages/dashboard/Notifications";
 import InstantAudition from "./pages/dashboard/InstantAudition";
 
 // Director Dashboard
@@ -56,6 +57,7 @@ import DirectorMessages from "./pages/director/DirectorMessages";
  import UsersManagement from "./pages/admin/UsersManagement";
  import AdminSubmissions from "./pages/admin/AdminSubmissions";
  import AdminBookings from "./pages/admin/AdminBookings";
+ import AdminNotifications from "./pages/admin/AdminNotifications";
  
  // Professional Dashboard
 import { ProfessionalLayout } from "./components/dashboard/ProfessionalLayout";
@@ -110,6 +112,7 @@ const App = () => (
                <Route path="browse/:id/submit" element={<SubmitAudition />} />
                <Route path="submissions" element={<Submissions />} />
                <Route path="messages" element={<Messages />} />
+               <Route path="notifications" element={<Notifications />} />
                <Route path="audition" element={<InstantAudition />} />
              </Route>
  
@@ -124,6 +127,7 @@ const App = () => (
                <Route path="create" element={<CreateCasting />} />
                <Route path="submissions" element={<DirectorSubmissions />} />
                <Route path="messages" element={<DirectorMessages />} />
+               <Route path="notifications" element={<Notifications />} />
              </Route>
  
              {/* Professional Dashboard Routes */}
@@ -138,6 +142,7 @@ const App = () => (
                <Route path="talents" element={<BrowseTalents />} />
                <Route path="bookings" element={<ProfessionalBookings />} />
                <Route path="messages" element={<ProfessionalMessages />} />
+               <Route path="notifications" element={<Notifications />} />
              </Route>
              
              {/* Admin Dashboard Routes */}
@@ -152,6 +157,7 @@ const App = () => (
                <Route path="users" element={<UsersManagement />} />
                <Route path="submissions" element={<AdminSubmissions />} />
                <Route path="bookings" element={<AdminBookings />} />
+               <Route path="notifications" element={<AdminNotifications />} />
              </Route>
              
              {/* Catch-all */}
