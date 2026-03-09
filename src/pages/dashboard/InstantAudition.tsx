@@ -35,7 +35,7 @@ export default function InstantAudition() {
         // For now, let's go back to dashboard
         navigate("/dashboard");
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create audition");
     } finally {
       setIsLoading(false);

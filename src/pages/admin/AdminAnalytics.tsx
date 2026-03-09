@@ -16,7 +16,7 @@ import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function AdminAnalytics() {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function AdminAnalytics() {
         if (response.data.success) {
           setAnalytics(response.data.data);
         }
-      } catch (error: any) {
+      } catch (error) {
         toast.error(error.response?.data?.message || "Failed to load analytics");
       } finally {
         setIsLoading(false);
@@ -255,7 +255,7 @@ export default function AdminAnalytics() {
             <p className="text-sm text-muted-foreground">Most submissions and votes</p>
           </CardHeader>
           <CardContent className="space-y-3">
-            {topCastingCalls.map((item: any, idx: number) => (
+            {topCastingCalls.map((item, idx: number) => (
               <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <div>
                   <p className="font-medium">{item.title}</p>
@@ -275,7 +275,7 @@ export default function AdminAnalytics() {
             <p className="text-sm text-muted-foreground">Highest submission rates</p>
           </CardHeader>
           <CardContent className="space-y-3">
-            {mostActiveTalents.map((talent: any, idx: number) => (
+            {mostActiveTalents.map((talent, idx: number) => (
               <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
                   {talent.initial || talent.name?.[0]}

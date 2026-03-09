@@ -12,7 +12,7 @@ import { MOCK_CASTINGS } from "@/lib/data";
 export default function SubmitAudition() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [casting, setCasting] = useState<any>(null);
+  const [casting, setCasting] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
@@ -46,7 +46,7 @@ export default function SubmitAudition() {
         if (response.data.success) {
           setCasting(response.data.data);
         }
-      } catch (error: any) {
+      } catch (error) {
         toast.error("Failed to load casting details");
       } finally {
         setIsLoading(false);
@@ -85,7 +85,7 @@ export default function SubmitAudition() {
         toast.success("Audition submitted successfully!");
         navigate("/dashboard/submissions");
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to submit audition");
     } finally {
       setIsSubmitting(false);

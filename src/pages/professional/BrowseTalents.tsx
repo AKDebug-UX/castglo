@@ -19,27 +19,27 @@ import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function BrowseTalents() {
-  const [talents, setTalents] = useState<any[]>([]);
+  const [talents, setTalents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
   const [location, setLocation] = useState("all");
-  const [selectedTalent, setSelectedTalent] = useState<any | null>(null);
+  const [selectedTalent, setSelectedTalent] = useState(null);
 
   const fetchTalents = async () => {
     setIsLoading(true);
     try {
-      const params: any = {};
+      const params = {};
       if (search) params.search = search;
       if (role !== "all") params.role = role;
       if (location !== "all") params.location = location;
-      params.userRole = "talent"; // Only browse talents
+      params.profileType = "talent"; // Only browse talents
 
       const response = await profileAPI.search(params);
       if (response.data.success) {
         setTalents(response.data.data);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to load talents");
     } finally {
       setIsLoading(false);

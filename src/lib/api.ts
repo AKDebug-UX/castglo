@@ -119,12 +119,12 @@ const api = axios.create({
 // --- USER ENDPOINTS ---
 export const userAPI = {
   getProfile: () => api.get(API_ENDPOINTS.USERS.PROFILE),
-  updateProfile: (data: any) => api.put(API_ENDPOINTS.USERS.UPDATE_PROFILE, data),
+  updateProfile: (data) => api.put(API_ENDPOINTS.USERS.UPDATE_PROFILE, data),
   updateProfilePicture: (formData: FormData) => api.put(API_ENDPOINTS.USERS.UPDATE_PROFILE_PICTURE, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   deleteAccount: () => api.delete(API_ENDPOINTS.USERS.DELETE_ACCOUNT),
-  search: (params: any) => api.get(API_ENDPOINTS.USERS.SEARCH, { params }),
+  search: (params) => api.get(API_ENDPOINTS.USERS.SEARCH, { params }),
   getOne: (userId: string) => api.get(API_ENDPOINTS.USERS.GET_ONE(userId)),
 };
 
@@ -154,12 +154,12 @@ api.interceptors.response.use(
 
 // --- AUTH ENDPOINTS ---
 export const authAPI = {
-  register: (data: any) => api.post(API_ENDPOINTS.AUTH.REGISTER, data),
-  login: (data: any) => api.post(API_ENDPOINTS.AUTH.LOGIN, data),
-  verifyEmail: (data: any) => api.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, data),
-  forgotPassword: (data: any) => api.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, data),
-  resetPassword: (data: any) => api.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data),
-  changePassword: (data: any) => api.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, data),
+  register: (data) => api.post(API_ENDPOINTS.AUTH.REGISTER, data),
+  login: (data) => api.post(API_ENDPOINTS.AUTH.LOGIN, data),
+  verifyEmail: (data) => api.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, data),
+  forgotPassword: (data) => api.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, data),
+  resetPassword: (data) => api.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data),
+  changePassword: (data) => api.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, data),
   getMe: () => api.get(API_ENDPOINTS.AUTH.ME),
   resendVerification: (email: string) => api.post(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, { email }),
   logout: () => api.post(API_ENDPOINTS.AUTH.LOGOUT),
@@ -170,13 +170,13 @@ export const blockchainAPI = {
   verify: (formData: FormData) => api.post(API_ENDPOINTS.BLOCKCHAIN.VERIFY, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  getHistory: (params: any) => api.get(API_ENDPOINTS.BLOCKCHAIN.HISTORY, { params }),
+  getHistory: (params) => api.get(API_ENDPOINTS.BLOCKCHAIN.HISTORY, { params }),
   validate: (hash: string) => api.get(API_ENDPOINTS.BLOCKCHAIN.VALIDATE(hash)),
 };
 
 // --- LIVESTREAM ENDPOINTS ---
 export const livestreamAPI = {
-  create: (data: any) => api.post(API_ENDPOINTS.LIVESTREAM.CREATE, data),
+  create: (data) => api.post(API_ENDPOINTS.LIVESTREAM.CREATE, data),
   getActive: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_ACTIVE),
   start: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.START(id)),
   join: (id: string) => api.get(API_ENDPOINTS.LIVESTREAM.JOIN(id)),
@@ -191,24 +191,24 @@ export const messagingAPI = {
   getMyConversations: () => api.get(API_ENDPOINTS.MESSAGING.GET_MY_CONVERSATIONS),
   sendMessage: (data: { conversationId: string, text: string, mediaUrl?: string }) => 
     api.post(API_ENDPOINTS.MESSAGING.SEND_MESSAGE, data),
-  getMessages: (id: string, params: any) => api.get(API_ENDPOINTS.MESSAGING.GET_MESSAGES(id), { params }),
+  getMessages: (id: string, params) => api.get(API_ENDPOINTS.MESSAGING.GET_MESSAGES(id), { params }),
 };
 
 // --- NOTIFICATION ENDPOINTS ---
 export const notificationAPI = {
   registerDevice: (data: { deviceToken: string, platform: 'ios' | 'android' | 'web' }) => 
     api.post(API_ENDPOINTS.NOTIFICATIONS.REGISTER_DEVICE, data),
-  send: (data: any) => api.post(API_ENDPOINTS.NOTIFICATIONS.SEND, data),
-  getAll: (params: any) => api.get(API_ENDPOINTS.NOTIFICATIONS.GET_ALL, { params }),
+  send: (data) => api.post(API_ENDPOINTS.NOTIFICATIONS.SEND, data),
+  getAll: (params) => api.get(API_ENDPOINTS.NOTIFICATIONS.GET_ALL, { params }),
   readAll: () => api.patch(API_ENDPOINTS.NOTIFICATIONS.READ_ALL),
   markRead: (id: string) => api.patch(API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id)),
 };
 
 // --- PROFILE ENDPOINTS ---
 export const profileAPI = {
-  create: (data: any) => api.post(API_ENDPOINTS.PROFILES.CREATE, data),
+  create: (data) => api.post(API_ENDPOINTS.PROFILES.CREATE, data),
   getMe: () => api.get(API_ENDPOINTS.PROFILES.ME),
-  updateMe: (data: any) => api.put(API_ENDPOINTS.PROFILES.UPDATE_ME, data),
+  updateMe: (data) => api.put(API_ENDPOINTS.PROFILES.UPDATE_ME, data),
   addHeadshot: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.ADD_HEADSHOT, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
@@ -216,24 +216,24 @@ export const profileAPI = {
   uploadShowreel: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.UPLOAD_SHOWREEL, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  search: (params: any) => api.get(API_ENDPOINTS.PROFILES.SEARCH, { params }),
+  search: (params) => api.get(API_ENDPOINTS.PROFILES.SEARCH, { params }),
   getOne: (userId: string) => api.get(API_ENDPOINTS.PROFILES.GET_ONE(userId)),
 };
 
 // --- CASTING CALL ENDPOINTS ---
 export const castingCallAPI = {
-  getAll: (params: any) => api.get(API_ENDPOINTS.CASTING_CALLS.GET_ALL, { params }),
-  create: (data: any) => api.post(API_ENDPOINTS.CASTING_CALLS.CREATE, data),
+  getAll: (params) => api.get(API_ENDPOINTS.CASTING_CALLS.GET_ALL, { params }),
+  create: (data) => api.post(API_ENDPOINTS.CASTING_CALLS.CREATE, data),
   getMyListings: () => api.get(API_ENDPOINTS.CASTING_CALLS.MY_LISTINGS),
   getOne: (id: string) => api.get(API_ENDPOINTS.CASTING_CALLS.GET_ONE(id)),
-  update: (id: string, data: any) => api.put(API_ENDPOINTS.CASTING_CALLS.UPDATE(id), data),
+  update: (id: string, data) => api.put(API_ENDPOINTS.CASTING_CALLS.UPDATE(id), data),
   delete: (id: string) => api.delete(API_ENDPOINTS.CASTING_CALLS.DELETE(id)),
   close: (id: string) => api.put(API_ENDPOINTS.CASTING_CALLS.CLOSE(id)),
 };
 
 // --- APPLICATION ENDPOINTS ---
 export const applicationAPI = {
-  create: (data: any) => api.post(API_ENDPOINTS.APPLICATIONS.CREATE, data),
+  create: (data) => api.post(API_ENDPOINTS.APPLICATIONS.CREATE, data),
   getMe: () => api.get(API_ENDPOINTS.APPLICATIONS.ME),
   getByCastingCall: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.BY_CASTING_CALL(id)),
   getDetails: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.DETAILS(id)),
@@ -247,28 +247,28 @@ export const applicationAPI = {
 // --- SUBSCRIPTION ENDPOINTS ---
 export const subscriptionAPI = {
   getPlans: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.PLANS),
-  createCheckoutSession: (data: any) => api.post(API_ENDPOINTS.SUBSCRIPTIONS.CREATE_CHECKOUT_SESSION, data),
+  createCheckoutSession: (data) => api.post(API_ENDPOINTS.SUBSCRIPTIONS.CREATE_CHECKOUT_SESSION, data),
   getStatus: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.STATUS),
   getDetails: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.DETAILS),
-  upgrade: (data: any) => api.post(API_ENDPOINTS.SUBSCRIPTIONS.UPGRADE, data),
+  upgrade: (data) => api.post(API_ENDPOINTS.SUBSCRIPTIONS.UPGRADE, data),
   cancel: () => api.post(API_ENDPOINTS.SUBSCRIPTIONS.CANCEL),
 };
 
 // --- ADMIN ENDPOINTS ---
 export const adminAPI = {
-  getUsers: (params: any) => api.get(API_ENDPOINTS.ADMIN.USERS, { params }),
+  getUsers: (params) => api.get(API_ENDPOINTS.ADMIN.USERS, { params }),
   suspendUser: (id: string, reason: string) => api.put(API_ENDPOINTS.ADMIN.SUSPEND_USER(id), { reason }),
   unsuspendUser: (id: string) => api.put(API_ENDPOINTS.ADMIN.UNSUSPEND_USER(id)),
   verifyUser: (id: string) => api.put(API_ENDPOINTS.ADMIN.VERIFY_USER(id)),
   deleteUser: (id: string) => api.delete(API_ENDPOINTS.ADMIN.DELETE_USER(id)),
-  getActionLogs: (params: any) => api.get(API_ENDPOINTS.ADMIN.ACTION_LOGS, { params }),
+  getActionLogs: (params) => api.get(API_ENDPOINTS.ADMIN.ACTION_LOGS, { params }),
   getAnalytics: () => api.get(API_ENDPOINTS.ADMIN.ANALYTICS),
-  getLeads: (params: any) => api.get(API_ENDPOINTS.ADMIN.LEADS, { params }),
+  getLeads: (params) => api.get(API_ENDPOINTS.ADMIN.LEADS, { params }),
 };
 
 // --- LEAD ENDPOINTS ---
 export const leadAPI = {
-  create: (data: any) => api.post(API_ENDPOINTS.LEADS.CREATE, data),
+  create: (data) => api.post(API_ENDPOINTS.LEADS.CREATE, data),
 };
 
 export default api;

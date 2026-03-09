@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('token');
         setUser(null);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to fetch user:", error);
       localStorage.removeItem('token');
       setUser(null);
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { role: userObj.role };
       }
       return { error: response.data.message || "Sign in failed" };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred during sign in" };
     }
   };
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return {};
       }
       return { error: response.data.message || "Registration failed" };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred during registration" };
     }
   };
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return {};
       }
       return { error: response.data.message || "Failed to send reset link" };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return {};
       }
       return { error: response.data.message || "Password reset failed" };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };
@@ -145,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return {};
       }
       return { error: response.data.message || "Email verification failed" };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };
@@ -157,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return {};
       }
       return { error: response.data.message || "Failed to resend verification" };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };

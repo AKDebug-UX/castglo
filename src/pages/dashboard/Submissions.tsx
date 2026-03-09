@@ -15,16 +15,16 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Submissions() {
-  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<any[]>([]);
+  const [stats, setStats] = useState([]);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
       try {
         const response = await applicationAPI.getMe();
         if (response.data.success && Array.isArray(response.data.data)) {
-          const apps = response.data.data.map((app: any) => ({
+          const apps = response.data.data.map((app) => ({
             _id: app._id,
             status: app.status, // submitted, viewed, shortlisted, rejected, accepted, withdrawn
             createdAt: app.createdAt,
@@ -41,8 +41,8 @@ export default function Submissions() {
           // Calculate stats
           setStats([
             { label: "Total Submissions", value: apps.length.toString(), sublabel: "All time", Icon: FileText },
-            { label: "In Review", value: apps.filter((a: any) => a.status === "applied").length.toString(), sublabel: "Pending Review", Icon: Eye },
-            { label: "Shortlisted", value: apps.filter((a: any) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", Icon: Star },
+            { label: "In Review", value: apps.filter((a) => a.status === "applied").length.toString(), sublabel: "Pending Review", Icon: Eye },
+            { label: "Shortlisted", value: apps.filter((a) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", Icon: Star },
           ]);
         } else {
           setSubmissions([]);
@@ -52,7 +52,7 @@ export default function Submissions() {
             { label: "Shortlisted", value: "0", sublabel: "Callbacks Pending", Icon: Star },
           ]);
         }
-      } catch (error: any) {
+      } catch (error) {
         toast.error("Failed to load submissions");
       } finally {
         setIsLoading(false);

@@ -12,9 +12,9 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function Messages() {
   const { user } = useAuth();
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
@@ -31,7 +31,7 @@ export default function Messages() {
       } else {
         setConversations([]);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to load conversations");
     } finally {
       setIsLoading(false);
@@ -52,7 +52,7 @@ export default function Messages() {
         } else {
           setMessages([]);
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error("Failed to fetch messages:", error);
       }
     };
@@ -84,7 +84,7 @@ export default function Messages() {
           c._id === selectedConversation._id ? { ...c, lastMessage: response.data.data } : c
         ));
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to send message");
     } finally {
       setIsSending(false);
@@ -115,7 +115,7 @@ export default function Messages() {
             <ScrollArea className="flex-1">
               <div className="p-2">
                 {conversations.length > 0 ? conversations.map((conv) => {
-                  const otherParticipant = conv.participants?.find((p: any) => p._id !== user?.id);
+                  const otherParticipant = conv.participants?.find((p) => p._id !== user?.id);
                   return (
                     <button
                       key={conv._id}
@@ -162,7 +162,7 @@ export default function Messages() {
                 {/* Chat Header */}
                 <div className="p-3 border-b border-border flex items-center justify-between">
                   {(() => {
-                    const otherParticipant = selectedConversation.participants?.find((p: any) => p._id !== user?.id);
+                    const otherParticipant = selectedConversation.participants?.find((p) => p._id !== user?.id);
                     return (
                       <div className="flex items-center gap-3">
                         <Avatar>
@@ -181,7 +181,7 @@ export default function Messages() {
                 {/* Messages */}
                 <ScrollArea className="flex-1 p-4">
                   <div className="space-y-4">
-                    {messages.map((msg: any, idx: number) => (
+                    {messages.map((msg, idx: number) => (
                       <div 
                         key={idx} 
                         className={cn(

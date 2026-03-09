@@ -19,9 +19,9 @@ import { toast } from "sonner";
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<any[]>([]);
-  const [upcomingCastings, setUpcomingCastings] = useState<any[]>([]);
-  const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
+  const [stats, setStats] = useState([]);
+  const [upcomingCastings, setUpcomingCastings] = useState([]);
+  const [recentSubmissions, setRecentSubmissions] = useState([]);
   const [userName, setUserName] = useState("");
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function Dashboard() {
 
         if (appsRes.data.success && Array.isArray(appsRes.data.data)) {
           const apps = appsRes.data.data;
-          setRecentSubmissions(apps.slice(0, 3).map((app: any) => ({
+          setRecentSubmissions(apps.slice(0, 3).map((app) => ({
             id: app._id,
             title: app.castingCall?.title || "Unknown Position",
             date: new Date(app.createdAt).toLocaleDateString(),
@@ -48,9 +48,9 @@ export default function Dashboard() {
 
           // Calculate stats based on actual application status from schema:
           // submitted, viewed, shortlisted, rejected, accepted, withdrawn
-          const activeApps = apps.filter((a: any) => ["submitted", "viewed", "shortlisted"].includes(a.status)).length;
-          const accepted = apps.filter((a: any) => a.status === "accepted").length;
-          const shortlisted = apps.filter((a: any) => a.status === "shortlisted").length;
+          const activeApps = apps.filter((a) => ["submitted", "viewed", "shortlisted"].includes(a.status)).length;
+          const accepted = apps.filter((a) => a.status === "accepted").length;
+          const shortlisted = apps.filter((a) => a.status === "shortlisted").length;
           
           setStats([
             { label: "Active Applications", value: activeApps.toString(), change: "In progress", Icon: FileText },
@@ -71,7 +71,7 @@ export default function Dashboard() {
           setUpcomingCastings(castingsRes.data.data.slice(0, 2));
         }
 
-      } catch (error: any) {
+      } catch (error) {
         toast.error("Failed to load dashboard data");
       } finally {
         setIsLoading(false);

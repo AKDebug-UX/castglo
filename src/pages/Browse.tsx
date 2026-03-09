@@ -15,7 +15,7 @@ import { MOCK_TALENTS } from "@/lib/data";
 export default function Browse() {
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [talents, setTalents] = useState<any[]>([]);
+  const [talents, setTalents] = useState([]);
 
   const fetchFeaturedTalents = async () => {
     setIsLoading(true);

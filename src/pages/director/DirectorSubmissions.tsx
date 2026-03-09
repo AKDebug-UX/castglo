@@ -23,8 +23,8 @@ export default function DirectorSubmissions() {
   const { id } = useParams(); // castingCallId
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState("all");
-  const [submissions, setSubmissions] = useState<any[]>([]);
-  const [castingCall, setCastingCall] = useState<any>(null);
+  const [submissions, setSubmissions] = useState([]);
+  const [castingCall, setCastingCall] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -45,7 +45,7 @@ export default function DirectorSubmissions() {
       if (castingRes.data.success) {
         setCastingCall(castingRes.data.data);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to load submissions");
     } finally {
       setIsLoading(false);
@@ -68,7 +68,7 @@ export default function DirectorSubmissions() {
         toast.success(`Application ${action}ed`);
         setSubmissions(prev => prev.map(s => s._id === appId ? { ...s, status: action === 'shortlist' ? 'shortlisted' : action === 'accept' ? 'accepted' : 'rejected' } : s));
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(`Failed to ${action} application`);
     } finally {
       setActionLoading(null);

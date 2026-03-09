@@ -19,10 +19,10 @@ import { toast } from "sonner";
 
 export default function DirectorDashboard() {
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [listings, setListings] = useState<any[]>([]);
-  const [stats, setStats] = useState<any[]>([]);
-  const [recentApps, setRecentApps] = useState<any[]>([]);
+  const [user, setUser] = useState(null);
+  const [listings, setListings] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [recentApps, setRecentApps] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,8 +41,8 @@ export default function DirectorDashboard() {
           setListings(myCastings);
 
           // Calculate basic stats from listings
-          const activeCount = myCastings.filter((c: any) => c.status === 'open').length;
-          const totalSubmissions = myCastings.reduce((acc: number, c: any) => acc + (c.applicationCount || 0), 0);
+          const activeCount = myCastings.filter((c) => c.status === 'open').length;
+          const totalSubmissions = myCastings.reduce((acc: number, c) => acc + (c.applicationCount || 0), 0);
           
           setStats([
             { label: "Active Casting Calls", value: activeCount.toString(), change: "Live", Icon: Clapperboard },
@@ -53,10 +53,10 @@ export default function DirectorDashboard() {
 
           // Fetch recent applications for these listings (simplified)
           if (myCastings.length > 0) {
-             const allAppsPromises = myCastings.slice(0, 3).map((c: any) => applicationAPI.getByCastingCall(c._id));
+             const allAppsPromises = myCastings.slice(0, 3).map((c) => applicationAPI.getByCastingCall(c._id));
              const appsResults = await Promise.all(allAppsPromises);
              const allApps = appsResults.flatMap(res => (res.data.success && Array.isArray(res.data.data)) ? res.data.data : []);
-             setRecentApps(allApps.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5));
+             setRecentApps(allApps.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5));
           }
         } else {
           setListings([]);
@@ -67,7 +67,7 @@ export default function DirectorDashboard() {
             { label: "Roles Filled", value: "0", change: "This quarter", Icon: CheckCircle },
           ]);
         }
-      } catch (error: any) {
+      } catch (error) {
         toast.error("Failed to load dashboard data");
       } finally {
         setIsLoading(false);

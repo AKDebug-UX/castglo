@@ -49,7 +49,7 @@ export default function CreateCasting() {
               status: data.status || "open"
             });
           }
-        } catch (error: any) {
+        } catch (error) {
           toast.error("Failed to load casting call details");
         } finally {
           setIsLoading(false);
@@ -101,7 +101,7 @@ export default function CreateCasting() {
         toast.success(isEditMode ? "Casting call updated" : "Casting call created");
         navigate("/director/projects");
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to save casting call");
     } finally {
       setIsSubmitting(false);

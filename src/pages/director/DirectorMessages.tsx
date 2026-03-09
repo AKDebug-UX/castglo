@@ -10,8 +10,8 @@ import { applicationAPI, castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function DirectorMessages() {
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [selectedApp, setSelectedApp] = useState<any>(null);
+  const [conversations, setConversations] = useState([]);
+  const [selectedApp, setSelectedApp] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
@@ -22,7 +22,7 @@ export default function DirectorMessages() {
       const listingsRes = await castingCallAPI.getMyListings();
       if (listingsRes.data.success) {
         const myCastings = listingsRes.data.data;
-        const allAppsPromises = myCastings.map((c: any) => applicationAPI.getByCastingCall(c._id));
+        const allAppsPromises = myCastings.map((c) => applicationAPI.getByCastingCall(c._id));
         const appsResults = await Promise.all(allAppsPromises);
         
         // Flatten and filter for apps that have communications or are shortlisted/accepted
@@ -33,7 +33,7 @@ export default function DirectorMessages() {
           setSelectedApp(allApps[0]);
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to load conversations");
     } finally {
       setIsLoading(false);
@@ -60,7 +60,7 @@ export default function DirectorMessages() {
           setConversations(prev => prev.map(a => a._id === selectedApp._id ? updatedAppRes.data.data : a));
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to send message");
     } finally {
       setIsSending(false);
@@ -161,7 +161,7 @@ export default function DirectorMessages() {
                 {/* Messages */}
                 <ScrollArea className="flex-1 p-4">
                   <div className="space-y-4">
-                    {selectedApp.communications?.map((msg: any, idx: number) => (
+                    {selectedApp.communications?.map((msg, idx: number) => (
                       <div 
                         key={idx} 
                         className={cn(

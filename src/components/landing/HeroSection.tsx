@@ -14,8 +14,8 @@ import newsProduction from "@/assets/news-production.jpg";
 import newsAudition from "@/assets/news-audition.jpg";
 
 export function HeroSection() {
-  const [featuredCalls, setFeaturedCalls] = useState<any[]>([]);
-  const [featuredTalents, setFeaturedTalents] = useState<any[]>([]);
+  const [featuredCalls, setFeaturedCalls] = useState([]);
+  const [featuredTalents, setFeaturedTalents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

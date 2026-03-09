@@ -8,17 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Plus, X, Upload, Loader2, ShieldCheck, FileCheck, History } from "lucide-react";
-import { profileAPI, userAPI, blockchainAPI } from "@/lib/api";
+import { profileAPI, userAPI, blockchainAPI, authAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("basic");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState(null);
   
   // Blockchain states
-  const [verificationHistory, setVerificationHistory] = useState<any[]>([]);
+  const [verificationHistory, setVerificationHistory] = useState([]);
   const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
@@ -31,12 +31,17 @@ export default function Profile() {
 
         if (profileRes.data.success) {
           setProfileData(profileRes.data.data);
+        } else {
+          const userRes = await authAPI.getMe();
+          if (userRes.data.success) {
+            setProfileData(userRes.data.data);
+          }
         }
         
         if (historyRes.data.success) {
           setVerificationHistory(historyRes.data.data.records || []);
         }
-      } catch (error: any) {
+      } catch (error) {
         toast.error("Failed to load profile data");
       } finally {
         setIsLoading(false);
@@ -65,7 +70,7 @@ export default function Profile() {
 
       await Promise.all([userUpdate, profileUpdate]);
       toast.success("Profile updated successfully");
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
@@ -88,7 +93,7 @@ export default function Profile() {
         const historyRes = await blockchainAPI.getHistory({ limit: 5 });
         setVerificationHistory(historyRes.data.data.records || []);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Blockchain anchoring failed");
     } finally {
       setIsVerifying(false);
@@ -97,11 +102,11 @@ export default function Profile() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setProfileData((prev: any) => ({ ...prev, [name]: value }));
+    setProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setProfileData((prev: any) => ({ ...prev, [name]: value }));
+    setProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,12 +120,12 @@ export default function Profile() {
       const response = await profileAPI.addHeadshot(formData);
       if (response.data.success) {
         toast.success("Profile picture updated");
-        setProfileData((prev: any) => ({ 
+        setProfileData((prev) => ({ 
           ...prev, 
           profilePicture: response.data.data.url // Adjust based on actual API response
         }));
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to upload photo");
     } finally {
       setIsSaving(false);
@@ -212,7 +217,7 @@ export default function Profile() {
                   value={profileData?.professionalRoles?.join(", ") || ""} 
                   onChange={(e) => {
                     const roles = e.target.value.split(",").map(r => r.trim());
-                    setProfileData((prev: any) => ({ ...prev, professionalRoles: roles }));
+                    setProfileData((prev) => ({ ...prev, professionalRoles: roles }));
                   }}
                 />
               </div>
@@ -327,7 +332,7 @@ export default function Profile() {
                     name="height"
                     type="number"
                     value={profileData?.physicalAttributes?.height || ""} 
-                    onChange={(e) => setProfileData((prev: any) => ({
+                    onChange={(e) => setProfileData((prev) => ({
                       ...prev,
                       physicalAttributes: { ...prev.physicalAttributes, height: e.target.value }
                     }))}
@@ -339,7 +344,7 @@ export default function Profile() {
                     name="weight"
                     type="number"
                     value={profileData?.physicalAttributes?.weight || ""} 
-                    onChange={(e) => setProfileData((prev: any) => ({
+                    onChange={(e) => setProfileData((prev) => ({
                       ...prev,
                       physicalAttributes: { ...prev.physicalAttributes, weight: e.target.value }
                     }))}
@@ -350,7 +355,7 @@ export default function Profile() {
                   <Input 
                     name="eyeColor"
                     value={profileData?.physicalAttributes?.eyeColor || ""} 
-                    onChange={(e) => setProfileData((prev: any) => ({
+                    onChange={(e) => setProfileData((prev) => ({
                       ...prev,
                       physicalAttributes: { ...prev.physicalAttributes, eyeColor: e.target.value }
                     }))}
@@ -372,8 +377,8 @@ export default function Profile() {
                   <Badge key={i} variant="secondary" className="gap-1">
                     {skill}
                     <X className="w-3 h-3 cursor-pointer" onClick={() => {
-                      const newSkills = profileData.skills.filter((_: any, idx: number) => idx !== i);
-                      setProfileData((prev: any) => ({ ...prev, skills: newSkills }));
+                      const newSkills = profileData.skills.filter((_, idx: number) => idx !== i);
+                      setProfileData((prev) => ({ ...prev, skills: newSkills }));
                     }} />
                   </Badge>
                 ))}
@@ -383,7 +388,7 @@ export default function Profile() {
                   if (e.key === "Enter") {
                     const val = (e.target as HTMLInputElement).value;
                     if (val && !profileData.skills.includes(val)) {
-                      setProfileData((prev: any) => ({ ...prev, skills: [...prev.skills, val] }));
+                      setProfileData((prev) => ({ ...prev, skills: [...prev.skills, val] }));
                       (e.target as HTMLInputElement).value = "";
                     }
                   }
@@ -403,7 +408,7 @@ export default function Profile() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-                {profileData?.headshots?.map((shot: any, i: number) => (
+                {profileData?.headshots?.map((shot, i: number) => (
                   <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
                     <img src={shot.url} className="w-full h-full object-cover" />
                     <Button 
@@ -413,9 +418,9 @@ export default function Profile() {
                       onClick={async () => {
                         try {
                           await profileAPI.deleteHeadshot(shot._id);
-                          setProfileData((prev: any) => ({
+                          setProfileData((prev) => ({
                             ...prev,
-                            headshots: prev.headshots.filter((s: any) => s._id !== shot._id)
+                            headshots: prev.headshots.filter((s) => s._id !== shot._id)
                           }));
                         } catch (e) { toast.error("Failed to delete headshot"); }
                       }}
@@ -479,7 +484,7 @@ export default function Profile() {
                 </h3>
                 <div className="space-y-2">
                   {verificationHistory.length > 0 ? (
-                    verificationHistory.map((record: any) => (
+                    verificationHistory.map((record) => (
                       <div key={record._id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-green-500/10 rounded flex items-center justify-center">

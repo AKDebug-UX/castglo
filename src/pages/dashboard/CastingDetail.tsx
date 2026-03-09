@@ -18,7 +18,7 @@ import { MOCK_CASTINGS } from "@/lib/data";
 
 export default function CastingDetail() {
   const { id } = useParams();
-  const [casting, setCasting] = useState<any>(null);
+  const [casting, setCasting] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export default function CastingDetail() {
         if (response.data.success) {
           setCasting(response.data.data);
         }
-      } catch (error: any) {
+      } catch (error) {
         toast.error(error.response?.data?.message || "Failed to load casting details");
       } finally {
         setIsLoading(false);

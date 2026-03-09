@@ -17,9 +17,9 @@ import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,7 +36,7 @@ export default function AdminDashboard() {
         if (logsRes.data.success) {
           setLogs(logsRes.data.data);
         }
-      } catch (error: any) {
+      } catch (error) {
         toast.error(error.response?.data?.message || "Failed to load dashboard data");
       } finally {
         setIsLoading(false);

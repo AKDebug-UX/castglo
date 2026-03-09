@@ -35,9 +35,9 @@ const getRoleBadgeVariant = (role: string) => {
 };
 
 export default function UsersManagement() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
   const fetchUsers = async () => {
@@ -47,7 +47,7 @@ export default function UsersManagement() {
       if (response.data.success) {
         setUsers(response.data.data.users);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to fetch users");
     } finally {
       setIsLoading(false);
@@ -66,7 +66,7 @@ export default function UsersManagement() {
         toast.success("User suspended successfully");
         fetchUsers();
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to suspend user");
     } finally {
       setIsActionLoading(false);
@@ -81,7 +81,7 @@ export default function UsersManagement() {
         toast.success("User verified successfully");
         fetchUsers();
       }
-    } catch (error: any) {
+    } catch (error) {
       const message = error.response?.data?.message || "Failed to verify user";
       if (message.toLowerCase().includes("profile not found")) {
         toast.error("User cannot be verified yet: They haven't created their profile.");
@@ -103,7 +103,7 @@ export default function UsersManagement() {
         toast.success("User deleted successfully");
         fetchUsers();
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete user");
     } finally {
       setIsActionLoading(false);

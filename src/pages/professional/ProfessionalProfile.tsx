@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Upload, Camera, Plus, Loader2, X } from "lucide-react";
-import { profileAPI } from "@/lib/api";
+import { profileAPI, authAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 const workingDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -14,7 +14,7 @@ const workingDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 export default function ProfessionalProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -22,8 +22,13 @@ export default function ProfessionalProfile() {
         const response = await profileAPI.getMe();
         if (response.data.success) {
           setProfileData(response.data.data);
+        } else {
+          const userRes = await authAPI.getMe();
+          if (userRes.data.success) {
+            setProfileData(userRes.data.data);
+          }
         }
-      } catch (error: any) {
+      } catch (error) {
         toast.error("Failed to load profile");
       } finally {
         setIsLoading(false);
@@ -34,7 +39,7 @@ export default function ProfessionalProfile() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setProfileData((prev: any) => ({ ...prev, [name]: value }));
+    setProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
@@ -44,7 +49,7 @@ export default function ProfessionalProfile() {
       if (response.data.success) {
         toast.success("Profile updated successfully");
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
@@ -65,7 +70,7 @@ export default function ProfessionalProfile() {
         const updated = await profileAPI.getMe();
         setProfileData(updated.data.data);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to upload photo");
     } finally {
       setIsSaving(false);
@@ -154,7 +159,7 @@ export default function ProfessionalProfile() {
               value={profileData?.professionalRoles?.join(", ") || ""} 
               onChange={(e) => {
                 const roles = e.target.value.split(",").map(r => r.trim());
-                setProfileData((prev: any) => ({ ...prev, professionalRoles: roles }));
+                setProfileData((prev) => ({ ...prev, professionalRoles: roles }));
               }}
             />
           </div>
@@ -189,7 +194,7 @@ export default function ProfessionalProfile() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
-            {profileData?.headshots?.map((shot: any) => (
+            {profileData?.headshots?.map((shot) => (
               <div key={shot._id} className="relative aspect-square rounded-lg overflow-hidden border group">
                 <img src={shot.url} className="w-full h-full object-cover" />
                 <Button 
@@ -199,9 +204,9 @@ export default function ProfessionalProfile() {
                   onClick={async () => {
                     try {
                       await profileAPI.deleteHeadshot(shot._id);
-                      setProfileData((prev: any) => ({
+                      setProfileData((prev) => ({
                         ...prev,
-                        headshots: prev.headshots.filter((s: any) => s._id !== shot._id)
+                        headshots: prev.headshots.filter((s) => s._id !== shot._id)
                       }));
                     } catch (e) { toast.error("Delete failed"); }
                   }}
@@ -234,7 +239,7 @@ export default function ProfessionalProfile() {
               value={profileData?.skills?.join(", ") || ""}
               onChange={(e) => {
                 const skills = e.target.value.split(",").map(s => s.trim());
-                setProfileData((prev: any) => ({ ...prev, skills }));
+                setProfileData((prev) => ({ ...prev, skills }));
               }}
               placeholder="List your skills..."
             />

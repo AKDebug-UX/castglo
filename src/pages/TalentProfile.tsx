@@ -12,7 +12,7 @@ import { MOCK_TALENTS } from "@/lib/data";
 
 export default function TalentProfile() {
   const { id } = useParams();
-  const [talent, setTalent] = useState<any>(null);
+  const [talent, setTalent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -183,7 +183,7 @@ export default function TalentProfile() {
                     <div className="mt-10 border-t pt-8">
                       <h3 className="font-bold text-xl mb-6">Portfolio</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {talent.headshots.map((shot: any) => (
+                        {talent.headshots.map((shot) => (
                           <div key={shot._id} className="aspect-square rounded-xl overflow-hidden border bg-muted">
                             <img src={shot.url} className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" alt="Portfolio" />
                           </div>

@@ -18,9 +18,9 @@ import { toast } from "sonner";
 
 export default function ProfessionalDashboard() {
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [stats, setStats] = useState<any[]>([]);
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [stats, setStats] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,7 +46,7 @@ export default function ProfessionalDashboard() {
             { label: "Rating", value: profileData.rating?.toString() || "0.0", change: "From reviews", Icon: Star },
           ]);
         }
-      } catch (error: any) {
+      } catch (error) {
         toast.error("Failed to load dashboard data");
       } finally {
         setIsLoading(false);

@@ -21,7 +21,7 @@ import { toast } from "sonner";
 export default function MyProjects() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState("all");
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProjects = async () => {
@@ -33,7 +33,7 @@ export default function MyProjects() {
       } else {
         setProjects([]);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to load projects");
       setProjects([]);
     } finally {
@@ -53,7 +53,7 @@ export default function MyProjects() {
         toast.success("Project deleted successfully");
         setProjects(prev => prev.filter(p => p._id !== id));
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to delete project");
     }
   };

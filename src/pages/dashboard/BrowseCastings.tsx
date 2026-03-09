@@ -44,7 +44,7 @@ export default function BrowseCastings() {
       } else {
         setCastings([]);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to load casting calls");
     } finally {
       setIsLoading(false);

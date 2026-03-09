@@ -43,7 +43,7 @@ export default function Contact() {
       } else {
         toast.error(response.data.message || "Failed to send message");
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred");
     } finally {
       setIsLoading(false);
