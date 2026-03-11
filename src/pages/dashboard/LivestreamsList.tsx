@@ -79,8 +79,10 @@ export default function LivestreamsList() {
               <Calendar className="h-5 w-5 text-secondary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Scheduled Today</p>
-              <p className="text-xl font-bold">4</p>
+              <p className="text-sm text-muted-foreground">Audition Types</p>
+              <p className="text-xl font-bold">
+                {new Set(streams.map(s => s.category)).size}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -90,8 +92,10 @@ export default function LivestreamsList() {
               <Users className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Participants</p>
-              <p className="text-xl font-bold">12</p>
+              <p className="text-sm text-muted-foreground">Total Viewers</p>
+              <p className="text-xl font-bold">
+                {streams.reduce((acc, s) => acc + (s.viewerCount || 0), 0)}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -129,13 +133,17 @@ export default function LivestreamsList() {
                   <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6 border border-white/20">
-                        <AvatarFallback className="text-[10px] bg-primary/20 text-primary">CD</AvatarFallback>
+                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                          {stream.hostId?.fullName?.[0] || "H"}
+                        </AvatarFallback>
                       </Avatar>
-                      <span className="text-[10px] text-white font-medium drop-shadow-md">Sarah Mitchell</span>
+                      <span className="text-[10px] text-white font-medium drop-shadow-md">
+                        {stream.hostId?.fullName || "Host"}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1 text-[10px] text-white/80">
                       <Users className="w-3 h-3" />
-                      3 online
+                      {stream.viewerCount || 0} watching
                     </div>
                   </div>
                 </div>

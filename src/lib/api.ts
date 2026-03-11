@@ -14,6 +14,8 @@ export const API_ENDPOINTS = {
     ANALYTICS: '/admin/analytics',
     LEADS: '/admin/leads',
     SUBSCRIPTIONS: '/admin/subscriptions',
+    MODERATION: '/admin/moderation',
+    REPORTS: '/admin/reports',
   },
   APPLICATIONS: {
     CREATE: '/applications',
@@ -25,6 +27,14 @@ export const API_ENDPOINTS = {
     ACCEPT: (applicationId: string) => `/applications/${applicationId}/accept`,
     COMMUNICATION: (applicationId: string) => `/applications/${applicationId}/communication`,
     WITHDRAW: (applicationId: string) => `/applications/${applicationId}`,
+  },
+  BOOKINGS: {
+    CREATE: '/bookings',
+    ME: '/bookings/me',
+    PROFESSIONAL_ME: '/bookings/professional/me',
+    DETAILS: (id: string) => `/bookings/${id}`,
+    UPDATE_STATUS: (id: string) => `/bookings/${id}/status`,
+    STATS: '/bookings/stats',
   },
   AUTH: {
     REGISTER: '/auth/register',
@@ -56,6 +66,13 @@ export const API_ENDPOINTS = {
     GET_MY_CONVERSATIONS: '/messaging/conversations',
     SEND_MESSAGE: '/messaging/messages',
     GET_MESSAGES: (id: string) => `/messaging/conversations/${id}/messages`,
+  },
+  NEWS: {
+    GET_ALL: '/news',
+    GET_ONE: (id: string) => `/news/${id}`,
+    CREATE: '/news',
+    UPDATE: (id: string) => `/news/${id}`,
+    DELETE: (id: string) => `/news/${id}`,
   },
   NOTIFICATIONS: {
     REGISTER_DEVICE: '/notifications/register-device',
@@ -89,6 +106,14 @@ export const API_ENDPOINTS = {
     UPLOAD_SHOWREEL: '/profiles/me/showreel',
     SEARCH: '/profiles/search',
     GET_ONE: (userId: string) => `/profiles/${userId}`,
+  },
+  SERVICES: {
+    GET_ALL: '/services',
+    GET_MY_SERVICES: '/services/me',
+    CREATE: '/services',
+    UPDATE: (id: string) => `/services/${id}`,
+    DELETE: (id: string) => `/services/${id}`,
+    STATS: '/services/stats',
   },
   SUBSCRIPTIONS: {
     CREATE_CHECKOUT_SESSION: '/subscriptions/create-checkout-session',
@@ -246,6 +271,35 @@ export const applicationAPI = {
   withdraw: (id: string) => api.delete(API_ENDPOINTS.APPLICATIONS.WITHDRAW(id)),
 };
 
+// --- BOOKING ENDPOINTS ---
+export const bookingAPI = {
+  create: (data) => api.post(API_ENDPOINTS.BOOKINGS.CREATE, data),
+  getMe: (params?: any) => api.get(API_ENDPOINTS.BOOKINGS.ME, { params }),
+  getProfessionalBookings: (params?: any) => api.get(API_ENDPOINTS.BOOKINGS.PROFESSIONAL_ME, { params }),
+  getDetails: (id: string) => api.get(API_ENDPOINTS.BOOKINGS.DETAILS(id)),
+  updateStatus: (id: string, status: string) => api.patch(API_ENDPOINTS.BOOKINGS.UPDATE_STATUS(id), { status }),
+  getStats: () => api.get(API_ENDPOINTS.BOOKINGS.STATS),
+};
+
+// --- NEWS ENDPOINTS ---
+export const newsAPI = {
+  getAll: (params?: any) => api.get(API_ENDPOINTS.NEWS.GET_ALL, { params }),
+  getOne: (id: string) => api.get(API_ENDPOINTS.NEWS.GET_ONE(id)),
+  create: (data) => api.post(API_ENDPOINTS.NEWS.CREATE, data),
+  update: (id: string, data) => api.put(API_ENDPOINTS.NEWS.UPDATE(id), data),
+  delete: (id: string) => api.delete(API_ENDPOINTS.NEWS.DELETE(id)),
+};
+
+// --- SERVICE ENDPOINTS ---
+export const serviceAPI = {
+  getAll: (params?: any) => api.get(API_ENDPOINTS.SERVICES.GET_ALL, { params }),
+  getMyServices: () => api.get(API_ENDPOINTS.SERVICES.GET_MY_SERVICES),
+  create: (data) => api.post(API_ENDPOINTS.SERVICES.CREATE, data),
+  update: (id: string, data) => api.put(API_ENDPOINTS.SERVICES.UPDATE(id), data),
+  delete: (id: string) => api.delete(API_ENDPOINTS.SERVICES.DELETE(id)),
+  getStats: () => api.get(API_ENDPOINTS.SERVICES.STATS),
+};
+
 // --- SUBSCRIPTION ENDPOINTS ---
 export const subscriptionAPI = {
   getPlans: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.PLANS),
@@ -266,6 +320,10 @@ export const adminAPI = {
   getActionLogs: (params) => api.get(API_ENDPOINTS.ADMIN.ACTION_LOGS, { params }),
   getAnalytics: () => api.get(API_ENDPOINTS.ADMIN.ANALYTICS),
   getLeads: (params) => api.get(API_ENDPOINTS.ADMIN.LEADS, { params }),
+  getModerationQueue: (params?: any) => api.get(API_ENDPOINTS.ADMIN.MODERATION, { params }),
+  updateModerationStatus: (id: string, status: string, notes?: string) => 
+    api.patch(`${API_ENDPOINTS.ADMIN.MODERATION}/${id}`, { status, notes }),
+  getReports: (params?: any) => api.get(API_ENDPOINTS.ADMIN.REPORTS, { params }),
 };
 
 // --- LEAD ENDPOINTS ---

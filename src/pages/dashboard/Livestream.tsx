@@ -56,6 +56,7 @@ export default function LivestreamPage() {
   const [activeTab, setActiveTab] = useState("chat");
   const [layout, setLayout] = useState<"grid" | "spotlight" | "sidebar">("grid");
   const [participants, setParticipants] = useState<any[]>([]);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [showSidebar, setShowSidebar] = useState(true);
 
   useEffect(() => {
@@ -67,12 +68,50 @@ export default function LivestreamPage() {
           const stream = response.data.data.find((s: any) => s._id === id);
           if (stream) {
             setStreamData(stream);
-            setParticipants([
-              { id: user?._id, name: user?.fullName, role: user?.role, isSelf: true, isMicOn: true, isCamOn: true },
-              { id: "mock-1", name: "Sarah Mitchell", role: "casting_director", isMicOn: true, isCamOn: true },
-              { id: "mock-2", name: "Michael Chen", role: "talent", isMicOn: false, isCamOn: true },
-              { id: "mock-3", name: "Production Assistant", role: "admin", isMicOn: false, isCamOn: false },
-            ]);
+            
+            // Build real participants list from stream data
+            const realParticipants = [];
+            
+            // Add host
+            if (stream.hostId) {
+              realParticipants.push({
+                id: stream.hostId._id,
+                name: stream.hostId.fullName,
+                role: "host",
+                isSelf: user?._id === stream.hostId._id,
+                isMicOn: true,
+                isCamOn: true
+              });
+            }
+
+            // Add co-hosts
+            if (Array.isArray(stream.coHosts)) {
+              stream.coHosts.forEach((coHost: any) => {
+                realParticipants.push({
+                  id: coHost._id,
+                  name: coHost.fullName,
+                  role: "co-host",
+                  isSelf: user?._id === coHost._id,
+                  isMicOn: true,
+                  isCamOn: true
+                });
+              });
+            }
+
+            // If user is not host or co-host, add them as participant
+            const isUserInList = realParticipants.some(p => p.id === user?._id);
+            if (!isUserInList && user) {
+              realParticipants.push({
+                id: user._id,
+                name: user.fullName,
+                role: user.role,
+                isSelf: true,
+                isMicOn: true,
+                isCamOn: true
+              });
+            }
+
+            setParticipants(realParticipants);
           } else {
             toast.error("Stream not found or ended");
             navigate(-1);
@@ -139,6 +178,23 @@ export default function LivestreamPage() {
       }
       navigate(-1);
     }
+  };
+
+  const [chatInput, setChatInput] = useState("");
+
+  const handleSendMessage = () => {
+    if (!chatInput.trim()) return;
+    
+    const newMessage = {
+      id: Date.now().toString(),
+      sender: user?.fullName,
+      text: chatInput,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isSelf: true
+    };
+    
+    setChatMessages([...chatMessages, newMessage]);
+    setChatInput("");
   };
 
   const sendReaction = (emoji: string) => {
@@ -217,7 +273,9 @@ export default function LivestreamPage() {
                 </div>
                 <div>
                   <p className="font-medium">{participants.length} people in this call</p>
-                  <p className="text-xs text-slate-500">Including Sarah Mitchell (Director)</p>
+                  <p className="text-xs text-slate-500">
+                    {streamData?.hostId?.fullName ? `Host: ${streamData.hostId.fullName}` : "Loading host..."}
+                  </p>
                 </div>
               </div>
               <DropdownMenu>
@@ -326,26 +384,46 @@ export default function LivestreamPage() {
 
             <div className="flex-1 overflow-y-auto">
               <TabsContent value="chat" className="m-0 h-full flex flex-col p-4">
-                  <div className="space-y-4">
+                  <div className="flex-1 space-y-4">
                     <div className="text-center py-8 px-4">
                       <div className="bg-white/5 rounded-2xl p-4 inline-block mb-3">
                         <Shield className="w-6 h-6 text-primary" />
                       </div>
                       <p className="text-xs text-slate-400">Messages are secure and only visible to participants in this call.</p>
                     </div>
-                    <div key="system-1" className="space-y-1">
-                      <p className="text-[11px] font-bold text-primary">Sarah Mitchell</p>
-                      <p className="text-sm text-slate-300 bg-white/5 p-3 rounded-2xl rounded-tl-none">
-                        Hello everyone! We'll begin the auditions in 5 minutes.
-                      </p>
-                    </div>
+                    {chatMessages.map((msg) => (
+                      <div key={msg.id} className={`space-y-1 ${msg.isSelf ? "text-right" : ""}`}>
+                        <p className={`text-[11px] font-bold ${msg.isSelf ? "text-primary" : "text-slate-400"}`}>
+                          {msg.sender}
+                        </p>
+                        <p className={`text-sm text-slate-300 p-3 rounded-2xl ${
+                          msg.isSelf ? "bg-primary/20 rounded-tr-none" : "bg-white/5 rounded-tl-none"
+                        }`}>
+                          {msg.text}
+                        </p>
+                        <p className="text-[10px] text-slate-500">{msg.timestamp}</p>
+                      </div>
+                    ))}
+                    {chatMessages.length === 0 && (
+                      <div className="text-center py-12 text-slate-500 text-sm italic">
+                        No messages yet. Start the conversation!
+                      </div>
+                    )}
                   </div>
                 <div className="mt-4 flex gap-2">
                   <Input 
                     placeholder="Send a message" 
                     className="bg-white/5 border-white/10 rounded-xl h-11 focus-visible:ring-primary"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                   />
-                  <Button size="icon" className="h-11 w-11 rounded-xl shrink-0">
+                  <Button 
+                    size="icon" 
+                    className="h-11 w-11 rounded-xl shrink-0"
+                    onClick={handleSendMessage}
+                    disabled={!chatInput.trim()}
+                  >
                     <Play className="w-4 h-4 fill-current" />
                   </Button>
                 </div>
