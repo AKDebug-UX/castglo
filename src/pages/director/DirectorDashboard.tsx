@@ -12,9 +12,10 @@ import {
   Users,
   Calendar,
   Eye,
-  Loader2
+  Loader2,
+  Video
 } from "lucide-react";
-import { castingCallAPI, applicationAPI, authAPI } from "@/lib/api";
+import { castingCallAPI, applicationAPI, authAPI, livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function DirectorDashboard() {
@@ -23,17 +24,23 @@ export default function DirectorDashboard() {
   const [listings, setListings] = useState([]);
   const [stats, setStats] = useState([]);
   const [recentApps, setRecentApps] = useState([]);
+  const [activeStreams, setActiveStreams] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [userRes, listingsRes] = await Promise.all([
+        const [userRes, listingsRes, streamsRes] = await Promise.all([
           authAPI.getMe(),
-          castingCallAPI.getMyListings()
+          castingCallAPI.getMyListings(),
+          livestreamAPI.getActive().catch(() => ({ data: { success: false } }))
         ]);
 
         if (userRes.data.success) {
           setUser(userRes.data.data);
+        }
+
+        if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
+          setActiveStreams(streamsRes.data.data.slice(0, 2));
         }
 
         if (listingsRes.data.success && listingsRes.data.data) {
@@ -101,6 +108,36 @@ export default function DirectorDashboard() {
         <h1 className="text-2xl font-bold">Welcome back, {user?.fullName || 'Director'}!</h1>
         <p className="text-muted-foreground">Manage your casting calls and discover amazing talent</p>
       </div>
+
+      {/* Active Livestreams */}
+      {activeStreams.length > 0 && (
+        <div className="animate-in fade-in slide-in-from-top-4 duration-700">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+            <h2 className="text-sm font-bold uppercase tracking-wider text-destructive">Auditions in Progress</h2>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {activeStreams.map((stream) => (
+              <Card key={stream._id} className="border-destructive/20 bg-destructive/5 overflow-hidden group">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                      <Video className="h-6 w-6 text-destructive" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-sm group-hover:text-destructive transition-colors">{stream.title}</h3>
+                      <p className="text-xs text-muted-foreground line-clamp-1">{stream.description || "Live virtual audition session"}</p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="destructive" asChild>
+                    <Link to={`/director/livestream/${stream._id}`}>Join Room</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

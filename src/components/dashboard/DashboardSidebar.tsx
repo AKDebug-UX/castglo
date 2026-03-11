@@ -18,7 +18,7 @@ const navItems = [
   { title: "My Submissions", href: "/dashboard/submissions", Icon: FileText },
   { title: "Messages", href: "/dashboard/messages", Icon: MessageSquare },
   { title: "Notifications", href: "/dashboard/notifications", Icon: Bell },
-  { title: "Instant Audition", href: "/dashboard/audition", Icon: Video },
+  { title: "Livestreams", href: "/dashboard/livestreams", Icon: Video },
 ];
 
 interface DashboardSidebarProps {

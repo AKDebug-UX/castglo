@@ -17,6 +17,7 @@ const navItems = [
   { title: "Submissions", href: "/director/submissions", Icon: Users },
   { title: "Messages", href: "/director/messages", Icon: MessageSquare },
   { title: "Notifications", href: "/director/notifications", Icon: Bell },
+  { title: "Livestreams", href: "/director/livestreams", Icon: Users },
 ];
 
 interface DirectorSidebarProps {

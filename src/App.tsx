@@ -40,6 +40,8 @@ import Submissions from "./pages/dashboard/Submissions";
 import Messages from "./pages/dashboard/Messages";
 import Notifications from "./pages/dashboard/Notifications";
 import InstantAudition from "./pages/dashboard/InstantAudition";
+import Livestream from "./pages/dashboard/Livestream";
+import LivestreamsList from "./pages/dashboard/LivestreamsList";
 
 // Director Dashboard
 import { DirectorLayout } from "./components/dashboard/DirectorLayout";
@@ -113,7 +115,9 @@ const App = () => (
                <Route path="submissions" element={<Submissions />} />
                <Route path="messages" element={<Messages />} />
                <Route path="notifications" element={<Notifications />} />
+               <Route path="livestreams" element={<LivestreamsList />} />
                <Route path="audition" element={<InstantAudition />} />
+               <Route path="livestream/:id" element={<Livestream />} />
              </Route>
  
              {/* Director Dashboard Routes */}
@@ -130,6 +134,9 @@ const App = () => (
                <Route path="submissions/:id" element={<DirectorSubmissions />} />
                <Route path="messages" element={<DirectorMessages />} />
                <Route path="notifications" element={<Notifications />} />
+               <Route path="livestreams" element={<LivestreamsList />} />
+               <Route path="audition" element={<InstantAudition />} />
+               <Route path="livestream/:id" element={<Livestream />} />
              </Route>
  
              {/* Professional Dashboard Routes */}

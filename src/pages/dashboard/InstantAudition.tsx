@@ -9,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Upload, Info, Loader2 } from "lucide-react";
 import { livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function InstantAudition() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -31,9 +33,8 @@ export default function InstantAudition() {
       const response = await livestreamAPI.create(formData);
       if (response.data.success) {
         toast.success("Virtual audition created successfully!");
-        // In a real app, we might redirect to the stream page
-        // For now, let's go back to dashboard
-        navigate("/dashboard");
+        // Redirect back to the livestreams list
+        navigate(user?.role === "talent" ? "/dashboard/livestreams" : "/director/livestreams");
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create audition");
@@ -45,11 +46,11 @@ export default function InstantAudition() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       <Link 
-        to="/dashboard"
+        to={user?.role === "talent" ? "/dashboard/livestreams" : "/director/livestreams"}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to Dashboard
+        Back to Livestreams
       </Link>
 
       <div>

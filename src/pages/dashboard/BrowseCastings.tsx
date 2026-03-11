@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { MOCK_CASTINGS } from "@/lib/data";
 
 import castingIndieDrama from "@/assets/casting-indie-drama.jpg";
 import castingCommercial from "@/assets/casting-commercial.jpg";
@@ -42,10 +43,13 @@ export default function BrowseCastings() {
       if (response.data.success && Array.isArray(response.data.data)) {
         setCastings(response.data.data);
       } else {
-        setCastings([]);
+        setCastings(MOCK_CASTINGS);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to load casting calls");
+      console.error("Failed to fetch casting calls:", error);
+      // Fallback to mock data on server error (500)
+      setCastings(MOCK_CASTINGS);
+      toast.error(error.response?.data?.message || "Server issue detected. Showing featured opportunities.");
     } finally {
       setIsLoading(false);
     }

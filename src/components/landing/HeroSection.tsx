@@ -23,23 +23,25 @@ export function HeroSection() {
       setIsLoading(true);
       try {
         const [callsRes, profilesRes] = await Promise.all([
-          castingCallAPI.getAll({ limit: 5, status: 'open' }),
-          profileAPI.search({ limit: 4 })
+          castingCallAPI.getAll({ limit: 5, status: 'open' }).catch(err => ({ data: { success: false } })),
+          profileAPI.search({ limit: 4 }).catch(err => ({ data: { success: false } }))
         ]);
 
-        if (callsRes.data.success && Array.isArray(callsRes.data.data)) {
+        if (callsRes.data?.success && Array.isArray(callsRes.data.data)) {
           setFeaturedCalls(callsRes.data.data.slice(0, 5));
         } else {
-          setFeaturedCalls([]);
+          setFeaturedCalls(MOCK_CASTINGS.slice(0, 5));
         }
 
-        if (profilesRes.data.success && Array.isArray(profilesRes.data.data)) {
+        if (profilesRes.data?.success && Array.isArray(profilesRes.data.data)) {
           setFeaturedTalents(profilesRes.data.data.slice(0, 4));
         } else {
-          setFeaturedTalents([]);
+          setFeaturedTalents(MOCK_TALENTS.slice(0, 4));
         }
       } catch (error) {
         console.error("Error fetching landing page data:", error);
+        setFeaturedCalls(MOCK_CASTINGS.slice(0, 5));
+        setFeaturedTalents(MOCK_TALENTS.slice(0, 4));
       } finally {
         setIsLoading(false);
       }
