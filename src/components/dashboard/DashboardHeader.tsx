@@ -65,7 +65,31 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         return "/dashboard/notifications";
     }
   };
+
+  const getProfilePath = () => {
+    if (!user) return "/";
+    switch (user.role) {
+      case "admin":
+        return "/admin";
+      case "casting_director":
+        return "/director";
+      case "industry_professional":
+        return "/professional/profile";
+      case "talent":
+      default:
+        return "/dashboard/profile";
+    }
+  };
  
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+  };
+
   return (
     <header className="sticky top-0 z-30 h-16 border-b border-border bg-card/90 backdrop-blur px-4 flex items-center justify-between">
       <Button 
@@ -123,8 +147,8 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={userAvatar} alt="User" />
-                <AvatarFallback>SC</AvatarFallback>
+                <AvatarImage src={user?.profilePicture || userAvatar} alt={user?.fullName || "User"} />
+                <AvatarFallback>{getInitials(user?.fullName || "")}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -134,7 +158,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
              </div>
              <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/dashboard/profile" className="cursor-pointer">
+              <Link to={getProfilePath()} className="cursor-pointer">
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </Link>

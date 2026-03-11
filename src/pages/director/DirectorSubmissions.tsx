@@ -29,23 +29,50 @@ export default function DirectorSubmissions() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchData = async () => {
-    if (!id) return;
     setIsLoading(true);
     try {
-      const [subsRes, castingRes] = await Promise.all([
-        applicationAPI.getByCastingCall(id),
-        castingCallAPI.getOne(id)
-      ]);
+      if (id) {
+        // Fetch submissions for a specific casting call
+        const [subsRes, castingRes] = await Promise.all([
+          applicationAPI.getByCastingCall(id),
+          castingCallAPI.getOne(id)
+        ]);
 
-      if (subsRes.data.success && Array.isArray(subsRes.data.data)) {
-        setSubmissions(subsRes.data.data);
+        if (subsRes.data.success && Array.isArray(subsRes.data.data)) {
+          setSubmissions(subsRes.data.data);
+        } else {
+          setSubmissions([]);
+        }
+        if (castingRes.data.success) {
+          setCastingCall(castingRes.data.data);
+        }
       } else {
-        setSubmissions([]);
-      }
-      if (castingRes.data.success) {
-        setCastingCall(castingRes.data.data);
+        // Fetch all submissions for all director's projects
+        const listingsRes = await castingCallAPI.getMyListings();
+        if (listingsRes.data.success && Array.isArray(listingsRes.data.data)) {
+          const myCastings = listingsRes.data.data;
+          
+          if (myCastings.length > 0) {
+            const allAppsPromises = myCastings.map((c) => applicationAPI.getByCastingCall(c._id));
+            const appsResults = await Promise.all(allAppsPromises);
+            const allApps = appsResults.flatMap(res => 
+              (res.data.success && Array.isArray(res.data.data)) ? res.data.data : []
+            );
+            
+            // Sort by most recent
+            setSubmissions(allApps.sort((a, b) => 
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            ));
+          } else {
+            setSubmissions([]);
+          }
+        } else {
+          setSubmissions([]);
+        }
+        setCastingCall(null); // Reset casting call context
       }
     } catch (error) {
+      console.error("Error fetching submissions:", error);
       toast.error("Failed to load submissions");
     } finally {
       setIsLoading(false);
@@ -80,6 +107,16 @@ export default function DirectorSubmissions() {
     shortlisted: "bg-primary text-primary-foreground",
     accepted: "bg-success text-success-foreground",
     rejected: "bg-destructive text-destructive-foreground",
+  };
+
+  const renderLocation = (location: any) => {
+    if (!location) return "N/A";
+    if (typeof location === 'string') return location;
+    if (typeof location === 'object') {
+      if (location.remote) return "Remote";
+      return location.name || location.city || "On-site";
+    }
+    return "N/A";
   };
 
   const filteredSubmissions = submissions.filter((sub) => {
@@ -162,7 +199,7 @@ export default function DirectorSubmissions() {
                       <p className="font-semibold">{submission.talent?.fullName}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
-                        {submission.talent?.location || "Remote"}
+                        {renderLocation(submission.talent?.location)}
                       </p>
                     </div>
                   </div>

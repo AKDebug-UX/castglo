@@ -28,8 +28,12 @@ export default function MyProjects() {
     setIsLoading(true);
     try {
       const response = await castingCallAPI.getMyListings();
-      if (response.data.success && Array.isArray(response.data.data)) {
-        setProjects(response.data.data);
+      if (response.data.success && response.data.data) {
+        // Handle both direct array and nested structure
+        const projectData = Array.isArray(response.data.data) 
+          ? response.data.data 
+          : response.data.data.castingCalls || [];
+        setProjects(projectData);
       } else {
         setProjects([]);
       }
@@ -65,6 +69,16 @@ export default function MyProjects() {
     if (activeTab === "drafts") return project.status === "draft";
     return true;
   });
+
+  const renderLocation = (location: any) => {
+    if (!location) return "N/A";
+    if (typeof location === 'string') return location;
+    if (typeof location === 'object') {
+      if (location.remote) return "Remote";
+      return location.name || location.city || "On-site";
+    }
+    return "N/A";
+  };
 
   if (isLoading) {
     return (
@@ -152,15 +166,15 @@ export default function MyProjects() {
                   </div>
                   <div className="flex justify-between">
                     <span>Location:</span>
-                    <span className="font-medium text-foreground">{project.location}</span>
+                    <span className="font-medium text-foreground">{renderLocation(project.location)}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" className="flex-1" asChild>
-                    <Link to={`/director/projects/${project._id}`}>
-                      <Eye className="w-3 h-3 mr-1" />
-                      View
+                    <Link to={`/director/submissions/${project._id}`}>
+                      <Users className="w-3 h-3 mr-1" />
+                      Submissions
                     </Link>
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1" asChild>
@@ -169,7 +183,7 @@ export default function MyProjects() {
                       Edit
                     </Link>
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(project._id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(project._id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -216,9 +230,9 @@ export default function MyProjects() {
                   </div>
                   <div className="flex items-center gap-2 ml-4">
                     <Button variant="outline" size="sm" asChild>
-                      <Link to={`/director/projects/${project._id}`}>
-                        <Eye className="w-3 h-3 mr-1" />
-                        View
+                      <Link to={`/director/submissions/${project._id}`}>
+                        <Users className="w-3 h-3 mr-1" />
+                        Submissions
                       </Link>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
@@ -227,7 +241,7 @@ export default function MyProjects() {
                         Edit
                       </Link>
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(project._id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(project._id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>

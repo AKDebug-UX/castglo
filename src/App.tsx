@@ -124,8 +124,10 @@ const App = () => (
              }>
                <Route index element={<DirectorDashboard />} />
                <Route path="projects" element={<MyProjects />} />
+               <Route path="projects/:id/edit" element={<CreateCasting />} />
                <Route path="create" element={<CreateCasting />} />
                <Route path="submissions" element={<DirectorSubmissions />} />
+               <Route path="submissions/:id" element={<DirectorSubmissions />} />
                <Route path="messages" element={<DirectorMessages />} />
                <Route path="notifications" element={<Notifications />} />
              </Route>

@@ -36,8 +36,11 @@ export default function DirectorDashboard() {
           setUser(userRes.data.data);
         }
 
-        if (listingsRes.data.success && Array.isArray(listingsRes.data.data)) {
-          const myCastings = listingsRes.data.data;
+        if (listingsRes.data.success && listingsRes.data.data) {
+          // Handle both direct array and nested structure
+          const myCastings = Array.isArray(listingsRes.data.data) 
+            ? listingsRes.data.data 
+            : listingsRes.data.data.castingCalls || [];
           setListings(myCastings);
 
           // Calculate basic stats from listings
@@ -162,7 +165,7 @@ export default function DirectorDashboard() {
               </div>
               <div className="flex gap-2 ml-4">
                 <Button variant="outline" size="sm" asChild>
-                  <Link to={`/director/projects/${casting._id}`}>
+                  <Link to={`/director/submissions/${casting._id}`}>
                     <Eye className="w-4 h-4 mr-1" />
                     Submissions
                   </Link>

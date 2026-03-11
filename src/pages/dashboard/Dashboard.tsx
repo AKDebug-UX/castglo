@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { applicationAPI, castingCallAPI, authAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { MOCK_CASTINGS } from "@/lib/data";
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -67,8 +68,11 @@ export default function Dashboard() {
           ]);
         }
 
-        if (castingsRes.data.success && Array.isArray(castingsRes.data.data)) {
+        if (castingsRes.data.success && Array.isArray(castingsRes.data.data) && castingsRes.data.data.length > 0) {
           setUpcomingCastings(castingsRes.data.data.slice(0, 2));
+        } else {
+          // If no actual data from API, show mock ones to avoid empty page
+          setUpcomingCastings(MOCK_CASTINGS.slice(0, 2));
         }
 
       } catch (error) {
@@ -126,7 +130,7 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
-            {upcomingCastings.map((casting) => (
+            {upcomingCastings.length > 0 ? upcomingCastings.map((casting) => (
               <div key={casting._id} className="rounded-lg border border-border overflow-hidden card-elevated">
                 <div className="relative h-40">
                   <img 
@@ -138,15 +142,15 @@ export default function Dashboard() {
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold mb-1">{casting.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{casting.description}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{casting.description || "No description available"}</p>
                   <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
-                      {casting.location}
+                      {casting.location || "Remote"}
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      Deadline: {new Date(casting.deadline).toLocaleDateString()}
+                      Deadline: {casting.deadline ? new Date(casting.deadline).toLocaleDateString() : "TBD"}
                     </span>
                   </div>
                   <Button size="sm" asChild>
@@ -157,7 +161,14 @@ export default function Dashboard() {
                   </Button>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full py-8 text-center border-2 border-dashed border-muted rounded-lg">
+                <p className="text-muted-foreground">No upcoming casting calls at the moment.</p>
+                <Button variant="link" size="sm" asChild>
+                  <Link to="/dashboard/browse">Browse all opportunities</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

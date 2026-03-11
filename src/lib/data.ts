@@ -12,6 +12,8 @@ export const MOCK_CASTINGS = [
     title: "Lead Actor for Indie Film",
     location: "Los Angeles, CA",
     category: "Film",
+    description: "Looking for a versatile actor for an upcoming independent drama production.",
+    deadline: "2026-05-15",
     image: castingIndie,
   },
   {
@@ -19,6 +21,8 @@ export const MOCK_CASTINGS = [
     title: "Commercial Voice Talent",
     location: "Remote",
     category: "Commercial",
+    description: "Seeking a professional voice-over artist for a national television commercial.",
+    deadline: "2026-04-30",
     image: castingCommercial,
   },
   {
@@ -26,6 +30,8 @@ export const MOCK_CASTINGS = [
     title: "Stage Performer",
     location: "New York, NY",
     category: "Theater",
+    description: "Experienced stage performer needed for a contemporary play off-Broadway.",
+    deadline: "2026-06-01",
     image: newsProduction,
   },
   {
@@ -33,6 +39,8 @@ export const MOCK_CASTINGS = [
     title: "Feature Film Extra",
     location: "London, UK",
     category: "Film",
+    description: "Background performers needed for a high-budget feature film production.",
+    deadline: "2026-03-25",
     image: newsAudition,
   }
 ];
