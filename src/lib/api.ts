@@ -44,6 +44,7 @@ export const API_ENDPOINTS = {
   },
   LIVESTREAM: {
     CREATE: '/livestream',
+    GET_ALL: '/livestream',
     GET_ACTIVE: '/livestream',
     START: (id: string) => `/livestream/${id}/start`,
     JOIN: (id: string) => `/livestream/${id}/join`,
@@ -177,11 +178,12 @@ export const blockchainAPI = {
 // --- LIVESTREAM ENDPOINTS ---
 export const livestreamAPI = {
   create: (data) => api.post(API_ENDPOINTS.LIVESTREAM.CREATE, data),
+  getAll: (params?: any) => api.get(API_ENDPOINTS.LIVESTREAM.GET_ALL, { params }),
   getActive: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_ACTIVE),
   start: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.START(id)),
-  join: (id: string) => api.get(API_ENDPOINTS.LIVESTREAM.JOIN(id)),
+  join: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.JOIN(id)),
   leave: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.LEAVE(id)),
-  end: (id: string) => api.patch(API_ENDPOINTS.LIVESTREAM.END(id)),
+  end: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.END(id)),
 };
 
 // --- MESSAGING ENDPOINTS ---

@@ -32,7 +32,7 @@ export default function DirectorDashboard() {
         const [userRes, listingsRes, streamsRes] = await Promise.all([
           authAPI.getMe(),
           castingCallAPI.getMyListings(),
-          livestreamAPI.getActive().catch(() => ({ data: { success: false } }))
+          livestreamAPI.getAll().catch(() => ({ data: { success: false } }))
         ]);
 
         if (userRes.data.success) {

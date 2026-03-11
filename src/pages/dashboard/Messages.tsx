@@ -4,11 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Send, MoreVertical, Loader2, MessageSquare } from "lucide-react";
+import { Plus, Send, MoreVertical, Loader2, MessageSquare, Search, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { messagingAPI } from "@/lib/api";
+import { messagingAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 export default function Messages() {
   const { user } = useAuth();
@@ -19,6 +29,15 @@ export default function Messages() {
   const [isSending, setIsSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // New Message Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [searchResult, setSearchResult] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [formSubject, setFormSubject] = useState("");
+  const [formMessage, setFormMessage] = useState("");
+  const [selectedRecipientId, setSelectedRecipientId] = useState("");
 
   const fetchConversations = async () => {
     try {
@@ -91,6 +110,84 @@ export default function Messages() {
     }
   };
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!isModalOpen) return;
+      setIsSearching(true);
+      try {
+        const response = await userAPI.search({ query: userSearch, limit: 20 });
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setSearchResult(response.data.data.filter(u => u._id !== user?.id));
+        }
+      } catch (error) {
+        console.error("User search failed:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+    fetchUsers();
+  }, [isModalOpen, userSearch, user?.id]);
+
+  const handleStartConversation = async (recipientId: string) => {
+    try {
+      const response = await messagingAPI.getOrCreateConversation(recipientId);
+      if (response.data.success) {
+        const newConversation = response.data.data;
+        // Check if conversation already exists in our list
+        if (!conversations.some(c => c._id === newConversation._id)) {
+          setConversations([newConversation, ...conversations]);
+        }
+        setSelectedConversation(newConversation);
+        setIsModalOpen(false);
+        setUserSearch("");
+        setSearchResult([]);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to start conversation");
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRecipientId || !formMessage.trim()) {
+      toast.error("Please select a recipient and enter a message");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      // 1. Get or create conversation
+      const convRes = await messagingAPI.getOrCreateConversation(selectedRecipientId);
+      if (convRes.data.success) {
+        const conversation = convRes.data.data;
+        
+        // 2. Send the message (with subject if supported, but usually it's just text)
+        const messageText = formSubject ? `Subject: ${formSubject}\n\n${formMessage}` : formMessage;
+        const msgRes = await messagingAPI.sendMessage({
+          conversationId: conversation._id,
+          text: messageText,
+        });
+
+        if (msgRes.data.success) {
+          if (!conversations.some(c => c._id === conversation._id)) {
+            setConversations([conversation, ...conversations]);
+          }
+          setSelectedConversation(conversation);
+          setMessages(prev => [...prev, msgRes.data.data]);
+          setIsModalOpen(false);
+          setFormSubject("");
+          setFormMessage("");
+          setSelectedRecipientId("");
+          toast.success("Message sent successfully!");
+        }
+      }
+    } catch (error) {
+      toast.error("Failed to send message");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
@@ -104,8 +201,109 @@ export default function Messages() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold">Messages</h1>
-          <p className="text-muted-foreground">Connect with casting directors regarding your applications</p>
+          <p className="text-muted-foreground">Connect with casting directors and industry professionals</p>
         </div>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-black hover:bg-black/90 text-white rounded-lg flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              New Message
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-[#F1FBFB] border-none">
+            <div className="p-6 space-y-6">
+              <div className="space-y-1">
+                <DialogTitle className="text-xl font-bold">Start New Conversation</DialogTitle>
+                <DialogDescription className="text-sm text-slate-600">
+                  Send a message to a casting director or industry professional
+                </DialogDescription>
+              </div>
+
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="recipient" className="text-sm font-semibold">Recipient</Label>
+                  <Select value={selectedRecipientId} onValueChange={setSelectedRecipientId}>
+                    <SelectTrigger id="recipient" className="w-full bg-white border-slate-300 rounded-lg h-11">
+                      <SelectValue placeholder="Select recipient" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="p-2 border-b border-slate-100">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                          <Input 
+                            placeholder="Search users..." 
+                            className="h-8 pl-8 text-xs bg-slate-50 border-none"
+                            value={userSearch}
+                            onChange={(e) => setUserSearch(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      {isSearching ? (
+                        <div className="p-4 text-center"><Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" /></div>
+                      ) : searchResult.length > 0 ? (
+                        searchResult.map((u) => (
+                          <SelectItem key={u._id} value={u._id}>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={u.profilePicture} />
+                                <AvatarFallback className="text-[10px]">{u.fullName[0]}</AvatarFallback>
+                              </Avatar>
+                              <span>{u.fullName}</span>
+                              <span className="text-[10px] text-slate-400 uppercase">({u.role?.replace('_', ' ')})</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-xs text-slate-500">No users found</div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="subject" className="text-sm font-semibold">Subject</Label>
+                  <Input 
+                    id="subject"
+                    placeholder="Enter Subject" 
+                    className="bg-white border-slate-300 rounded-lg h-11"
+                    value={formSubject}
+                    onChange={(e) => setFormSubject(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message" className="text-sm font-semibold">Message</Label>
+                  <Textarea 
+                    id="message"
+                    placeholder="Type your message" 
+                    className="bg-white border-slate-300 rounded-xl min-h-[120px] resize-none"
+                    value={formMessage}
+                    onChange={(e) => setFormMessage(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg px-6"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-[#5D45D6] hover:bg-[#4A36B1] text-white rounded-lg px-6"
+                    disabled={isSending}
+                  >
+                    {isSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Send Message
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="h-[calc(100%-4rem)]">

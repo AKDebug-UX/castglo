@@ -4,33 +4,47 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, Plus, Search, MessageSquare, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { applicationAPI, castingCallAPI } from "@/lib/api";
+import { applicationAPI, castingCallAPI, messagingAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 export default function DirectorMessages() {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState([]);
-  const [selectedApp, setSelectedApp] = useState(null);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
 
+  // New Message Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [searchResult, setSearchResult] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [formSubject, setFormSubject] = useState("");
+  const [formMessage, setFormMessage] = useState("");
+  const [selectedRecipientId, setSelectedRecipientId] = useState("");
+
   const fetchConversations = async () => {
     try {
-      // In this system, messages are tied to applications
-      const listingsRes = await castingCallAPI.getMyListings();
-      if (listingsRes.data.success) {
-        const myCastings = listingsRes.data.data;
-        const allAppsPromises = myCastings.map((c) => applicationAPI.getByCastingCall(c._id));
-        const appsResults = await Promise.all(allAppsPromises);
-        
-        // Flatten and filter for apps that have communications or are shortlisted/accepted
-        const allApps = appsResults.flatMap(res => res.data.success ? res.data.data : []);
-        setConversations(allApps);
-        
-        if (allApps.length > 0 && !selectedApp) {
-          setSelectedApp(allApps[0]);
+      const response = await messagingAPI.getMyConversations();
+      if (response.data.success && Array.isArray(response.data.data)) {
+        setConversations(response.data.data);
+        if (response.data.data.length > 0 && !selectedConversation) {
+          setSelectedConversation(response.data.data[0]);
         }
       }
     } catch (error) {
@@ -44,20 +58,112 @@ export default function DirectorMessages() {
     fetchConversations();
   }, []);
 
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!selectedConversation) return;
+      try {
+        const response = await messagingAPI.getMessages(selectedConversation._id, { limit: 50 });
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setMessages(response.data.data.reverse());
+        } else {
+          setMessages([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      }
+    };
+    fetchMessages();
+  }, [selectedConversation]);
+
   const handleSendMessage = async () => {
-    if (!selectedApp || !newMessage.trim()) return;
+    if (!selectedConversation || !newMessage.trim()) return;
 
     setIsSending(true);
     try {
-      const response = await applicationAPI.addCommunication(selectedApp._id, newMessage);
+      const response = await messagingAPI.sendMessage({
+        conversationId: selectedConversation._id,
+        text: newMessage,
+      });
+
       if (response.data.success) {
+        setMessages([...messages, response.data.data]);
         setNewMessage("");
-        // Refresh the selected application to show new message
-        const updatedAppRes = await applicationAPI.getDetails(selectedApp._id);
-        if (updatedAppRes.data.success) {
-          setSelectedApp(updatedAppRes.data.data);
-          // Update in list too
-          setConversations(prev => prev.map(a => a._id === selectedApp._id ? updatedAppRes.data.data : a));
+        setConversations(conversations.map(c => 
+          c._id === selectedConversation._id ? { ...c, lastMessage: response.data.data } : c
+        ));
+      }
+    } catch (error) {
+      toast.error("Failed to send message");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!isModalOpen) return;
+      setIsSearching(true);
+      try {
+        const response = await userAPI.search({ query: userSearch, limit: 20 });
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setSearchResult(response.data.data.filter(u => u._id !== user?.id));
+        }
+      } catch (error) {
+        console.error("User search failed:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+    fetchUsers();
+  }, [isModalOpen, userSearch, user?.id]);
+
+  const handleStartConversation = async (recipientId: string) => {
+    try {
+      const response = await messagingAPI.getOrCreateConversation(recipientId);
+      if (response.data.success) {
+        const newConversation = response.data.data;
+        if (!conversations.some(c => c._id === newConversation._id)) {
+          setConversations([newConversation, ...conversations]);
+        }
+        setSelectedConversation(newConversation);
+        setIsModalOpen(false);
+        setUserSearch("");
+        setSearchResult([]);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to start conversation");
+    }
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRecipientId || !formMessage.trim()) {
+      toast.error("Please select a recipient and enter a message");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const convRes = await messagingAPI.getOrCreateConversation(selectedRecipientId);
+      if (convRes.data.success) {
+        const conversation = convRes.data.data;
+        const messageText = formSubject ? `Subject: ${formSubject}\n\n${formMessage}` : formMessage;
+        const msgRes = await messagingAPI.sendMessage({
+          conversationId: conversation._id,
+          text: messageText,
+        });
+
+        if (msgRes.data.success) {
+          if (!conversations.some(c => c._id === conversation._id)) {
+            setConversations([conversation, ...conversations]);
+          }
+          setSelectedConversation(conversation);
+          setMessages(prev => [...prev, msgRes.data.data]);
+          setIsModalOpen(false);
+          setFormSubject("");
+          setFormMessage("");
+          setSelectedRecipientId("");
+          toast.success("Message sent successfully!");
         }
       }
     } catch (error) {
@@ -82,57 +188,152 @@ export default function DirectorMessages() {
           <h1 className="text-2xl font-bold">Director Messages</h1>
           <p className="text-muted-foreground">Communicate with talent regarding their applications</p>
         </div>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-black hover:bg-black/90 text-white rounded-lg flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              New Message
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-[#F1FBFB] border-none">
+            <div className="p-6 space-y-6">
+              <div className="space-y-1">
+                <DialogTitle className="text-xl font-bold">Start New Conversation</DialogTitle>
+                <DialogDescription className="text-sm text-slate-600">
+                  Send a message to a talent or industry professional
+                </DialogDescription>
+              </div>
+
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="recipient" className="text-sm font-semibold">Recipient</Label>
+                  <Select value={selectedRecipientId} onValueChange={setSelectedRecipientId}>
+                    <SelectTrigger id="recipient" className="w-full bg-white border-slate-300 rounded-lg h-11">
+                      <SelectValue placeholder="Select recipient" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="p-2 border-b border-slate-100">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                          <Input 
+                            placeholder="Search talent..." 
+                            className="h-8 pl-8 text-xs bg-slate-50 border-none"
+                            value={userSearch}
+                            onChange={(e) => setUserSearch(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      {isSearching ? (
+                        <div className="p-4 text-center"><Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" /></div>
+                      ) : searchResult.length > 0 ? (
+                        searchResult.map((u) => (
+                          <SelectItem key={u._id} value={u._id}>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-5 w-5">
+                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{u.fullName[0]}</AvatarFallback>
+                              </Avatar>
+                              <span>{u.fullName}</span>
+                              <span className="text-[10px] text-slate-400 uppercase">({u.role?.replace('_', ' ')})</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-sm text-muted-foreground">No users found</div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="subject" className="text-sm font-semibold">Subject</Label>
+                  <Input 
+                    id="subject"
+                    placeholder="Enter Subject" 
+                    className="bg-white border-slate-300 rounded-lg h-11"
+                    value={formSubject}
+                    onChange={(e) => setFormSubject(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message" className="text-sm font-semibold">Message</Label>
+                  <Textarea 
+                    id="message"
+                    placeholder="Type your message" 
+                    className="bg-white border-slate-300 rounded-xl min-h-[120px] resize-none"
+                    value={formMessage}
+                    onChange={(e) => setFormMessage(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg px-6"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-[#5D45D6] hover:bg-[#4A36B1] text-white rounded-lg px-6"
+                    disabled={isSending}
+                  >
+                    {isSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Send Message
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="h-[calc(100%-4rem)]">
         <div className="flex h-full">
-          {/* Contacts List (Applications) */}
+          {/* Contacts List (Conversations) */}
           <div className="w-80 border-r border-border flex flex-col">
             <ScrollArea className="flex-1">
               <div className="p-2">
-                {conversations.length > 0 ? conversations.map((app) => (
-                  <button
-                    key={app._id}
-                    onClick={() => setSelectedApp(app)}
-                    className={cn(
-                      "w-full flex items-start gap-3 p-3 rounded-lg text-left transition-colors",
-                      selectedApp?._id === app._id 
-                        ? "bg-primary text-primary-foreground" 
-                        : "hover:bg-muted"
-                    )}
-                  >
-                    <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarFallback className={cn(
-                        selectedApp?._id === app._id ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary/10 text-primary"
-                      )}>
-                        {app.talent?.fullName?.[0] || 'T'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium truncate">{app.talent?.fullName}</p>
+                {conversations.length > 0 ? conversations.map((conv) => {
+                  const otherParticipant = conv.participants?.find((p) => p._id !== user?.id);
+                  return (
+                    <button
+                      key={conv._id}
+                      onClick={() => setSelectedConversation(conv)}
+                      className={cn(
+                        "w-full flex items-start gap-3 p-3 rounded-lg text-left transition-colors",
+                        selectedConversation?._id === conv._id 
+                          ? "bg-primary text-primary-foreground" 
+                          : "hover:bg-muted"
+                      )}
+                    >
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarFallback className={cn(
+                          selectedConversation?._id === conv._id ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary/10 text-primary"
+                        )}>
+                          {otherParticipant?.fullName?.[0] || 'T'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium truncate">{otherParticipant?.fullName}</p>
+                        </div>
+                        <p className={cn(
+                          "text-xs truncate",
+                          selectedConversation?._id === conv._id 
+                            ? "text-primary-foreground/80" 
+                            : "text-muted-foreground"
+                        )}>
+                          {conv.lastMessage?.text || "No messages yet"}
+                        </p>
                       </div>
-                      <p className={cn(
-                        "text-xs truncate",
-                        selectedApp?._id === app._id 
-                          ? "text-primary-foreground/80" 
-                          : "text-muted-foreground"
-                      )}>
-                        {app.castingCall?.title}
-                      </p>
-                      <p className={cn(
-                        "text-xs truncate mt-1",
-                        selectedApp?._id === app._id 
-                          ? "text-primary-foreground/60" 
-                          : "text-muted-foreground"
-                      )}>
-                        {app.status}
-                      </p>
-                    </div>
-                  </button>
-                )) : (
+                    </button>
+                  );
+                }) : (
                   <div className="p-4 text-center text-sm text-muted-foreground">
-                    No active conversations. Applications will appear here once you shortlist or receive them.
+                    No active conversations.
                   </div>
                 )}
               </div>
@@ -141,55 +342,60 @@ export default function DirectorMessages() {
 
           {/* Chat Area */}
           <div className="flex-1 flex flex-col">
-            {selectedApp ? (
+            {selectedConversation ? (
               <>
                 {/* Chat Header */}
                 <div className="p-3 border-b border-border flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {selectedApp.talent?.fullName?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{selectedApp.talent?.fullName}</p>
-                      <p className="text-xs text-muted-foreground">{selectedApp.castingCall?.title}</p>
-                    </div>
-                  </div>
+                  {(() => {
+                    const otherParticipant = selectedConversation.participants?.find((p) => p._id !== user?.id);
+                    return (
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {otherParticipant?.fullName?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{otherParticipant?.fullName}</p>
+                          <p className="text-xs text-muted-foreground">{selectedConversation.castingCall?.title || "Direct Message"}</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Messages */}
                 <ScrollArea className="flex-1 p-4">
                   <div className="space-y-4">
-                    {selectedApp.communications?.map((msg, idx: number) => (
+                    {messages.map((msg, idx: number) => (
                       <div 
                         key={idx} 
                         className={cn(
                           "flex",
-                          msg.senderModel === "User" ? "justify-end" : "justify-start"
+                          msg.sender === user?.id ? "justify-end" : "justify-start"
                         )}
                       >
                         <div className={cn(
                           "max-w-[70%] rounded-lg p-3",
-                          msg.senderModel === "User" 
+                          msg.sender === user?.id 
                             ? "bg-primary text-primary-foreground" 
                             : "bg-muted"
                         )}>
-                          <p className="text-sm">{msg.message}</p>
+                          <p className="text-sm">{msg.text}</p>
                           <p className={cn(
                             "text-xs mt-1",
-                            msg.senderModel === "User" 
+                            msg.sender === user?.id 
                               ? "text-primary-foreground/60" 
                               : "text-muted-foreground"
                           )}>
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                       </div>
                     ))}
-                    {(!selectedApp.communications || selectedApp.communications.length === 0) && (
+                    {messages.length === 0 && (
                       <div className="text-center py-12 text-sm text-muted-foreground">
-                        No messages yet. Send a message to start the conversation with the talent.
+                        No messages yet. Send a message to start the conversation.
                       </div>
                     )}
                   </div>
@@ -215,8 +421,11 @@ export default function DirectorMessages() {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                Select a conversation to view messages
+              <div className="flex-1 flex items-center justify-center text-muted-foreground bg-muted/20">
+                <div className="text-center space-y-2">
+                  <MessageSquare className="w-12 h-12 mx-auto text-muted/30" />
+                  <p>Select a conversation or start a new one</p>
+                </div>
               </div>
             )}
           </div>

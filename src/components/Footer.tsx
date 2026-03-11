@@ -5,21 +5,22 @@ const footerLinks = {
   company: [
     { label: "About Us", href: "/about" },
     { label: "Careers", href: "/careers" },
-    { label: "Audition Guides", href: "/guides" },
-    // { label: "Press", href: "/press" },
+    { label: "Press", href: "/press" },
   ],
   support: [
     { label: "Contact", href: "/contact" },
     { label: "Help Centre", href: "/help" },
     { label: "FAQ", href: "/faq" },
   ],
-  // resources: [
-  //   { label: "Glo Hub", href: "/hub" },
-  //   { label: "Glo Chat", href: "/chat" },
-  // ],
+  resources: [
+    { label: "Glo Hub", href: "/hub" },
+    { label: "Glo Chat", href: "/chat" },
+    { label: "Audition Guides", href: "/guides" },
+  ],
   legal: [
     { label: "Terms of Service", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
+    { label: "Cookie Policy", href: "/cookies" },
   ],
 };
 
@@ -27,7 +28,7 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-[#F1FBFB]">
       <div className="container py-8">
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-3 xl:grid-cols-5">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Logo />
@@ -41,7 +42,7 @@ export function Footer() {
             <h4 className="font-semibold text-foreground text-sm mb-3">Company</h4>
             <ul className="space-y-2">
               {footerLinks.company.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <Link 
                     to={link.href} 
                     className="text-xs text-muted-foreground hover:text-primary transition-colors"
@@ -57,7 +58,7 @@ export function Footer() {
             <h4 className="font-semibold text-foreground text-sm mb-3">Support</h4>
             <ul className="space-y-2">
               {footerLinks.support.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <Link 
                     to={link.href} 
                     className="text-xs text-muted-foreground hover:text-primary transition-colors"
@@ -69,11 +70,11 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* <div>
+          <div>
             <h4 className="font-semibold text-foreground text-sm mb-3">Resources</h4>
             <ul className="space-y-2">
               {footerLinks.resources.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <Link 
                     to={link.href} 
                     className="text-xs text-muted-foreground hover:text-primary transition-colors"
@@ -83,13 +84,13 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-          </div> */}
+          </div>
 
           <div>
             <h4 className="font-semibold text-foreground text-sm mb-3">Legal</h4>
             <ul className="space-y-2">
               {footerLinks.legal.map((link) => (
-                <li key={link.href}>
+                <li key={link.label}>
                   <Link 
                     to={link.href} 
                     className="text-xs text-muted-foreground hover:text-primary transition-colors"

@@ -15,7 +15,7 @@ import {
   Star,
   Video
 } from "lucide-react";
-import { applicationAPI, castingCallAPI, authAPI } from "@/lib/api";
+import { applicationAPI, castingCallAPI, authAPI, livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { MOCK_CASTINGS } from "@/lib/data";
 
@@ -34,7 +34,7 @@ export default function Dashboard() {
           authAPI.getMe().catch(err => ({ data: { success: false } })),
           applicationAPI.getMe().catch(err => ({ data: { success: false } })),
           castingCallAPI.getAll({ limit: 2 }).catch(err => ({ data: { success: false } })),
-          livestreamAPI.getActive().catch(err => ({ data: { success: false } }))
+          livestreamAPI.getAll().catch(err => ({ data: { success: false } }))
         ]);
 
         if (userRes.data?.success) {

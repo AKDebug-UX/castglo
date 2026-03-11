@@ -24,10 +24,13 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Cookies from "./pages/Cookies";
 import Help from "./pages/Help";
 import FAQ from "./pages/FAQ";
 import Guides from "./pages/Guides";
 import Careers from "./pages/Careers";
+import Hub from "./pages/Hub";
+import Chat from "./pages/Chat";
 
 // Talent Dashboard
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
@@ -90,6 +93,8 @@ const App = () => (
             <Route path="/help" element={<Help />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/guides" element={<Guides />} />
+            <Route path="/hub" element={<Hub />} />
+            <Route path="/chat" element={<Chat />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/join" element={<Join />} />
             <Route path="/join/:type" element={<SignUp />} />
@@ -100,6 +105,7 @@ const App = () => (
             <Route path="/news/:id" element={<NewsArticle />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/cookies" element={<Cookies />} />
             <Route path="/talent/:id" element={<TalentProfile />} />
              {/* Talent Dashboard Routes */}
              <Route path="/dashboard" element={

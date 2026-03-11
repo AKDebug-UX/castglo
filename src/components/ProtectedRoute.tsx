@@ -26,8 +26,8 @@
      // Redirect to appropriate dashboard based on role
      const roleRoutes: Record<UserRole, string> = {
        talent: "/dashboard",
-       director: "/casting_director",
-       professional: "/industry_professional",
+       casting_director: "/director",
+       industry_professional: "/professional",
        admin: "/admin",
      };
      return <Navigate to={roleRoutes[user.role]} replace />;

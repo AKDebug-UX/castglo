@@ -26,7 +26,7 @@ export default function LivestreamsList() {
   useEffect(() => {
     const fetchStreams = async () => {
       try {
-        const response = await livestreamAPI.getActive();
+        const response = await livestreamAPI.getAll();
         if (response.data.success && Array.isArray(response.data.data)) {
           setStreams(response.data.data);
         } else {
