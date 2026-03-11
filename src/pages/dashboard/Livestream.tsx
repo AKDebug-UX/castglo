@@ -132,7 +132,8 @@ export default function LivestreamPage() {
     if (!id) return;
     setIsLoading(true);
     try {
-      const isHost = user?._id === streamData?.hostId?._id;
+      const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
+      const isHost = user?._id === hostId;
       let response;
       
       if (isHost) {
@@ -142,10 +143,14 @@ export default function LivestreamPage() {
       }
 
       if (response.data.success) {
+        const tokenData = response.data.data;
         setTokens({
-          rtcToken: response.data.rtcToken,
-          rtmToken: response.data.rtmToken
+          rtcToken: tokenData.rtcToken,
+          rtmToken: tokenData.rtmToken
         });
+        if (tokenData.stream) {
+          setStreamData({ ...streamData, ...tokenData.stream });
+        }
         setIsJoined(true);
         toast.success(isHost ? "Started the audition session" : "Joined the virtual audition");
       }
@@ -158,7 +163,8 @@ export default function LivestreamPage() {
   };
 
   const handleLeave = async () => {
-    const isHost = user?._id === streamData?.hostId?._id;
+    const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
+    const isHost = user?._id === hostId;
     const confirmMsg = isHost 
       ? "Do you want to end the audition for everyone or just leave?" 
       : "Are you sure you want to leave the audition?";
@@ -326,7 +332,7 @@ export default function LivestreamPage() {
           }`}>
             {/* Participants rendering logic would go here - Mocking for now */}
             {participants.map((p, idx) => (
-              <div key={p.id} className={`relative bg-slate-900 rounded-3xl overflow-hidden border border-white/5 group shadow-2xl transition-all duration-500 ${
+              <div key={p.id || `participant-${idx}`} className={`relative bg-slate-900 rounded-3xl overflow-hidden border border-white/5 group shadow-2xl transition-all duration-500 ${
                 layout === "spotlight" && !p.isSelf ? "hidden" : ""
               }`}>
                 {p.isCamOn ? (
@@ -338,7 +344,7 @@ export default function LivestreamPage() {
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
                     <Avatar className="w-24 h-24 border-4 border-white/5 shadow-2xl">
-                      <AvatarFallback className="bg-primary/20 text-primary text-3xl">{p.name[0]}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/20 text-primary text-3xl">{p.name?.[0] || "U"}</AvatarFallback>
                     </Avatar>
                   </div>
                 )}
@@ -346,7 +352,7 @@ export default function LivestreamPage() {
                 <div className="absolute bottom-4 left-4 flex items-center gap-2">
                   <div className="bg-black/40 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-2">
                     {!p.isMicOn && <MicOff className="w-3.5 h-3.5 text-destructive" />}
-                    <span className="text-xs font-medium">{p.name} {p.isSelf ? "(You)" : ""}</span>
+                    <span className="text-xs font-medium">{p.name || "Unknown"} {p.isSelf ? "(You)" : ""}</span>
                     {p.role === "casting_director" && <Shield className="w-3 h-3 text-primary fill-primary/20" />}
                   </div>
                 </div>
@@ -435,15 +441,15 @@ export default function LivestreamPage() {
                   Add people
                 </Button>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-2 mb-2">In Call</p>
-                {participants.map(p => (
-                  <div key={p.id} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group">
+                {participants.map((p, idx) => (
+                  <div key={p.id || `people-${idx}`} className="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors group">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
-                        <AvatarFallback className="bg-white/10 text-xs">{p.name[0]}</AvatarFallback>
+                        <AvatarFallback className="bg-white/10 text-xs">{p.name?.[0] || "U"}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium">{p.name} {p.isSelf ? "(You)" : ""}</p>
-                        <p className="text-[10px] text-slate-500 capitalize">{p.role.replace('_', ' ')}</p>
+                        <p className="text-sm font-medium">{p.name || "Unknown"} {p.isSelf ? "(You)" : ""}</p>
+                        <p className="text-[10px] text-slate-500 capitalize">{p.role?.replace('_', ' ') || "Guest"}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
