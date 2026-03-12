@@ -371,7 +371,7 @@ export default function LivestreamPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0F1115] text-white overflow-hidden -m-4 lg:-m-6">
+    <div className="h-screen flex flex-col bg-[#0F1115] text-white overflow-hidden">
       <div className="h-14 border-b border-white/5 bg-[#181A20] flex items-center justify-between px-4 z-50 shrink-0">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" onClick={() => navigate(-1)}><ArrowLeft className="w-5 h-5" /></Button>
