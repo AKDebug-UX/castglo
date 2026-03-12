@@ -213,7 +213,7 @@ export const livestreamAPI = {
   postMessage: (id: string, message: string) => api.post(API_ENDPOINTS.LIVESTREAM.POST_MESSAGE(id), { text: message }),
   getMessages: (id: string) => api.get(API_ENDPOINTS.LIVESTREAM.GET_MESSAGES(id)),
   start: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.START(id)),
-  join: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.JOIN(id), {}, {
+  join: (id: string, hostId?: string) => api.post(API_ENDPOINTS.LIVESTREAM.JOIN(id), { hostId }, {
     headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }
   }),
   leave: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.LEAVE(id)),

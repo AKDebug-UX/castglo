@@ -20,8 +20,8 @@ export default function InstantAudition() {
     title: "",
     description: "",
     category: "audition",
-    isRecordingEnabled: true,
-    isPublic: true,
+    isRecordingEnabled: false,
+    visibility: "public" as "public" | "private",
     scheduledDate: "",
     scheduledTime: "",
     invitedTalents: [] as string[],
@@ -48,13 +48,37 @@ export default function InstantAudition() {
 
     setIsLoading(true);
     try {
-      const response = await livestreamAPI.create(formData);
-      if (response.data.success) {
-        toast.success("Virtual audition created successfully!");
-        // Redirect back to the livestreams list
-        navigate(user?.role === "talent" ? "/dashboard/livestreams" : "/director/livestreams");
+      // Combine date and time into scheduledAt ISO string
+      let scheduledAt = new Date().toISOString();
+      if (formData.scheduledDate && formData.scheduledTime) {
+        const date = new Date(`${formData.scheduledDate}T${formData.scheduledTime}`);
+        if (!isNaN(date.getTime())) {
+          scheduledAt = date.toISOString();
+        }
       }
-    } catch (error) {
+
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        isRecordingEnabled: formData.isRecordingEnabled,
+        visibility: formData.visibility,
+        invitedTalents: formData.invitedTalents,
+        scheduledAt: scheduledAt
+      };
+
+      const response = await livestreamAPI.create(payload);
+      if (response.data.success) {
+        const streamId = response.data.data?._id || response.data.data?.id;
+        toast.success("Virtual audition created successfully!");
+        // Redirect directly to the livestream room so the host can start it immediately
+        if (streamId) {
+          navigate(`/livestream/${streamId}`);
+        } else {
+          navigate(user?.role === "talent" ? "/dashboard/livestreams" : "/director/livestreams");
+        }
+      }
+    } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to create audition");
     } finally {
       setIsLoading(false);
@@ -125,10 +149,10 @@ export default function InstantAudition() {
             <label className="text-sm font-medium block">Privacy Settings</label>
             <div className="grid grid-cols-2 gap-4">
               <div 
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.isPublic ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
-                onClick={() => setFormData({ ...formData, isPublic: true })}
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.visibility === 'public' ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
+                onClick={() => setFormData({ ...formData, visibility: 'public' })}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${formData.isPublic ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${formData.visibility === 'public' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}>
                   <Globe className="w-5 h-5" />
                 </div>
                 <div className="text-left">
@@ -137,10 +161,10 @@ export default function InstantAudition() {
                 </div>
               </div>
               <div 
-                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${!formData.isPublic ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
-                onClick={() => setFormData({ ...formData, isPublic: false })}
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.visibility === 'private' ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
+                onClick={() => setFormData({ ...formData, visibility: 'private' })}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${!formData.isPublic ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${formData.visibility === 'private' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}>
                   <Lock className="w-5 h-5" />
                 </div>
                 <div className="text-left">

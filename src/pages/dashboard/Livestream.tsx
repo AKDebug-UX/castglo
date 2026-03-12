@@ -172,7 +172,7 @@ export default function LivestreamPage() {
               id: typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId,
               name: typeof stream.hostId === 'object' ? stream.hostId.fullName : "Host",
               role: "host",
-              isSelf: user?._id === (typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId),
+              isSelf: user?.id === (typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId),
               isMicOn: true,
               isCamOn: true
             });
@@ -185,7 +185,7 @@ export default function LivestreamPage() {
                 id: typeof coHost === 'object' ? coHost._id : coHost,
                 name: typeof coHost === 'object' ? coHost.fullName : "Co-Host",
                 role: "co-host",
-                isSelf: user?._id === (typeof coHost === 'object' ? coHost._id : coHost),
+                isSelf: user?.id === (typeof coHost === 'object' ? coHost._id : coHost),
                 isMicOn: true,
                 isCamOn: true
               });
@@ -193,10 +193,10 @@ export default function LivestreamPage() {
           }
 
           // If user is not host or co-host, add them as participant
-          const isUserInList = realParticipants.some(p => p.id === user?._id);
+          const isUserInList = realParticipants.some(p => p.id === user?.id);
           if (!isUserInList && user) {
             realParticipants.push({
-              id: user._id,
+              id: user.id,
               name: user.fullName,
               role: user.role,
               isSelf: true,
@@ -221,11 +221,28 @@ export default function LivestreamPage() {
     fetchStream();
   }, [id, user]);
 
-  const isOwner = user?._id === (typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId);
+  const isOwner = Boolean(
+    streamData && 
+    user && 
+    (
+      (typeof streamData.hostId === 'object' 
+        ? streamData.hostId?._id === user.id 
+        : streamData.hostId === user.id) ||
+      streamData.hostId === user.id
+    )
+  );
+
+  console.log("Ownership Debug:", {
+    isOwner,
+    currentUserId: user?.id,
+    streamHostId: typeof streamData?.hostId === 'object' ? streamData?.hostId?._id : streamData?.hostId,
+    rawHostId: streamData?.hostId
+  });
 
   const handleJoin = async () => {
     if (!id) return;
-
+    
+    // Safety check for ended streams
     if (streamData?.status === 'ended' && !isOwner) {
       toast.error("This session has already ended.");
       return;
@@ -235,10 +252,16 @@ export default function LivestreamPage() {
     try {
       let response;
       
+      // If the current user is the host, call the START endpoint
       if (isOwner) {
+        console.log("Host detected, starting live session...");
         response = await livestreamAPI.start(id);
-      } else {
-        response = await livestreamAPI.join(id);
+      } 
+      // Otherwise, call the JOIN endpoint
+      else {
+        console.log("Guest detected, joining live session...");
+        const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
+        response = await livestreamAPI.join(id, hostId);
       }
 
       if (response.data.success) {
@@ -247,14 +270,16 @@ export default function LivestreamPage() {
           rtcToken: tokenData.rtcToken,
           rtmToken: tokenData.rtmToken
         });
+        
         if (tokenData.stream) {
           setStreamData({ ...streamData, ...tokenData.stream });
         }
+        
         setIsJoined(true);
-        toast.success(isOwner ? "Started the audition session" : "Joined the virtual audition");
+        toast.success(isOwner ? "Started the live audition" : "Joined the live audition");
       }
     } catch (error: any) {
-      console.error("Failed to join stream:", error);
+      console.error("Livestream connection error:", error);
       toast.error(error.response?.data?.message || "Failed to connect to the session");
     } finally {
       setIsLoading(false);
@@ -294,7 +319,7 @@ export default function LivestreamPage() {
             sender: msg.sender?.fullName || msg.senderName || "Unknown",
             text: msg.message || msg.text,
             timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSelf: (msg.sender?._id || msg.senderId) === user?._id
+            isSelf: (msg.sender?._id || msg.senderId) === user?.id
           }));
           setChatMessages(formattedMessages);
         }
@@ -422,7 +447,7 @@ export default function LivestreamPage() {
                 <div>
                   <p className="font-medium">{participants.length} people in this call</p>
                   <p className="text-xs text-slate-500">
-                    {isOwner ? "You are the host" : `Host: ${streamData?.hostId?.fullName || "Loading..."}`}
+                    {isOwner ? "You are the host" : `Host: ${streamData?.hostId?.fullName || streamData?.hostId || "Loading..."}`}
                   </p>
                 </div>
               </div>

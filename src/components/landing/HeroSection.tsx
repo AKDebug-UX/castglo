@@ -49,7 +49,10 @@ export function HeroSection() {
         }
 
         if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
-          setPublicStreams(streamsRes.data.data.filter((s) => s.isPublic !== false).slice(0, 4));
+          setPublicStreams(streamsRes.data.data.filter((s: any) => 
+            s.isPublic !== false && 
+            (typeof s.hostId === 'object' ? s.hostId._id : s.hostId) !== user?.id
+          ).slice(0, 4));
         }
       } catch (error) {
         console.error("Error fetching landing page data:", error);
@@ -314,7 +317,7 @@ export function HeroSection() {
                         </div>
                         <Button size="sm" variant="destructive" className="h-8 rounded-lg text-[10px] font-bold px-4" asChild>
                           <Link to={`/dashboard/livestream/${stream._id}`}>
-                            {(typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId) === user?._id ? "Start" : "Join"}
+                            {(typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId) === user?.id ? "Start" : "Join"}
                           </Link>
                         </Button>
                       </CardContent>
