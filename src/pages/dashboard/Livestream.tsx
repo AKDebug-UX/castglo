@@ -69,11 +69,19 @@ export default function LivestreamPage() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
+  const isOwner = Boolean(
+    streamData && user && 
+    (typeof streamData.hostId === 'object' 
+      ? (streamData.hostId?._id === user.id || streamData.hostId?.id === user.id)
+      : (streamData.hostId === user.id))
+  );
+
   const inviteLink = `${window.location.origin}/livestream/${id}`;
 
-  // Initialize media on mount or when joining
+  // Initialize media only for host on mount or when joining
   useEffect(() => {
     const initMedia = async () => {
+      if (!isOwner) return; // Only host needs media access
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
@@ -100,7 +108,7 @@ export default function LivestreamPage() {
         localStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isJoined]);
+  }, [isJoined, isOwner]);
 
   // Update local video element when joined
   useEffect(() => {
@@ -160,12 +168,15 @@ export default function LivestreamPage() {
         if (stream) {
           setStreamData(stream);
           const realParticipants = [];
+          const currentUserId = user?.id;
+
           if (stream.hostId) {
+            const hostId = typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId;
             realParticipants.push({
-              id: typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId,
+              id: hostId,
               name: typeof stream.hostId === 'object' ? stream.hostId.fullName : "Host",
               role: "host",
-              isSelf: user?.id === (typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId),
+              isSelf: currentUserId === hostId,
               isMicOn: true,
               isCamOn: true
             });
@@ -173,18 +184,19 @@ export default function LivestreamPage() {
 
           if (Array.isArray(stream.coHosts)) {
             stream.coHosts.forEach((coHost: any) => {
+              const coHostId = typeof coHost === 'object' ? coHost._id : coHost;
               realParticipants.push({
-                id: typeof coHost === 'object' ? coHost._id : coHost,
+                id: coHostId,
                 name: typeof coHost === 'object' ? coHost.fullName : "Co-Host",
                 role: "co-host",
-                isSelf: user?.id === (typeof coHost === 'object' ? coHost._id : coHost),
+                isSelf: currentUserId === coHostId,
                 isMicOn: true,
                 isCamOn: true
               });
             });
           }
 
-          const isUserInList = realParticipants.some(p => p.id === user?.id);
+          const isUserInList = realParticipants.some(p => p.id === currentUserId);
           if (!isUserInList && user) {
             realParticipants.push({
               id: user.id,
@@ -208,14 +220,7 @@ export default function LivestreamPage() {
       }
     };
     fetchStream();
-  }, [id, user]);
-
-  const isOwner = Boolean(
-    streamData && user && 
-    (typeof streamData.hostId === 'object' 
-      ? (streamData.hostId?._id === user.id || streamData.hostId?.id === user.id)
-      : (streamData.hostId === user.id))
-  );
+  }, [id, user?.id]);
 
   const handleJoin = async () => {
     if (!id) return;
@@ -259,6 +264,9 @@ export default function LivestreamPage() {
   };
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    const currentUserId = user?.id;
+
     const fetchMessages = async () => {
       if (!id || !isJoined) return;
       try {
@@ -269,15 +277,30 @@ export default function LivestreamPage() {
             sender: msg.sender?.fullName || msg.senderName || "Unknown",
             text: msg.message || msg.text,
             timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSelf: (msg.sender?._id || msg.senderId) === user?.id
+            isSelf: (msg.sender?._id || msg.senderId) === currentUserId
           }));
-          setChatMessages(formattedMessages);
+          
+          setChatMessages(prev => {
+            if (JSON.stringify(prev) === JSON.stringify(formattedMessages)) return prev;
+            return formattedMessages;
+          });
         }
-      } catch (error) { console.error("Messages error:", error); }
+      } catch (error) {
+        console.error("Messages error:", error);
+      } finally {
+        if (isJoined) {
+          timeoutId = setTimeout(fetchMessages, 5000);
+        }
+      }
     };
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
-    return () => clearInterval(interval);
+
+    if (isJoined) {
+      fetchMessages();
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [id, isJoined, user?.id]);
 
   const [chatInput, setChatInput] = useState("");
@@ -332,22 +355,39 @@ export default function LivestreamPage() {
       <div className="min-h-screen bg-[#0F1115] text-white flex flex-col items-center justify-center p-4">
         <div className="max-w-5xl w-full grid gap-12 lg:grid-cols-[1fr,400px] items-center">
           <div className="aspect-video bg-[#181A20] rounded-3xl relative overflow-hidden border border-white/5 shadow-2xl">
-            {isCamOn ? (
-              <video ref={previewVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+            {isOwner ? (
+              <>
+                {isCamOn ? (
+                  <video ref={previewVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full gap-4">
+                    <Avatar className="w-32 h-32 border-4 border-white/5 bg-slate-800"><AvatarFallback className="text-4xl">{user?.fullName?.[0]}</AvatarFallback></Avatar>
+                    <p className="text-slate-400 font-medium uppercase text-xs tracking-widest">Camera Off</p>
+                  </div>
+                )}
+                <div className="absolute bottom-6 right-6 flex items-center gap-3">
+                  <Button variant="ghost" size="icon" className={`rounded-full h-12 w-12 backdrop-blur-md ${!isMicOn ? "bg-destructive text-white" : "bg-white/10 text-white"}`} onClick={() => setIsMicOn(!isMicOn)}>
+                    {isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" className={`rounded-full h-12 w-12 backdrop-blur-md ${!isCamOn ? "bg-destructive text-white" : "bg-white/10 text-white"}`} onClick={() => setIsCamOn(!isCamOn)}>
+                    {isCamOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                  </Button>
+                </div>
+              </>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full gap-4">
-                <Avatar className="w-32 h-32 border-4 border-white/5 bg-slate-800"><AvatarFallback className="text-4xl">{user?.fullName?.[0]}</AvatarFallback></Avatar>
-                <p className="text-slate-400 font-medium uppercase text-xs tracking-widest">Camera Off</p>
+              <div className="flex flex-col items-center justify-center h-full gap-6 bg-gradient-to-br from-[#181A20] to-[#0F1115]">
+                <div className="relative">
+                  <Avatar className="w-40 h-40 border-8 border-white/5 shadow-2xl">
+                    <AvatarFallback className="bg-primary/10 text-primary text-5xl font-black">{streamData?.hostId?.fullName?.[0] || "H"}</AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-primary rounded-full border-4 border-[#181A20]" />
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] animate-pulse">Waiting for host to start...</p>
+                  <p className="text-xs text-slate-500">You will be joining as a viewer</p>
+                </div>
               </div>
             )}
-            <div className="absolute bottom-6 right-6 flex items-center gap-3">
-              <Button variant="ghost" size="icon" className={`rounded-full h-12 w-12 backdrop-blur-md ${!isMicOn ? "bg-destructive text-white" : "bg-white/10 text-white"}`} onClick={() => setIsMicOn(!isMicOn)}>
-                {isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-              </Button>
-              <Button variant="ghost" size="icon" className={`rounded-full h-12 w-12 backdrop-blur-md ${!isCamOn ? "bg-destructive text-white" : "bg-white/10 text-white"}`} onClick={() => setIsCamOn(!isCamOn)}>
-                {isCamOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
-              </Button>
-            </div>
           </div>
           <div className="space-y-8">
             <div className="text-center lg:text-left space-y-2">
@@ -395,12 +435,27 @@ export default function LivestreamPage() {
           <div className="flex-1 relative flex items-center justify-center p-4">
             <div className="w-full h-full max-w-6xl aspect-video bg-[#181A20] rounded-xl overflow-hidden shadow-2xl border border-white/5 relative group">
               <div className="absolute inset-0">
-                {isCamOn ? (
-                  <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+                {isOwner ? (
+                  isCamOn ? (
+                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#181A20] to-[#0F1115]">
+                      <Avatar className="w-32 h-32 border-4 border-white/5 shadow-2xl"><AvatarFallback className="bg-primary/20 text-primary text-4xl">{user?.fullName?.[0]}</AvatarFallback></Avatar>
+                      <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Your camera is off</p>
+                    </div>
+                  )
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#181A20] to-[#0F1115]">
-                    <Avatar className="w-32 h-32 border-4 border-white/5 shadow-2xl"><AvatarFallback className="bg-primary/20 text-primary text-4xl">{user?.fullName?.[0]}</AvatarFallback></Avatar>
-                    <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Waiting for video feed...</p>
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-[#181A20] to-[#0F1115]">
+                    <div className="relative">
+                      <Avatar className="w-40 h-40 border-8 border-white/5 shadow-3xl">
+                        <AvatarFallback className="bg-primary/10 text-primary text-5xl font-black">{streamData?.hostId?.fullName?.[0] || "H"}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute bottom-2 right-2 h-6 w-6 bg-primary rounded-full border-4 border-[#181A20]" />
+                    </div>
+                    <div className="text-center space-y-2">
+                      <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] animate-pulse">Waiting for broadcast feed...</p>
+                      <p className="text-xs text-slate-500">The session is moderated. Enjoy the audition!</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -437,16 +492,23 @@ export default function LivestreamPage() {
                 <div className="relative"><Avatar className="h-12 w-12 border-2 border-primary/20 shadow-lg"><AvatarFallback className="bg-[#2A2E35] text-primary">{streamData?.hostId?.fullName?.[0] || "H"}</AvatarFallback></Avatar><div className="absolute -bottom-1 -right-1 h-4 w-4 bg-success border-2 border-[#181A20] rounded-full" /></div>
                 <div><div className="flex items-center gap-2"><p className="text-sm font-bold text-white hover:text-primary cursor-pointer">{streamData?.hostId?.fullName || "Host Name"}</p>{isOwner && <Shield className="w-3 h-3 text-primary" />}</div><p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Audition Host</p></div>
               </div>
-              <Button variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 h-9 rounded-lg text-xs font-bold gap-2"><Plus className="w-3.5 h-3.5" /> Follow</Button>
+              {/* <Button variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 h-9 rounded-lg text-xs font-bold gap-2"><Plus className="w-3.5 h-3.5" /> Follow</Button> */}
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center bg-[#0F1115] p-1 rounded-xl border border-white/5">
-                <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${!isMicOn ? "text-destructive" : "text-slate-400"}`} onClick={() => setIsMicOn(!isMicOn)}>{isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}</Button>
-                <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${!isCamOn ? "text-destructive" : "text-slate-400"}`} onClick={() => setIsCamOn(!isCamOn)}>{isCamOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}</Button>
-                <div className="w-px h-6 bg-white/5 mx-1" />
-                <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${isScreenSharing ? "text-primary" : "text-slate-400"}`} onClick={() => setIsScreenSharing(!isScreenSharing)}><Monitor className="w-5 h-5" /></Button>
-                <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${isHandRaised ? "text-yellow-500" : "text-slate-400"}`} onClick={() => setIsHandRaised(!isHandRaised)}><Hand className="w-5 h-5" /></Button>
-              </div>
+              {isOwner ? (
+                <div className="flex items-center bg-[#0F1115] p-1 rounded-xl border border-white/5">
+                  <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${!isMicOn ? "text-destructive" : "text-slate-400"}`} onClick={() => setIsMicOn(!isMicOn)}>{isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}</Button>
+                  <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${!isCamOn ? "text-destructive" : "text-slate-400"}`} onClick={() => setIsCamOn(!isCamOn)}>{isCamOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}</Button>
+                  <div className="w-px h-6 bg-white/5 mx-1" />
+                  <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${isScreenSharing ? "text-primary" : "text-slate-400"}`} onClick={() => setIsScreenSharing(!isScreenSharing)}><Monitor className="w-5 h-5" /></Button>
+                  <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${isHandRaised ? "text-yellow-500" : "text-slate-400"}`} onClick={() => setIsHandRaised(!isHandRaised)}><Hand className="w-5 h-5" /></Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 border border-primary/10 rounded-xl">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Viewing Mode</span>
+                </div>
+              )}
               <Button variant="destructive" className="h-11 px-6 rounded-xl font-black uppercase text-xs gap-2 shadow-lg shadow-destructive/20" onClick={handleLeave}><PhoneOff className="w-4 h-4" />{isOwner ? "End Session" : "Leave"}</Button>
             </div>
             <div className="flex items-center justify-end gap-3 w-1/3">
@@ -530,5 +592,3 @@ export default function LivestreamPage() {
     </div>
   );
 }
-
-import { Globe } from "lucide-react";
