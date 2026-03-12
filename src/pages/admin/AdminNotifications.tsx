@@ -78,7 +78,7 @@ export default function AdminNotifications() {
 
       const response = await notificationAPI.send(payload);
       if (response.data.success) {
-        toast.success("Notification sent successfully!");
+        toast.success("Push notification sent!");
         setFormData({
           recipient: "all",
           title: "",

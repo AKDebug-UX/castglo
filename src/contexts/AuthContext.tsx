@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.data.success) {
         const userData = response.data.data;
         setUser({
-          id: userData._id,
+          id: userData._id || userData.id,
           email: userData.email,
           role: userData.role as UserRole,
           fullName: userData.fullName,
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('token', token);
         
         const userObj: User = {
-          id: userData._id,
+          id: userData._id || userData.id,
           email: userData.email,
           role: userData.role as UserRole,
           fullName: userData.fullName,
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { token, user: userData } = response.data.data;
           localStorage.setItem('token', token);
           setUser({
-            id: userData._id,
+            id: userData._id || userData.id,
             email: userData.email,
             role: userData.role as UserRole,
             fullName: userData.fullName,

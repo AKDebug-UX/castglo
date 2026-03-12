@@ -226,17 +226,15 @@ export default function LivestreamPage() {
     user && 
     (
       (typeof streamData.hostId === 'object' 
-        ? streamData.hostId?._id === user.id 
-        : streamData.hostId === user.id) ||
-      streamData.hostId === user.id
+        ? (streamData.hostId?._id === user.id || streamData.hostId?.id === user.id)
+        : (streamData.hostId === user.id))
     )
   );
 
   console.log("Ownership Debug:", {
     isOwner,
-    currentUserId: user?.id,
-    streamHostId: typeof streamData?.hostId === 'object' ? streamData?.hostId?._id : streamData?.hostId,
-    rawHostId: streamData?.hostId
+    user,
+    streamData
   });
 
   const handleJoin = async () => {
@@ -331,7 +329,7 @@ export default function LivestreamPage() {
     fetchMessages();
     const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
-  }, [id, isJoined, user?._id]);
+  }, [id, isJoined, user?.id]);
 
   const [chatInput, setChatInput] = useState("");
 
