@@ -55,7 +55,6 @@ export const API_ENDPOINTS = {
   LIVESTREAM: {
     CREATE: '/livestream',
     GET_ALL: '/livestream',
-    GET_ONE: (id: string) => `/livestream/${id}`,
     GET_ACTIVE: '/livestream',
     GET_MY_STREAMS: '/livestream/me',
     POST_MESSAGE: (id: string) => `/livestream/${id}/messages`,
@@ -208,7 +207,6 @@ export const blockchainAPI = {
 export const livestreamAPI = {
   create: (data) => api.post(API_ENDPOINTS.LIVESTREAM.CREATE, data),
   getAll: (params?: any) => api.get(API_ENDPOINTS.LIVESTREAM.GET_ALL, { params }),
-  getOne: (id: string) => api.get(API_ENDPOINTS.LIVESTREAM.GET_ONE(id)),
   getActive: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_ACTIVE),
   getMyStreams: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_MY_STREAMS),
   postMessage: (id: string, message: string) => api.post(API_ENDPOINTS.LIVESTREAM.POST_MESSAGE(id), { message }),

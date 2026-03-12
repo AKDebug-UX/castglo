@@ -76,9 +76,25 @@ export default function LivestreamPage() {
     const fetchStream = async () => {
       if (!id) return;
       try {
-        const response = await livestreamAPI.getOne(id);
-        if (response.data.success && response.data.data) {
-          const stream = response.data.data;
+        // Since GET /livestream/:id is not available, we fetch all and find the match
+        const [myRes, publicRes] = await Promise.all([
+          livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
+          livestreamAPI.getAll().catch(() => ({ data: { success: false } }))
+        ]);
+
+        let stream = null;
+
+        // Try to find in my streams first
+        if (myRes.data?.success && Array.isArray(myRes.data.data)) {
+          stream = myRes.data.data.find((s: any) => s._id === id);
+        }
+
+        // If not found, try to find in public streams
+        if (!stream && publicRes.data?.success && Array.isArray(publicRes.data.data)) {
+          stream = publicRes.data.data.find((s: any) => s._id === id);
+        }
+
+        if (stream) {
           setStreamData(stream);
           
           // Build real participants list from stream data
