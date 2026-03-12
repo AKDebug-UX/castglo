@@ -138,8 +138,8 @@ export function BrowseCastSection() {
                   </div>
 
                   <Button className="w-full bg-[#009698] hover:bg-[#009698]/90 text-white rounded-xl h-12 font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#009698]/20 transition-all active:scale-[0.98]" asChild>
-                    <Link to={casting._id ? `/dashboard/browse-cast/${casting._id}` : "/sign-in"}>
-                      Apply Now
+                    <Link to={casting._id ? `/cast/${casting._id}` : "/sign-in"}>
+                      View Details
                       <ArrowUpRight className="w-5 h-5" />
                     </Link>
                   </Button>

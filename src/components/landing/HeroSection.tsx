@@ -100,7 +100,7 @@ export function HeroSection() {
                       </div>
                       <div className="p-2">
                         <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
-                          <Link to={call._id ? `/browse-cast/${call._id}` : "/sign-in"}>View Details</Link>
+                          <Link to={call._id ? `/cast/${call._id}` : "/sign-in"}>View Details</Link>
                         </Button>
                       </div>
                     </div>

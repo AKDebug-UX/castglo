@@ -44,7 +44,9 @@ export default function BrowseTalent() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("Actors & Performers");
   const [isLoading, setIsLoading] = useState(false);
+  const [isNewLoading, setIsNewLoading] = useState(false);
   const [talents, setTalents] = useState([]);
+  const [newTalents, setNewTalents] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 12;
@@ -56,26 +58,30 @@ export default function BrowseTalent() {
     { name: "Crew", icon: Video, key: "crew" },
   ];
 
-  const categoryDetails: { [key: string]: { popular: string[], label: string, topHeading: string } } = {
+  const categoryDetails: { [key: string]: { popular: string[], label: string, topHeading: string, subHeading: string } } = {
     "Actors & Performers": {
       popular: ["Female Actors", "LA Actors", "London Actors", "Male Actors", "NYC Actors", "Theatre", "Union Actors"],
       label: "Actors & Performers",
-      topHeading: "Top Actors and Performers"
+      topHeading: "Top Actors and Performers",
+      subHeading: "New Faces & Rising Stars"
     },
     "Content Creators": {
       popular: ["YouTubers", "TikTokers", "Instagram Models", "Streamers", "Bloggers", "Influencers", "UGC Creators"],
       label: "Content Creators",
-      topHeading: "Top Content Creators"
+      topHeading: "Top Content Creators",
+      subHeading: "Trending Digital Talent"
     },
     "Voiceover Artists": {
       popular: ["Animation", "Commercial VO", "Audiobooks", "Video Games", "Dubbing", "Narrators", "Radio"],
       label: "Voiceover Artists",
-      topHeading: "Top Voiceover Talent"
+      topHeading: "Top Voiceover Talent",
+      subHeading: "New Voices to Watch"
     },
     "Crew": {
       popular: ["Directors", "Producers", "DOPs", "Editors", "Sound Engineers", "Makeup Artists", "Stylists"],
       label: "Crew Members",
-      topHeading: "Top Industry Crew"
+      topHeading: "Top Industry Crew",
+      subHeading: "Recently Joined Professionals"
     }
   };
 
@@ -118,8 +124,40 @@ export default function BrowseTalent() {
     }
   };
 
+  const fetchNewTalents = async () => {
+    setIsNewLoading(true);
+    try {
+      const categoryMap: { [key: string]: string } = {
+        "Actors & Performers": "talent",
+        "Content Creators": "content_creator",
+        "Voiceover Artists": "voiceover",
+        "Crew": "crew"
+      };
+
+      const response = await profileAPI.search({ 
+        userRole: categoryMap[activeCategory] || "talent",
+        page: 1,
+        limit: 4,
+        sort: "newest"
+      });
+      
+      if (response.data.success && Array.isArray(response.data.data)) {
+        setNewTalents(response.data.data);
+      } else {
+        // Fallback to a different slice of mock data
+        setNewTalents(MOCK_TALENTS.slice(4, 8));
+      }
+    } catch (error) {
+      console.error("Failed to fetch new talents", error);
+      setNewTalents(MOCK_TALENTS.slice(4, 8));
+    } finally {
+      setIsNewLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchTalents(currentPage);
+    fetchNewTalents();
   }, [currentPage, activeCategory]);
 
   const handleSearch = async (e?: React.FormEvent) => {
@@ -136,7 +174,7 @@ export default function BrowseTalent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F9F7F2]">
+    <div className="min-h-screen flex flex-col">
       <Header />
       
       <main className="flex-1 py-8">
@@ -289,6 +327,63 @@ export default function BrowseTalent() {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* New Faces / Rising Stars Section */}
+          <div className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center border border-slate-100">
+                  <UserPlus className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">{currentDetails.subHeading}</h2>
+                  <p className="text-sm text-slate-400 font-medium">Explore recently joined {currentDetails.label.toLowerCase()}</p>
+                </div>
+              </div>
+            </div>
+
+            {isNewLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+              </div>
+            ) : newTalents.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {newTalents.map((talent) => (
+                  <Card key={talent._id} className="overflow-hidden border border-slate-100 shadow-sm bg-white rounded-3xl group/card hover:shadow-xl transition-all duration-300">
+                    <CardContent className="p-0">
+                      <div className="relative aspect-square overflow-hidden bg-slate-50">
+                        <img 
+                          src={talent.profilePicture || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                          alt={talent.fullName}
+                        />
+                        <div className="absolute bottom-4 left-4">
+                          <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-bold text-xs px-3 py-1 shadow-lg">
+                            New Talent
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="p-5">
+                        <h3 className="font-bold text-lg text-slate-900 leading-tight mb-1">{talent.fullName}</h3>
+                        <p className="text-[#009698] text-sm font-semibold uppercase tracking-wider mb-4">{talent.category || "Talent"}</p>
+                        <Button variant="outline" className="w-full rounded-xl border-slate-200 font-bold group-hover/card:bg-primary group-hover/card:text-white transition-all" asChild>
+                          <Link to={`/talent/${talent._id}`}>View Profile</Link>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-4">
+                  <UserPlus className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-600">No new talent found</h3>
+                <p className="text-slate-400">Check back soon for the latest additions to this category.</p>
               </div>
             )}
           </div>

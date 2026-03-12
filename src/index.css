@@ -1,8 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* CASTGLO Design System */
+/* CASTGLO Design System - Inspired by Backstage.com Typography */
 
 @layer base {
   :root {
@@ -116,12 +118,13 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Montserrat', 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Montserrat', 'Inter', system-ui, -apple-system, sans-serif;
     background-color: #DEFCFE;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    @apply font-bold tracking-tight;
+    font-family: 'Plus Jakarta Sans', 'Montserrat', sans-serif;
   }
 }
 
