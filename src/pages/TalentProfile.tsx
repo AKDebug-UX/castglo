@@ -172,7 +172,7 @@ export default function TalentProfile() {
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {talent.skills?.map((skill: string) => (
-                          <Badge key={skill} variant="secondary" className="text-[10px]">{skill}</Badge>
+                          <Badge key={skill} variant="secondary" className="text-white text-[10px]">{skill}</Badge>
                         )) || <span className="text-sm text-muted-foreground">None specified</span>}
                       </div>
                     </div>

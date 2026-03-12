@@ -80,7 +80,9 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ['Montserrat', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        jakarta: ['Plus Jakarta Sans', 'sans-serif'],
+        montserrat: ['Montserrat', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'Montserrat', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       keyframes: {
         "accordion-down": {

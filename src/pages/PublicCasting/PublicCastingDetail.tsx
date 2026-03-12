@@ -15,8 +15,10 @@ import {
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { MOCK_CASTINGS } from "@/lib/data";
+import { useNavigate } from "react-router-dom";
 
 export default function PublicCastingDetail() {
+  const navigate = useNavigate();
   const { id } = useParams();
   const [casting, setCasting] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,7 +85,8 @@ export default function PublicCastingDetail() {
         <div className="container max-w-5xl">
           <div className="space-y-6 animate-in fade-in duration-500">
             <Link 
-              to="/#browse-castings" 
+            onClick={() => navigate(-1)}
+              to="#" 
               className="inline-flex items-center gap-2 text-sm text-[#009698] hover:text-[#007A7C] transition-colors mb-4"
             >
               <ArrowLeft className="w-4 h-4" />

@@ -159,7 +159,7 @@ export function BrowseCastSection() {
 
         <div className="mt-16 text-center">
           <Button variant="outline" size="lg" className="rounded-xl px-10 h-14 border-2 font-bold" asChild>
-            <Link to="/sign-in">View All Casting Calls</Link>
+            <Link to="/browse-cast">View All Casting Calls</Link>
           </Button>
         </div>
       </div>

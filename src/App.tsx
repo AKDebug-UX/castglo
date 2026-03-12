@@ -31,7 +31,8 @@ import Guides from "./pages/Guides";
 import Careers from "./pages/Careers";
 import Hub from "./pages/Hub";
 import Chat from "./pages/Chat";
-import PublicCastingDetail from "./pages/PublicCastingDetail";
+import PublicCastingDetail from "./pages/PublicCasting/PublicCastingDetail";
+import PublicCasting from "./pages/PublicCasting";
 
 // Talent Dashboard
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
@@ -108,8 +109,7 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/cookies" element={<Cookies />} />
             <Route path="/talent/:id" element={<TalentProfile />} />
-            <Route path="/browse-cast" element={<BrowseCast />} />
-            <Route path="/browse-cast/:id" element={<CastingDetail />} />
+            <Route path="/browse-cast" element={<PublicCasting />} />
             <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
             <Route path="/cast/:id" element={<PublicCastingDetail />} />
             {/* Talent Dashboard Routes */}
