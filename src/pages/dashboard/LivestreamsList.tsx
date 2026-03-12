@@ -88,7 +88,7 @@ export default function LivestreamsList() {
             <Button className="w-full" size="sm" asChild>
               <Link to={user?.role === "talent" ? `/livestream/${stream._id}` : `/livestream/${stream._id}`}>
                 <Play className="w-3 h-3 mr-2" />
-                Join Session
+                {(typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId) === user?._id ? "Start Session" : "Join Session"}
               </Link>
             </Button>
           </CardContent>

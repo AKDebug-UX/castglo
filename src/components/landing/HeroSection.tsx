@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, User, Video, Users, Loader2 } from "lucide-react";
 import { castingCallAPI, profileAPI, livestreamAPI } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { MOCK_CASTINGS, MOCK_TALENTS } from "@/lib/data";
 
@@ -15,6 +16,7 @@ import newsProduction from "@/assets/news-production.jpg";
 import newsAudition from "@/assets/news-audition.jpg";
 
 export function HeroSection() {
+  const { user } = useAuth();
   const [featuredCalls, setFeaturedCalls] = useState([]);
   const [featuredTalents, setFeaturedTalents] = useState([]);
   const [publicStreams, setPublicStreams] = useState([]);
@@ -311,7 +313,9 @@ export function HeroSection() {
                           </div>
                         </div>
                         <Button size="sm" variant="destructive" className="h-8 rounded-lg text-[10px] font-bold px-4" asChild>
-                          <Link to={`/dashboard/livestream/${stream._id}`}>Join</Link>
+                          <Link to={`/dashboard/livestream/${stream._id}`}>
+                            {(typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId) === user?._id ? "Start" : "Join"}
+                          </Link>
                         </Button>
                       </CardContent>
                     </Card>

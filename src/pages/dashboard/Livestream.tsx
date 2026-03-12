@@ -143,6 +143,12 @@ export default function LivestreamPage() {
 
   const handleJoin = async () => {
     if (!id) return;
+
+    if (streamData?.status === 'ended' && !isOwner) {
+      toast.error("This session has already ended.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       let response;
@@ -315,9 +321,20 @@ export default function LivestreamPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <Button size="lg" className="h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20" onClick={handleJoin}>
-                {isOwner ? "Start session" : "Join now"}
-              </Button>
+              {isOwner ? (
+                <Button size="lg" className="h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20" onClick={handleJoin}>
+                  Start session
+                </Button>
+              ) : (
+                <Button 
+                  size="lg" 
+                  className="h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20" 
+                  onClick={handleJoin}
+                  disabled={streamData?.status === 'ended'}
+                >
+                  {streamData?.status === 'live' ? "Join now" : "Join waiting room"}
+                </Button>
+              )}
               <Button variant="ghost" size="lg" className="h-14 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5" onClick={() => navigate(-1)}>
                 Cancel
               </Button>
