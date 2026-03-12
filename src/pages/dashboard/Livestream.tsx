@@ -63,59 +63,57 @@ export default function LivestreamPage() {
     const fetchStream = async () => {
       if (!id) return;
       try {
-        const response = await livestreamAPI.getAll();
-        if (response.data.success && Array.isArray(response.data.data)) {
-          const stream = response.data.data.find((s: any) => s._id === id);
-          if (stream) {
-            setStreamData(stream);
-            
-            // Build real participants list from stream data
-            const realParticipants = [];
-            
-            // Add host
-            if (stream.hostId) {
-              realParticipants.push({
-                id: stream.hostId._id,
-                name: stream.hostId.fullName,
-                role: "host",
-                isSelf: user?._id === stream.hostId._id,
-                isMicOn: true,
-                isCamOn: true
-              });
-            }
-
-            // Add co-hosts
-            if (Array.isArray(stream.coHosts)) {
-              stream.coHosts.forEach((coHost: any) => {
-                realParticipants.push({
-                  id: coHost._id,
-                  name: coHost.fullName,
-                  role: "co-host",
-                  isSelf: user?._id === coHost._id,
-                  isMicOn: true,
-                  isCamOn: true
-                });
-              });
-            }
-
-            // If user is not host or co-host, add them as participant
-            const isUserInList = realParticipants.some(p => p.id === user?._id);
-            if (!isUserInList && user) {
-              realParticipants.push({
-                id: user._id,
-                name: user.fullName,
-                role: user.role,
-                isSelf: true,
-                isMicOn: true,
-                isCamOn: true
-              });
-            }
-
-            setParticipants(realParticipants);
-          } else {
-            toast.error("Stream not found or ended");
-            navigate(-1);
+        const response = await livestreamAPI.getOne(id);
+        if (response.data.success && response.data.data) {
+          const stream = response.data.data;
+          setStreamData(stream);
+          
+          // Build real participants list from stream data
+          const realParticipants = [];
+          
+          // Add host
+          if (stream.hostId) {
+            realParticipants.push({
+              id: typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId,
+              name: typeof stream.hostId === 'object' ? stream.hostId.fullName : "Host",
+              role: "host",
+              isSelf: user?._id === (typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId),
+              isMicOn: true,
+              isCamOn: true
+            });
           }
+
+          // Add co-hosts
+          if (Array.isArray(stream.coHosts)) {
+            stream.coHosts.forEach((coHost: any) => {
+              realParticipants.push({
+                id: typeof coHost === 'object' ? coHost._id : coHost,
+                name: typeof coHost === 'object' ? coHost.fullName : "Co-Host",
+                role: "co-host",
+                isSelf: user?._id === (typeof coHost === 'object' ? coHost._id : coHost),
+                isMicOn: true,
+                isCamOn: true
+              });
+            });
+          }
+
+          // If user is not host or co-host, add them as participant
+          const isUserInList = realParticipants.some(p => p.id === user?._id);
+          if (!isUserInList && user) {
+            realParticipants.push({
+              id: user._id,
+              name: user.fullName,
+              role: user.role,
+              isSelf: true,
+              isMicOn: true,
+              isCamOn: true
+            });
+          }
+
+          setParticipants(realParticipants);
+        } else {
+          toast.error("Stream not found or ended");
+          navigate(-1);
         }
       } catch (error) {
         console.error("Failed to fetch stream:", error);
@@ -128,15 +126,15 @@ export default function LivestreamPage() {
     fetchStream();
   }, [id, user]);
 
+  const isOwner = user?._id === (typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId);
+
   const handleJoin = async () => {
     if (!id) return;
     setIsLoading(true);
     try {
-      const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
-      const isHost = user?._id === hostId;
       let response;
       
-      if (isHost) {
+      if (isOwner) {
         response = await livestreamAPI.start(id);
       } else {
         response = await livestreamAPI.join(id);
@@ -152,7 +150,7 @@ export default function LivestreamPage() {
           setStreamData({ ...streamData, ...tokenData.stream });
         }
         setIsJoined(true);
-        toast.success(isHost ? "Started the audition session" : "Joined the virtual audition");
+        toast.success(isOwner ? "Started the audition session" : "Joined the virtual audition");
       }
     } catch (error: any) {
       console.error("Failed to join stream:", error);
@@ -163,16 +161,14 @@ export default function LivestreamPage() {
   };
 
   const handleLeave = async () => {
-    const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
-    const isHost = user?._id === hostId;
-    const confirmMsg = isHost 
+    const confirmMsg = isOwner 
       ? "Do you want to end the audition for everyone or just leave?" 
       : "Are you sure you want to leave the audition?";
     
     if (window.confirm(confirmMsg)) {
       if (id) {
         try {
-          if (isHost) {
+          if (isOwner) {
             await livestreamAPI.end(id);
             toast.success("Audition session ended");
           } else {
@@ -268,7 +264,9 @@ export default function LivestreamPage() {
 
           <div className="space-y-8">
             <div className="text-center lg:text-left space-y-2">
-              <h1 className="text-4xl font-bold tracking-tight">Ready to join?</h1>
+              <h1 className="text-4xl font-bold tracking-tight">
+                {isOwner ? "Ready to start?" : "Ready to join?"}
+              </h1>
               <p className="text-slate-400 text-lg">{streamData?.title || "Virtual Audition Session"}</p>
             </div>
 
@@ -280,7 +278,7 @@ export default function LivestreamPage() {
                 <div>
                   <p className="font-medium">{participants.length} people in this call</p>
                   <p className="text-xs text-slate-500">
-                    {streamData?.hostId?.fullName ? `Host: ${streamData.hostId.fullName}` : "Loading host..."}
+                    {isOwner ? "You are the host" : `Host: ${streamData?.hostId?.fullName || "Loading..."}`}
                   </p>
                 </div>
               </div>
@@ -305,7 +303,7 @@ export default function LivestreamPage() {
 
             <div className="flex flex-col gap-3">
               <Button size="lg" className="h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20" onClick={handleJoin}>
-                Join now
+                {isOwner ? "Start session" : "Join now"}
               </Button>
               <Button variant="ghost" size="lg" className="h-14 rounded-2xl text-slate-400 hover:text-white hover:bg-white/5" onClick={() => navigate(-1)}>
                 Cancel

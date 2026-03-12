@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,33 @@ export function HeroSection() {
   const [featuredCalls, setFeaturedCalls] = useState([]);
   const [featuredTalents, setFeaturedTalents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const castingScrollRef = useRef(null);
+  const talentScrollRef = useRef(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (castingScrollRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = castingScrollRef.current;
+        if (scrollTop + clientHeight >= scrollHeight - 10) {
+          castingScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          castingScrollRef.current.scrollBy({ top: 200, behavior: 'smooth' });
+        }
+      }
+      
+      if (talentScrollRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = talentScrollRef.current;
+        if (scrollTop + clientHeight >= scrollHeight - 10) {
+          talentScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          talentScrollRef.current.scrollBy({ top: 200, behavior: 'smooth' });
+        }
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,13 +105,16 @@ export function HeroSection() {
             <div className="rounded-xl p-2 mb-2">
               <h3 className="font-semibold text-black text-md">Featured Castings</h3>
             </div>
-            <div className="flex-1 overflow-hidden h-[620px]">
+            <div 
+              ref={castingScrollRef}
+              className="flex-1 overflow-y-auto h-[620px] scrollbar-hide scroll-smooth"
+            >
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <div className="animate-scroll-vertical space-y-2">
+                <div className="space-y-3 pb-10">
                   {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : [...MOCK_CASTINGS, ...MOCK_CASTINGS]).map((call, index) => (
                     <div key={`${call._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                       <div className="relative h-48">
@@ -272,13 +302,16 @@ export function HeroSection() {
             <div className="rounded-xl p-2 mb-2">
               <h3 className="font-semibold text-black text-md">Discover Talent</h3>
             </div>
-            <div className="flex-1 overflow-hidden h-[620px]">
+            <div 
+              ref={talentScrollRef}
+              className="flex-1 overflow-y-auto h-[620px] scrollbar-hide scroll-smooth"
+            >
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 animate-scroll-vertical-reverse space-y-2">
+                <div className="space-y-3 pb-10">
                   {(featuredTalents.length > 0 ? [...featuredTalents, ...featuredTalents] : [...MOCK_TALENTS, ...MOCK_TALENTS]).map((talent, index) => (
                     <div key={`${talent._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                       <div className="relative h-48">

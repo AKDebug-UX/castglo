@@ -26,7 +26,7 @@ export default function LivestreamsList() {
   useEffect(() => {
     const fetchStreams = async () => {
       try {
-        const response = await livestreamAPI.getAll();
+        const response = await livestreamAPI.getMyStreams();
         if (response.data.success && Array.isArray(response.data.data)) {
           setStreams(response.data.data);
         } else {
@@ -34,7 +34,7 @@ export default function LivestreamsList() {
         }
       } catch (error) {
         console.error("Failed to fetch streams:", error);
-        toast.error("Failed to load active auditions");
+        toast.error("Failed to load your auditions");
       } finally {
         setIsLoading(false);
       }
@@ -47,8 +47,8 @@ export default function LivestreamsList() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Virtual Auditions & Livestreams</h1>
-          <p className="text-muted-foreground">Join active sessions or schedule a new virtual audition</p>
+          <h1 className="text-2xl font-bold">My Virtual Auditions</h1>
+          <p className="text-muted-foreground">Manage your scheduled and active virtual audition sessions</p>
         </div>
         {user?.role !== "admin" && (
           <Button asChild>
@@ -106,7 +106,7 @@ export default function LivestreamsList() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-            Live Auditions
+            My Live Sessions
           </h2>
         </div>
 
@@ -165,9 +165,9 @@ export default function LivestreamsList() {
                 <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
                   <Video className="w-6 h-6 text-muted-foreground" />
                 </div>
-                <h3 className="font-bold text-muted-foreground">No sessions active</h3>
+                <h3 className="font-bold text-muted-foreground">No sessions found</h3>
                 <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
-                  There are currently no live virtual auditions. You can start your own session or wait for one to begin.
+                  You haven't created any virtual auditions yet. Start your first session to discover talent or showcase your skills.
                 </p>
                 <Button variant="outline" className="mt-6" asChild>
                   <Link to={user?.role === "talent" ? "/dashboard/audition" : "/director/audition"}>

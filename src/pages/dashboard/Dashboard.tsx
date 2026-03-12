@@ -34,7 +34,7 @@ export default function Dashboard() {
           authAPI.getMe().catch(err => ({ data: { success: false } })),
           applicationAPI.getMe().catch(err => ({ data: { success: false } })),
           castingCallAPI.getAll({ limit: 2 }).catch(err => ({ data: { success: false } })),
-          livestreamAPI.getAll().catch(err => ({ data: { success: false } }))
+          livestreamAPI.getMyStreams().catch(err => ({ data: { success: false } }))
         ]);
 
         if (userRes.data?.success) {
@@ -120,7 +120,7 @@ export default function Dashboard() {
         <div className="animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-destructive">Live Now</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-destructive">My Active Sessions</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {activeStreams.map((stream) => (

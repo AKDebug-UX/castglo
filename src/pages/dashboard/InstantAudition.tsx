@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, Info, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, Info, Loader2, Globe, Lock, Users as UsersIcon, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +21,24 @@ export default function InstantAudition() {
     description: "",
     category: "audition",
     isRecordingEnabled: true,
+    isPublic: true,
+    scheduledDate: "",
+    scheduledTime: "",
+    invitedTalents: [] as string[],
   });
+
+  const [talentEmail, setTalentEmail] = useState("");
+
+  const addTalent = () => {
+    if (talentEmail && !formData.invitedTalents.includes(talentEmail)) {
+      setFormData({ ...formData, invitedTalents: [...formData.invitedTalents, talentEmail] });
+      setTalentEmail("");
+    }
+  };
+
+  const removeTalent = (email: string) => {
+    setFormData({ ...formData, invitedTalents: formData.invitedTalents.filter(t => t !== email) });
+  };
 
   const handleCreate = async () => {
     if (!formData.title) {
@@ -87,11 +105,72 @@ export default function InstantAudition() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Date</label>
-              <Input type="date" placeholder="DD/MM/YY" />
+              <Input 
+                type="date" 
+                value={formData.scheduledDate}
+                onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Time</label>
-              <Input type="time" placeholder="--:--" />
+              <Input 
+                type="time" 
+                value={formData.scheduledTime}
+                onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-sm font-medium block">Privacy Settings</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div 
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.isPublic ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
+                onClick={() => setFormData({ ...formData, isPublic: true })}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${formData.isPublic ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}>
+                  <Globe className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-sm">Public</p>
+                  <p className="text-[10px] text-muted-foreground">Visible to everyone</p>
+                </div>
+              </div>
+              <div 
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${!formData.isPublic ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
+                onClick={() => setFormData({ ...formData, isPublic: false })}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${!formData.isPublic ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400'}`}>
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-sm">Private</p>
+                  <p className="text-[10px] text-muted-foreground">Invitation only</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-sm font-medium block">Invite Talents</label>
+            <div className="flex gap-2">
+              <Input 
+                placeholder="Enter talent email address" 
+                value={talentEmail}
+                onChange={(e) => setTalentEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTalent())}
+              />
+              <Button type="button" onClick={addTalent} variant="secondary">
+                Invite
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.invitedTalents.map(email => (
+                <Badge key={email} className="bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1 gap-2 border-none">
+                  {email}
+                  <X className="w-3 h-3 cursor-pointer" onClick={() => removeTalent(email)} />
+                </Badge>
+              ))}
             </div>
           </div>
 

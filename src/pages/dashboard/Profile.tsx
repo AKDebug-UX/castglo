@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Plus, X, Upload, Loader2, ShieldCheck, FileCheck, History } from "lucide-react";
+import { Camera, Plus, X, Upload, Loader2, ShieldCheck, FileCheck, History, KeyRound, Smartphone } from "lucide-react";
 import { profileAPI, userAPI, blockchainAPI, authAPI } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -24,24 +24,29 @@ export default function Profile() {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const [profileRes, historyRes] = await Promise.all([
-          profileAPI.getMe(),
-          blockchainAPI.getHistory({ limit: 5 })
+        const [authRes, profileRes, historyRes] = await Promise.all([
+          authAPI.getMe().catch(() => ({ data: { success: false } })),
+          profileAPI.getMe().catch(() => ({ data: { success: false } })),
+          blockchainAPI.getHistory({ limit: 5 }).catch(() => ({ data: { success: false } }))
         ]);
 
-        if (profileRes.data.success) {
-          setProfileData(profileRes.data.data);
-        } else {
-          const userRes = await authAPI.getMe();
-          if (userRes.data.success) {
-            setProfileData(userRes.data.data);
-          }
+        let combinedData = {};
+
+        if (authRes.data?.success) {
+          combinedData = { ...combinedData, ...authRes.data.data };
         }
+
+        if (profileRes.data?.success) {
+          combinedData = { ...combinedData, ...profileRes.data.data };
+        }
+
+        setProfileData(combinedData);
         
-        if (historyRes.data.success) {
+        if (historyRes.data?.success) {
           setVerificationHistory(historyRes.data.data.records || []);
         }
       } catch (error) {
+        console.error("Profile fetch error:", error);
         toast.error("Failed to load profile data");
       } finally {
         setIsLoading(false);
@@ -162,6 +167,7 @@ export default function Profile() {
           <TabsTrigger value="equipment" className="py-2">Equipment</TabsTrigger>
           <TabsTrigger value="portfolio" className="py-2">Portfolio</TabsTrigger>
           <TabsTrigger value="verification" className="py-2">Verification</TabsTrigger>
+          <TabsTrigger value="security" className="py-2">Security</TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="mt-6">
@@ -507,6 +513,68 @@ export default function Profile() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="security" className="mt-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <KeyRound className="w-5 h-5 text-primary" />
+                  Change Password
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Update your password to keep your account secure</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Current Password</label>
+                  <Input type="password" placeholder="••••••••" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">New Password</label>
+                  <Input type="password" placeholder="••••••••" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Confirm New Password</label>
+                  <Input type="password" placeholder="••••••••" />
+                </div>
+                <Button className="w-full bg-[#009698] hover:bg-[#009698]/90">Update Password</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Smartphone className="w-5 h-5 text-primary" />
+                  Two-Factor Authentication (2FA)
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                  <div className="space-y-1">
+                    <p className="font-bold text-sm">Authenticator App</p>
+                    <p className="text-xs text-muted-foreground">Use an app like Google Authenticator or Authy</p>
+                  </div>
+                  <Button variant="outline" size="sm">Enable</Button>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                  <div className="space-y-1">
+                    <p className="font-bold text-sm">SMS Authentication</p>
+                    <p className="text-xs text-muted-foreground">Receive a code via text message</p>
+                  </div>
+                  <Button variant="outline" size="sm">Enable</Button>
+                </div>
+
+                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                  <p className="text-xs text-blue-600 font-medium leading-relaxed">
+                    Two-factor authentication adds an extra layer of security to your account by requiring more than just a password to log in.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

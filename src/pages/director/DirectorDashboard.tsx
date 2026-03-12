@@ -32,7 +32,7 @@ export default function DirectorDashboard() {
         const [userRes, listingsRes, streamsRes] = await Promise.all([
           authAPI.getMe(),
           castingCallAPI.getMyListings(),
-          livestreamAPI.getAll().catch(() => ({ data: { success: false } }))
+          livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } }))
         ]);
 
         if (userRes.data.success) {
@@ -114,7 +114,7 @@ export default function DirectorDashboard() {
         <div className="animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-destructive">Auditions in Progress</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-destructive">My Active Auditions</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {activeStreams.map((stream) => (

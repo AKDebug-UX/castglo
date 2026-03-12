@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, MapPin, Calendar, Loader2 } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Loader2, Image as ImageIcon, Upload } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -26,8 +26,24 @@ export default function CreateCasting() {
     category: "drama",
     location: "",
     deadline: "",
-    status: "open"
+    status: "open",
+    image: ""
   });
+
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setSelectedImage(result);
+        setFormData(prev => ({ ...prev, image: result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   useEffect(() => {
     if (isEditMode) {
@@ -245,6 +261,34 @@ export default function CreateCasting() {
                   onChange={handleChange}
                   required
                 />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-3 block">Casting Header Image</label>
+                <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-8 hover:bg-slate-50 transition-colors cursor-pointer relative group">
+                  <input 
+                    type="file" 
+                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                    onChange={handleImageChange}
+                    accept="image/*"
+                  />
+                  {selectedImage || formData.image ? (
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                      <img src={selectedImage || formData.image} alt="Casting" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Upload className="w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                        <ImageIcon className="w-6 h-6 text-slate-400" />
+                      </div>
+                      <p className="text-sm font-medium text-slate-600">Click or drag to upload header image</p>
+                      <p className="text-xs text-slate-400 mt-1">Recommended size: 1200x600px</p>
+                    </>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

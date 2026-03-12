@@ -14,7 +14,9 @@ import {
   Pencil,
   Trash2,
   Clock,
-  Eye
+  Eye,
+  Image as ImageIcon,
+  Upload
 } from "lucide-react";
 
 const stats = [
@@ -65,6 +67,18 @@ const services = [
 
 export default function ProfessionalServices() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -108,34 +122,70 @@ export default function ProfessionalServices() {
                 Add New Service
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Service</DialogTitle>
                 <p className="text-sm text-muted-foreground">Add a new service to your offerings</p>
               </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Service Title</label>
-                  <Input placeholder="e.g., Professional Headshot Session" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Description</label>
-                  <Textarea rows={3} placeholder="Describe your service in detail..." />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-6 py-4">
+                <div className="grid gap-4">
                   <div>
-                    <label className="text-sm font-medium mb-1.5 block">Price</label>
-                    <Input placeholder="250" type="number" />
+                    <label className="text-sm font-medium mb-1.5 block">Service Title</label>
+                    <Input placeholder="e.g., Professional Headshot Session" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium mb-1.5 block">Duration</label>
-                    <Input placeholder="e.g., 2 hours" />
+                    <label className="text-sm font-medium mb-1.5 block">Description</label>
+                    <Textarea rows={3} placeholder="Describe your service in detail..." />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Price</label>
+                      <Input placeholder="250" type="number" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Duration</label>
+                      <Input placeholder="e.g., 2 hours" />
+                    </div>
                   </div>
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={() => setIsDialogOpen(false)}>Create Service</Button>
+
+                <div className="space-y-4">
+                  <label className="text-sm font-medium block">Service Image / Portfolio Work</label>
+                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-8 hover:bg-slate-50 transition-colors cursor-pointer relative group">
+                    <input 
+                      type="file" 
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                      onChange={handleImageChange}
+                      accept="image/*"
+                    />
+                    {selectedImage ? (
+                      <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                        <img src={selectedImage} alt="Selected" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Upload className="w-8 h-8 text-white" />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                          <ImageIcon className="w-6 h-6 text-slate-400" />
+                        </div>
+                        <p className="text-sm font-medium text-slate-600">Click or drag to upload an image</p>
+                        <p className="text-xs text-slate-400 mt-1">Showcase your previous work or a service gig image</p>
+                      </>
+                    )}
+                  </div>
                 </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => {
+                  setIsDialogOpen(false);
+                  setSelectedImage(null);
+                }}>Cancel</Button>
+                <Button onClick={() => {
+                  setIsDialogOpen(false);
+                  setSelectedImage(null);
+                }}>Create Service</Button>
               </div>
             </DialogContent>
           </Dialog>
