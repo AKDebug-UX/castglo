@@ -136,7 +136,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <Button size="sm" variant="destructive" asChild>
-                    <Link to={`/dashboard/livestream/${stream._id}`}>Join Room</Link>
+                    <Link to={`/livestream/${stream._id}`}>Join Room</Link>
                   </Button>
                 </CardContent>
               </Card>

@@ -130,7 +130,7 @@ export default function DirectorDashboard() {
                     </div>
                   </div>
                   <Button size="sm" variant="destructive" asChild>
-                    <Link to={`/director/livestream/${stream._id}`}>Join Room</Link>
+                    <Link to={`/livestream/${stream._id}`}>Join Room</Link>
                   </Button>
                 </CardContent>
               </Card>
