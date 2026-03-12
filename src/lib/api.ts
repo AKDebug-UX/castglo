@@ -142,6 +142,7 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
   },
 });
 
@@ -212,7 +213,9 @@ export const livestreamAPI = {
   postMessage: (id: string, message: string) => api.post(API_ENDPOINTS.LIVESTREAM.POST_MESSAGE(id), { message }),
   getMessages: (id: string) => api.get(API_ENDPOINTS.LIVESTREAM.GET_MESSAGES(id)),
   start: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.START(id)),
-  join: (id: string) => api.get(API_ENDPOINTS.LIVESTREAM.JOIN(id)),
+  join: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.JOIN(id), {}, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }
+  }),
   leave: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.LEAVE(id)),
   end: (id: string) => api.patch(API_ENDPOINTS.LIVESTREAM.END(id)),
 };

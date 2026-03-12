@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,8 +62,74 @@ export default function LivestreamPage() {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [showSidebar, setShowSidebar] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   const inviteLink = `${window.location.origin}/livestream/${id}`;
+
+  // Initialize media on mount or when joining
+  useEffect(() => {
+    const initMedia = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        });
+        setLocalStream(stream);
+        if (previewVideoRef.current) {
+          previewVideoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error("Error accessing media devices:", error);
+        toast.error("Could not access camera or microphone");
+        setIsCamOn(false);
+        setIsMicOn(false);
+      }
+    };
+
+    if (!isJoined) {
+      initMedia();
+    }
+
+    return () => {
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isJoined]);
+
+  // Update local video element when joined
+  useEffect(() => {
+    if (isJoined && localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [isJoined, localStream]);
+
+  // Handle Cam Toggle
+  useEffect(() => {
+    if (localStream) {
+      localStream.getVideoTracks().forEach(track => {
+        track.enabled = isCamOn;
+      });
+    }
+  }, [isCamOn, localStream]);
+
+  // Handle Mic Toggle
+  useEffect(() => {
+    if (localStream) {
+      localStream.getAudioTracks().forEach(track => {
+        track.enabled = isMicOn;
+      });
+    }
+  }, [isMicOn, localStream]);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink);
@@ -217,21 +283,58 @@ export default function LivestreamPage() {
     }
   };
 
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (!id || !isJoined) return;
+      try {
+        const response = await livestreamAPI.getMessages(id);
+        if (response.data.success && Array.isArray(response.data.data)) {
+          const formattedMessages = response.data.data.map((msg: any) => ({
+            id: msg._id || msg.id,
+            sender: msg.sender?.fullName || msg.senderName || "Unknown",
+            text: msg.message || msg.text,
+            timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isSelf: (msg.sender?._id || msg.senderId) === user?._id
+          }));
+          setChatMessages(formattedMessages);
+        }
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      }
+    };
+
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 5000);
+    return () => clearInterval(interval);
+  }, [id, isJoined, user?._id]);
+
   const [chatInput, setChatInput] = useState("");
 
-  const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || !id) return;
     
-    const newMessage = {
-      id: Date.now().toString(),
-      sender: user?.fullName,
-      text: chatInput,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isSelf: true
-    };
-    
-    setChatMessages([...chatMessages, newMessage]);
-    setChatInput("");
+    const messageText = chatInput;
+    setChatInput(""); // Clear input early for better UX
+
+    try {
+      const response = await livestreamAPI.postMessage(id, messageText);
+      if (response.data.success) {
+        // Optionally fetch messages immediately after sending
+        const msg = response.data.data;
+        const newMessage = {
+          id: msg._id || msg.id || Date.now().toString(),
+          sender: user?.fullName,
+          text: messageText,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isSelf: true
+        };
+        setChatMessages(prev => [...prev, newMessage]);
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      toast.error("Failed to send message");
+      setChatInput(messageText); // Restore input on failure
+    }
   };
 
   const sendReaction = (emoji: string) => {
@@ -254,8 +357,14 @@ export default function LivestreamPage() {
           <div className="space-y-8">
             <div className="aspect-video bg-slate-900 rounded-3xl relative overflow-hidden border border-white/10 shadow-2xl group">
               {isCamOn ? (
-                <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                   <Video className="w-16 h-16 text-slate-700" />
+                <div className="w-full h-full bg-slate-800">
+                  <video 
+                    ref={previewVideoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted 
+                    className="w-full h-full object-cover scale-x-[-1]"
+                  />
                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                    <div className="absolute bottom-6 left-6 flex items-center gap-3">
                       <Avatar className="h-10 w-10 border-2 border-white/20">
@@ -381,7 +490,17 @@ export default function LivestreamPage() {
               }`}>
                 {p.isCamOn ? (
                   <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
-                    <Video className="w-16 h-16 text-white/5" />
+                    {p.isSelf ? (
+                      <video 
+                        ref={localVideoRef} 
+                        autoPlay 
+                        playsInline 
+                        muted 
+                        className="w-full h-full object-cover scale-x-[-1]"
+                      />
+                    ) : (
+                      <Video className="w-16 h-16 text-white/5" />
+                    )}
                     {/* Mock video content */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
@@ -434,7 +553,7 @@ export default function LivestreamPage() {
 
             <div className="flex-1 overflow-y-auto">
               <TabsContent value="chat" className="m-0 h-full flex flex-col p-4">
-                  <div className="flex-1 space-y-4">
+                  <div className="flex-1 space-y-4 overflow-y-auto">
                     <div className="text-center py-8 px-4">
                       <div className="bg-white/5 rounded-2xl p-4 inline-block mb-3">
                         <Shield className="w-6 h-6 text-primary" />
@@ -459,6 +578,7 @@ export default function LivestreamPage() {
                         No messages yet. Start the conversation!
                       </div>
                     )}
+                    <div ref={chatEndRef} />
                   </div>
                 <div className="mt-4 flex gap-2">
                   <Input 
