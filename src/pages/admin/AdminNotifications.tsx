@@ -190,7 +190,7 @@ export default function AdminNotifications() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Metadata (JSON format - Optional)</label>
                 <Textarea 
-                  placeholder='{ "link": "/dashboard/browse", "category": "new_casting" }' 
+                  placeholder='{ "link": "/dashboard/browse-cast", "category": "new_casting" }' 
                   rows={2}
                   value={formData.metadata}
                   onChange={(e) => setFormData({ ...formData, metadata: e.target.value })}

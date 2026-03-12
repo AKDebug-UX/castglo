@@ -170,7 +170,7 @@ export default function Dashboard() {
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-lg">Upcoming Casting Calls</CardTitle>
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/dashboard/browse">View All</Link>
+            <Link to="/dashboard/browse-cast">View All</Link>
           </Button>
         </CardHeader>
         <CardContent>
@@ -199,7 +199,7 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <Button size="sm" asChild>
-                    <Link to={`/dashboard/browse/${casting._id}`}>
+                    <Link to={`/dashboard/browse-cast/${casting._id}`}>
                       View Details
                       <ArrowUpRight className="w-3 h-3 ml-1" />
                     </Link>
@@ -210,7 +210,7 @@ export default function Dashboard() {
               <div className="col-span-full py-8 text-center border-2 border-dashed border-muted rounded-lg">
                 <p className="text-muted-foreground">No upcoming casting calls at the moment.</p>
                 <Button variant="link" size="sm" asChild>
-                  <Link to="/dashboard/browse">Browse all opportunities</Link>
+                  <Link to="/dashboard/browse-cast">Browse all opportunities</Link>
                 </Button>
               </div>
             )}

@@ -71,7 +71,7 @@ export default function CastingDetail() {
       <div className="text-center py-12">
         <p className="text-muted-foreground">Casting call not found.</p>
         <Button variant="link" asChild>
-          <Link to="/dashboard/browse">Back to browse</Link>
+          <Link to="/dashboard/browse-cast">Back to browse</Link>
         </Button>
       </div>
     );
@@ -80,7 +80,7 @@ export default function CastingDetail() {
   return (
     <div className="space-y-6 animate-fade-in">
       <Link 
-        to="/dashboard/browse" 
+        to="/dashboard/browse-cast" 
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -212,7 +212,7 @@ export default function CastingDetail() {
             </CardHeader>
             <CardContent>
               <Button className="w-full" size="lg" asChild disabled={casting.status !== 'open'}>
-                <Link to={`/dashboard/browse/${id}/submit`}>
+                <Link to={`/dashboard/browse-cast/${id}/submit`}>
                   {casting.status === 'open' ? 'Submit Audition' : 'Casting Closed'}
                 </Link>
               </Button>

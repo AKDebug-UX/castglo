@@ -10,7 +10,7 @@ import TalentProfile from "./pages/TalentProfile";
 
 // Public pages
 import Index from "./pages/Index";
-import Browse from "./pages/Browse";
+import BrowseTalent from "./pages/BrowseTalent";
 import SignIn from "./pages/SignIn";
 import Join from "./pages/Join";
 import SignUp from "./pages/SignUp";
@@ -36,7 +36,7 @@ import Chat from "./pages/Chat";
 import { DashboardLayout } from "./components/dashboard/DashboardLayout";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Profile from "./pages/dashboard/Profile";
-import BrowseCastings from "./pages/dashboard/BrowseCastings";
+import BrowseCast from "./pages/dashboard/BrowseCast";
 import CastingDetail from "./pages/dashboard/CastingDetail";
 import SubmitAudition from "./pages/dashboard/SubmitAudition";
 import Submissions from "./pages/dashboard/Submissions";
@@ -55,16 +55,16 @@ import DirectorSubmissions from "./pages/director/DirectorSubmissions";
 import DirectorMessages from "./pages/director/DirectorMessages";
 
 // Professional Dashboard
- import { AdminLayout } from "./components/dashboard/AdminLayout";
- import AdminDashboard from "./pages/admin/AdminDashboard";
- import ModerationQueue from "./pages/admin/ModerationQueue";
- import AdminAnalytics from "./pages/admin/AdminAnalytics";
- import UsersManagement from "./pages/admin/UsersManagement";
- import AdminSubmissions from "./pages/admin/AdminSubmissions";
- import AdminBookings from "./pages/admin/AdminBookings";
- import AdminNotifications from "./pages/admin/AdminNotifications";
- 
- // Professional Dashboard
+import { AdminLayout } from "./components/dashboard/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import ModerationQueue from "./pages/admin/ModerationQueue";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import UsersManagement from "./pages/admin/UsersManagement";
+import AdminSubmissions from "./pages/admin/AdminSubmissions";
+import AdminBookings from "./pages/admin/AdminBookings";
+import AdminNotifications from "./pages/admin/AdminNotifications";
+
+// Professional Dashboard
 import { ProfessionalLayout } from "./components/dashboard/ProfessionalLayout";
 import ProfessionalDashboard from "./pages/professional/ProfessionalDashboard";
 import ProfessionalProfile from "./pages/professional/ProfessionalProfile";
@@ -86,7 +86,7 @@ const App = () => (
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
-            <Route path="/browse" element={<Browse />} />
+            <Route path="/browse-talent" element={<BrowseTalent />} />
             <Route path="/sign-in" element={<SignIn />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
@@ -107,80 +107,83 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/cookies" element={<Cookies />} />
             <Route path="/talent/:id" element={<TalentProfile />} />
-             {/* Talent Dashboard Routes */}
-             <Route path="/dashboard" element={
-               <ProtectedRoute allowedRoles={["talent"]}>
-                 <DashboardLayout />
-               </ProtectedRoute>
-             }>
-               <Route index element={<Dashboard />} />
-               <Route path="profile" element={<Profile />} />
-               <Route path="browse" element={<BrowseCastings />} />
-               <Route path="browse/:id" element={<CastingDetail />} />
-               <Route path="browse/:id/submit" element={<SubmitAudition />} />
-               <Route path="submissions" element={<Submissions />} />
-               <Route path="messages" element={<Messages />} />
-               <Route path="notifications" element={<Notifications />} />
-               <Route path="livestreams" element={<LivestreamsList />} />
-               <Route path="audition" element={<InstantAudition />} />
-               <Route path="livestream/:id" element={<Livestream />} />
-             </Route>
- 
-             {/* Director Dashboard Routes */}
-             <Route path="/director" element={
-               <ProtectedRoute allowedRoles={["casting_director"]}>
-                 <DirectorLayout />
-               </ProtectedRoute>
-             }>
-               <Route index element={<DirectorDashboard />} />
-               <Route path="projects" element={<MyProjects />} />
-               <Route path="projects/:id/edit" element={<CreateCasting />} />
-               <Route path="create" element={<CreateCasting />} />
-               <Route path="submissions" element={<DirectorSubmissions />} />
-               <Route path="submissions/:id" element={<DirectorSubmissions />} />
-               <Route path="messages" element={<DirectorMessages />} />
-               <Route path="notifications" element={<Notifications />} />
-               <Route path="livestreams" element={<LivestreamsList />} />
-               <Route path="audition" element={<InstantAudition />} />
-               <Route path="livestream/:id" element={<Livestream />} />
-             </Route>
- 
-             {/* Professional Dashboard Routes */}
-             <Route path="/professional" element={
-               <ProtectedRoute allowedRoles={["industry_professional"]}>
-                 <ProfessionalLayout />
-               </ProtectedRoute>
-             }>
-               <Route index element={<ProfessionalDashboard />} />
-               <Route path="profile" element={<ProfessionalProfile />} />
-               <Route path="services" element={<ProfessionalServices />} />
-               <Route path="talents" element={<BrowseTalents />} />
-               <Route path="bookings" element={<ProfessionalBookings />} />
-               <Route path="messages" element={<ProfessionalMessages />} />
-               <Route path="notifications" element={<Notifications />} />
-             </Route>
-             
-             {/* Admin Dashboard Routes */}
-             <Route path="/admin" element={
-               <ProtectedRoute allowedRoles={["admin"]}>
-                 <AdminLayout />
-               </ProtectedRoute>
-             }>
-               <Route index element={<AdminDashboard />} />
-               <Route path="moderation" element={<ModerationQueue />} />
-               <Route path="analytics" element={<AdminAnalytics />} />
-               <Route path="users" element={<UsersManagement />} />
-               <Route path="submissions" element={<AdminSubmissions />} />
-               <Route path="bookings" element={<AdminBookings />} />
-               <Route path="notifications" element={<AdminNotifications />} />
-             </Route>
-             
-             {/* Catch-all */}
-             <Route path="*" element={<NotFound />} />
-           </Routes>
-         </BrowserRouter>
-       </TooltipProvider>
-     </AuthProvider>
+            <Route path="/browse-cast" element={<BrowseCast />} />
+            <Route path="/browse-cast/:id" element={<CastingDetail />} />
+            <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
+            {/* Talent Dashboard Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute allowedRoles={["talent"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="browse-cast" element={<BrowseCast />} />
+              <Route path="browse-cast/:id" element={<CastingDetail />} />
+              <Route path="browse-cast/:id/submit" element={<SubmitAudition />} />
+              <Route path="submissions" element={<Submissions />} />
+              <Route path="messages" element={<Messages />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="livestreams" element={<LivestreamsList />} />
+              <Route path="audition" element={<InstantAudition />} />
+              <Route path="livestream/:id" element={<Livestream />} />
+            </Route>
+
+            {/* Director Dashboard Routes */}
+            <Route path="/director" element={
+              <ProtectedRoute allowedRoles={["casting_director"]}>
+                <DirectorLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<DirectorDashboard />} />
+              <Route path="projects" element={<MyProjects />} />
+              <Route path="projects/:id/edit" element={<CreateCasting />} />
+              <Route path="create" element={<CreateCasting />} />
+              <Route path="submissions" element={<DirectorSubmissions />} />
+              <Route path="submissions/:id" element={<DirectorSubmissions />} />
+              <Route path="messages" element={<DirectorMessages />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="livestreams" element={<LivestreamsList />} />
+              <Route path="audition" element={<InstantAudition />} />
+              <Route path="livestream/:id" element={<Livestream />} />
+            </Route>
+
+            {/* Professional Dashboard Routes */}
+            <Route path="/professional" element={
+              <ProtectedRoute allowedRoles={["industry_professional"]}>
+                <ProfessionalLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<ProfessionalDashboard />} />
+              <Route path="profile" element={<ProfessionalProfile />} />
+              <Route path="services" element={<ProfessionalServices />} />
+              <Route path="talents" element={<BrowseTalents />} />
+              <Route path="bookings" element={<ProfessionalBookings />} />
+              <Route path="messages" element={<ProfessionalMessages />} />
+              <Route path="notifications" element={<Notifications />} />
+            </Route>
+
+            {/* Admin Dashboard Routes */}
+            <Route path="/admin" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<AdminDashboard />} />
+              <Route path="moderation" element={<ModerationQueue />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="users" element={<UsersManagement />} />
+              <Route path="submissions" element={<AdminSubmissions />} />
+              <Route path="bookings" element={<AdminBookings />} />
+              <Route path="notifications" element={<AdminNotifications />} />
+            </Route>
+
+            {/* Catch-all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

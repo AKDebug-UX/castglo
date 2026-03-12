@@ -30,7 +30,7 @@ export default function Join() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Logo />
           <nav className="hidden md:flex items-center gap-8 text-sm">
-            <Link to="/browse" className="text-foreground hover:text-primary">Browse</Link>
+            <Link to="/browse-talent" className="text-foreground hover:text-primary">Browse</Link>
             <Link to="/about" className="text-foreground hover:text-primary">About</Link>
             <Link to="/contact" className="text-foreground hover:text-primary">Contact</Link>
           </nav>

@@ -111,7 +111,7 @@ export default function SubmitAudition() {
       <div className="text-center py-12">
         <p className="text-muted-foreground">Casting call not found.</p>
         <Button variant="link" asChild>
-          <Link to="/dashboard/browse">Back to browse</Link>
+          <Link to="/dashboard/browse-cast">Back to browse</Link>
         </Button>
       </div>
     );
@@ -120,7 +120,7 @@ export default function SubmitAudition() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       <Link 
-        to={`/dashboard/browse/${id}`}
+        to={`/dashboard/browse-cast/${id}`}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />

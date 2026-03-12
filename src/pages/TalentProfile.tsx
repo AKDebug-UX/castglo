@@ -86,7 +86,7 @@ export default function TalentProfile() {
               <h1 className="text-xl font-semibold">Talent not found</h1>
               <p className="mt-2 text-sm text-muted-foreground">Please go back and select a profile again.</p>
               <Button className="mt-6" variant="outline" asChild>
-                <Link to="/browse">Back to Browse</Link>
+                <Link to="/browse-talent">Back to Browse</Link>
               </Button>
             </div>
           ) : (
@@ -112,7 +112,7 @@ export default function TalentProfile() {
                     <div className="mt-6 flex flex-col gap-2">
                       <Button variant="hero" className="w-full">Book Talent</Button>
                       <Button variant="outline" className="w-full" asChild>
-                        <Link to="/browse">Back to Browse</Link>
+                        <Link to="/browse-talent">Back to Browse</Link>
                       </Button>
                     </div>
                   </div>

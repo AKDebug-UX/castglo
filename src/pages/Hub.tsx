@@ -81,7 +81,7 @@ export default function Hub() {
                   Be inspired by talent who found their big break on Castglo. Learn about their journey, their audition process, and how they used our platform to succeed.
                 </p>
                 <Button asChild variant="outline" size="sm">
-                  <Link to="/browse">Explore Opportunities</Link>
+                  <Link to="/#browse-castings">Explore Opportunities</Link>
                 </Button>
               </CardContent>
             </Card>

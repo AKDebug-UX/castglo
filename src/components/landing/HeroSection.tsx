@@ -100,7 +100,7 @@ export function HeroSection() {
                       </div>
                       <div className="p-2">
                         <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
-                          <Link to={`/browse`}>View Details</Link>
+                          <Link to={call._id ? `/browse-cast/${call._id}` : "/sign-in"}>View Details</Link>
                         </Button>
                       </div>
                     </div>
@@ -132,15 +132,20 @@ export function HeroSection() {
                 size="sm"
                 asChild
               >
-                <Link to="/dashboard">Talent Hub</Link>
+                <Link to="/browse-talent">Talent Hub</Link>
               </Button>
               <Button 
                 variant={"tab-outline"}
                 className="bg-secondary text-white hover:text-secondary-foreground"
                 size="sm"
-                asChild
+                onClick={() => {
+                  const element = document.getElementById('browse-castings');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
               >
-                <Link to="/director">Casting Hub</Link>
+                Casting Hub
               </Button>
               <Button 
                 variant={"tab-outline"}
@@ -166,7 +171,7 @@ export function HeroSection() {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
                 const keyword = formData.get("keyword");
-                window.location.href = `/browse?search=${keyword}`;
+                window.location.href = `/browse-talent?search=${keyword}`;
               }} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Keyword</label>

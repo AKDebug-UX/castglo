@@ -1,13 +1,30 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/landing/HeroSection";
+import { BrowseCastSection } from "@/components/landing/BrowseCastSection";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 const Index = () => {
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    if (hash === '#browse-castings') {
+      const element = document.getElementById('browse-castings');
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, [hash]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
         <HeroSection />
+        <BrowseCastSection />
         
         {/* Get Started Section */}
         <section className="py-16 bg-gradient-to-b from-[#DEFCFE] to-white">

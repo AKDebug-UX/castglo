@@ -14,7 +14,7 @@ import {
 const navItems = [
   { title: "Dashboard", href: "/dashboard", Icon: LayoutDashboard },
   { title: "Profile", href: "/dashboard/profile", Icon: User },
-  { title: "Browse Casting Calls", href: "/dashboard/browse", Icon: Search },
+  { title: "Browse Casting Calls", href: "/dashboard/browse-cast", Icon: Search },
   { title: "My Submissions", href: "/dashboard/submissions", Icon: FileText },
   { title: "Messages", href: "/dashboard/messages", Icon: MessageSquare },
   { title: "Notifications", href: "/dashboard/notifications", Icon: Bell },
