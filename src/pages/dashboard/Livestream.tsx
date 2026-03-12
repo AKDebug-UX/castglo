@@ -63,7 +63,7 @@ export default function LivestreamPage() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
 
-  const inviteLink = `${window.location.origin}/dashboard/livestream/${id}`;
+  const inviteLink = `${window.location.origin}/livestream/${id}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(inviteLink);
