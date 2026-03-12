@@ -25,7 +25,10 @@ import {
   UserPlus,
   Info,
   X,
-  Play
+  Play,
+  Share2,
+  Copy,
+  Check
 } from "lucide-react";
 import { livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -58,6 +61,16 @@ export default function LivestreamPage() {
   const [participants, setParticipants] = useState<any[]>([]);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const inviteLink = `${window.location.origin}/dashboard/livestream/${id}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(inviteLink);
+    setIsCopied(true);
+    toast.success("Invite link copied to clipboard!");
+    setTimeout(() => setIsCopied(false), 2000);
+  };
 
   useEffect(() => {
     const fetchStream = async () => {
@@ -461,6 +474,31 @@ export default function LivestreamPage() {
                   </div>
                 ))}
               </TabsContent>
+
+              <TabsContent value="info" className="m-0 p-6 space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold mb-2">Joining info</h3>
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+                    <p className="text-xs text-slate-400 break-all">{inviteLink}</p>
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="w-full h-9 rounded-lg text-xs font-bold gap-2"
+                      onClick={handleCopyLink}
+                    >
+                      {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      {isCopied ? "Copied!" : "Copy joining info"}
+                    </Button>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-bold mb-2">Description</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    {streamData?.description || "No description provided for this session."}
+                  </p>
+                </div>
+              </TabsContent>
             </div>
           </Tabs>
         </div>
@@ -471,7 +509,16 @@ export default function LivestreamPage() {
         <div className="flex items-center gap-4 w-1/4">
           <div className="hidden md:block">
             <p className="text-sm font-bold truncate max-w-[200px]">{streamData?.title}</p>
-            <p className="text-[10px] text-slate-500 font-mono tracking-tighter">{id?.slice(0, 4)}-{id?.slice(4, 8)}-{id?.slice(8, 12)}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] text-slate-500 font-mono tracking-tighter">{id?.slice(0, 4)}-{id?.slice(4, 8)}-{id?.slice(8, 12)}</p>
+              <button 
+                onClick={handleCopyLink}
+                className="text-primary hover:text-primary/80 transition-colors p-1"
+                title="Copy Invite Link"
+              >
+                {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              </button>
+            </div>
           </div>
         </div>
 

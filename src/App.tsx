@@ -112,6 +112,7 @@ const App = () => (
             <Route path="/browse-cast" element={<PublicCasting />} />
             <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
             <Route path="/cast/:id" element={<PublicCastingDetail />} />
+              <Route path="/livestream/:id" element={<Livestream />} />
             {/* Talent Dashboard Routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute allowedRoles={["talent"]}>

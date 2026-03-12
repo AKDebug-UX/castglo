@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, User, Video, Users, Loader2 } from "lucide-react";
-import { castingCallAPI, profileAPI } from "@/lib/api";
+import { castingCallAPI, profileAPI, livestreamAPI } from "@/lib/api";
+import { Card, CardContent } from "@/components/ui/card";
 import { MOCK_CASTINGS, MOCK_TALENTS } from "@/lib/data";
 
 import talentMichael from "@/assets/talent-michael.jpg";
@@ -16,10 +17,49 @@ import newsAudition from "@/assets/news-audition.jpg";
 export function HeroSection() {
   const [featuredCalls, setFeaturedCalls] = useState([]);
   const [featuredTalents, setFeaturedTalents] = useState([]);
+  const [publicStreams, setPublicStreams] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const castingScrollRef = useRef(null);
   const talentScrollRef = useRef(null);
+  const streamScrollRef = useRef(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [callsRes, profilesRes, streamsRes] = await Promise.all([
+          castingCallAPI.getAll({ limit: 5, status: 'open' }).catch(err => ({ data: { success: false } })),
+          profileAPI.search({ limit: 4 }).catch(err => ({ data: { success: false } })),
+          livestreamAPI.getAll().catch(err => ({ data: { success: false } }))
+        ]);
+
+        if (callsRes.data?.success && Array.isArray(callsRes.data.data)) {
+          setFeaturedCalls(callsRes.data.data.slice(0, 5));
+        } else {
+          setFeaturedCalls(MOCK_CASTINGS.slice(0, 5));
+        }
+
+        if (profilesRes.data?.success && Array.isArray(profilesRes.data.data)) {
+          setFeaturedTalents(profilesRes.data.data.slice(0, 4));
+        } else {
+          setFeaturedTalents(MOCK_TALENTS.slice(0, 4));
+        }
+
+        if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
+          setPublicStreams(streamsRes.data.data.filter((s) => s.isPublic !== false).slice(0, 4));
+        }
+      } catch (error) {
+        console.error("Error fetching landing page data:", error);
+        setFeaturedCalls(MOCK_CASTINGS.slice(0, 5));
+        setFeaturedTalents(MOCK_TALENTS.slice(0, 4));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -40,41 +80,18 @@ export function HeroSection() {
           talentScrollRef.current.scrollBy({ top: 200, behavior: 'smooth' });
         }
       }
+
+      if (streamScrollRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = streamScrollRef.current;
+        if (scrollTop + clientHeight >= scrollHeight - 10) {
+          streamScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          streamScrollRef.current.scrollBy({ top: 200, behavior: 'smooth' });
+        }
+      }
     }, 4000);
 
     return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [callsRes, profilesRes] = await Promise.all([
-          castingCallAPI.getAll({ limit: 5, status: 'open' }).catch(err => ({ data: { success: false } })),
-          profileAPI.search({ limit: 4 }).catch(err => ({ data: { success: false } }))
-        ]);
-
-        if (callsRes.data?.success && Array.isArray(callsRes.data.data)) {
-          setFeaturedCalls(callsRes.data.data.slice(0, 5));
-        } else {
-          setFeaturedCalls(MOCK_CASTINGS.slice(0, 5));
-        }
-
-        if (profilesRes.data?.success && Array.isArray(profilesRes.data.data)) {
-          setFeaturedTalents(profilesRes.data.data.slice(0, 4));
-        } else {
-          setFeaturedTalents(MOCK_TALENTS.slice(0, 4));
-        }
-      } catch (error) {
-        console.error("Error fetching landing page data:", error);
-        setFeaturedCalls(MOCK_CASTINGS.slice(0, 5));
-        setFeaturedTalents(MOCK_TALENTS.slice(0, 4));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
   }, []);
 
   const newsArticles = [
@@ -264,6 +281,44 @@ export function HeroSection() {
                 </p>
               </div>
             </div>
+
+            {/* Active Public Auditions */}
+            {publicStreams.length > 0 && (
+              <div className="pt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <div className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+                    Live Auditions
+                  </h2>
+                  <Link to="/dashboard/livestreams" className="text-xs text-primary font-bold hover:underline">
+                    View All
+                  </Link>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {publicStreams.map((stream) => (
+                    <Card key={stream._id} className="border-destructive/10 bg-destructive/[0.02] overflow-hidden group hover:shadow-lg transition-all duration-300">
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-2xl bg-destructive/10 flex items-center justify-center">
+                            <Video className="h-6 w-6 text-destructive" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-sm group-hover:text-destructive transition-colors truncate">{stream.title}</h3>
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              {stream.viewerCount || 0} watching • {stream.category || "Audition"}
+                            </p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="destructive" className="h-8 rounded-lg text-[10px] font-bold px-4" asChild>
+                          <Link to={`/dashboard/livestream/${stream._id}`}>Join</Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Industry News */}
             <div>
