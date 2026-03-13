@@ -284,7 +284,7 @@ export default function LivestreamPage() {
 
       if (response.data.success) {
         const { rtcToken, userId: resUserId, channelName: resChannelName } = response.data.data;
-        const agoraAppId = "084d15ad2fcd42dabfc7f1caf4922c5a";
+        const agoraAppId = import.meta.env.VITE_AGORA_APP_ID;
 
         // Determine final userId and channelName
         const userId = resUserId || response.data.data.uid || response.data.data._id || user?.id;
