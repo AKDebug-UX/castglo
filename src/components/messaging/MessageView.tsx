@@ -155,14 +155,6 @@ const ChatView = ({
                 );
               })()}
             </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="rounded-full text-slate-400 hover:text-slate-600">
-                <Search className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full text-slate-400 hover:text-slate-600">
-                <MoreVertical className="w-5 h-5" />
-              </Button>
-            </div>
           </div>
 
           <ScrollArea className="flex-1 bg-blue-50/50">
