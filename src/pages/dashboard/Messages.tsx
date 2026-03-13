@@ -116,8 +116,11 @@ export default function Messages() {
       setIsSearching(true);
       try {
         const response = await userAPI.search({ query: userSearch, limit: 20 });
-        if (response.data.success && Array.isArray(response.data.data)) {
-          setSearchResult(response.data.data.filter(u => u._id !== user?.id));
+        if (response.data.success && Array.isArray(response.data.data?.users)) {
+          const users = response.data.data.users
+            .map((item: any) => item.user)
+            .filter((u: any) => u && u._id !== user?.id);
+          setSearchResult(users);
         }
       } catch (error) {
         console.error("User search failed:", error);

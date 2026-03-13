@@ -84,8 +84,8 @@ export default function LivestreamPage() {
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
-  const [participants, setParticipants] = useState<any[]>([]);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [participants, setParticipants] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
   const [showSidebar, setShowSidebar] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
   const [isMuted, setIsMuted] = useState(false);

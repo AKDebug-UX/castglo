@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export default function AdminNotifications() {
   const [isSending, setIsSending] = useState(false);
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [formData, setFormData] = useState({
     recipient: "all",

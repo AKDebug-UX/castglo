@@ -23,8 +23,8 @@ export default function LivestreamsList() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [myStreams, setMyStreams] = useState<any[]>([]);
-  const [publicStreams, setPublicStreams] = useState<any[]>([]);
+  const [myStreams, setMyStreams] = useState([]);
+  const [publicStreams, setPublicStreams] = useState([]);
   const [activeTab, setActiveTab] = useState("discovery");
 
   useEffect(() => {
