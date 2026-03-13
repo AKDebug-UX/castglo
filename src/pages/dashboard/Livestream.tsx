@@ -298,7 +298,8 @@ export default function LivestreamPage() {
         const { rtcToken, userId: resUserId, channelName: resChannelName, stream } = response.data.data;
         const agoraAppId = import.meta.env.VITE_AGORA_APP_ID;
 
-        // Determine final userId and channelName based on Guideline Step C
+        // Step C: Join with String User ID (Critical)
+        // Ensure we use the MongoDB _id string returned from the backend
         const userId = resUserId || response.data.data.uid || response.data.data._id || user?.id;
         const channelName = resChannelName || stream?.channelName || response.data.data.channel || id;
 
@@ -316,13 +317,20 @@ export default function LivestreamPage() {
         const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
         agoraClientRef.current = client;
 
-        // 2. Set Client Role
+        // Step 3.5: Connection State Management (Anti-Race Condition)
+        if (client.connectionState !== "DISCONNECTED") {
+          await client.leave();
+        }
+
+        // Step B: Setup Agora Client - Set Role before joining
         const role = isOwner ? "host" : "audience";
         await client.setClientRole(role);
 
         // 3. Handle Agora Events
         client.on("user-published", async (user, mediaType) => {
+          // Full Example Code (Viewer) - Step 3: Subscribe to the Host
           await client.subscribe(user, mediaType);
+          
           if (mediaType === "video") {
             setRemoteUsers(prev => {
               if (prev.find(u => u.uid === user.uid)) return prev;
@@ -338,6 +346,26 @@ export default function LivestreamPage() {
           setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
         });
 
+        // Handle Token Expiration
+        client.on("token-privilege-will-expire", async () => {
+          console.log("Agora Token is about to expire. Fetching a new one...");
+          try {
+            let refreshResponse;
+            if (isOwner) {
+              refreshResponse = await livestreamAPI.start(id);
+            } else {
+              const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
+              refreshResponse = await livestreamAPI.join(id, hostId);
+            }
+            if (refreshResponse.data.success && refreshResponse.data.data.rtcToken) {
+              await client.renewToken(refreshResponse.data.data.rtcToken);
+              console.log("Agora Token renewed successfully");
+            }
+          } catch (error) {
+            console.error("Failed to renew Agora token:", error);
+          }
+        });
+
         // 4. Join the Channel
         // Ensure the token is not being sent as an empty string or null
         if (!rtcToken) {
@@ -345,6 +373,7 @@ export default function LivestreamPage() {
         }
         
         console.log("Attempting to join Agora channel...");
+        // Use String userId as per Step C
         await client.join(agoraAppId, String(channelName), rtcToken, String(userId));
         console.log("Joined Agora channel successfully!");
 
