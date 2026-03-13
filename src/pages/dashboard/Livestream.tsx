@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IRemoteUser } from "agora-rtc-sdk-ng";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -46,6 +47,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 
+// Component to handle Agora remote tracks
+const RemoteVideoPlayer = ({ user }: { user: IRemoteUser }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current && user.videoTrack) {
+      user.videoTrack.play(containerRef.current);
+    }
+    return () => {
+      user.videoTrack?.stop();
+    };
+  }, [user.videoTrack]);
+
+  return <div ref={containerRef} className="w-full h-full object-cover" />;
+};
+
 export default function LivestreamPage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -68,6 +85,12 @@ export default function LivestreamPage() {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
+
+  // Agora State
+  const agoraClientRef = useRef<IAgoraRTCClient | null>(null);
+  const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | null>(null);
+  const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
+  const [remoteUsers, setRemoteUsers] = useState<IRemoteUser[]>([]);
 
   const isOwner = Boolean(
     streamData && user && 
@@ -112,28 +135,49 @@ export default function LivestreamPage() {
 
   // Update local video element when joined
   useEffect(() => {
-    if (isJoined && localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
+    if (isJoined && localVideoRef.current) {
+      if (localVideoTrack) {
+        localVideoTrack.play(localVideoRef.current);
+      } else if (localStream) {
+        localVideoRef.current.srcObject = localStream;
+      }
     }
-  }, [isJoined, localStream]);
+  }, [isJoined, localStream, localVideoTrack]);
 
-  // Handle Cam Toggle
+  // Handle Remote Video Playback
   useEffect(() => {
-    if (localStream) {
+    remoteUsers.forEach(remoteUser => {
+      // Find the host in remote users to play in main area if viewer
+      // For now, we'll just play the first remote user in the main area if we are audience
+      if (!isOwner && remoteUser.videoTrack) {
+        // We'll use a specific ref for remote host video
+      }
+    });
+  }, [remoteUsers, isOwner]);
+
+  // Handle Cam Toggle (Local MediaStream)
+  useEffect(() => {
+    if (localStream && !localVideoTrack) {
       localStream.getVideoTracks().forEach(track => {
         track.enabled = isCamOn;
       });
     }
-  }, [isCamOn, localStream]);
+    if (localVideoTrack) {
+      localVideoTrack.setEnabled(isCamOn);
+    }
+  }, [isCamOn, localStream, localVideoTrack]);
 
-  // Handle Mic Toggle
+  // Handle Mic Toggle (Local MediaStream)
   useEffect(() => {
-    if (localStream) {
+    if (localStream && !localAudioTrack) {
       localStream.getAudioTracks().forEach(track => {
         track.enabled = isMicOn;
       });
     }
-  }, [isMicOn, localStream]);
+    if (localAudioTrack) {
+      localAudioTrack.setEnabled(isMicOn);
+    }
+  }, [isMicOn, localStream, localAudioTrack]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -220,7 +264,7 @@ export default function LivestreamPage() {
       }
     };
     fetchStream();
-  }, [id, user?.id]);
+  }, [id, user?.id]); // Stabilized dependency by using user?.id instead of user object
 
   const handleJoin = async () => {
     if (!id) return;
@@ -237,20 +281,122 @@ export default function LivestreamPage() {
         const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
         response = await livestreamAPI.join(id, hostId);
       }
+
       if (response.data.success) {
+        const { rtcToken, userId: resUserId, channelName: resChannelName } = response.data.data;
+        const agoraAppId = "084d15ad2fcd42dabfc7f1caf4922c5a";
+
+        // Determine final userId and channelName
+        const userId = resUserId || response.data.data.uid || response.data.data._id || user?.id;
+        const channelName = resChannelName || response.data.data.channel || id;
+
+        console.log("Agora Join Params:", { agoraAppId, channelName, rtcToken, userId });
+
+        if (!agoraAppId) {
+          throw new Error("Agora App ID is not configured");
+        }
+
+        if (!userId) {
+          throw new Error("User identity missing for connection");
+        }
+
+        // 1. Initialize Agora Client
+        const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
+        agoraClientRef.current = client;
+
+        // 2. Set Client Role
+        const role = isOwner ? "host" : "audience";
+        await client.setClientRole(role);
+
+        // 3. Handle Agora Events
+        client.on("user-published", async (user, mediaType) => {
+          await client.subscribe(user, mediaType);
+          if (mediaType === "video") {
+            setRemoteUsers(prev => {
+              if (prev.find(u => u.uid === user.uid)) return prev;
+              return [...prev, user];
+            });
+          }
+          if (mediaType === "audio") {
+            user.audioTrack?.play();
+          }
+        });
+
+        client.on("user-unpublished", (user) => {
+          setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
+        });
+
+        // 4. Join the Channel
+        // Ensure the token is not being sent as an empty string or null
+        if (!rtcToken) {
+          throw new Error("RTC Token is missing from the backend response");
+        }
+        
+        console.log("Attempting to join Agora channel...");
+        await client.join(agoraAppId, String(channelName), rtcToken, String(userId));
+        console.log("Joined Agora channel successfully!");
+
+        // 5. If Host, create and publish tracks
+        if (isOwner) {
+          const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+          const videoTrack = await AgoraRTC.createCameraVideoTrack();
+          
+          setLocalAudioTrack(audioTrack);
+          setLocalVideoTrack(videoTrack);
+          
+          await client.publish([audioTrack, videoTrack]);
+          
+          // Stop the preview localStream if it exists
+          if (localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+            setLocalStream(null);
+          }
+        }
+
         setIsJoined(true);
         toast.success(isOwner ? "Started the live audition" : "Joined the live audition");
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to connect to the session");
+      console.error("Agora Error:", error);
+      toast.error(error.message || "Failed to connect to the session");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (localVideoTrack) {
+        localVideoTrack.stop();
+        localVideoTrack.close();
+      }
+      if (localAudioTrack) {
+        localAudioTrack.stop();
+        localAudioTrack.close();
+      }
+      if (agoraClientRef.current) {
+        agoraClientRef.current.leave();
+      }
+    };
+  }, [localVideoTrack, localAudioTrack]);
+
   const handleLeave = async () => {
     const confirmMsg = isOwner ? "End the audition for everyone?" : "Leave the audition?";
     if (window.confirm(confirmMsg)) {
+      // Cleanup Agora
+      if (localVideoTrack) {
+        localVideoTrack.stop();
+        localVideoTrack.close();
+      }
+      if (localAudioTrack) {
+        localAudioTrack.stop();
+        localAudioTrack.close();
+      }
+      if (agoraClientRef.current) {
+        await agoraClientRef.current.leave();
+      }
+
       if (id) {
         try {
           if (isOwner) await livestreamAPI.end(id);
@@ -264,11 +410,12 @@ export default function LivestreamPage() {
   };
 
   useEffect(() => {
+    const pollRef = { active: true };
     let timeoutId: NodeJS.Timeout;
     const currentUserId = user?.id;
 
     const fetchMessages = async () => {
-      if (!id || !isJoined) return;
+      if (!id || !isJoined || !pollRef.active) return;
       try {
         const response = await livestreamAPI.getMessages(id);
         if (response.data.success && Array.isArray(response.data.data)) {
@@ -288,7 +435,7 @@ export default function LivestreamPage() {
       } catch (error) {
         console.error("Messages error:", error);
       } finally {
-        if (isJoined) {
+        if (isJoined && pollRef.active) {
           timeoutId = setTimeout(fetchMessages, 5000);
         }
       }
@@ -299,6 +446,7 @@ export default function LivestreamPage() {
     }
 
     return () => {
+      pollRef.active = false;
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [id, isJoined, user?.id]);
@@ -437,7 +585,9 @@ export default function LivestreamPage() {
               <div className="absolute inset-0">
                 {isOwner ? (
                   isCamOn ? (
-                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+                    <div className="w-full h-full">
+                      <div ref={localVideoRef} className="w-full h-full object-cover scale-x-[-1]" />
+                    </div>
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#181A20] to-[#0F1115]">
                       <Avatar className="w-32 h-32 border-4 border-white/5 shadow-2xl"><AvatarFallback className="bg-primary/20 text-primary text-4xl">{user?.fullName?.[0]}</AvatarFallback></Avatar>
@@ -445,17 +595,23 @@ export default function LivestreamPage() {
                     </div>
                   )
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-[#181A20] to-[#0F1115]">
-                    <div className="relative">
-                      <Avatar className="w-40 h-40 border-8 border-white/5 shadow-3xl">
-                        <AvatarFallback className="bg-primary/10 text-primary text-5xl font-black">{streamData?.hostId?.fullName?.[0] || "H"}</AvatarFallback>
-                      </Avatar>
-                      <div className="absolute bottom-2 right-2 h-6 w-6 bg-primary rounded-full border-4 border-[#181A20]" />
-                    </div>
-                    <div className="text-center space-y-2">
-                      <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] animate-pulse">Waiting for broadcast feed...</p>
-                      <p className="text-xs text-slate-500">The session is moderated. Enjoy the audition!</p>
-                    </div>
+                  <div className="w-full h-full relative">
+                    {remoteUsers.length > 0 ? (
+                      <RemoteVideoPlayer user={remoteUsers[0]} />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-[#181A20] to-[#0F1115]">
+                        <div className="relative">
+                          <Avatar className="w-40 h-40 border-8 border-white/5 shadow-3xl">
+                            <AvatarFallback className="bg-primary/10 text-primary text-5xl font-black">{streamData?.hostId?.fullName?.[0] || "H"}</AvatarFallback>
+                          </Avatar>
+                          <div className="absolute bottom-2 right-2 h-6 w-6 bg-primary rounded-full border-4 border-[#181A20]" />
+                        </div>
+                        <div className="text-center space-y-2">
+                          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] animate-pulse">Waiting for broadcast feed...</p>
+                          <p className="text-xs text-slate-500">The session is moderated. Enjoy the audition!</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -476,10 +632,13 @@ export default function LivestreamPage() {
                 </div>
               </div>
               <div className="absolute top-4 right-4 w-48 space-y-3">
-                {participants.filter(p => !p.isSelf).slice(0, 3).map((p) => (
-                  <div key={p.id} className="aspect-video bg-black/60 backdrop-blur-xl rounded-lg border border-white/10 overflow-hidden relative shadow-xl group/mini">
-                    <div className="absolute inset-0 flex items-center justify-center"><Avatar className="h-8 w-8"><AvatarFallback className="text-[10px] bg-primary/10 text-primary">{p.name?.[0]}</AvatarFallback></Avatar></div>
-                    <div className="absolute bottom-1 left-1 right-1 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded flex items-center justify-between"><span className="text-[8px] font-bold truncate pr-1">{p.name}</span>{!p.isMicOn && <MicOff className="w-2 h-2 text-destructive" />}</div>
+                {remoteUsers.slice(1).map((remoteUser) => (
+                  <div key={remoteUser.uid} className="aspect-video bg-black/60 backdrop-blur-xl rounded-lg border border-white/10 overflow-hidden relative shadow-xl group/mini">
+                    <RemoteVideoPlayer user={remoteUser} />
+                    <div className="absolute bottom-1 left-1 right-1 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded flex items-center justify-between">
+                      <span className="text-[8px] font-bold truncate pr-1">User {remoteUser.uid}</span>
+                      {!remoteUser.hasAudio && <MicOff className="w-2 h-2 text-destructive" />}
+                    </div>
                   </div>
                 ))}
               </div>
