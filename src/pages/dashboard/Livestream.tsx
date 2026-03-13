@@ -382,6 +382,16 @@ export default function LivestreamPage() {
         setRemoteUsers(prev => prev.filter(u => u.uid !== remoteUser.uid));
       });
 
+      client.on("user-left", (remoteUser) => {
+        console.log(`Remote user ${remoteUser.uid} left`);
+        const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
+        if (String(remoteUser.uid) === String(hostId)) {
+          toast.info("The host has left the session.");
+          // We don't necessarily end the session here because the host might be reconnecting
+        }
+        setRemoteUsers(prev => prev.filter(u => u.uid !== remoteUser.uid));
+      });
+
       // 3.1 Token Expiration Management
       // Renew token before it expires to maintain connection
       client.on("token-privilege-will-expire", async () => {
@@ -497,12 +507,17 @@ export default function LivestreamPage() {
     let timeoutId: NodeJS.Timeout;
     const currentUserId = user?.id;
 
-    const fetchMessages = async () => {
+    const fetchMessagesAndStatus = async () => {
       if (!id || !isJoined || !pollRef.active) return;
       try {
-        const response = await livestreamAPI.getMessages(id);
-        if (response.data.success && Array.isArray(response.data.data)) {
-          const formattedMessages = response.data.data.map((msg: any) => ({
+        const [msgRes, myRes, publicRes] = await Promise.all([
+          livestreamAPI.getMessages(id),
+          livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
+          livestreamAPI.getAll().catch(() => ({ data: { success: false } }))
+        ]);
+
+        if (msgRes.data.success && Array.isArray(msgRes.data.data)) {
+          const formattedMessages = msgRes.data.data.map((msg: any) => ({
             id: msg._id || msg.id,
             sender: msg.sender?.fullName || msg.senderName || "Unknown",
             text: msg.message || msg.text,
@@ -515,17 +530,32 @@ export default function LivestreamPage() {
             return formattedMessages;
           });
         }
+
+        // Check if stream has ended
+        let currentStream = null;
+        if (myRes.data?.success && Array.isArray(myRes.data.data)) {
+          currentStream = myRes.data.data.find((s: any) => s._id === id);
+        }
+        if (!currentStream && publicRes.data?.success && Array.isArray(publicRes.data.data)) {
+          currentStream = publicRes.data.data.find((s: any) => s._id === id);
+        }
+
+        if (currentStream && currentStream.status === 'ended' && !isBroadcaster) {
+          toast.info("The host has ended the livestream.");
+          setTimeout(() => navigate(-1), 3000);
+          return;
+        }
       } catch (error) {
-        console.error("Messages error:", error);
+        console.error("Polling error:", error);
       } finally {
         if (isJoined && pollRef.active) {
-          timeoutId = setTimeout(fetchMessages, 5000);
+          timeoutId = setTimeout(fetchMessagesAndStatus, 5000);
         }
       }
     };
 
     if (isJoined) {
-      fetchMessages();
+      fetchMessagesAndStatus();
     }
 
     return () => {
