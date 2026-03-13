@@ -4,6 +4,7 @@ import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IR
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import { 
   Video, 
   Mic, 
@@ -32,8 +33,10 @@ import {
   Flag,
   UserX,
   Heart,
-  Plus
+  Plus,
+  Globe
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -732,9 +735,51 @@ export default function LivestreamPage() {
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     <div className="bg-primary/5 rounded-lg p-3 border border-primary/10 text-[10px] text-slate-400 leading-relaxed">Welcome to the audition! Keep it professional and respectful.</div>
                     {chatMessages.map((msg) => (
-                      <div key={msg.id} className="group/msg flex gap-2">
-                        <Avatar className="h-6 w-6 mt-1 shrink-0"><AvatarFallback className="text-[8px] bg-white/5 text-slate-400">{msg.sender?.[0]}</AvatarFallback></Avatar>
-                        <div className="flex-1 min-w-0"><div className="flex items-baseline gap-2"><span className={`text-[11px] font-black ${msg.isSelf ? "text-primary" : "text-slate-300"}`}>{msg.sender}</span><span className="text-[9px] text-slate-600 opacity-0 group-hover/msg:opacity-100">{msg.timestamp}</span></div><p className="text-xs text-slate-400 leading-relaxed break-words">{msg.text}</p></div>
+                      <div 
+                        key={msg.id} 
+                        className={cn(
+                          "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
+                          msg.isSelf ? "justify-end" : "justify-start"
+                        )}
+                      >
+                        <div className={cn(
+                          "max-w-[85%] space-y-1",
+                          msg.isSelf ? "items-end" : "items-start"
+                        )}>
+                          <div className="flex items-center gap-2 mb-1">
+                            {!msg.isSelf && (
+                              <Avatar className="h-5 w-5 shrink-0">
+                                <AvatarFallback className="text-[8px] bg-white/5 text-slate-400">
+                                  {msg.sender?.[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                            <span className={cn(
+                              "text-[10px] font-black uppercase tracking-tighter",
+                              msg.isSelf ? "text-primary" : "text-slate-400"
+                            )}>
+                              {msg.sender}
+                            </span>
+                            {msg.isSelf && (
+                              <Avatar className="h-5 w-5 shrink-0">
+                                <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
+                                  {user?.fullName?.[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                          </div>
+                          <div className={cn(
+                            "px-3 py-2 rounded-xl text-[11px] shadow-sm",
+                            msg.isSelf 
+                              ? "bg-primary text-white rounded-tr-none" 
+                              : "bg-[#181A20] text-slate-300 rounded-tl-none border border-white/5"
+                          )}>
+                            <p className="leading-relaxed break-words">{msg.text}</p>
+                          </div>
+                          <p className="text-[8px] text-slate-600 px-1 font-bold">
+                            {msg.timestamp}
+                          </p>
+                        </div>
                       </div>
                     ))}
                     <div ref={chatEndRef} />

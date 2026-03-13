@@ -369,26 +369,30 @@ export default function ProfessionalMessages() {
 
                 <ScrollArea className="flex-1 p-4 bg-muted/20">
                   <div className="space-y-4">
-                    {messages.map((msg, idx: number) => (
-                      <div
-                        key={idx}
-                        ref={idx === messages.length - 1 ? scrollRef : null}
-                        className={cn("flex", msg.sender === user?.id ? "justify-end" : "justify-start")}
-                      >
-                        <div className={cn(
-                          "max-w-[70%] rounded-lg p-3",
-                          msg.sender === user?.id ? "bg-primary text-primary-foreground" : "bg-card border"
-                        )}>
-                          <p className="text-sm">{msg.text}</p>
-                          <p className={cn(
-                            "text-xs mt-1",
-                            msg.sender === user?.id ? "text-primary-foreground/60" : "text-muted-foreground"
+                    {messages.map((msg, idx: number) => {
+                      const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
+                      const isSelf = senderId === user?.id;
+                      return (
+                        <div
+                          key={idx}
+                          ref={idx === messages.length - 1 ? scrollRef : null}
+                          className={cn("flex", isSelf ? "justify-end" : "justify-start")}
+                        >
+                          <div className={cn(
+                            "max-w-[70%] rounded-lg p-3",
+                            isSelf ? "bg-primary text-primary-foreground" : "bg-card border"
                           )}>
-                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                            <p className="text-sm">{msg.text}</p>
+                            <p className={cn(
+                              "text-xs mt-1",
+                              isSelf ? "text-primary-foreground/60" : "text-muted-foreground"
+                            )}>
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {messages.length === 0 && (
                       <div className="text-center py-12 text-sm text-muted-foreground">Send a message to start the conversation.</div>
                     )}
