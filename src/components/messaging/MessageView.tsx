@@ -197,108 +197,14 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
       "flex flex-col border-r border-slate-200 bg-white",
       isMobileView && selectedConversation && "hidden"
     )}>
-      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-800">{title}</h2>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogTrigger asChild>
-            <Button size="icon" variant="ghost" className="rounded-full hover:bg-slate-100">
-              <Plus className="w-5 h-5 text-slate-600" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-[#F1FBFB] border-none">
-            <div className="p-6 space-y-6">
-              <div className="space-y-1">
-                <DialogTitle className="text-xl font-bold">Start New Conversation</DialogTitle>
-                <DialogDescription className="text-sm text-slate-600">
-                  Send a message to a industry professional
-                </DialogDescription>
-              </div>
-
-              <form onSubmit={handleFormSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="recipient" className="text-sm font-semibold">Recipient</Label>
-                  <Select value={selectedRecipientId} onValueChange={setSelectedRecipientId}>
-                    <SelectTrigger id="recipient" className="w-full bg-white border-slate-300 rounded-lg h-11">
-                      <SelectValue placeholder="Select recipient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div className="p-2 border-b border-slate-100">
-                        <div className="relative">
-                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                          <Input 
-                            placeholder="Search users..." 
-                            className="h-8 pl-8 text-xs bg-slate-50 border-none"
-                            value={userSearch}
-                            onChange={(e) => setUserSearch(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      {isSearching ? (
-                        <div className="p-4 text-center"><Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" /></div>
-                      ) : searchResult.length > 0 ? (
-                        searchResult.map((u) => (
-                          <SelectItem key={u._id} value={u._id}>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-5 w-5">
-                                <AvatarImage src={u.profilePicture} />
-                                <AvatarFallback className="text-[10px]">{u.fullName?.[0]}</AvatarFallback>
-                              </Avatar>
-                              <span>{u.fullName}</span>
-                              <span className="text-[10px] text-slate-400 uppercase">({u.role?.replace('_', ' ')})</span>
-                            </div>
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <div className="p-4 text-center text-xs text-slate-500">No users found</div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="subject" className="text-sm font-semibold">Subject</Label>
-                  <Input 
-                    id="subject"
-                    placeholder="Enter Subject" 
-                    className="bg-white border-slate-300 rounded-lg h-11"
-                    value={formSubject}
-                    onChange={(e) => setFormSubject(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="message" className="text-sm font-semibold">Message</Label>
-                  <Textarea 
-                    id="message"
-                    placeholder="Type your message" 
-                    className="bg-white border-slate-300 rounded-xl min-h-[120px] resize-none"
-                    value={formMessage}
-                    onChange={(e) => setFormMessage(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg px-6"
-                    onClick={() => setIsModalOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    className="bg-primary hover:bg-primary/90 text-white rounded-lg px-6"
-                    disabled={isSending}
-                  >
-                    {isSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Send Message
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </DialogContent>
-        </Dialog>
+      <div className="p-3 border-b border-slate-200 bg-slate-50/50">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input 
+            placeholder="Search conversations..." 
+            className="h-9 pl-9 bg-white border-slate-200 text-sm rounded-lg"
+          />
+        </div>
       </div>
       <ScrollArea className="flex-1">
         <div className="space-y-1 p-2">
@@ -487,12 +393,114 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
 
   return (
     <div className="flex flex-col h-full md:h-screen md:gap-4">
-      {subtitle && (
-        <div className="mb-2 px-4 pt-4 md:px-0 md:pt-0">
+      <div className="flex items-center justify-between mb-2 px-4 pt-4 md:px-0 md:pt-0">
+        <div>
           <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
-          <p className="text-slate-500 text-sm">{subtitle}</p>
+          {subtitle && <p className="text-slate-500 text-sm">{subtitle}</p>}
         </div>
-      )}
+        {/* New Message Button in Page Header */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-primary hover:bg-primary/90 text-white gap-2 shadow-md shadow-primary/20">
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">New Message</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-[#F1FBFB] border-none">
+            <div className="p-6 space-y-6">
+              <div className="space-y-1">
+                <DialogTitle className="text-xl font-bold">Start New Conversation</DialogTitle>
+                <DialogDescription className="text-sm text-slate-600">
+                  Send a message to a industry professional
+                </DialogDescription>
+              </div>
+
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="recipient" className="text-sm font-semibold">Recipient</Label>
+                  <Select value={selectedRecipientId} onValueChange={setSelectedRecipientId}>
+                    <SelectTrigger id="recipient" className="w-full bg-white border-slate-300 rounded-lg h-11">
+                      <SelectValue placeholder="Select recipient" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="p-2 border-b border-slate-100">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                          <Input 
+                            placeholder="Search users..." 
+                            className="h-8 pl-8 text-xs bg-slate-50 border-none"
+                            value={userSearch}
+                            onChange={(e) => setUserSearch(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      {isSearching ? (
+                        <div className="p-4 text-center"><Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" /></div>
+                      ) : searchResult.length > 0 ? (
+                        searchResult.map((u) => (
+                          <SelectItem key={u._id} value={u._id}>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={u.profilePicture} />
+                                <AvatarFallback className="text-[10px]">{u.fullName?.[0]}</AvatarFallback>
+                              </Avatar>
+                              <span>{u.fullName}</span>
+                              <span className="text-[10px] text-slate-400 uppercase">({u.role?.replace('_', ' ')})</span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-4 text-center text-xs text-slate-500">No users found</div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="subject" className="text-sm font-semibold">Subject</Label>
+                  <Input 
+                    id="subject"
+                    placeholder="Enter Subject" 
+                    className="bg-white border-slate-300 rounded-lg h-11"
+                    value={formSubject}
+                    onChange={(e) => setFormSubject(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message" className="text-sm font-semibold">Message</Label>
+                  <Textarea 
+                    id="message"
+                    placeholder="Type your message" 
+                    className="bg-white border-slate-300 rounded-xl min-h-[120px] resize-none"
+                    value={formMessage}
+                    onChange={(e) => setFormMessage(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg px-6"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-primary hover:bg-primary/90 text-white rounded-lg px-6"
+                    disabled={isSending}
+                  >
+                    {isSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Send Message
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
       <div className="grid md:grid-cols-[320px_1fr] flex-1 min-h-0 animate-fade-in md:border md:border-slate-200 md:rounded-xl overflow-hidden md:shadow-sm bg-white">
         <Sidebar />
         <ChatView />
