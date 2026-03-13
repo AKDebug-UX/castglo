@@ -227,6 +227,70 @@ export default function LivestreamPage() {
   };
 
   useEffect(() => {
+    if (!streamData) return;
+    
+    const realParticipants = [];
+    const currentUserId = user?.id;
+
+    if (streamData.hostId) {
+      const hostId = typeof streamData.hostId === 'object' ? streamData.hostId._id : streamData.hostId;
+      realParticipants.push({
+        id: hostId,
+        name: typeof streamData.hostId === 'object' ? streamData.hostId.fullName : "Host",
+        role: "host",
+        isSelf: currentUserId === hostId,
+        isMicOn: true,
+        isCamOn: true
+      });
+    }
+
+    if (Array.isArray(streamData.coHosts)) {
+      streamData.coHosts.forEach((coHost: any) => {
+        const coHostId = typeof coHost === 'object' ? coHost._id : coHost;
+        realParticipants.push({
+          id: coHostId,
+          name: typeof coHost === 'object' ? coHost.fullName : "Co-Host",
+          role: "co-host",
+          isSelf: currentUserId === coHostId,
+          isMicOn: true,
+          isCamOn: true
+        });
+      });
+    }
+
+    // Add viewers if they exist in streamData
+    if (Array.isArray(streamData.viewers)) {
+      streamData.viewers.forEach((viewer: any) => {
+        const viewerId = typeof viewer === 'object' ? viewer._id : viewer;
+        // Don't add if already in participants (host/cohost)
+        if (!realParticipants.some(p => p.id === viewerId)) {
+          realParticipants.push({
+            id: viewerId,
+            name: typeof viewer === 'object' ? viewer.fullName : "Viewer",
+            role: "viewer",
+            isSelf: currentUserId === viewerId,
+            isMicOn: false,
+            isCamOn: false
+          });
+        }
+      });
+    }
+
+    const isUserInList = realParticipants.some(p => p.id === currentUserId);
+    if (!isUserInList && user) {
+      realParticipants.push({
+        id: user.id,
+        name: user.fullName,
+        role: user.role,
+        isSelf: true,
+        isMicOn: !isBroadcaster ? false : isMicOn,
+        isCamOn: !isBroadcaster ? false : isCamOn
+      });
+    }
+    setParticipants(realParticipants);
+  }, [streamData, user?.id, isBroadcaster, isMicOn, isCamOn]);
+
+  useEffect(() => {
     const fetchStream = async () => {
       if (!id) return;
       try {
@@ -245,47 +309,6 @@ export default function LivestreamPage() {
 
         if (stream) {
           setStreamData(stream);
-          const realParticipants = [];
-          const currentUserId = user?.id;
-
-          if (stream.hostId) {
-            const hostId = typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId;
-            realParticipants.push({
-              id: hostId,
-              name: typeof stream.hostId === 'object' ? stream.hostId.fullName : "Host",
-              role: "host",
-              isSelf: currentUserId === hostId,
-              isMicOn: true,
-              isCamOn: true
-            });
-          }
-
-          if (Array.isArray(stream.coHosts)) {
-            stream.coHosts.forEach((coHost: any) => {
-              const coHostId = typeof coHost === 'object' ? coHost._id : coHost;
-              realParticipants.push({
-                id: coHostId,
-                name: typeof coHost === 'object' ? coHost.fullName : "Co-Host",
-                role: "co-host",
-                isSelf: currentUserId === coHostId,
-                isMicOn: true,
-                isCamOn: true
-              });
-            });
-          }
-
-          const isUserInList = realParticipants.some(p => p.id === currentUserId);
-          if (!isUserInList && user) {
-            realParticipants.push({
-              id: user.id,
-              name: user.fullName,
-              role: user.role,
-              isSelf: true,
-              isMicOn: true,
-              isCamOn: true
-            });
-          }
-          setParticipants(realParticipants);
         } else {
           toast.error("Stream not found or ended");
           navigate(-1);
@@ -544,6 +567,10 @@ export default function LivestreamPage() {
           toast.info("The host has ended the livestream.");
           setTimeout(() => navigate(-1), 3000);
           return;
+        }
+
+        if (currentStream) {
+          setStreamData(currentStream);
         }
       } catch (error) {
         console.error("Polling error:", error);
