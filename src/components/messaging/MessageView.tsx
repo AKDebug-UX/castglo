@@ -334,7 +334,7 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
                       {conv.lastMessage ? new Date(conv.lastMessage.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ""}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 truncate leading-relaxed">
+                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
                     {conv.lastMessage?.text || "No messages yet"}
                   </p>
                 </div>
