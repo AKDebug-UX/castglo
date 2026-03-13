@@ -94,6 +94,7 @@ export default function LivestreamPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(100);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const isMountedRef = useRef(true);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
@@ -103,6 +104,7 @@ export default function LivestreamPage() {
   const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | null>(null);
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
   const [remoteUsers, setRemoteUsers] = useState<IRemoteUser[]>([]);
+  const joinHostIdRef = useRef<string | undefined>(undefined);
 
   const isOwner = Boolean(
     streamData && user && 
@@ -110,13 +112,33 @@ export default function LivestreamPage() {
       ? (streamData.hostId?._id === user.id || streamData.hostId?.id === user.id)
       : (streamData.hostId === user.id))
   );
+  const isCoHost = Boolean(
+    streamData &&
+    user &&
+    Array.isArray(streamData.coHosts) &&
+    streamData.coHosts.some((coHost: any) =>
+      (typeof coHost === "object" ? coHost?._id || coHost?.id : coHost) === user.id
+    )
+  );
+  const isBroadcaster = isOwner || isCoHost;
 
   const inviteLink = `${window.location.origin}/livestream/${id}`;
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      // Also leave if still in a channel
+      if (agoraClientRef.current) {
+        agoraClientRef.current.leave().catch(err => console.error("Error leaving on unmount:", err));
+      }
+    };
+  }, []);
 
   // Initialize media only for host on mount or when joining
   useEffect(() => {
     const initMedia = async () => {
-      if (!isOwner) return; // Only host needs media access
+      if (!isBroadcaster) return; // Only broadcasters need media access
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
@@ -143,7 +165,7 @@ export default function LivestreamPage() {
         localStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isJoined, isOwner]);
+  }, [isBroadcaster, isJoined]);
 
   // Update local video element when joined
   useEffect(() => {
@@ -280,132 +302,155 @@ export default function LivestreamPage() {
 
   const handleJoin = async () => {
     if (!id) return;
-    if (streamData?.status === 'ended' && !isOwner) {
+    if (streamData?.status === 'ended') {
       toast.error("This session has already ended.");
       return;
     }
     setIsLoading(true);
+
     try {
-      let response;
-      if (isOwner) {
-        response = await livestreamAPI.start(id);
-      } else {
-        const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
-        response = await livestreamAPI.join(id, hostId);
+      const existingClient = agoraClientRef.current;
+      if (existingClient && existingClient.connectionState !== "DISCONNECTED") {
+        await existingClient.leave();
       }
 
-      if (response.data.success) {
-        const { rtcToken, userId: resUserId, channelName: resChannelName, stream } = response.data.data;
-        const agoraAppId = import.meta.env.VITE_AGORA_APP_ID;
+      // Step A: Fetch Connection Details
+      // You must call the join endpoint (for viewers) or start endpoint (for hosts)
+      let response;
+      const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
+      joinHostIdRef.current = hostId ? String(hostId) : undefined;
 
-        // Step C: Join with String User ID (Critical)
-        // Ensure we use the MongoDB _id string returned from the backend
-        const userId = resUserId || response.data.data.uid || response.data.data._id || user?.id;
-        const channelName = resChannelName || stream?.channelName || response.data.data.channel || id;
+      if (isBroadcaster) {
+        response = await livestreamAPI.start(id);
+      } else {
+        response = await livestreamAPI.join(id, joinHostIdRef.current);
+      }
 
-        console.log("Agora Join Params:", { agoraAppId, channelName, rtcToken, userId });
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to get connection details from server");
+      }
 
-        if (!agoraAppId) {
-          throw new Error("Agora App ID is not configured");
-        }
+      const { rtcToken, userId: resUserId, channelName: resChannelName, stream } = response.data.data;
+      const agoraAppId = import.meta.env.VITE_AGORA_APP_ID;
 
-        if (!userId) {
-          throw new Error("User identity missing for connection");
-        }
+      // Validate required details
+      if (!agoraAppId) throw new Error("Agora App ID is not configured");
+      if (!rtcToken) throw new Error("RTC Token is missing from the backend response");
 
-        // 1. Initialize Agora Client
-        const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
-        agoraClientRef.current = client;
+      // Step C: Join with String User ID (Critical)
+      // The Castglo backend generates Account Tokens tied to the MongoDB _id string.
+      // You MUST pass this string as the uid.
+      const userId = String(resUserId || response.data.data.uid || response.data.data._id || user?.id);
+      const channelName = String(resChannelName || stream?.channelName || response.data.data.channel || id);
 
-        // Step 3.5: Connection State Management (Anti-Race Condition)
-        if (client.connectionState !== "DISCONNECTED") {
-          await client.leave();
-        }
+      console.log("Agora Connection Details:", { channelName, userId, hasToken: !!rtcToken });
 
-        // Step B: Setup Agora Client - Set Role before joining
-        const role = isOwner ? "host" : "audience";
-        await client.setClientRole(role);
+      // Step B: Setup Agora Client
+      // In Live mode, you MUST set the client role before joining.
+      const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
+      agoraClientRef.current = client;
 
-        // 3. Handle Agora Events
-        client.on("user-published", async (user, mediaType) => {
-          // Full Example Code (Viewer) - Step 3: Subscribe to the Host
-          await client.subscribe(user, mediaType);
-          
-          if (mediaType === "video") {
-            setRemoteUsers(prev => {
-              if (prev.find(u => u.uid === user.uid)) return prev;
-              return [...prev, user];
-            });
-          }
-          if (mediaType === "audio") {
-            user.audioTrack?.play();
-          }
-        });
+      // Step 3.5: Connection State Management (Anti-Race Condition)
+      // To avoid AgoraRTCError INVALID_OPERATION, always check the connection state.
+      if (client.connectionState !== "DISCONNECTED") {
+        await client.leave();
+      }
 
-        client.on("user-unpublished", (user) => {
-          setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
-        });
+      // Set role: 'host' for broadcasters, 'audience' for viewers
+      const role = isBroadcaster ? "host" : "audience";
+      await client.setClientRole(role);
 
-        // Handle Token Expiration
-        client.on("token-privilege-will-expire", async () => {
-          console.log("Agora Token is about to expire. Fetching a new one...");
-          try {
-            let refreshResponse;
-            if (isOwner) {
-              refreshResponse = await livestreamAPI.start(id);
-            } else {
-              const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
-              refreshResponse = await livestreamAPI.join(id, hostId);
-            }
-            if (refreshResponse.data.success && refreshResponse.data.data.rtcToken) {
-              await client.renewToken(refreshResponse.data.data.rtcToken);
-              console.log("Agora Token renewed successfully");
-            }
-          } catch (error) {
-            console.error("Failed to renew Agora token:", error);
-          }
-        });
-
-        // 4. Join the Channel
-        // Ensure the token is not being sent as an empty string or null
-        if (!rtcToken) {
-          throw new Error("RTC Token is missing from the backend response");
-        }
+      // Step 4: Handle Remote Users (Viewer Logic)
+      // Subscribe to the Host when they publish their tracks
+      client.on("user-published", async (remoteUser, mediaType) => {
+        await client.subscribe(remoteUser, mediaType);
+        console.log(`Subscribed to remote user ${remoteUser.uid} ${mediaType}`);
         
-        console.log("Attempting to join Agora channel...");
-        // Use String userId as per Step C
-        await client.join(agoraAppId, String(channelName), rtcToken, String(userId));
-        console.log("Joined Agora channel successfully!");
+        if (mediaType === "video") {
+          setRemoteUsers(prev => {
+            if (prev.find(u => u.uid === remoteUser.uid)) return prev;
+            return [...prev, remoteUser];
+          });
+        }
+        if (mediaType === "audio") {
+          remoteUser.audioTrack?.play();
+        }
+      });
 
-        // 5. If Host, create and publish tracks
-        if (isOwner) {
-          const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-          const videoTrack = await AgoraRTC.createCameraVideoTrack();
-          
+      client.on("user-unpublished", (remoteUser) => {
+        console.log(`Remote user ${remoteUser.uid} unpublished`);
+        setRemoteUsers(prev => prev.filter(u => u.uid !== remoteUser.uid));
+      });
+
+      // 3.1 Token Expiration Management
+      // Renew token before it expires to maintain connection
+      client.on("token-privilege-will-expire", async () => {
+        console.log("Agora Token will expire soon. Refreshing...");
+        try {
+          const refreshRes = isBroadcaster
+            ? await livestreamAPI.start(id)
+            : await livestreamAPI.join(id, joinHostIdRef.current);
+          if (refreshRes.data.success && refreshRes.data.data.rtcToken) {
+            await client.renewToken(refreshRes.data.data.rtcToken);
+            console.log("Agora Token renewed");
+          }
+        } catch (error) {
+          console.error("Token renewal failed:", error);
+        }
+      });
+
+      // Step C: Join Call
+      // Join using the string userId from the API. Do not use integer 0.
+      await client.join(agoraAppId, channelName, rtcToken, userId);
+      console.log("Successfully joined Agora channel");
+
+      // Stop if unmounted during join
+      if (!isMountedRef.current) {
+        console.log("Component unmounted during Agora join");
+        await client.leave();
+        return;
+      }
+
+      // 5. Host-Specific Logic: Publish Local Tracks
+      if (isBroadcaster) {
+        const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        const videoTrack = await AgoraRTC.createCameraVideoTrack();
+        
+        // Final check before publishing to avoid DISCONNECTING state error
+        if (isMountedRef.current && client.connectionState === "CONNECTED") {
           setLocalAudioTrack(audioTrack);
           setLocalVideoTrack(videoTrack);
           
           await client.publish([audioTrack, videoTrack]);
+          console.log("Published local tracks as host");
           
-          // Stop the preview localStream if it exists
+          // Cleanup preview stream
           if (localStream) {
             localStream.getTracks().forEach(t => t.stop());
             setLocalStream(null);
           }
+        } else {
+          console.log("Skipping publish: unmounted or not connected", { 
+            isMounted: isMountedRef.current, 
+            state: client.connectionState 
+          });
+          audioTrack.close();
+          videoTrack.close();
         }
-
-        setIsJoined(true);
-        toast.success(isOwner ? "Started the live audition" : "Joined the live audition");
       }
+
+      setIsJoined(true);
+      toast.success(isBroadcaster ? "Started the live audition" : "Joined the live audition");
+
     } catch (error: any) {
-      console.error("Agora Error:", error);
+      console.error("Agora Implementation Error:", error);
       toast.error(error.message || "Failed to connect to the session");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Cleanup on unmount
+  // Cleanup tracks when they are closed or changed
   useEffect(() => {
     return () => {
       if (localVideoTrack) {
@@ -415,9 +460,6 @@ export default function LivestreamPage() {
       if (localAudioTrack) {
         localAudioTrack.stop();
         localAudioTrack.close();
-      }
-      if (agoraClientRef.current) {
-        agoraClientRef.current.leave();
       }
     };
   }, [localVideoTrack, localAudioTrack]);
