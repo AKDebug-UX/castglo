@@ -125,12 +125,12 @@ const ChatView = ({
 
   return (
     <div className={cn(
-      "flex flex-col bg-[#E6F7FF] h-full",
+      "flex flex-col bg-[#E6F7FF] h-full overflow-hidden",
       isMobileView && !selectedConversation && "hidden"
     )}>
       {selectedConversation ? (
         <>
-          <div className="h-[72px] flex-shrink-0 flex items-center justify-between px-4 md:px-6 border-b border-slate-200 bg-white shadow-sm z-10">
+          <div className="h-[72px] flex-shrink-0 flex items-center justify-between px-4 md:px-6 border-b border-slate-200 bg-white shadow-sm z-10 sticky top-0">
             <div className="flex items-center gap-3">
               {isMobileView && (
                 <Button variant="ghost" size="icon" className="mr-2" onClick={onDeselectConversation}>
@@ -157,7 +157,7 @@ const ChatView = ({
             </div>
           </div>
 
-          <ScrollArea className="flex-1 bg-blue-50/50">
+          <ScrollArea className="flex-1 bg-blue-50/50 overflow-y-auto">
             <div className="p-4 md:p-6 space-y-6">
               {messages.map((msg, idx: number) => {
                 const senderId = msg.senderId?._id || msg.senderId;
@@ -204,7 +204,7 @@ const ChatView = ({
             </div>
           </ScrollArea>
 
-          <div className="p-2 md:p-4 bg-white border-t border-slate-200 flex-shrink-0">
+          <div className="p-2 md:p-4 bg-white border-t border-slate-200 flex-shrink-0 sticky bottom-0">
             <div className="max-w-4xl mx-auto relative flex items-center gap-2">
               <div className="relative flex-1 group">
                 <Input 
