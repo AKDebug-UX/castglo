@@ -216,7 +216,10 @@ export default function LivestreamPage() {
 
   useEffect(() => {
     if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+      const scrollTimeout = setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+      return () => clearTimeout(scrollTimeout);
     }
   }, [chatMessages]);
 
@@ -234,42 +237,46 @@ export default function LivestreamPage() {
     const currentUserId = user?.id;
 
     if (streamData.hostId) {
-      const hostId = typeof streamData.hostId === 'object' ? streamData.hostId._id : streamData.hostId;
-      realParticipants.push({
-        id: hostId,
-        name: typeof streamData.hostId === 'object' ? streamData.hostId.fullName : "Host",
-        role: "host",
-        isSelf: currentUserId === hostId,
-        isMicOn: true,
-        isCamOn: true
-      });
+      const hostId = typeof streamData.hostId === 'object' ? (streamData.hostId?._id || streamData.hostId?.id) : streamData.hostId;
+      if (hostId) {
+        realParticipants.push({
+          id: String(hostId),
+          name: typeof streamData.hostId === 'object' ? streamData.hostId.fullName : "Host",
+          role: "host",
+          isSelf: String(currentUserId) === String(hostId),
+          isMicOn: true,
+          isCamOn: true
+        });
+      }
     }
 
     if (Array.isArray(streamData.coHosts)) {
       streamData.coHosts.forEach((coHost: any) => {
-        const coHostId = typeof coHost === 'object' ? coHost._id : coHost;
-        realParticipants.push({
-          id: coHostId,
-          name: typeof coHost === 'object' ? coHost.fullName : "Co-Host",
-          role: "co-host",
-          isSelf: currentUserId === coHostId,
-          isMicOn: true,
-          isCamOn: true
-        });
+        const coHostId = typeof coHost === 'object' ? (coHost?._id || coHost?.id) : coHost;
+        if (coHostId && !realParticipants.some(p => String(p.id) === String(coHostId))) {
+          realParticipants.push({
+            id: String(coHostId),
+            name: typeof coHost === 'object' ? coHost.fullName : "Co-Host",
+            role: "co-host",
+            isSelf: String(currentUserId) === String(coHostId),
+            isMicOn: true,
+            isCamOn: true
+          });
+        }
       });
     }
 
     // Add viewers if they exist in streamData
     if (Array.isArray(streamData.viewers)) {
       streamData.viewers.forEach((viewer: any) => {
-        const viewerId = typeof viewer === 'object' ? viewer._id : viewer;
+        const viewerId = typeof viewer === 'object' ? (viewer?._id || viewer?.id) : viewer;
         // Don't add if already in participants (host/cohost)
-        if (!realParticipants.some(p => p.id === viewerId)) {
+        if (viewerId && !realParticipants.some(p => String(p.id) === String(viewerId))) {
           realParticipants.push({
-            id: viewerId,
-            name: typeof viewer === 'object' ? viewer.fullName : "Viewer",
+            id: String(viewerId),
+            name: typeof viewer === 'object' ? (viewer.fullName || viewer.name) : "Viewer",
             role: "viewer",
-            isSelf: currentUserId === viewerId,
+            isSelf: String(currentUserId) === String(viewerId),
             isMicOn: false,
             isCamOn: false
           });
@@ -277,11 +284,11 @@ export default function LivestreamPage() {
       });
     }
 
-    const isUserInList = realParticipants.some(p => p.id === currentUserId);
+    const isUserInList = realParticipants.some(p => String(p.id) === String(currentUserId));
     if (!isUserInList && user) {
       realParticipants.push({
-        id: user.id,
-        name: user.fullName,
+        id: String(user.id || user._id),
+        name: user.fullName || user.name,
         role: user.role,
         isSelf: true,
         isMicOn: !isBroadcaster ? false : isMicOn,
@@ -289,7 +296,7 @@ export default function LivestreamPage() {
       });
     }
     setParticipants(realParticipants);
-  }, [streamData, user?.id, isBroadcaster, isMicOn, isCamOn]);
+  }, [streamData, user?.id, user?._id, isBroadcaster, isMicOn, isCamOn]);
 
   useEffect(() => {
     const fetchStream = async () => {
@@ -532,15 +539,15 @@ export default function LivestreamPage() {
     const currentUserId = user?.id;
 
     const fetchMessagesAndStatus = async () => {
-      if (!id || !isJoined || !pollRef.active) return;
+      if (!id || !pollRef.active) return;
       try {
         const [msgRes, myRes, publicRes] = await Promise.all([
-          livestreamAPI.getMessages(id),
+          livestreamAPI.getMessages(id).catch(() => ({ data: { success: false } })),
           livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
           livestreamAPI.getAll().catch(() => ({ data: { success: false } }))
         ]);
 
-        if (msgRes.data.success && Array.isArray(msgRes.data.data)) {
+        if (msgRes.data?.success && Array.isArray(msgRes.data.data)) {
           const formattedMessages = msgRes.data.data.map((msg: any) => ({
             id: msg._id || msg.id,
             sender: msg.sender?.fullName || msg.senderName || "Unknown",
@@ -550,7 +557,11 @@ export default function LivestreamPage() {
           }));
           
           setChatMessages(prev => {
-            if (JSON.stringify(prev) === JSON.stringify(formattedMessages)) return prev;
+            // Only update if there are actually new messages or changes
+            if (prev.length === formattedMessages.length && 
+                prev[prev.length-1]?.id === formattedMessages[formattedMessages.length-1]?.id) {
+              return prev;
+            }
             return formattedMessages;
           });
         }
@@ -567,6 +578,7 @@ export default function LivestreamPage() {
         if (currentStream && currentStream.status === 'ended' && !isBroadcaster) {
           toast.info("The host has ended the livestream.");
           setTimeout(() => navigate(-1), 3000);
+          pollRef.active = false; // Stop polling
           return;
         }
 
@@ -576,21 +588,19 @@ export default function LivestreamPage() {
       } catch (error) {
         console.error("Polling error:", error);
       } finally {
-        if (isJoined && pollRef.active) {
+        if (pollRef.active) {
           timeoutId = setTimeout(fetchMessagesAndStatus, 5000);
         }
       }
     };
 
-    if (isJoined) {
-      fetchMessagesAndStatus();
-    }
+    fetchMessagesAndStatus();
 
     return () => {
       pollRef.active = false;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [id, isJoined, user?.id]);
+  }, [id, user?.id, isBroadcaster]); // Removed isJoined dependency
 
   const [chatInput, setChatInput] = useState("");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -676,7 +686,7 @@ export default function LivestreamPage() {
       <div className="min-h-screen bg-[#0F1115] text-white flex flex-col items-center justify-center p-4">
         <div className="max-w-5xl w-full grid gap-12 lg:grid-cols-[1fr,400px] items-center">
           <div className="aspect-video bg-[#181A20] rounded-3xl relative overflow-hidden border border-white/5 shadow-2xl">
-            {isOwner ? (
+            {isBroadcaster ? (
               <>
                 {isCamOn ? (
                   <video ref={previewVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
@@ -718,7 +728,14 @@ export default function LivestreamPage() {
             <div className="bg-[#181A20] border border-white/5 rounded-2xl p-6 space-y-4 shadow-xl">
               <div className="flex items-center gap-4">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary"><Users className="w-5 h-5" /></div>
-                <div><p className="text-sm font-bold">{participants.length} in call</p><p className="text-[10px] text-slate-500 font-bold uppercase">{isOwner ? "You are the host" : `Host: ${streamData?.hostId?.fullName || "Loading..."}`}</p></div>
+                <div>
+                  <p className="text-sm font-bold">
+                    {streamData?.viewerCount || participants.length} { (streamData?.viewerCount || participants.length) === 1 ? 'person' : 'people' } in the room
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">
+                    {isOwner ? "You are ready to start" : `Host: ${streamData?.hostId?.fullName || "Loading..."}`}
+                  </p>
+                </div>
               </div>
             </div>
             <div className="flex flex-col gap-3">
@@ -762,7 +779,10 @@ export default function LivestreamPage() {
           <div className="hidden md:flex items-center gap-5 px-5 py-2 bg-white/5 rounded-2xl border border-white/5 text-[12px] font-bold shadow-inner">
             <div className="flex items-center gap-2 group cursor-help">
               <Users className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-              <span className="text-slate-300">{participants.length} <span className="text-slate-500 text-[10px] ml-0.5 uppercase">watching</span></span>
+              <span className="text-slate-300">
+                {isJoined ? (remoteUsers.length + 1) : (streamData?.viewerCount || participants.length)} 
+                <span className="text-slate-500 text-[10px] ml-0.5 uppercase">watching</span>
+              </span>
             </div>
             <div className="w-px h-4 bg-white/10" />
             <div className="flex items-center gap-2 group cursor-help">
@@ -911,7 +931,7 @@ export default function LivestreamPage() {
             </div>
 
             <div className="flex items-center gap-3 w-full lg:w-auto justify-center">
-              {isOwner ? (
+              {isBroadcaster ? (
                 <div className="flex items-center bg-white/5 p-1.5 rounded-[1.25rem] border border-white/5 shadow-inner">
                   <Button 
                     variant="ghost" 
@@ -1115,7 +1135,9 @@ export default function LivestreamPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <h3 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.2em]">Participants</h3>
-                      <Badge className="bg-white/5 text-slate-400 rounded-lg text-[10px] h-5 border-none px-2">{participants.length}</Badge>
+                      <Badge className="bg-white/5 text-slate-400 rounded-lg text-[10px] h-5 border-none px-2">
+                        {isJoined ? (remoteUsers.length + 1) : (streamData?.viewerCount || participants.length)}
+                      </Badge>
                     </div>
                     {isOwner && (
                       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
