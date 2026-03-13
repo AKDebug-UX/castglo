@@ -500,8 +500,6 @@ export default function LivestreamPage() {
                   <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${!isMicOn ? "text-destructive" : "text-slate-400"}`} onClick={() => setIsMicOn(!isMicOn)}>{isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}</Button>
                   <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${!isCamOn ? "text-destructive" : "text-slate-400"}`} onClick={() => setIsCamOn(!isCamOn)}>{isCamOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}</Button>
                   <div className="w-px h-6 bg-white/5 mx-1" />
-                  <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${isScreenSharing ? "text-primary" : "text-slate-400"}`} onClick={() => setIsScreenSharing(!isScreenSharing)}><Monitor className="w-5 h-5" /></Button>
-                  <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${isHandRaised ? "text-yellow-500" : "text-slate-400"}`} onClick={() => setIsHandRaised(!isHandRaised)}><Hand className="w-5 h-5" /></Button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 border border-primary/10 rounded-xl">
