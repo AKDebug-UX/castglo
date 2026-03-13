@@ -19,6 +19,244 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 
+// #region Sub-components
+
+const Sidebar = ({ 
+  conversations, 
+  selectedConversation, 
+  onSelectConversation, 
+  user, 
+  isMobileView,
+  title
+}) => {
+  const [conversationSearch, setConversationSearch] = useState("");
+
+  const filteredConversations = conversations.filter(conv => {
+    const otherParticipant = conv.participants?.find((p: any) => p._id !== user?.id);
+    return otherParticipant?.fullName.toLowerCase().includes(conversationSearch.toLowerCase());
+  });
+
+  return (
+    <div className={cn(
+      "flex flex-col border-r border-slate-200 bg-white",
+      isMobileView && selectedConversation && "hidden"
+    )}>
+      <div className="p-3 border-b border-slate-200 bg-slate-50/50">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input 
+            placeholder="Search conversations..." 
+            className="h-9 pl-9 bg-white border-slate-200 text-sm rounded-lg"
+            value={conversationSearch}
+            onChange={(e) => setConversationSearch(e.target.value)}
+          />
+        </div>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="space-y-1 p-2">
+          {filteredConversations.length > 0 ? filteredConversations.map((conv) => {
+            const otherParticipant = conv.participants?.find((p: any) => p._id !== user?.id);
+            const isSelected = selectedConversation?._id === conv._id;
+            return (
+              <button
+                key={conv._id}
+                onClick={() => onSelectConversation(conv)}
+                className={cn(
+                  "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200",
+                  isSelected 
+                    ? "bg-[#F0F7FF] shadow-sm" 
+                    : "hover:bg-slate-50"
+                )}
+              >
+                <div className="relative">
+                  <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+                    <AvatarImage src={otherParticipant?.profilePicture} />
+                    <AvatarFallback className="bg-slate-100 text-slate-600 font-bold">
+                      {otherParticipant?.fullName?.[0] || "C"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className={cn("font-bold truncate text-sm", isSelected ? "text-blue-600" : "text-slate-800")}>
+                      {otherParticipant?.fullName || "Casting Team"}
+                    </p>
+                    <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
+                      {conv.lastMessage ? new Date(conv.lastMessage.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ""}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                    {conv.lastMessage?.text || "No messages yet"}
+                  </p>
+                </div>
+              </button>
+            );
+          }) : (
+            <div className="p-8 text-center">
+              <MessageSquare className="w-10 h-10 mx-auto text-slate-200 mb-3" />
+              <p className="text-sm text-slate-400">No conversations found</p>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+};
+
+const ChatView = ({ 
+  selectedConversation, 
+  messages, 
+  user, 
+  isMobileView, 
+  onDeselectConversation, 
+  isSending, 
+  newMessage, 
+  onNewMessageChange, 
+  onSendMessage 
+}) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
+  return (
+    <div className={cn(
+      "flex flex-col bg-[#E6F7FF] h-full",
+      isMobileView && !selectedConversation && "hidden"
+    )}>
+      {selectedConversation ? (
+        <>
+          <div className="h-[72px] flex-shrink-0 flex items-center justify-between px-4 md:px-6 border-b border-slate-200 bg-white shadow-sm z-10">
+            <div className="flex items-center gap-3">
+              {isMobileView && (
+                <Button variant="ghost" size="icon" className="mr-2" onClick={onDeselectConversation}>
+                  <ChevronLeft className="w-5 h-5 text-slate-600" />
+                </Button>
+              )}
+              {(() => {
+                const otherParticipant = selectedConversation.participants?.find((p: any) => p._id !== user?.id);
+                return (
+                  <>
+                    <Avatar className="h-10 w-10 border border-slate-100">
+                      <AvatarImage src={otherParticipant?.profilePicture} />
+                      <AvatarFallback className="bg-slate-100 text-slate-600 font-bold">
+                        {otherParticipant?.fullName?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm leading-none mb-1">{otherParticipant?.fullName || "Casting Team"}</p>
+                      <p className="text-[11px] text-slate-500 font-medium">{otherParticipant?.role?.replace('_', ' ') || "Producer"}</p>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="rounded-full text-slate-400 hover:text-slate-600">
+                <Search className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-full text-slate-400 hover:text-slate-600">
+                <MoreVertical className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+
+          <ScrollArea className="flex-1 bg-blue-50/50">
+            <div className="p-4 md:p-6 space-y-6">
+              {messages.map((msg, idx: number) => {
+                const senderId = msg.senderId?._id || msg.senderId;
+                const isSelf = senderId === user?.id;
+                return (
+                  <div 
+                    key={idx} 
+                    className={cn(
+                      "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
+                      isSelf ? "justify-end" : "justify-start"
+                    )}
+                  >
+                    <div className={cn(
+                      "max-w-[85%] md:max-w-[75%] space-y-1",
+                      isSelf ? "items-end" : "items-start"
+                    )}>
+                      <div className={cn(
+                        "px-4 py-3 rounded-2xl text-sm shadow-sm",
+                        isSelf 
+                          ? "bg-primary text-white rounded-br-none" 
+                          : "bg-white text-slate-800 rounded-bl-none border border-slate-100"
+                      )}>
+                        <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                      </div>
+                      <p className={cn(
+                        "text-[10px] font-medium px-1",
+                        isSelf ? "text-slate-500 text-right" : "text-slate-400 text-left"
+                      )}>
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={scrollRef} />
+              {messages.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400 opacity-60">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100">
+                    <MessageSquare className="w-8 h-8" />
+                  </div>
+                  <p className="text-sm font-medium">Start the conversation</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          <div className="p-2 md:p-4 bg-white border-t border-slate-200 flex-shrink-0">
+            <div className="max-w-4xl mx-auto relative flex items-center gap-2">
+              <div className="relative flex-1 group">
+                <Input 
+                  placeholder="Type your message..." 
+                  value={newMessage}
+                  onChange={(e) => onNewMessageChange(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), onSendMessage())}
+                  className="h-12 rounded-2xl bg-slate-50 border-slate-200 focus-visible:bg-white focus-visible:ring-1 focus-visible:ring-blue-400 focus-visible:border-blue-400 transition-all pr-12 text-sm"
+                  disabled={isSending}
+                />
+                <Button 
+                  size="icon" 
+                  onClick={onSendMessage}
+                  disabled={isSending || !newMessage.trim()}
+                  className={cn(
+                    "absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl transition-all duration-300",
+                    newMessage.trim() 
+                      ? "bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/20" 
+                      : "bg-slate-100 text-slate-300"
+                  )}
+                >
+                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex-col items-center justify-center h-full text-center p-8 bg-white/50 backdrop-blur-sm hidden md:flex">
+          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-blue-100 border border-white">
+            <MessageSquare className="w-10 h-10 text-blue-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">Select a conversation</h2>
+          <p className="text-slate-500 max-w-xs mx-auto leading-relaxed">
+            Choose from your existing chats on the left or start a new conversation to get started.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// #endregion
+
 interface MessageViewProps {
   title?: string;
   subtitle?: string;
@@ -32,9 +270,7 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // New Message Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [searchResult, setSearchResult] = useState<any[]>([]);
@@ -76,27 +312,43 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   }, []);
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      if (!selectedConversation) return;
+    if (!selectedConversation) return;
+
+    const pollInterval = 10000;
+    let isPolling = true;
+
+    const pollMessages = async () => {
+      if (!isPolling) return;
+
       try {
         const response = await messagingAPI.getMessages(selectedConversation._id, { limit: 50 });
         if (response.data.success && Array.isArray(response.data.data)) {
-          setMessages(response.data.data.reverse());
-        } else {
-          setMessages([]);
+          const newMessages = response.data.data.reverse();
+          setMessages(prevMessages => {
+            if (JSON.stringify(newMessages) !== JSON.stringify(prevMessages)) {
+              return newMessages;
+            }
+            return prevMessages;
+          });
         }
       } catch (error) {
-        console.error("Failed to fetch messages:", error);
+        console.error("Polling failed:", error);
+      } finally {
+        if (isPolling) {
+          setTimeout(pollMessages, pollInterval);
+        }
       }
     };
-    fetchMessages();
-  }, [selectedConversation]);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+    pollMessages();
+
+    const intervalId = setInterval(pollMessages, pollInterval);
+
+    return () => {
+      isPolling = false;
+      clearInterval(intervalId);
+    };
+  }, [selectedConversation]);
 
   const handleSendMessage = async () => {
     if (!selectedConversation || !newMessage.trim()) return;
@@ -192,205 +444,6 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     );
   }
 
-  const Sidebar = () => (
-    <div className={cn(
-      "flex flex-col border-r border-slate-200 bg-white",
-      isMobileView && selectedConversation && "hidden"
-    )}>
-      <div className="p-3 border-b border-slate-200 bg-slate-50/50">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input 
-            placeholder="Search conversations..." 
-            className="h-9 pl-9 bg-white border-slate-200 text-sm rounded-lg"
-          />
-        </div>
-      </div>
-      <ScrollArea className="flex-1">
-        <div className="space-y-1 p-2">
-          {conversations.length > 0 ? conversations.map((conv) => {
-            const otherParticipant = conv.participants?.find((p: any) => p._id !== user?.id);
-            const isSelected = selectedConversation?._id === conv._id;
-            return (
-              <button
-                key={conv._id}
-                onClick={() => setSelectedConversation(conv)}
-                className={cn(
-                  "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200",
-                  isSelected 
-                    ? "bg-[#F0F7FF] shadow-sm" 
-                    : "hover:bg-slate-50"
-                )}
-              >
-                <div className="relative">
-                  <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                    <AvatarImage src={otherParticipant?.profilePicture} />
-                    <AvatarFallback className="bg-slate-100 text-slate-600 font-bold">
-                      {otherParticipant?.fullName?.[0] || "C"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <p className={cn("font-bold truncate text-sm", isSelected ? "text-blue-600" : "text-slate-800")}>
-                      {otherParticipant?.fullName || "Casting Team"}
-                    </p>
-                    <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
-                      {conv.lastMessage ? new Date(conv.lastMessage.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ""}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                    {conv.lastMessage?.text || "No messages yet"}
-                  </p>
-                </div>
-              </button>
-            );
-          }) : (
-            <div className="p-8 text-center">
-              <MessageSquare className="w-10 h-10 mx-auto text-slate-200 mb-3" />
-              <p className="text-sm text-slate-400">No conversations yet</p>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-    </div>
-  );
-
-  const ChatView = () => (
-    <div className={cn(
-      "flex flex-col bg-[#E6F7FF] h-screen",
-      isMobileView && !selectedConversation && "hidden"
-    )}>
-      {selectedConversation ? (
-        <>
-          {/* Message Header */}
-          <div className="h-[72px] flex-shrink-0 flex items-center justify-between px-4 md:px-6 border-b border-slate-200 bg-white shadow-sm z-10">
-            <div className="flex items-center gap-3">
-              {isMobileView && (
-                <Button variant="ghost" size="icon" className="mr-2" onClick={() => setSelectedConversation(null)}>
-                  <ChevronLeft className="w-5 h-5 text-slate-600" />
-                </Button>
-              )}
-              {(() => {
-                const otherParticipant = selectedConversation.participants?.find((p: any) => p._id !== user?.id);
-                return (
-                  <>
-                    <Avatar className="h-10 w-10 border border-slate-100">
-                      <AvatarImage src={otherParticipant?.profilePicture} />
-                      <AvatarFallback className="bg-slate-100 text-slate-600 font-bold">
-                        {otherParticipant?.fullName?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-bold text-slate-800 text-sm leading-none mb-1">{otherParticipant?.fullName || "Casting Team"}</p>
-                      <p className="text-[11px] text-slate-500 font-medium">{otherParticipant?.role?.replace('_', ' ') || "Producer"}</p>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-            {/* <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="rounded-full text-slate-400 hover:text-slate-600">
-                <Search className="w-5 h-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full text-slate-400 hover:text-slate-600">
-                <MoreVertical className="w-5 h-5" />
-              </Button>
-            </div> */}
-          </div>
-
-          {/* Messages Area */}
-          <ScrollArea className="flex-1 bg-blue-50/50">
-            <div className="p-4 md:p-6 space-y-6">
-              {messages.map((msg, idx: number) => {
-                const senderId = msg.senderId._id;
-                const isSelf = senderId === user?.id;
-                return (
-                  <div 
-                    key={idx} 
-                    className={cn(
-                      "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
-                      isSelf ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    <div className={cn(
-                      "max-w-[85%] md:max-w-[75%] space-y-1",
-                      isSelf ? "items-end" : "items-start"
-                    )}>
-                      <div className={cn(
-                        "px-4 py-3 rounded-2xl text-sm shadow-sm",
-                        isSelf 
-                          ? "bg-primary text-white rounded-br-none" 
-                          : "bg-white text-slate-800 rounded-bl-none border border-slate-100"
-                      )}>
-                        <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                      </div>
-                      <p className={cn(
-                        "text-[10px] font-medium px-1",
-                        isSelf ? "text-slate-500 text-right" : "text-slate-400 text-left"
-                      )}>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={scrollRef} />
-              {messages.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 text-slate-400 opacity-60">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100">
-                    <MessageSquare className="w-8 h-8" />
-                  </div>
-                  <p className="text-sm font-medium">Start the conversation</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          {/* Message Input */}
-          <div className="p-2 md:p-4 bg-white border-t border-slate-200 flex-shrink-0">
-            <div className="max-w-4xl mx-auto relative flex items-center gap-2">
-              <div className="relative flex-1 group">
-                <Input 
-                  placeholder="Type your message..." 
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
-                  className="h-12 rounded-2xl bg-slate-50 border-slate-200 focus-visible:bg-white focus-visible:ring-1 focus-visible:ring-blue-400 focus-visible:border-blue-400 transition-all pr-12 text-sm"
-                  disabled={isSending}
-                />
-                <Button 
-                  size="icon" 
-                  onClick={handleSendMessage}
-                  disabled={isSending || !newMessage.trim()}
-                  className={cn(
-                    "absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl transition-all duration-300",
-                    newMessage.trim() 
-                      ? "bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/20" 
-                      : "bg-slate-100 text-slate-300"
-                  )}
-                >
-                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="flex-col items-center justify-center h-full text-center p-8 bg-white/50 backdrop-blur-sm hidden md:flex">
-          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-blue-100 border border-white">
-            <MessageSquare className="w-10 h-10 text-blue-500" />
-          </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Select a conversation</h2>
-          <p className="text-slate-500 max-w-xs mx-auto leading-relaxed">
-            Choose from your existing chats on the left or start a new conversation to get started.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <div className="flex flex-col h-full md:h-screen md:gap-4">
       <div className="flex items-center justify-between mb-2 px-4 pt-4 md:px-0 md:pt-0">
@@ -398,7 +451,6 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
           <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
           {subtitle && <p className="text-slate-500 text-sm">{subtitle}</p>}
         </div>
-        {/* New Message Button in Page Header */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90 text-white gap-2 shadow-md shadow-primary/20">
@@ -501,9 +553,26 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
           </DialogContent>
         </Dialog>
       </div>
-      <div className="grid md:grid-cols-[320px_1fr] flex-1 min-h-0 animate-fade-in md:border md:border-slate-200 md:rounded-xl overflow-hidden md:shadow-sm bg-white">
-        <Sidebar />
-        <ChatView />
+      <div className="h-screen grid md:grid-cols-[320px_1fr] flex-1 animate-fade-in md:border md:border-slate-200 md:rounded-xl overflow-hidden md:shadow-sm bg-white">
+        <Sidebar 
+          conversations={conversations}
+          selectedConversation={selectedConversation}
+          onSelectConversation={setSelectedConversation}
+          user={user}
+          isMobileView={isMobileView}
+          title={title}
+        />
+        <ChatView 
+          selectedConversation={selectedConversation}
+          messages={messages}
+          user={user}
+          isMobileView={isMobileView}
+          onDeselectConversation={() => setSelectedConversation(null)}
+          isSending={isSending}
+          newMessage={newMessage}
+          onNewMessageChange={setNewMessage}
+          onSendMessage={handleSendMessage}
+        />
       </div>
     </div>
   );
