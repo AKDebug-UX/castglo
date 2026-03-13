@@ -295,12 +295,12 @@ export default function LivestreamPage() {
       }
 
       if (response.data.success) {
-        const { rtcToken, userId: resUserId, channelName: resChannelName } = response.data.data;
+        const { rtcToken, userId: resUserId, channelName: resChannelName, stream } = response.data.data;
         const agoraAppId = import.meta.env.VITE_AGORA_APP_ID;
 
-        // Determine final userId and channelName
+        // Determine final userId and channelName based on Guideline Step C
         const userId = resUserId || response.data.data.uid || response.data.data._id || user?.id;
-        const channelName = resChannelName || response.data.data.channel || id;
+        const channelName = resChannelName || stream?.channelName || response.data.data.channel || id;
 
         console.log("Agora Join Params:", { agoraAppId, channelName, rtcToken, userId });
 

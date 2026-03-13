@@ -385,8 +385,9 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
               <ScrollArea className="flex-1">
                 <div className="p-6 space-y-6">
                   {messages.map((msg, idx: number) => {
-                    const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
+                    const senderId = msg.senderId._id;
                     const isSelf = senderId === user?.id;
+                    console.log("isSelf:", senderId);
                     return (
                       <div 
                         key={idx} 
