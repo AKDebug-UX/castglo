@@ -63,13 +63,25 @@ export default function InstantAudition() {
         category: formData.category,
         isRecordingEnabled: formData.isRecordingEnabled,
         visibility: formData.visibility,
-        invitedTalents: formData.invitedTalents,
+        // invitedTalents: formData.invitedTalents,
         scheduledAt: scheduledAt
       };
 
       const response = await livestreamAPI.create(payload);
       if (response.data.success) {
         const streamId = response.data.data?._id || response.data.data?.id;
+        
+        // If there are invited talents, send the invitations using the new endpoint
+        if (streamId && formData.invitedTalents.length > 0) {
+          try {
+            await livestreamAPI.invite(streamId, formData.invitedTalents);
+            toast.success(`Sent ${formData.invitedTalents.length} invitation(s)`);
+          } catch (inviteError) {
+            console.error("Failed to send invitations:", inviteError);
+            toast.error("Audition created, but failed to send some invitations");
+          }
+        }
+
         toast.success("Virtual audition created successfully!");
         // Redirect directly to the livestream room so the host can start it immediately
         if (streamId) {

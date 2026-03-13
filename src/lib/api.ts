@@ -61,6 +61,7 @@ export const API_ENDPOINTS = {
     GET_MESSAGES: (id: string) => `/livestream/${id}/messages`,
     START: (id: string) => `/livestream/${id}/start`,
     JOIN: (id: string) => `/livestream/${id}/join`,
+    INVITE: (id: string) => `/livestream/${id}/invite`,
     LEAVE: (id: string) => `/livestream/${id}/leave`,
     END: (id: string) => `/livestream/${id}/end`,
   },
@@ -216,6 +217,7 @@ export const livestreamAPI = {
   join: (id: string, hostId?: string) => api.post(API_ENDPOINTS.LIVESTREAM.JOIN(id), { hostId }, {
     headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }
   }),
+  invite: (id: string, emails: string[]) => api.post(API_ENDPOINTS.LIVESTREAM.INVITE(id), { emails }),
   leave: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.LEAVE(id)),
   end: (id: string) => api.patch(API_ENDPOINTS.LIVESTREAM.END(id)),
 };

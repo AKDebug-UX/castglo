@@ -45,7 +45,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 // Component to handle Agora remote tracks
 const RemoteVideoPlayer = ({ user }: { user: IRemoteUser }) => {
@@ -452,6 +461,38 @@ export default function LivestreamPage() {
   }, [id, isJoined, user?.id]);
 
   const [chatInput, setChatInput] = useState("");
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteEmails, setInviteEmails] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
+
+  const handleSendInvite = async () => {
+    if (!id || !inviteEmails.trim()) return;
+    
+    const emailList = inviteEmails
+      .split(/[\n,]/)
+      .map(email => email.trim())
+      .filter(email => email.length > 0 && email.includes("@"));
+
+    if (emailList.length === 0) {
+      toast.error("Please enter at least one valid email address");
+      return;
+    }
+
+    setIsInviting(true);
+    try {
+      const response = await livestreamAPI.invite(id, emailList);
+      if (response.data.success) {
+        toast.success(`Successfully sent ${emailList.length} invitation(s)`);
+        setInviteEmails("");
+        setIsInviteDialogOpen(false);
+      }
+    } catch (error: any) {
+      console.error("Invite error:", error);
+      toast.error(error.response?.data?.message || "Failed to send invitations");
+    } finally {
+      setIsInviting(false);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!chatInput.trim() || !id) return;
@@ -706,7 +747,50 @@ export default function LivestreamPage() {
               )}
               {activeTab === "people" && (
                 <div className="absolute inset-0 flex flex-col p-4 space-y-4">
-                  <div className="flex items-center justify-between"><h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Participants ({participants.length})</h3>{isOwner && <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold text-primary gap-1.5"><UserPlus className="w-3 h-3" /> Invite</Button>}</div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Participants ({participants.length})</h3>
+                    {isOwner && (
+                      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold text-primary gap-1.5">
+                            <UserPlus className="w-3 h-3" /> Invite
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-[#181A20] border-white/5 text-white sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="text-xl font-black uppercase tracking-tight">Invite Talents</DialogTitle>
+                            <DialogDescription className="text-slate-400 text-xs">
+                              Enter email addresses separated by commas or new lines. We'll send them a secure link to join this session.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email Addresses</label>
+                              <Textarea 
+                                placeholder="talent1@example.com, talent2@example.com..." 
+                                className="bg-[#0F1115] border-white/5 min-h-[120px] text-sm focus-visible:ring-primary/20"
+                                value={inviteEmails}
+                                onChange={(e) => setInviteEmails(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button 
+                              className="w-full h-12 rounded-xl font-black uppercase tracking-tight shadow-lg shadow-primary/20"
+                              onClick={handleSendInvite}
+                              disabled={isInviting || !inviteEmails.trim()}
+                            >
+                              {isInviting ? (
+                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending Invitations...</>
+                              ) : (
+                                "Send Invitations"
+                              )}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
                   <div className="space-y-1 overflow-y-auto flex-1">
                     {participants.map((p) => (
                       <div key={p.id} className="group/user flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-all">
