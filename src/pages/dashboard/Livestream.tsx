@@ -34,7 +34,8 @@ import {
   UserX,
   Heart,
   Plus,
-  Globe
+  Globe,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { livestreamAPI } from "@/lib/api";
@@ -731,85 +732,152 @@ export default function LivestreamPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0F1115] text-white overflow-hidden">
-      <div className="h-14 border-b border-white/5 bg-[#181A20] flex items-center justify-between px-4 z-50 shrink-0">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white" onClick={() => navigate(-1)}><ArrowLeft className="w-5 h-5" /></Button>
-          <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
-            <h1 className="font-bold text-sm tracking-tight truncate max-w-[200px]">{streamData?.title}</h1>
-            <Badge variant="secondary" className="bg-white/5 text-[10px] text-slate-400 border-none h-5">{streamData?.category || "Audition"}</Badge>
+    <div className="h-screen flex flex-col bg-[#0B0D11] text-white overflow-hidden font-sans">
+      {/* Header with Glassmorphism */}
+      <div className="h-16 border-b border-white/5 bg-[#12141A]/80 backdrop-blur-xl flex items-center justify-between px-6 z-50 shrink-0 shadow-sm">
+        <div className="flex items-center gap-5">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" 
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-3">
+              <h1 className="font-bold text-base tracking-tight truncate max-w-[250px]">{streamData?.title}</h1>
+              <Badge variant="secondary" className="bg-primary/10 text-[10px] text-primary border-none h-5 px-2 font-bold uppercase tracking-wider">
+                {streamData?.category || "Audition"}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <div className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Live Broadcast</span>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-4 px-4 py-1.5 bg-white/5 rounded-full border border-white/5 text-[11px] font-bold">
-            <div className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5 text-primary" />{participants.length}</div>
-            <div className="w-px h-3 bg-white/10" /><div className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-success" />Encrypted</div>
+        
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-5 px-5 py-2 bg-white/5 rounded-2xl border border-white/5 text-[12px] font-bold shadow-inner">
+            <div className="flex items-center gap-2 group cursor-help">
+              <Users className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+              <span className="text-slate-300">{participants.length} <span className="text-slate-500 text-[10px] ml-0.5 uppercase">watching</span></span>
+            </div>
+            <div className="w-px h-4 bg-white/10" />
+            <div className="flex items-center gap-2 group cursor-help">
+              <Shield className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
+              <span className="text-slate-300 uppercase text-[10px]">Secure</span>
+            </div>
           </div>
-          <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-400 hover:text-white"><Share2 className="w-4 h-4" /></Button>
+          <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-slate-400 hover:text-white hover:bg-white/5 transition-all">
+            <Share2 className="w-5 h-5" />
+          </Button>
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex flex-col min-w-0 bg-black relative">
-          <div className="flex-1 relative flex items-center justify-center p-4">
-            <div className="w-full h-full max-w-6xl aspect-video bg-[#181A20] rounded-xl overflow-hidden shadow-2xl border border-white/5 relative group">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0 bg-[#0B0D11] relative">
+          <div className="flex-1 relative flex items-center justify-center p-4 lg:p-6 overflow-hidden">
+            <div className="w-full h-full max-w-6xl aspect-video bg-[#12141A] rounded-[2rem] overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-white/5 relative group transition-all duration-500">
               <div className="absolute inset-0">
                 {isOwner ? (
                   isCamOn ? (
-                    <div className="w-full h-full">
+                    <div className="w-full h-full bg-black">
                       <div ref={localVideoRef} className="w-full h-full object-cover scale-x-[-1]" />
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#181A20] to-[#0F1115]">
-                      <Avatar className="w-32 h-32 border-4 border-white/5 shadow-2xl"><AvatarFallback className="bg-primary/20 text-primary text-4xl">{user?.fullName?.[0]}</AvatarFallback></Avatar>
-                      <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Your camera is off</p>
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11]">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+                        <Avatar className="w-40 h-40 border-8 border-white/5 shadow-2xl relative z-10">
+                          <AvatarFallback className="bg-[#252831] text-primary text-5xl font-black">
+                            {user?.fullName?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <p className="text-slate-400 font-black uppercase text-xs tracking-[0.3em] animate-pulse">Camera is currently off</p>
                     </div>
                   )
                 ) : (
-                  <div className="w-full h-full relative">
+                  <div className="w-full h-full relative bg-black">
                     {remoteUsers.length > 0 ? (
                       <RemoteVideoPlayer user={remoteUsers[0]} />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-[#181A20] to-[#0F1115]">
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-8 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11]">
                         <div className="relative">
-                          <Avatar className="w-40 h-40 border-8 border-white/5 shadow-3xl">
-                            <AvatarFallback className="bg-primary/10 text-primary text-5xl font-black">{streamData?.hostId?.fullName?.[0] || "H"}</AvatarFallback>
+                          <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+                          <Avatar className="w-48 h-48 border-[12px] border-white/5 shadow-[0_0_80px_rgba(0,0,0,0.4)] relative z-10">
+                            <AvatarFallback className="bg-primary/10 text-primary text-6xl font-black">
+                              {streamData?.hostId?.fullName?.[0] || "H"}
+                            </AvatarFallback>
                           </Avatar>
-                          <div className="absolute bottom-2 right-2 h-6 w-6 bg-primary rounded-full border-4 border-[#181A20]" />
+                          <div className="absolute -bottom-2 -right-2 h-10 w-10 bg-primary rounded-full border-8 border-[#1A1D24] shadow-xl" />
                         </div>
-                        <div className="text-center space-y-2">
-                          <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] animate-pulse">Waiting for broadcast feed...</p>
-                          <p className="text-xs text-slate-500">The session is moderated. Enjoy the audition!</p>
+                        <div className="text-center space-y-4 px-6 max-w-md">
+                          <p className="text-slate-400 font-black uppercase text-[11px] tracking-[0.4em] leading-relaxed">
+                            Waiting for the broadcast signal...
+                          </p>
+                          <p className="text-sm text-slate-500 font-medium">
+                            The audition will begin shortly. Stay tuned.
+                          </p>
                         </div>
                       </div>
                     )}
                   </div>
                 )}
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="absolute bottom-0 left-0 right-0 p-6 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-white/20"><Play className="w-5 h-5 fill-current" /></Button>
-                    <div className="flex items-center gap-2 group/volume">
-                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-white" onClick={() => setIsMuted(!isMuted)}>{isMuted || volume === 0 ? <VolumeX className="w-5 h-5 text-destructive" /> : <Volume2 className="w-5 h-5" />}</Button>
-                      <div className="w-0 group-hover/volume:w-24 overflow-hidden transition-all duration-300"><input type="range" min="0" max="100" value={volume} onChange={(e) => setVolume(parseInt(e.target.value))} className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-primary" /></div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className="bg-destructive/90 text-white border-none px-3 py-1 font-bold uppercase text-[10px] tracking-widest">Live</Badge>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-white"><Settings className="w-5 h-5" /></Button>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-white"><Maximize className="w-5 h-5" /></Button>
+
+              {/* Video Overlay Controls - Modern Floating Bar */}
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[1.5rem] opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 shadow-2xl z-20">
+                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-white/5 text-white hover:bg-white/15 transition-all">
+                  <Play className="w-5 h-5 fill-current" />
+                </Button>
+                <div className="w-px h-6 bg-white/10 mx-1" />
+                <div className="flex items-center gap-1 group/volume pr-2">
+                  <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-white hover:bg-white/5" onClick={() => setIsMuted(!isMuted)}>
+                    {isMuted || volume === 0 ? <VolumeX className="w-5 h-5 text-destructive" /> : <Volume2 className="w-5 h-5" />}
+                  </Button>
+                  <div className="w-0 group-hover/volume:w-28 overflow-hidden transition-all duration-500">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={volume} 
+                      onChange={(e) => setVolume(parseInt(e.target.value))} 
+                      className="w-full h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-primary" 
+                    />
                   </div>
                 </div>
+                <div className="w-px h-6 bg-white/10 mx-1" />
+                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-white hover:bg-white/5">
+                  <Settings className="w-5 h-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-white hover:bg-white/5">
+                  <Maximize className="w-5 h-5" />
+                </Button>
               </div>
-              <div className="absolute top-4 right-4 w-48 space-y-3">
+
+              {/* Status Tags */}
+              <div className="absolute top-6 left-6 flex items-center gap-3 z-20">
+                <Badge className="bg-destructive hover:bg-destructive text-white border-none px-4 py-1.5 font-black uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-destructive/20 rounded-full">
+                  Live
+                </Badge>
+                <div className="px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-2 text-[10px] font-bold text-white shadow-lg">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  HD 1080P
+                </div>
+              </div>
+
+              {/* Remote Users Small Grid */}
+              <div className="absolute top-6 right-6 w-56 space-y-4 z-20 pointer-events-none">
                 {remoteUsers.slice(1).map((remoteUser) => (
-                  <div key={remoteUser.uid} className="aspect-video bg-black/60 backdrop-blur-xl rounded-lg border border-white/10 overflow-hidden relative shadow-xl group/mini">
+                  <div key={remoteUser.uid} className="aspect-video bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/10 overflow-hidden relative shadow-2xl group/mini pointer-events-auto transition-transform hover:scale-105 duration-300">
                     <RemoteVideoPlayer user={remoteUser} />
-                    <div className="absolute bottom-1 left-1 right-1 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded flex items-center justify-between">
-                      <span className="text-[8px] font-bold truncate pr-1">User {remoteUser.uid}</span>
-                      {!remoteUser.hasAudio && <MicOff className="w-2 h-2 text-destructive" />}
+                    <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-xl px-2.5 py-1.5 rounded-xl flex items-center justify-between border border-white/5">
+                      <span className="text-[9px] font-bold truncate pr-2 text-white/90 tracking-tight">User {remoteUser.uid}</span>
+                      {!remoteUser.hasAudio && <MicOff className="w-3 h-3 text-destructive" />}
                     </div>
                   </div>
                 ))}
@@ -817,131 +885,263 @@ export default function LivestreamPage() {
             </div>
           </div>
 
-          <div className="h-20 bg-[#181A20] border-t border-white/5 px-6 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-6 w-1/3">
-              <div className="flex items-center gap-3">
-                <div className="relative"><Avatar className="h-12 w-12 border-2 border-primary/20 shadow-lg"><AvatarFallback className="bg-[#2A2E35] text-primary">{streamData?.hostId?.fullName?.[0] || "H"}</AvatarFallback></Avatar><div className="absolute -bottom-1 -right-1 h-4 w-4 bg-success border-2 border-[#181A20] rounded-full" /></div>
-                <div><div className="flex items-center gap-2"><p className="text-sm font-bold text-white hover:text-primary cursor-pointer">{streamData?.hostId?.fullName || "Host Name"}</p>{isOwner && <Shield className="w-3 h-3 text-primary" />}</div><p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Audition Host</p></div>
+          {/* Bottom Action Bar */}
+          <div className="h-auto min-h-[6rem] py-4 lg:h-24 bg-[#12141A]/60 backdrop-blur-2xl border-t border-white/5 px-4 lg:px-8 flex flex-col lg:flex-row items-center justify-between shrink-0 relative z-30 gap-4 lg:gap-0">
+            <div className="flex items-center gap-4 lg:gap-8 w-full lg:w-1/3">
+              <div className="flex items-center gap-4 group cursor-pointer">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-all" />
+                  <Avatar className="h-14 w-14 border-2 border-white/10 shadow-2xl transition-transform group-hover:scale-105">
+                    <AvatarFallback className="bg-[#252831] text-primary text-lg font-bold">
+                      {streamData?.hostId?.fullName?.[0] || "H"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 bg-emerald-500 border-4 border-[#12141A] rounded-full shadow-lg" />
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <p className="text-base font-bold text-white group-hover:text-primary transition-colors tracking-tight">
+                      {streamData?.hostId?.fullName || "Host Name"}
+                    </p>
+                    {isOwner && <Shield className="w-3.5 h-3.5 text-primary" />}
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">Audition Director</p>
+                </div>
               </div>
-              {/* <Button variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 h-9 rounded-lg text-xs font-bold gap-2"><Plus className="w-3.5 h-3.5" /> Follow</Button> */}
             </div>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-3 w-full lg:w-auto justify-center">
               {isOwner ? (
-                <div className="flex items-center bg-[#0F1115] p-1 rounded-xl border border-white/5">
-                  <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${!isMicOn ? "text-destructive" : "text-slate-400"}`} onClick={() => setIsMicOn(!isMicOn)}>{isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}</Button>
-                  <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${!isCamOn ? "text-destructive" : "text-slate-400"}`} onClick={() => setIsCamOn(!isCamOn)}>{isCamOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}</Button>
-                  <div className="w-px h-6 bg-white/5 mx-1" />
+                <div className="flex items-center bg-white/5 p-1.5 rounded-[1.25rem] border border-white/5 shadow-inner">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`h-10 lg:h-12 w-10 lg:w-12 rounded-xl transition-all ${!isMicOn ? "bg-destructive/10 text-destructive hover:bg-destructive/20" : "text-slate-400 hover:text-white hover:bg-white/10"}`} 
+                    onClick={() => setIsMicOn(!isMicOn)}
+                  >
+                    {isMicOn ? <Mic className="w-4 lg:w-5 h-4 lg:h-5" /> : <MicOff className="w-4 lg:w-5 h-4 lg:h-5" />}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`h-10 lg:h-12 w-10 lg:w-12 rounded-xl transition-all ${!isCamOn ? "bg-destructive/10 text-destructive hover:bg-destructive/20" : "text-slate-400 hover:text-white hover:bg-white/10"}`} 
+                    onClick={() => setIsCamOn(!isCamOn)}
+                  >
+                    {isCamOn ? <Video className="w-4 lg:w-5 h-4 lg:h-5" /> : <VideoOff className="w-4 lg:w-5 h-4 lg:h-5" />}
+                  </Button>
+                  <div className="w-px h-6 lg:h-8 bg-white/10 mx-1 lg:mx-1.5" />
+                  <Button variant="ghost" size="icon" className="h-10 lg:h-12 w-10 lg:w-12 rounded-xl text-slate-400 hover:text-white hover:bg-white/10">
+                    <Settings className="w-4 lg:w-5 h-4 lg:h-5" />
+                  </Button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 border border-primary/10 rounded-xl">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary">Viewing Mode</span>
+                <div className="flex items-center gap-2.5 px-4 lg:px-6 py-2 lg:py-3 bg-primary/5 border border-primary/10 rounded-2xl shadow-inner">
+                  <div className="w-2 lg:w-2.5 h-2 lg:h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_12px_rgba(var(--primary),0.5)]" />
+                  <span className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em] lg:tracking-[0.25em] text-primary">Live Viewing</span>
                 </div>
               )}
-              <Button variant="destructive" className="h-11 px-6 rounded-xl font-black uppercase text-xs gap-2 shadow-lg shadow-destructive/20" onClick={handleLeave}><PhoneOff className="w-4 h-4" />{isOwner ? "End Session" : "Leave"}</Button>
+              <Button 
+                variant="destructive" 
+                className="h-12 lg:h-14 px-6 lg:px-8 rounded-2xl font-black uppercase text-[10px] lg:text-xs tracking-widest gap-2 lg:gap-3 shadow-2xl shadow-destructive/20 hover:scale-[1.02] active:scale-[0.98] transition-all" 
+                onClick={handleLeave}
+              >
+                <PhoneOff className="w-4 h-4" />
+                <span className="hidden sm:inline">{isOwner ? "End Audition" : "Leave Session"}</span>
+                <span className="sm:hidden">{isOwner ? "End" : "Leave"}</span>
+              </Button>
             </div>
-            <div className="flex items-center justify-end gap-3 w-1/3">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0F1115] border border-white/5 rounded-lg text-slate-400"><Heart className="w-3.5 h-3.5" /><span className="text-[11px] font-bold">4.2k</span></div>
-              <Button variant="ghost" size="icon" className={`h-11 w-11 rounded-lg ${showSidebar ? "bg-primary/10 text-primary" : "text-slate-400"}`} onClick={() => setShowSidebar(!showSidebar)}><MessageSquare className="w-5 h-5" /></Button>
+
+            <div className="flex items-center justify-end gap-3 lg:gap-4 w-full lg:w-1/3">
+              <div className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-white/5 border border-white/5 rounded-xl text-slate-400 hover:text-primary transition-colors group cursor-pointer">
+                <Heart className="w-3.5 lg:w-4 h-3.5 lg:h-4 group-hover:scale-110 group-hover:fill-current transition-all" />
+                <span className="text-[10px] lg:text-xs font-bold tracking-tight">4.2k</span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={`h-12 lg:h-14 w-12 lg:w-14 rounded-2xl transition-all ${showSidebar ? "bg-primary/10 text-primary border border-primary/20 shadow-lg" : "text-slate-400 hover:text-white hover:bg-white/5"}`} 
+                onClick={() => setShowSidebar(!showSidebar)}
+              >
+                <MessageSquare className="w-5 lg:w-6 h-5 lg:h-6" />
+              </Button>
             </div>
           </div>
         </div>
 
-        <div className={`transition-all duration-300 ease-in-out border-l border-white/5 bg-[#181A20] flex flex-col ${showSidebar ? "w-[340px] translate-x-0" : "w-0 translate-x-full overflow-hidden border-none"}`}>
-          <div className="flex flex-col h-full min-w-[340px]">
-            <div className="p-4 border-b border-white/5 flex items-center justify-between">
-              <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-500">Stream Chat</h2>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500" onClick={() => setActiveTab("chat")}><MessageSquare className={`w-3.5 h-3.5 ${activeTab === "chat" ? "text-primary" : ""}`} /></Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500" onClick={() => setActiveTab("people")}><Users className={`w-3.5 h-3.5 ${activeTab === "people" ? "text-primary" : ""}`} /></Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500" onClick={() => setActiveTab("info")}><Info className={`w-3.5 h-3.5 ${activeTab === "info" ? "text-primary" : ""}`} /></Button>
+        {/* Sidebar - Polished Chat & Stats */}
+        <div className={cn(
+          "transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] border-l border-white/5 bg-[#12141A] flex flex-col shadow-2xl z-40 lg:relative absolute right-0 top-0 bottom-0",
+          showSidebar ? "w-full md:w-[380px] translate-x-0" : "w-0 translate-x-full overflow-hidden border-none"
+        )}>
+          <div className="flex flex-col h-full min-w-[320px] md:min-w-[380px]">
+            <div className="h-20 px-6 border-b border-white/5 flex items-center justify-between bg-[#12141A]/50 backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-1 bg-primary rounded-full" />
+                <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">Stream Activity</h2>
+              </div>
+              <div className="flex items-center gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5">
+                {[
+                  { id: "chat", icon: MessageSquare, label: "Chat" },
+                  { id: "people", icon: Users, label: "People" },
+                  { id: "info", icon: Info, label: "Info" }
+                ].map((tab) => (
+                  <Button 
+                    key={tab.id}
+                    variant="ghost" 
+                    size="icon" 
+                    className={`h-9 w-9 rounded-lg transition-all ${activeTab === tab.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"}`} 
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <tab.icon className="w-4.5 h-4.5" />
+                  </Button>
+                ))}
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-9 w-9 rounded-lg text-slate-500 hover:text-white lg:hidden" 
+                  onClick={() => setShowSidebar(false)}
+                >
+                  <X className="w-4.5 h-4.5" />
+                </Button>
               </div>
             </div>
+            
             <div className="flex-1 overflow-hidden relative">
               {activeTab === "chat" && (
                 <div className="absolute inset-0 flex flex-col">
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    <div className="bg-primary/5 rounded-lg p-3 border border-primary/10 text-[10px] text-slate-400 leading-relaxed">Welcome to the audition! Keep it professional and respectful.</div>
-                    {chatMessages.map((msg) => (
-                      <div 
-                        key={msg.id} 
-                        className={cn(
-                          "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
-                          msg.isSelf ? "justify-end" : "justify-start"
-                        )}
-                      >
-                        <div className={cn(
-                          "max-w-[85%] space-y-1",
-                          msg.isSelf ? "items-end" : "items-start"
-                        )}>
-                          <div className="flex items-center gap-2 mb-1">
-                            {!msg.isSelf && (
-                              <Avatar className="h-5 w-5 shrink-0">
-                                <AvatarFallback className="text-[8px] bg-white/5 text-slate-400">
-                                  {msg.sender?.[0]}
-                                </AvatarFallback>
-                              </Avatar>
-                            )}
-                            <span className={cn(
-                              "text-[10px] font-black uppercase tracking-tighter",
-                              msg.isSelf ? "text-primary" : "text-slate-400"
-                            )}>
-                              {msg.sender}
-                            </span>
-                            {msg.isSelf && (
-                              <Avatar className="h-5 w-5 shrink-0">
-                                <AvatarFallback className="text-[8px] bg-primary/10 text-primary">
-                                  {user?.fullName?.[0]}
-                                </AvatarFallback>
-                              </Avatar>
-                            )}
-                          </div>
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-white/5 hover:scrollbar-thumb-white/10 transition-all">
+                    <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 text-[11px] text-slate-400 leading-relaxed text-center italic shadow-inner">
+                      Welcome to the live audition room! Keep conversations professional and focused on the talent.
+                    </div>
+                    {chatMessages.map((msg, index) => {
+                      const isLastFromSameSender = index > 0 && chatMessages[index - 1].sender === msg.sender;
+                      return (
+                        <div 
+                          key={msg.id} 
+                          className={cn(
+                            "flex w-full animate-in fade-in slide-in-from-bottom-3 duration-500",
+                            msg.isSelf ? "justify-end" : "justify-start",
+                            isLastFromSameSender ? "mt-1" : "mt-6"
+                          )}
+                        >
                           <div className={cn(
-                            "px-3 py-2 rounded-xl text-[11px] shadow-sm",
-                            msg.isSelf 
-                              ? "bg-primary text-white rounded-tr-none" 
-                              : "bg-[#181A20] text-slate-300 rounded-tl-none border border-white/5"
+                            "max-w-[85%] space-y-1.5",
+                            msg.isSelf ? "items-end" : "items-start"
                           )}>
-                            <p className="leading-relaxed break-words">{msg.text}</p>
+                            {!isLastFromSameSender && (
+                              <div className={cn(
+                                "flex items-center gap-2 mb-1.5 px-1",
+                                msg.isSelf ? "flex-row-reverse" : "flex-row"
+                              )}>
+                                <Avatar className="h-6 w-6 border border-white/10 shadow-sm">
+                                  <AvatarFallback className={cn(
+                                    "text-[9px] font-bold",
+                                    msg.isSelf ? "bg-primary/20 text-primary" : "bg-white/5 text-slate-400"
+                                  )}>
+                                    {msg.sender?.[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className={cn(
+                                  "text-[10px] font-black uppercase tracking-widest",
+                                  msg.isSelf ? "text-primary" : "text-slate-400"
+                                )}>
+                                  {msg.sender}
+                                </span>
+                              </div>
+                            )}
+                            <div className={cn(
+                              "px-4 py-3 rounded-2xl text-[12px] shadow-sm transition-all hover:shadow-md",
+                              msg.isSelf 
+                                ? "bg-primary text-white rounded-tr-none" 
+                                : "bg-white/5 text-slate-300 rounded-tl-none border border-white/5"
+                            )}>
+                              <p className="leading-relaxed break-words tracking-tight">{msg.text}</p>
+                            </div>
+                            {!isLastFromSameSender && (
+                              <p className={cn(
+                                "text-[8px] text-slate-600 px-2 font-black uppercase tracking-tighter",
+                                msg.isSelf ? "text-right" : "text-left"
+                              )}>
+                                {msg.timestamp}
+                              </p>
+                            )}
                           </div>
-                          <p className="text-[8px] text-slate-600 px-1 font-bold">
-                            {msg.timestamp}
-                          </p>
                         </div>
-                      </div>
-                    ))}
-                    <div ref={chatEndRef} />
+                      );
+                    })}
+                    <div ref={chatEndRef} className="h-2" />
                   </div>
-                  <div className="p-4 bg-[#181A20] border-t border-white/5 space-y-3">
-                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">{["👏", "💖", "🔥", "💯", "🎭"].map(emoji => (<button key={emoji} className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-sm" onClick={() => sendReaction(emoji)}>{emoji}</button>))}</div>
-                    <div className="relative"><Input placeholder="Send a message" className="bg-[#0F1115] border-white/5 rounded-lg h-10 text-xs pr-10" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSendMessage()} /><Button variant="ghost" size="icon" className="absolute right-1 top-1 h-8 w-8 text-primary" onClick={handleSendMessage} disabled={!chatInput.trim()}><Play className="w-3.5 h-3.5 fill-current" /></Button></div>
+                  
+                  {/* Modern Chat Input Area */}
+                  <div className="p-6 bg-[#12141A] border-t border-white/5 space-y-4">
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
+                      {["👏", "💖", "🔥", "💯", "🎭", "✨", "🙌"].map(emoji => (
+                        <button 
+                          key={emoji} 
+                          className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 hover:scale-110 active:scale-90 transition-all text-base border border-white/5" 
+                          onClick={() => sendReaction(emoji)}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="relative group">
+                      <Input 
+                        placeholder="Type a message..." 
+                        className="bg-[#0B0D11] border-white/10 focus:border-primary/50 rounded-2xl h-14 text-sm pl-5 pr-14 transition-all shadow-inner focus-visible:ring-0" 
+                        value={chatInput} 
+                        onChange={(e) => setChatInput(e.target.value)} 
+                        onKeyDown={(e) => e.key === "Enter" && handleSendMessage()} 
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={cn(
+                          "absolute right-2 top-2 h-10 w-10 rounded-xl transition-all",
+                          chatInput.trim() ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-600"
+                        )} 
+                        onClick={handleSendMessage} 
+                        disabled={!chatInput.trim()}
+                      >
+                        <Play className="w-4 h-4 fill-current rotate-0" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
+
               {activeTab === "people" && (
-                <div className="absolute inset-0 flex flex-col p-4 space-y-4">
+                <div className="absolute inset-0 flex flex-col p-6 space-y-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Participants ({participants.length})</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.2em]">Participants</h3>
+                      <Badge className="bg-white/5 text-slate-400 rounded-lg text-[10px] h-5 border-none px-2">{participants.length}</Badge>
+                    </div>
                     {isOwner && (
                       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                         <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold text-primary gap-1.5">
-                            <UserPlus className="w-3 h-3" /> Invite
+                          <Button variant="ghost" size="sm" className="h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-wider text-primary bg-primary/10 hover:bg-primary/20 gap-2 transition-all">
+                            <UserPlus className="w-3.5 h-3.5" /> Invite
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="bg-[#181A20] border-white/5 text-white sm:max-w-md">
-                          <DialogHeader>
-                            <DialogTitle className="text-xl font-black uppercase tracking-tight">Invite Talents</DialogTitle>
-                            <DialogDescription className="text-slate-400 text-xs">
-                              Enter email addresses separated by commas or new lines. We'll send them a secure link to join this session.
-                            </DialogDescription>
+                        <DialogContent className="bg-[#12141A] border-white/10 text-white sm:max-w-md rounded-[2rem]">
+                          <DialogHeader className="space-y-4">
+                            <div className="h-16 w-16 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto">
+                              <UserPlus className="w-8 h-8 text-primary" />
+                            </div>
+                            <div className="text-center space-y-2">
+                              <DialogTitle className="text-2xl font-black uppercase tracking-tight">Expand the Crew</DialogTitle>
+                              <DialogDescription className="text-slate-400 text-sm">
+                                Send direct invitations to talents and collaborators. They'll receive a secure access link.
+                              </DialogDescription>
+                            </div>
                           </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Email Addresses</label>
+                          <div className="space-y-4 py-6">
+                            <div className="space-y-3">
+                              <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] px-1">Email Addresses</label>
                               <Textarea 
-                                placeholder="talent1@example.com, talent2@example.com..." 
-                                className="bg-[#0F1115] border-white/5 min-h-[120px] text-sm focus-visible:ring-primary/20"
+                                placeholder="talent@example.com, producer@example.com..." 
+                                className="bg-[#0B0D11] border-white/10 min-h-[140px] text-sm focus:border-primary/50 rounded-2xl resize-none p-5 transition-all focus-visible:ring-0"
                                 value={inviteEmails}
                                 onChange={(e) => setInviteEmails(e.target.value)}
                               />
@@ -949,14 +1149,14 @@ export default function LivestreamPage() {
                           </div>
                           <DialogFooter>
                             <Button 
-                              className="w-full h-12 rounded-xl font-black uppercase tracking-tight shadow-lg shadow-primary/20"
+                              className="w-full h-14 rounded-2xl font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                               onClick={handleSendInvite}
                               disabled={isInviting || !inviteEmails.trim()}
                             >
                               {isInviting ? (
-                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending Invitations...</>
+                                <><Loader2 className="w-5 h-5 mr-3 animate-spin" /> Sending...</>
                               ) : (
-                                "Send Invitations"
+                                "Dispatch Invites"
                               )}
                             </Button>
                           </DialogFooter>
@@ -964,39 +1164,117 @@ export default function LivestreamPage() {
                       </Dialog>
                     )}
                   </div>
-                  <div className="space-y-1 overflow-y-auto flex-1">
+                  <div className="space-y-2 overflow-y-auto flex-1 pr-2 scrollbar-thin scrollbar-thumb-white/5">
                     {participants.map((p) => (
-                      <div key={p.id} className="group/user flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-all">
-                        <div className="flex items-center gap-3"><Avatar className="h-8 w-8"><AvatarFallback className="bg-[#2A2E35] text-[10px] text-slate-400">{p.name?.[0]}</AvatarFallback></Avatar><div className="min-w-0"><div className="flex items-center gap-1.5"><p className="text-xs font-bold text-slate-300 truncate max-w-[120px]">{p.name}</p>{p.role === "host" && <Shield className="w-2.5 h-2.5 text-primary" />}</div><p className="text-[9px] text-slate-500 font-bold uppercase">{p.role || "Viewer"}</p></div></div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover/user:opacity-100 transition-opacity">
-                          {isOwner && !p.isSelf && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="w-3.5 h-3.5 text-slate-500" /></Button></DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-48 bg-[#181A20] border-white/5 text-white">
-                                <DropdownMenuLabel className="text-[10px] font-black uppercase text-slate-500">Moderation</DropdownMenuLabel>
-                                <DropdownMenuItem className="text-xs gap-2 py-2 cursor-pointer" onClick={() => handleMuteUser(p.id, p.name)}>{p.isMicOn ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5 text-success" />}{p.isMicOn ? "Mute" : "Unmute"}</DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-white/5" /><DropdownMenuItem className="text-xs gap-2 py-2 text-destructive cursor-pointer" onClick={() => handleKickUser(p.id, p.name)}><UserX className="w-3.5 h-3.5" /> Kick</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                          {!p.isMicOn && <MicOff className="w-3 h-3 text-destructive" />}
+                      <div key={p.id} className="group/user flex items-center justify-between p-3 rounded-2xl hover:bg-white/5 transition-all border border-transparent hover:border-white/5">
+                        <div className="flex items-center gap-4">
+                          <div className="relative">
+                            <Avatar className="h-10 w-10 border border-white/10 shadow-md">
+                              <AvatarFallback className="bg-[#252831] text-[11px] font-bold text-slate-400">
+                                {p.name?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            {p.role === "host" && (
+                              <div className="absolute -top-1 -right-1 h-4 w-4 bg-primary rounded-full flex items-center justify-center border-2 border-[#12141A] shadow-sm">
+                                <Shield className="w-2 h-2 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-bold text-slate-200 truncate max-w-[140px] tracking-tight">{p.name}</p>
+                              {p.isSelf && <Badge variant="outline" className="text-[8px] h-4 px-1 border-white/20 text-slate-500 uppercase font-black">You</Badge>}
+                            </div>
+                            <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-0.5">{p.role || "Viewer"}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 opacity-0 group-hover/user:opacity-100 transition-all duration-300">
+                            {isOwner && !p.isSelf && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-white/10"><MoreVertical className="w-4 h-4 text-slate-500" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-52 bg-[#12141A] border-white/10 text-white rounded-2xl p-2 shadow-2xl">
+                                  <DropdownMenuLabel className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] px-3 py-2">Moderation Tools</DropdownMenuLabel>
+                                  <DropdownMenuItem className="text-xs gap-3 py-3 rounded-xl cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleMuteUser(p.id, p.name)}>
+                                    {p.isMicOn ? <MicOff className="w-4 h-4 text-slate-400" /> : <Mic className="w-4 h-4 text-emerald-500" />}
+                                    <span className="font-bold">{p.isMicOn ? "Mute Talent" : "Unmute Talent"}</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator className="bg-white/5 mx-2 my-1" />
+                                  <DropdownMenuItem className="text-xs gap-3 py-3 rounded-xl text-destructive cursor-pointer hover:bg-destructive/10 transition-colors" onClick={() => handleKickUser(p.id, p.name)}>
+                                    <UserX className="w-4 h-4" />
+                                    <span className="font-bold">Remove from Session</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                          {!p.isMicOn && p.role !== "viewer" && <MicOff className="w-3.5 h-3.5 text-destructive/80" />}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
+
               {activeTab === "info" && (
-                <div className="absolute inset-0 p-6 space-y-8 overflow-y-auto">
-                  <div className="space-y-4">
-                    <h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Joining info</h3>
-                    <div className="bg-[#0F1115] border border-white/5 rounded-xl p-4 space-y-4">
-                      <div className="space-y-1"><p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Session ID</p><div className="flex items-center justify-between"><p className="text-xs font-mono text-primary truncate pr-4">{id}</p><Button variant="ghost" size="icon" className="h-6 w-6 text-slate-500" onClick={handleCopyLink}>{isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}</Button></div></div>
-                      <div className="space-y-1"><p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Visibility</p><div className="flex items-center gap-2"><Globe className="w-3 h-3 text-success" /><p className="text-xs font-bold text-slate-300 uppercase tracking-tighter">{streamData?.visibility || "Public"}</p></div></div>
+                <div className="absolute inset-0 p-8 space-y-10 overflow-y-auto scrollbar-thin scrollbar-thumb-white/5">
+                  <div className="space-y-6">
+                    <h3 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.3em] px-1">Session Protocol</h3>
+                    <div className="bg-[#0B0D11] border border-white/5 rounded-[1.5rem] p-6 space-y-6 shadow-inner relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16" />
+                      <div className="space-y-2.5 relative z-10">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Audition Identity</p>
+                        <div className="flex items-center justify-between p-3.5 bg-white/5 rounded-xl border border-white/5 group">
+                          <p className="text-xs font-mono text-primary font-bold truncate pr-4">{id}</p>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-slate-500 hover:text-white transition-all group-hover:scale-110" 
+                            onClick={handleCopyLink}
+                          >
+                            {isCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2.5 relative z-10">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Global Visibility</p>
+                        <div className="flex items-center gap-3 p-3.5 bg-white/5 rounded-xl border border-white/5">
+                          <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                            <Globe className="w-4 h-4 text-emerald-500" />
+                          </div>
+                          <p className="text-xs font-black text-slate-200 uppercase tracking-[0.1em]">{streamData?.visibility || "Public Session"}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-3"><h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Description</h3><p className="text-xs text-slate-400 leading-relaxed bg-[#0F1115] p-4 rounded-xl border border-white/5">{streamData?.description || "No description provided."}</p></div>
-                  <div className="space-y-3"><h3 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Quick Actions</h3><div className="grid grid-cols-2 gap-3"><Button variant="outline" className="h-auto py-3 px-4 rounded-xl flex-col items-center gap-2 border-white/5 bg-[#0F1115] hover:bg-white/5"><Flag className="w-4 h-4 text-slate-500" /><span className="text-[10px] font-black uppercase">Report</span></Button><Button variant="outline" className="h-auto py-3 px-4 rounded-xl flex-col items-center gap-2 border-white/5 bg-[#0F1115] hover:bg-white/5"><Smile className="w-4 h-4 text-slate-500" /><span className="text-[10px] font-black uppercase">React</span></Button></div></div>
+
+                  <div className="space-y-5">
+                    <h3 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.3em] px-1">Director's Brief</h3>
+                    <div className="text-sm text-slate-400 leading-relaxed bg-[#0B0D11] p-6 rounded-[1.5rem] border border-white/5 shadow-inner relative overflow-hidden group">
+                      <div className="absolute bottom-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -mb-12 -mr-12 group-hover:bg-primary/10 transition-all" />
+                      <p className="relative z-10">{streamData?.description || "No specific instructions or description provided for this audition session."}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-5 pb-8">
+                    <h3 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.3em] px-1">Engagement</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button variant="outline" className="h-auto py-5 px-6 rounded-2xl flex-col items-center gap-3 border-white/5 bg-[#0B0D11] hover:bg-white/5 hover:border-white/10 transition-all group shadow-sm">
+                        <div className="h-10 w-10 rounded-xl bg-slate-500/10 flex items-center justify-center group-hover:scale-110 transition-all">
+                          <Flag className="w-5 h-5 text-slate-500 group-hover:text-slate-300" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300">File Report</span>
+                      </Button>
+                      <Button variant="outline" className="h-auto py-5 px-6 rounded-2xl flex-col items-center gap-3 border-white/5 bg-[#0B0D11] hover:bg-white/5 hover:border-white/10 transition-all group shadow-sm">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-all">
+                          <Smile className="w-5 h-5 text-primary group-hover:text-primary/80" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-primary">Send Love</span>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

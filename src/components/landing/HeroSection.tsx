@@ -288,7 +288,7 @@ export function HeroSection() {
             </div>
 
             {/* Active Public Auditions */}
-            {publicStreams.length > 0 && (
+            {/* {publicStreams.length > 0 && (
               <div className="pt-4">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold flex items-center gap-2">
@@ -325,7 +325,7 @@ export function HeroSection() {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Industry News */}
             <div>
