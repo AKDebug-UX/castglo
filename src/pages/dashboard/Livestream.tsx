@@ -802,7 +802,7 @@ export default function LivestreamPage() {
           <div className="flex-1 relative flex items-center justify-center p-4 lg:p-6 overflow-hidden">
             <div className="w-full h-full max-w-6xl aspect-video bg-[#12141A] rounded-[2rem] overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-white/5 relative group transition-all duration-500">
               <div className="absolute inset-0">
-                {isOwner ? (
+                {isBroadcaster ? (
                   isCamOn ? (
                     <div className="w-full h-full bg-black">
                       <div ref={localVideoRef} className="w-full h-full object-cover scale-x-[-1]" />
