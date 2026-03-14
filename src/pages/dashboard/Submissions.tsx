@@ -7,11 +7,11 @@ import { applicationAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
-  "in_review": "bg-info text-info-foreground",
-  "shortlisted": "bg-primary text-primary-foreground",
-  "rejected": "bg-destructive text-destructive-foreground",
-  "accepted": "bg-success text-success-foreground",
-  "applied": "bg-muted text-muted-foreground",
+  "applied": "bg-slate-500 text-white hover:bg-slate-600 capitalize",
+  "in_review": "bg-blue-500 text-white hover:bg-blue-600 capitalize",
+  "shortlisted": "bg-amber-500 text-white hover:bg-amber-600 capitalize",
+  "rejected": "bg-rose-500 text-white hover:bg-rose-600 capitalize",
+  "accepted": "bg-emerald-500 text-white hover:bg-emerald-600 capitalize",
 };
 
 export default function Submissions() {

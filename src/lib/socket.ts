@@ -9,21 +9,27 @@ class SocketService {
     if (this.socket?.connected) return;
 
     this.socket = io(SOCKET_URL, {
-      auth: { token },
+      auth: { token: `Bearer ${token}` },
       transports: ['polling', 'websocket'],
       withCredentials: true,
-      autoConnect: true,
+      autoConnect: false, // Connect manually when token is ready
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000
     });
 
+    this.socket.connect(); // Manually connect as per plan
+
     this.socket.on('connect', () => {
-      console.log('Connected to Socket.io server');
+      console.log('Connected to messaging socket', this.socket?.id);
     });
 
-    this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+    this.socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err.message);
+    });
+
+    this.socket.on('disconnect', (reason) => {
+      console.log('Disconnected:', reason);
     });
   }
 

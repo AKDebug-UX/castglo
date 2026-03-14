@@ -331,11 +331,9 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
 
     fetchMessages();
 
-    // Join the conversation room
-    socketService.emit('join_conversation', selectedConversation._id);
-
     // Listen for new messages
-    const handleNewMessage = (message: any) => {
+    const handleNewMessage = (data: any) => {
+      const message = data.message;
       if (message.conversationId === selectedConversation._id) {
         setMessages(prev => {
           // Prevent duplicates
@@ -349,7 +347,6 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
 
     return () => {
       socketService.off('new_message', handleNewMessage);
-      socketService.emit('leave_conversation', selectedConversation._id);
     };
   }, [selectedConversation]);
 
@@ -364,15 +361,23 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
       });
 
       if (response.data.success) {
-        setMessages([...messages, response.data.data]);
+        // Optimistically update messages if the socket hasn't yet
+        setMessages(prev => {
+          if (prev.some(m => m._id === response.data.data._id)) return prev;
+          return [...prev, response.data.data];
+        });
         setNewMessage("");
         
         setConversations(conversations.map(c => 
           c._id === selectedConversation._id ? { ...c, lastMessage: response.data.data } : c
         ));
       }
-    } catch (error) {
-      toast.error("Failed to send message");
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        toast.error("You can only message casting directors if your application is shortlisted or accepted.");
+      } else {
+        toast.error("Failed to send message");
+      }
     } finally {
       setIsSending(false);
     }
