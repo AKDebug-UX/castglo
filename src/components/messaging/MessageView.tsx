@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Send, MoreVertical, Loader2, MessageSquare, Search, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { messagingAPI, userAPI } from "@/lib/api";
+import { socketService } from "@/lib/socket";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
@@ -304,43 +305,51 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   }, []);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      socketService.connect(token);
+    }
+    return () => {
+      socketService.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!selectedConversation) return;
 
-    const pollInterval = 10000;
-    let isPolling = true;
-    let timeoutId: NodeJS.Timeout;
-    let isRequesting = false;
-
-    const pollMessages = async () => {
-      if (!isPolling || isRequesting) return;
-
-      isRequesting = true;
+    // Fetch initial messages
+    const fetchMessages = async () => {
       try {
         const response = await messagingAPI.getMessages(selectedConversation._id, { limit: 50 });
         if (response.data.success && Array.isArray(response.data.data)) {
-          const newMessages = response.data.data.reverse();
-          setMessages(prevMessages => {
-            if (JSON.stringify(newMessages) !== JSON.stringify(prevMessages)) {
-              return newMessages;
-            }
-            return prevMessages;
-          });
+          setMessages(response.data.data.reverse());
         }
       } catch (error) {
-        console.error("Polling failed:", error);
-      } finally {
-        isRequesting = false;
-        if (isPolling) {
-          timeoutId = setTimeout(pollMessages, pollInterval);
-        }
+        console.error("Failed to fetch messages:", error);
       }
     };
 
-    pollMessages();
+    fetchMessages();
+
+    // Join the conversation room
+    socketService.emit('join_conversation', selectedConversation._id);
+
+    // Listen for new messages
+    const handleNewMessage = (message: any) => {
+      if (message.conversationId === selectedConversation._id) {
+        setMessages(prev => {
+          // Prevent duplicates
+          if (prev.some(m => m._id === message._id)) return prev;
+          return [...prev, message];
+        });
+      }
+    };
+
+    socketService.on('new_message', handleNewMessage);
 
     return () => {
-      isPolling = false;
-      if (timeoutId) clearTimeout(timeoutId);
+      socketService.off('new_message', handleNewMessage);
+      socketService.emit('leave_conversation', selectedConversation._id);
     };
   }, [selectedConversation]);
 
