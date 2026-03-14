@@ -7,11 +7,12 @@ import { applicationAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
-  "applied": "bg-slate-500 text-white hover:bg-slate-600 capitalize",
-  "in_review": "bg-blue-500 text-white hover:bg-blue-600 capitalize",
+  "submitted": "bg-slate-500 text-white hover:bg-slate-600 capitalize",
+  "viewed": "bg-blue-400 text-white hover:bg-blue-500 capitalize",
   "shortlisted": "bg-amber-500 text-white hover:bg-amber-600 capitalize",
   "rejected": "bg-rose-500 text-white hover:bg-rose-600 capitalize",
   "accepted": "bg-emerald-500 text-white hover:bg-emerald-600 capitalize",
+  "withdrawn": "bg-slate-300 text-slate-700 hover:bg-slate-400 capitalize",
 };
 
 export default function Submissions() {
@@ -41,7 +42,7 @@ export default function Submissions() {
           // Calculate stats
           setStats([
             { label: "Total Submissions", value: apps.length.toString(), sublabel: "All time", Icon: FileText },
-            { label: "In Review", value: apps.filter((a) => a.status === "applied").length.toString(), sublabel: "Pending Review", Icon: Eye },
+            { label: "Viewed/In Review", value: apps.filter((a) => ["submitted", "viewed"].includes(a.status)).length.toString(), sublabel: "Pending Review", Icon: Eye },
             { label: "Shortlisted", value: apps.filter((a) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", Icon: Star },
           ]);
         } else {
