@@ -33,8 +33,8 @@ const Sidebar = ({
   const [conversationSearch, setConversationSearch] = useState("");
 
   const filteredConversations = conversations.filter(conv => {
-    const otherParticipant = conv.participants?.find((p: any) => p._id !== user?.id);
-    return otherParticipant?.fullName.toLowerCase().includes(conversationSearch.toLowerCase());
+    const otherParticipant = conv.participants?.find((p) => p._id !== user?.id);
+    return (otherParticipant?.fullName || "").toLowerCase().includes(conversationSearch.toLowerCase());
   });
 
   return (
