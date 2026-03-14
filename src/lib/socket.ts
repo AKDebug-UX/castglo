@@ -10,12 +10,14 @@ class SocketService {
 
     this.socket = io(SOCKET_URL, {
       auth: { token: `Bearer ${token}` },
-      transports: ['polling', 'websocket'],
+      transports: ['websocket'], // Use websocket first as it often bypasses CORS issues on some hosts
       withCredentials: true,
-      autoConnect: false, // Connect manually when token is ready
+      autoConnect: false,
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      forceNew: true,
+      timeout: 10000
     });
 
     this.socket.connect(); // Manually connect as per plan

@@ -317,26 +317,36 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   useEffect(() => {
     if (!selectedConversation) return;
 
-    // Fetch initial messages
-    const fetchMessages = async () => {
+    let isPolling = true;
+    let timeoutId: NodeJS.Timeout;
+
+    // Fetch initial messages and set up fallback polling
+    const fetchMessagesAndPoll = async () => {
       try {
         const response = await messagingAPI.getMessages(selectedConversation._id, { limit: 50 });
         if (response.data.success && Array.isArray(response.data.data)) {
-          setMessages(response.data.data.reverse());
+          const newMessages = response.data.data.reverse();
+          setMessages(prev => {
+            if (JSON.stringify(newMessages) === JSON.stringify(prev)) return prev;
+            return newMessages;
+          });
         }
       } catch (error) {
         console.error("Failed to fetch messages:", error);
+      } finally {
+        if (isPolling) {
+          timeoutId = setTimeout(fetchMessagesAndPoll, 15000); // 15s fallback if socket fails
+        }
       }
     };
 
-    fetchMessages();
+    fetchMessagesAndPoll();
 
-    // Listen for new messages
+    // Listen for new messages via Socket
     const handleNewMessage = (data: any) => {
       const message = data.message;
       if (message.conversationId === selectedConversation._id) {
         setMessages(prev => {
-          // Prevent duplicates
           if (prev.some(m => m._id === message._id)) return prev;
           return [...prev, message];
         });
@@ -346,6 +356,8 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     socketService.on('new_message', handleNewMessage);
 
     return () => {
+      isPolling = false;
+      if (timeoutId) clearTimeout(timeoutId);
       socketService.off('new_message', handleNewMessage);
     };
   }, [selectedConversation]);
