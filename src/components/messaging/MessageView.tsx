@@ -308,10 +308,13 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
 
     const pollInterval = 10000;
     let isPolling = true;
+    let timeoutId: NodeJS.Timeout;
+    let isRequesting = false;
 
     const pollMessages = async () => {
-      if (!isPolling) return;
+      if (!isPolling || isRequesting) return;
 
+      isRequesting = true;
       try {
         const response = await messagingAPI.getMessages(selectedConversation._id, { limit: 50 });
         if (response.data.success && Array.isArray(response.data.data)) {
@@ -326,19 +329,18 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
       } catch (error) {
         console.error("Polling failed:", error);
       } finally {
+        isRequesting = false;
         if (isPolling) {
-          setTimeout(pollMessages, pollInterval);
+          timeoutId = setTimeout(pollMessages, pollInterval);
         }
       }
     };
 
     pollMessages();
 
-    const intervalId = setInterval(pollMessages, pollInterval);
-
     return () => {
       isPolling = false;
-      clearInterval(intervalId);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [selectedConversation]);
 
@@ -387,7 +389,12 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
         setIsSearching(false);
       }
     };
-    fetchUsers();
+
+    const debounceId = setTimeout(() => {
+      fetchUsers();
+    }, 500);
+
+    return () => clearTimeout(debounceId);
   }, [isModalOpen, userSearch, user?.id]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
