@@ -589,7 +589,7 @@ export default function LivestreamPage() {
         console.error("Polling error:", error);
       } finally {
         if (pollRef.active) {
-          timeoutId = setTimeout(fetchMessagesAndStatus, 5000);
+          timeoutId = setTimeout(fetchMessagesAndStatus, 15000); // Increased to 15s to reduce server load
         }
       }
     };

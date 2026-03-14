@@ -31,7 +31,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         if (response.data.success && Array.isArray(response.data.data)) {
           const fetchedNotifications = response.data.data;
           setNotifications(fetchedNotifications);
-          const unread = fetchedNotifications.filter(n => !n.isRead).length;
+          const unread = fetchedNotifications.filter((n: any) => !n.isRead).length;
           setUnreadCount(unread);
         }
       } catch (error) {
@@ -39,12 +39,13 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       }
     };
 
-    if (user) {
+    if (user?.id) {
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 60000);
+      // Increase to 2 minutes to reduce server load, as real-time updates should ideally come via socket
+      const interval = setInterval(fetchNotifications, 120000); 
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user?.id]);
  
    const handleSignOut = () => {
     signOut();

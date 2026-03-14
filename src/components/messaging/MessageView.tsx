@@ -315,27 +315,41 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   }, []);
 
   useEffect(() => {
-    if (!selectedConversation) return;
+    if (!selectedConversation?._id) return;
 
     let isPolling = true;
     let timeoutId: NodeJS.Timeout;
+    let isRequesting = false;
 
     // Fetch initial messages and set up fallback polling
     const fetchMessagesAndPoll = async () => {
+      // If socket is connected, we rely on it for real-time updates
+      // and only poll occasionally (every 60s) as a sanity check
+      const socketConnected = socketService.isConnected();
+      const interval = socketConnected ? 60000 : 20000;
+
+      if (!isPolling || isRequesting) return;
+
+      isRequesting = true;
       try {
         const response = await messagingAPI.getMessages(selectedConversation._id, { limit: 50 });
         if (response.data.success && Array.isArray(response.data.data)) {
           const newMessages = response.data.data.reverse();
           setMessages(prev => {
-            if (JSON.stringify(newMessages) === JSON.stringify(prev)) return prev;
+            // Use a more robust check to avoid unnecessary state updates
+            if (prev.length === newMessages.length && 
+                prev[prev.length - 1]?._id === newMessages[newMessages.length - 1]?._id) {
+              return prev;
+            }
             return newMessages;
           });
         }
       } catch (error) {
         console.error("Failed to fetch messages:", error);
       } finally {
+        isRequesting = false;
         if (isPolling) {
-          timeoutId = setTimeout(fetchMessagesAndPoll, 15000); // 15s fallback if socket fails
+          timeoutId = setTimeout(fetchMessagesAndPoll, interval);
         }
       }
     };
@@ -360,7 +374,7 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
       if (timeoutId) clearTimeout(timeoutId);
       socketService.off('new_message', handleNewMessage);
     };
-  }, [selectedConversation]);
+  }, [selectedConversation?._id]); // Depend on ID instead of object reference
 
   const handleSendMessage = async () => {
     if (!selectedConversation || !newMessage.trim()) return;
