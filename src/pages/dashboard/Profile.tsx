@@ -68,9 +68,11 @@ export default function Profile() {
 
       const profileUpdate = profileAPI.updateMe({
         bio: profileData.bio,
-        skills: profileData.skills,
+        skills: profileData?.talent?.skills || profileData?.skills,
+        education: profileData?.talent?.education || profileData?.education,
+        equipment: profileData?.talent?.equipment || profileData?.equipment,
+        physicalAttributes: profileData?.talent?.physicalAttributes || profileData?.physicalAttributes,
         experience: profileData.experience,
-        // Add other fields as supported by backend
       });
 
       await Promise.all([userUpdate, profileUpdate]);
@@ -181,7 +183,7 @@ export default function Profile() {
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={profileData?.profilePicture} />
+                    <AvatarImage src={profileData?.talent?.headshots[0]?.url} />
                     <AvatarFallback>{profileData?.fullName?.[0] || "U"}</AvatarFallback>
                   </Avatar>
                   <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-secondary flex items-center justify-center cursor-pointer shadow-sm hover:bg-secondary/80">
@@ -338,9 +340,9 @@ export default function Profile() {
                     name="height"
                     type="number"
                     value={profileData?.physicalAttributes?.height || ""} 
-                    onChange={(e) => setProfileData((prev) => ({
+                    onChange={(e) => setProfileData((prev: any) => ({
                       ...prev,
-                      physicalAttributes: { ...prev.physicalAttributes, height: e.target.value }
+                      physicalAttributes: { ...(prev?.physicalAttributes || {}), height: e.target.value }
                     }))}
                   />
                 </div>
@@ -350,9 +352,9 @@ export default function Profile() {
                     name="weight"
                     type="number"
                     value={profileData?.physicalAttributes?.weight || ""} 
-                    onChange={(e) => setProfileData((prev) => ({
+                    onChange={(e) => setProfileData((prev: any) => ({
                       ...prev,
-                      physicalAttributes: { ...prev.physicalAttributes, weight: e.target.value }
+                      physicalAttributes: { ...(prev?.physicalAttributes || {}), weight: e.target.value }
                     }))}
                   />
                 </div>
@@ -361,9 +363,9 @@ export default function Profile() {
                   <Input 
                     name="eyeColor"
                     value={profileData?.physicalAttributes?.eyeColor || ""} 
-                    onChange={(e) => setProfileData((prev) => ({
+                    onChange={(e) => setProfileData((prev: any) => ({
                       ...prev,
-                      physicalAttributes: { ...prev.physicalAttributes, eyeColor: e.target.value }
+                      physicalAttributes: { ...(prev?.physicalAttributes || {}), eyeColor: e.target.value }
                     }))}
                   />
                 </div>
@@ -379,12 +381,17 @@ export default function Profile() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                {profileData?.skills?.map((skill: string, i: number) => (
+                {(profileData?.talent?.skills || profileData?.skills || []).map((skill: string, i: number) => (
                   <Badge key={i} variant="secondary" className="gap-1">
                     {skill}
                     <X className="w-3 h-3 cursor-pointer" onClick={() => {
-                      const newSkills = profileData.skills.filter((_, idx: number) => idx !== i);
-                      setProfileData((prev) => ({ ...prev, skills: newSkills }));
+                      const currentSkills = (profileData?.talent?.skills || profileData?.skills || []);
+                      const newSkills = currentSkills.filter((_: any, idx: number) => idx !== i);
+                      setProfileData((prev: any) => ({
+                        ...prev,
+                        talent: prev.talent ? { ...prev.talent, skills: newSkills } : prev.talent,
+                        skills: newSkills 
+                      }));
                     }} />
                   </Badge>
                 ))}
@@ -393,13 +400,165 @@ export default function Profile() {
                 <Input id="new-skill" placeholder="Add a skill" onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     const val = (e.target as HTMLInputElement).value;
-                    if (val && !profileData.skills.includes(val)) {
-                      setProfileData((prev) => ({ ...prev, skills: [...prev.skills, val] }));
+                    const currentSkills = (profileData?.talent?.skills || profileData?.skills || []);
+                    if (val && !currentSkills.includes(val)) {
+                      const newSkills = [...currentSkills, val];
+                      setProfileData((prev: any) => ({
+                        ...prev,
+                        talent: prev.talent ? { ...prev.talent, skills: newSkills } : prev.talent,
+                        skills: newSkills
+                      }));
                       (e.target as HTMLInputElement).value = "";
                     }
                   }
                 }} />
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" onClick={() => {
+                  const input = document.getElementById("new-skill") as HTMLInputElement;
+                  const val = input.value;
+                  const currentSkills = (profileData?.talent?.skills || profileData?.skills || []);
+                  if (val && !currentSkills.includes(val)) {
+                    const newSkills = [...currentSkills, val];
+                    setProfileData((prev: any) => ({
+                      ...prev,
+                      talent: prev.talent ? { ...prev.talent, skills: newSkills } : prev.talent,
+                      skills: newSkills
+                    }));
+                    input.value = "";
+                  }
+                }}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="education" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Education & Training</CardTitle>
+              <p className="text-sm text-muted-foreground">List your academic qualifications and professional training</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                {(profileData?.talent?.education || profileData?.education || []).map((edu: any, i: number) => (
+                  <div key={i} className="flex items-start justify-between p-4 rounded-lg border bg-muted/30">
+                    <div className="space-y-1">
+                      <p className="font-bold">{edu.degree || edu.qualification}</p>
+                      <p className="text-sm text-muted-foreground">{edu.institution || edu.school}</p>
+                      <p className="text-xs text-muted-foreground">{edu.year || edu.graduationYear}</p>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => {
+                      const currentEdu = (profileData?.talent?.education || profileData?.education || []);
+                      const newEdu = currentEdu.filter((_: any, idx: number) => idx !== i);
+                      setProfileData((prev: any) => ({
+                        ...prev,
+                        talent: prev.talent ? { ...prev.talent, education: newEdu } : prev.talent,
+                        education: newEdu
+                      }));
+                    }}>
+                      <X className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="grid gap-4 p-4 border rounded-lg bg-slate-50/50">
+                <div className="grid gap-2">
+                  <label className="text-xs font-bold uppercase text-slate-500">Institution</label>
+                  <Input id="edu-inst" placeholder="e.g. Royal Academy of Dramatic Art" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <label className="text-xs font-bold uppercase text-slate-500">Degree / Qualification</label>
+                    <Input id="edu-deg" placeholder="e.g. BA in Acting" />
+                  </div>
+                  <div className="grid gap-2">
+                    <label className="text-xs font-bold uppercase text-slate-500">Year</label>
+                    <Input id="edu-year" placeholder="e.g. 2020" />
+                  </div>
+                </div>
+                <Button className="w-full mt-2" onClick={() => {
+                  const inst = (document.getElementById("edu-inst") as HTMLInputElement).value;
+                  const deg = (document.getElementById("edu-deg") as HTMLInputElement).value;
+                  const year = (document.getElementById("edu-year") as HTMLInputElement).value;
+                  
+                  if (inst && deg) {
+                    const newEntry = { institution: inst, degree: deg, year: year };
+                    const currentEdu = (profileData?.talent?.education || profileData?.education || []);
+                    const newEdu = [...currentEdu, newEntry];
+                    
+                    setProfileData((prev: any) => ({
+                      ...prev,
+                      talent: prev.talent ? { ...prev.talent, education: newEdu } : prev.talent,
+                      education: newEdu
+                    }));
+                    
+                    (document.getElementById("edu-inst") as HTMLInputElement).value = "";
+                    (document.getElementById("edu-deg") as HTMLInputElement).value = "";
+                    (document.getElementById("edu-year") as HTMLInputElement).value = "";
+                  }
+                }}>
+                  <Plus className="w-4 h-4 mr-2" /> Add Education
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="equipment" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Equipment & Gear</CardTitle>
+              <p className="text-sm text-muted-foreground">List the professional equipment you have access to</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex flex-wrap gap-2">
+                {(profileData?.talent?.equipment || profileData?.equipment || []).map((item: string, i: number) => (
+                  <Badge key={i} variant="secondary" className="gap-1 py-1.5 px-3">
+                    {item}
+                    <X className="w-3 h-3 cursor-pointer ml-1" onClick={() => {
+                      const currentEq = (profileData?.talent?.equipment || profileData?.equipment || []);
+                      const newEq = currentEq.filter((_: any, idx: number) => idx !== i);
+                      setProfileData((prev: any) => ({
+                        ...prev,
+                        talent: prev.talent ? { ...prev.talent, equipment: newEq } : prev.talent,
+                        equipment: newEq
+                      }));
+                    }} />
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Input id="new-equipment" placeholder="Add equipment (e.g. 4K Camera, Green Screen)" onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const val = (e.target as HTMLInputElement).value;
+                    const currentEq = (profileData?.talent?.equipment || profileData?.equipment || []);
+                    if (val && !currentEq.includes(val)) {
+                      const newEq = [...currentEq, val];
+                      setProfileData((prev: any) => ({
+                        ...prev,
+                        talent: prev.talent ? { ...prev.talent, equipment: newEq } : prev.talent,
+                        equipment: newEq
+                      }));
+                      (e.target as HTMLInputElement).value = "";
+                    }
+                  }
+                }} />
+                <Button variant="outline" size="icon" onClick={() => {
+                  const input = document.getElementById("new-equipment") as HTMLInputElement;
+                  const val = input.value;
+                  const currentEq = (profileData?.talent?.equipment || profileData?.equipment || []);
+                  if (val && !currentEq.includes(val)) {
+                    const newEq = [...currentEq, val];
+                    setProfileData((prev: any) => ({
+                      ...prev,
+                      talent: prev.talent ? { ...prev.talent, equipment: newEq } : prev.talent,
+                      equipment: newEq
+                    }));
+                    input.value = "";
+                  }
+                }}>
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
@@ -414,7 +573,7 @@ export default function Profile() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-                {profileData?.headshots?.map((shot, i: number) => (
+                {profileData?.talent?.headshots?.map((shot, i: number) => (
                   <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
                     <img src={shot.url} className="w-full h-full object-cover" />
                     <Button 
@@ -424,9 +583,12 @@ export default function Profile() {
                       onClick={async () => {
                         try {
                           await profileAPI.deleteHeadshot(shot._id);
-                          setProfileData((prev) => ({
+                          setProfileData((prev: any) => ({
                             ...prev,
-                            headshots: prev.headshots.filter((s) => s._id !== shot._id)
+                            talent: {
+                              ...prev?.talent,
+                              headshots: (prev?.talent?.headshots || []).filter((s: any) => s._id !== shot._id)
+                            }
                           }));
                         } catch (e) { toast.error("Failed to delete headshot"); }
                       }}
