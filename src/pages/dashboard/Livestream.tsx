@@ -697,9 +697,17 @@ export default function LivestreamPage() {
       const handleCohostAssigned = (data: any) => {
         const { userId, stream } = data;
         setStreamData(stream);
+        
+        // Update local participants role
+        setParticipants(prev => prev.map(p => 
+          String(p.id) === String(userId) ? { ...p, role: "co-host" } : p
+        ));
+
         if (String(userId) === String(user?.id)) {
-          toast.success("You have been promoted to Co-Host!");
-          // The component will re-render and isBroadcaster will become true
+          toast.success("You have been promoted to Co-Host!", { 
+            duration: 5000,
+            icon: "🎙️" 
+          });
         } else {
           const promotedUser = participants.find(p => String(p.id) === String(userId));
           if (promotedUser) {
@@ -708,9 +716,35 @@ export default function LivestreamPage() {
         }
       };
 
+      const handleCohostRemoved = (data: any) => {
+        const { userId, stream } = data;
+        setStreamData(stream);
+
+        // Update local participants role
+        setParticipants(prev => prev.map(p => 
+          String(p.id) === String(userId) ? { ...p, role: "viewer" } : p
+        ));
+
+        if (String(userId) === String(user?.id)) {
+          toast.error("Your Co-Host permissions have been removed.", { 
+            duration: 5000,
+            icon: "🚫" 
+          });
+          // Also disable local media tracks if they were on
+          setIsMicOn(false);
+          setIsCamOn(false);
+        } else {
+          const removedUser = participants.find(p => String(p.id) === String(userId));
+          if (removedUser) {
+            toast.info(`${removedUser.name} is no longer a Co-Host`);
+          }
+        }
+      };
+
       socketService.on('user_joined', handleUserJoined);
       socketService.on('user_left', handleUserLeft);
       socketService.on('cohost_assigned', handleCohostAssigned);
+      socketService.on('cohost_removed', handleCohostRemoved);
 
       const handleIncomingReaction = (data: any) => {
         const { emoji } = data;
@@ -756,6 +790,7 @@ export default function LivestreamPage() {
         socketService.off('user_joined', handleUserJoined);
         socketService.off('user_left', handleUserLeft);
         socketService.off('cohost_assigned', handleCohostAssigned);
+        socketService.off('cohost_removed', handleCohostRemoved);
         socketService.off('livestream_reaction', handleIncomingReaction);
         socketService.off('livestream_like', handleIncomingLike);
         socketService.off('user_camera_toggled', handleUserCameraToggled);
