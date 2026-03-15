@@ -110,6 +110,7 @@ export default function LivestreamPage() {
   const [selectedCamera, setSelectedCamera] = useState<string>("");
   const [selectedMic, setSelectedMic] = useState<string>("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [reactions, setReactions] = useState<{ id: number, emoji: string, left: number }[]>([]);
 
   // Agora State
   const agoraClientRef = useRef<IAgoraRTCClient | null>(null);
@@ -678,6 +679,21 @@ export default function LivestreamPage() {
       socketService.on('user_left', handleUserLeft);
       socketService.on('cohost_assigned', handleCohostAssigned);
 
+      const handleIncomingReaction = (data: any) => {
+        const { emoji } = data;
+        const id = Date.now() + Math.random();
+        const left = Math.floor(Math.random() * 80) + 10; // Random position 10% to 90%
+        
+        setReactions(prev => [...prev, { id, emoji, left }]);
+        
+        // Remove reaction after animation finishes (3 seconds)
+        setTimeout(() => {
+          setReactions(prev => prev.filter(r => r.id !== id));
+        }, 3000);
+      };
+
+      socketService.on('livestream_reaction', handleIncomingReaction);
+
       return () => {
         pollRef.active = false;
         if (timeoutId) clearTimeout(timeoutId);
@@ -685,6 +701,7 @@ export default function LivestreamPage() {
         socketService.off('user_joined', handleUserJoined);
         socketService.off('user_left', handleUserLeft);
         socketService.off('cohost_assigned', handleCohostAssigned);
+        socketService.off('livestream_reaction', handleIncomingReaction);
         socketService.emit('leave_livestream', id);
       };
     }
@@ -746,7 +763,17 @@ export default function LivestreamPage() {
     }
   };
 
-  const sendReaction = (emoji: string) => toast(`Sent ${emoji} reaction`, { duration: 1000 });
+  const sendReaction = (emoji: string) => {
+    if (!id) return;
+    socketService.emit('send_reaction', { streamId: id, emoji });
+    // Also show it locally
+    const rid = Date.now() + Math.random();
+    const left = Math.floor(Math.random() * 80) + 10;
+    setReactions(prev => [...prev, { id: rid, emoji, left }]);
+    setTimeout(() => {
+      setReactions(prev => prev.filter(r => r.id !== rid));
+    }, 3000);
+  };
 
   const togglePlayPause = () => {
     const newState = !isPaused;
@@ -1169,6 +1196,21 @@ export default function LivestreamPage() {
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   HD 1080P
                 </div>
+              </div>
+
+              {/* Floating Reactions Area */}
+              <div className="absolute inset-0 pointer-events-none z-40 overflow-hidden">
+                {reactions.map(reaction => (
+                  <div 
+                    key={reaction.id}
+                    className="absolute bottom-0 text-3xl animate-float-up"
+                    style={{ 
+                      left: `${reaction.left}%`,
+                    }}
+                  >
+                    {reaction.emoji}
+                  </div>
+                ))}
               </div>
 
               {/* Other Viewers Small Grid (Not Host/Co-Host) */}

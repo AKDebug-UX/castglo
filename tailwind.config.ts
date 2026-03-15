@@ -101,12 +101,18 @@ export default {
           from: { opacity: "0", transform: "translateX(20px)" },
           to: { opacity: "1", transform: "translateX(0)" },
         },
+        "float-up": {
+          "0%": { opacity: "0", transform: "translateY(0) scale(0.5)" },
+          "10%": { opacity: "1", transform: "translateY(-20px) scale(1.2)" },
+          "100%": { opacity: "0", transform: "translateY(-200px) scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.4s ease-out",
         "slide-in-right": "slide-in-right 0.4s ease-out",
+        "float-up": "float-up 3s ease-out forwards",
       },
       boxShadow: {
         card: "var(--shadow-card)",
