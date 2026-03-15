@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { livestreamAPI } from "@/lib/api";
+import { socketService } from "@/lib/socket";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
@@ -534,12 +535,26 @@ export default function LivestreamPage() {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      socketService.connect(token);
+    }
+    // We don't disconnect here as socket might be shared, 
+    // but we can join/leave rooms in specific stream effects
+  }, []);
+
+  useEffect(() => {
     const pollRef = { active: true };
     let timeoutId: NodeJS.Timeout;
     const currentUserId = user?.id;
 
     const fetchMessagesAndStatus = async () => {
       if (!id || !pollRef.active) return;
+
+      // If socket is connected, we only poll occasionally (every 45s) as a sanity check
+      const socketConnected = socketService.isConnected();
+      const interval = socketConnected ? 45000 : 15000;
+
       try {
         const [msgRes, myRes, publicRes] = await Promise.all([
           livestreamAPI.getMessages(id).catch(() => ({ data: { success: false } })),
@@ -557,7 +572,6 @@ export default function LivestreamPage() {
           }));
           
           setChatMessages(prev => {
-            // Only update if there are actually new messages or changes
             if (prev.length === formattedMessages.length && 
                 prev[prev.length-1]?.id === formattedMessages[formattedMessages.length-1]?.id) {
               return prev;
@@ -566,7 +580,6 @@ export default function LivestreamPage() {
           });
         }
 
-        // Check if stream has ended
         let currentStream = null;
         if (myRes.data?.success && Array.isArray(myRes.data.data)) {
           currentStream = myRes.data.data.find((s: any) => s._id === id);
@@ -578,7 +591,7 @@ export default function LivestreamPage() {
         if (currentStream && currentStream.status === 'ended' && !isBroadcaster) {
           toast.info("The host has ended the livestream.");
           setTimeout(() => navigate(-1), 3000);
-          pollRef.active = false; // Stop polling
+          pollRef.active = false;
           return;
         }
 
@@ -589,18 +602,41 @@ export default function LivestreamPage() {
         console.error("Polling error:", error);
       } finally {
         if (pollRef.active) {
-          timeoutId = setTimeout(fetchMessagesAndStatus, 15000); // Increased to 15s to reduce server load
+          timeoutId = setTimeout(fetchMessagesAndStatus, interval);
         }
       }
     };
 
     fetchMessagesAndStatus();
 
-    return () => {
-      pollRef.active = false;
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [id, user?.id, isBroadcaster]); // Removed isJoined dependency
+    // Socket listeners for livestream
+    if (id) {
+      socketService.emit('join_livestream', id);
+
+      const handleNewLivestreamMessage = (data: any) => {
+        const msg = data.message;
+        setChatMessages(prev => {
+          if (prev.some(m => m.id === (msg._id || msg.id))) return prev;
+          return [...prev, {
+            id: msg._id || msg.id,
+            sender: msg.sender?.fullName || msg.senderName || "Unknown",
+            text: msg.message || msg.text,
+            timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isSelf: (msg.sender?._id || msg.senderId) === currentUserId
+          }];
+        });
+      };
+
+      socketService.on('livestream_message', handleNewLivestreamMessage);
+
+      return () => {
+        pollRef.active = false;
+        if (timeoutId) clearTimeout(timeoutId);
+        socketService.off('livestream_message', handleNewLivestreamMessage);
+        socketService.emit('leave_livestream', id);
+      };
+    }
+  }, [id, user?.id, isBroadcaster]);
 
   const [chatInput, setChatInput] = useState("");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
