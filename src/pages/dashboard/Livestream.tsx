@@ -98,8 +98,8 @@ export default function LivestreamPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const previewVideoRef = useRef<HTMLVideoElement>(null);
+  const [localVideoRef, previewVideoRef] = [useRef<HTMLVideoElement>(null), useRef<HTMLVideoElement>(null)];
+  const [layoutMode, setLayoutMode] = useState<"grid" | "speaker">("grid");
 
   // Agora State
   const agoraClientRef = useRef<IAgoraRTCClient | null>(null);
@@ -629,10 +629,52 @@ export default function LivestreamPage() {
 
       socketService.on('livestream_message', handleNewLivestreamMessage);
 
+      const handleUserJoined = (data: any) => {
+        const newUser = data.user;
+        setParticipants(prev => {
+          if (prev.some(p => String(p.id) === String(newUser._id || newUser.id))) return prev;
+          return [...prev, {
+            id: String(newUser._id || newUser.id),
+            name: newUser.fullName,
+            role: newUser.role || "viewer",
+            isSelf: String(user?.id) === String(newUser._id || newUser.id),
+            isMicOn: false,
+            isCamOn: false
+          }];
+        });
+        toast.info(`${newUser.fullName} joined the live`);
+      };
+
+      const handleUserLeft = (data: any) => {
+        const userId = data.userId;
+        setParticipants(prev => prev.filter(p => String(p.id) !== String(userId)));
+      };
+
+      const handleCohostAssigned = (data: any) => {
+        const { userId, stream } = data;
+        setStreamData(stream);
+        if (String(userId) === String(user?.id)) {
+          toast.success("You have been promoted to Co-Host!");
+          // The component will re-render and isBroadcaster will become true
+        } else {
+          const promotedUser = participants.find(p => String(p.id) === String(userId));
+          if (promotedUser) {
+            toast.info(`${promotedUser.name} is now a Co-Host`);
+          }
+        }
+      };
+
+      socketService.on('user_joined', handleUserJoined);
+      socketService.on('user_left', handleUserLeft);
+      socketService.on('cohost_assigned', handleCohostAssigned);
+
       return () => {
         pollRef.active = false;
         if (timeoutId) clearTimeout(timeoutId);
         socketService.off('livestream_message', handleNewLivestreamMessage);
+        socketService.off('user_joined', handleUserJoined);
+        socketService.off('user_left', handleUserLeft);
+        socketService.off('cohost_assigned', handleCohostAssigned);
         socketService.emit('leave_livestream', id);
       };
     }
@@ -706,6 +748,20 @@ export default function LivestreamPage() {
   const handleMuteUser = (userId: string, userName: string) => {
     setParticipants(prev => prev.map(p => p.id === userId ? { ...p, isMicOn: !p.isMicOn } : p));
     toast.success(`Toggled mute for ${userName}`);
+  };
+
+  const handleMakeCoHost = async (userId: string, userName: string) => {
+    if (!id) return;
+    if (window.confirm(`Promote ${userName} to Co-Host?`)) {
+      try {
+        // We emit a socket event to promote the user
+        socketService.emit('assign_cohost', { streamId: id, userId });
+        toast.info(`Promoting ${userName}...`);
+      } catch (error) {
+        console.error("Co-host assignment error:", error);
+        toast.error("Failed to assign co-host");
+      }
+    }
   };
 
   if (isLoading) {
@@ -836,57 +892,79 @@ export default function LivestreamPage() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-[#0B0D11] relative">
           <div className="flex-1 relative flex items-center justify-center p-4 lg:p-6 overflow-hidden">
-            <div className="w-full h-full max-w-6xl aspect-video bg-[#12141A] rounded-[2rem] overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-white/5 relative group transition-all duration-500">
-              <div className="absolute inset-0">
-                {isBroadcaster ? (
-                  isCamOn ? (
+            <div className={cn(
+              "w-full h-full max-w-6xl rounded-[2rem] overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-white/5 relative group transition-all duration-500 p-4",
+              layoutMode === "grid" && (isBroadcaster ? remoteUsers.length + 1 : remoteUsers.length) > 1 
+                ? "grid grid-cols-1 md:grid-cols-2 gap-4" 
+                : "relative"
+            )}>
+              {/* Local Broadcaster (Host/Co-Host) */}
+              {isBroadcaster && (
+                <div className={cn(
+                  "relative w-full h-full rounded-2xl overflow-hidden bg-[#12141A]",
+                  layoutMode === "speaker" && "absolute inset-0 z-10"
+                )}>
+                  {isCamOn ? (
                     <div className="w-full h-full bg-black">
                       <div ref={localVideoRef} className="w-full h-full object-cover scale-x-[-1]" />
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11]">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-                        <Avatar className="w-40 h-40 border-8 border-white/5 shadow-2xl relative z-10">
-                          <AvatarFallback className="bg-[#252831] text-primary text-5xl font-black">
-                            {user?.fullName?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <p className="text-slate-400 font-black uppercase text-xs tracking-[0.3em] animate-pulse">Camera is currently off</p>
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11]">
+                      <Avatar className="w-24 h-24 border-4 border-white/5 shadow-xl">
+                        <AvatarFallback className="bg-[#252831] text-primary text-2xl font-black">
+                          {user?.fullName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">You (Broadcaster)</p>
                     </div>
-                  )
-                ) : (
-                  <div className="w-full h-full relative bg-black">
-                    {remoteUsers.length > 0 ? (
-                      <RemoteVideoPlayer user={remoteUsers[0]} />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-8 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11]">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-                          <Avatar className="w-48 h-48 border-[12px] border-white/5 shadow-[0_0_80px_rgba(0,0,0,0.4)] relative z-10">
-                            <AvatarFallback className="bg-primary/10 text-primary text-6xl font-black">
-                              {streamData?.hostId?.fullName?.[0] || "H"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="absolute -bottom-2 -right-2 h-10 w-10 bg-primary rounded-full border-8 border-[#1A1D24] shadow-xl" />
-                        </div>
-                        <div className="text-center space-y-4 px-6 max-w-md">
-                          <p className="text-slate-400 font-black uppercase text-[11px] tracking-[0.4em] leading-relaxed">
-                            Waiting for the broadcast signal...
-                          </p>
-                          <p className="text-sm text-slate-500 font-medium">
-                            The audition will begin shortly. Stay tuned.
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                  )}
+                  <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 text-[10px] font-bold z-20">
+                    You {isOwner && "(Host)"} {!isMicOn && <MicOff className="inline-block ml-2 w-3 h-3 text-destructive" />}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Remote Broadcasters (Host/Co-Hosts) */}
+              {remoteUsers.map((remoteUser) => {
+                const isHost = String(remoteUser.uid) === String(streamData?.hostId?._id || streamData?.hostId?.id || streamData?.hostId);
+                const isCoHostRemote = Array.isArray(streamData?.coHosts) && streamData.coHosts.some((ch: any) => 
+                  String(typeof ch === 'object' ? ch._id || ch.id : ch) === String(remoteUser.uid)
+                );
+                
+                // Only show host and co-hosts in the main area
+                if (!isHost && !isCoHostRemote) return null;
+
+                return (
+                  <div key={remoteUser.uid} className={cn(
+                    "relative w-full h-full rounded-2xl overflow-hidden bg-[#12141A]",
+                    layoutMode === "speaker" && isHost && "absolute inset-0 z-10",
+                    layoutMode === "speaker" && !isHost && "absolute top-6 right-6 w-56 aspect-video z-20 shadow-2xl border border-white/10"
+                  )}>
+                    <RemoteVideoPlayer user={remoteUser} />
+                    <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 text-[10px] font-bold z-20">
+                      {isHost ? "Host" : "Co-Host"} {!remoteUser.hasAudio && <MicOff className="inline-block ml-2 w-3 h-3 text-destructive" />}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Placeholder for Viewers if no one is broadcasting */}
+              {!isBroadcaster && remoteUsers.length === 0 && (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-8 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11] absolute inset-0">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+                    <Avatar className="w-48 h-48 border-[12px] border-white/5 shadow-[0_0_80px_rgba(0,0,0,0.4)] relative z-10">
+                      <AvatarFallback className="bg-primary/10 text-primary text-6xl font-black">
+                        {streamData?.hostId?.fullName?.[0] || "H"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <p className="text-slate-400 font-black uppercase text-[11px] tracking-[0.4em]">Waiting for host...</p>
+                </div>
+              )}
 
               {/* Video Overlay Controls - Modern Floating Bar */}
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[1.5rem] opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 shadow-2xl z-20">
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[1.5rem] opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 shadow-2xl z-30">
                 <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-white/5 text-white hover:bg-white/15 transition-all">
                   <Play className="w-5 h-5 fill-current" />
                 </Button>
@@ -907,16 +985,30 @@ export default function LivestreamPage() {
                   </div>
                 </div>
                 <div className="w-px h-6 bg-white/10 mx-1" />
+                {isOwner && (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={cn(
+                        "h-12 w-12 rounded-2xl transition-all",
+                        layoutMode === "grid" ? "bg-primary/20 text-primary" : "text-white hover:bg-white/5"
+                      )}
+                      onClick={() => setLayoutMode(layoutMode === "grid" ? "speaker" : "grid")}
+                      title={layoutMode === "grid" ? "Switch to Speaker View" : "Switch to Grid View"}
+                    >
+                      {layoutMode === "grid" ? <Monitor className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                    </Button>
+                    <div className="w-px h-6 bg-white/10 mx-1" />
+                  </>
+                )}
                 <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-white hover:bg-white/5">
                   <Settings className="w-5 h-5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-white hover:bg-white/5">
-                  <Maximize className="w-5 h-5" />
                 </Button>
               </div>
 
               {/* Status Tags */}
-              <div className="absolute top-6 left-6 flex items-center gap-3 z-20">
+              <div className="absolute top-6 left-6 flex items-center gap-3 z-30">
                 <Badge className="bg-destructive hover:bg-destructive text-white border-none px-4 py-1.5 font-black uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-destructive/20 rounded-full">
                   Live
                 </Badge>
@@ -926,13 +1018,19 @@ export default function LivestreamPage() {
                 </div>
               </div>
 
-              {/* Remote Users Small Grid */}
-              <div className="absolute top-6 right-6 w-56 space-y-4 z-20 pointer-events-none">
-                {remoteUsers.slice(1).map((remoteUser) => (
+              {/* Other Viewers Small Grid (Not Host/Co-Host) */}
+              <div className="absolute top-6 right-6 w-56 space-y-4 z-30 pointer-events-none">
+                {remoteUsers.filter(ru => {
+                  const isHost = String(ru.uid) === String(streamData?.hostId?._id || streamData?.hostId?.id || streamData?.hostId);
+                  const isCoHostRemote = Array.isArray(streamData?.coHosts) && streamData.coHosts.some((ch: any) => 
+                    String(typeof ch === 'object' ? ch._id || ch.id : ch) === String(ru.uid)
+                  );
+                  return !isHost && !isCoHostRemote;
+                }).map((remoteUser) => (
                   <div key={remoteUser.uid} className="aspect-video bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/10 overflow-hidden relative shadow-2xl group/mini pointer-events-auto transition-transform hover:scale-105 duration-300">
                     <RemoteVideoPlayer user={remoteUser} />
                     <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-xl px-2.5 py-1.5 rounded-xl flex items-center justify-between border border-white/5">
-                      <span className="text-[9px] font-bold truncate pr-2 text-white/90 tracking-tight">User {remoteUser.uid}</span>
+                      <span className="text-[9px] font-bold truncate pr-2 text-white/90 tracking-tight">Viewer {remoteUser.uid}</span>
                       {!remoteUser.hasAudio && <MicOff className="w-3 h-3 text-destructive" />}
                     </div>
                   </div>
@@ -1259,6 +1357,12 @@ export default function LivestreamPage() {
                                     {p.isMicOn ? <MicOff className="w-4 h-4 text-slate-400" /> : <Mic className="w-4 h-4 text-emerald-500" />}
                                     <span className="font-bold">{p.isMicOn ? "Mute Talent" : "Unmute Talent"}</span>
                                   </DropdownMenuItem>
+                                  {p.role !== "co-host" && p.role !== "host" && (
+                                    <DropdownMenuItem className="text-xs gap-3 py-3 rounded-xl cursor-pointer hover:bg-primary/10 text-primary transition-colors" onClick={() => handleMakeCoHost(p.id, p.name)}>
+                                      <Shield className="w-4 h-4" />
+                                      <span className="font-bold">Make Co-Host</span>
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuSeparator className="bg-white/5 mx-2 my-1" />
                                   <DropdownMenuItem className="text-xs gap-3 py-3 rounded-xl text-destructive cursor-pointer hover:bg-destructive/10 transition-colors" onClick={() => handleKickUser(p.id, p.name)}>
                                     <UserX className="w-4 h-4" />
