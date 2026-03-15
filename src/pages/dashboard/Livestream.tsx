@@ -181,16 +181,16 @@ export default function LivestreamPage() {
     };
   }, [isBroadcaster, isJoined]);
 
-  // Update local video element when joined
+  // Update local video element when joined or camera toggled
   useEffect(() => {
-    if (isJoined && localVideoRef.current) {
+    if (isJoined && isCamOn && localVideoRef.current) {
       if (localVideoTrack) {
         localVideoTrack.play(localVideoRef.current);
       } else if (localStream) {
         localVideoRef.current.srcObject = localStream;
       }
     }
-  }, [isJoined, localStream, localVideoTrack]);
+  }, [isJoined, isCamOn, localStream, localVideoTrack]);
 
   // Handle Remote Video Playback
   useEffect(() => {
