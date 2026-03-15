@@ -35,7 +35,8 @@ import {
   Heart,
   Plus,
   Globe,
-  X
+  X,
+  RotateCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { livestreamAPI } from "@/lib/api";
@@ -579,10 +580,11 @@ export default function LivestreamPage() {
       const interval = socketConnected ? 45000 : 15000;
 
       try {
-        const [msgRes, myRes, publicRes] = await Promise.all([
+        const [msgRes, myRes, publicRes, partRes] = await Promise.all([
           livestreamAPI.getMessages(id).catch(() => ({ data: { success: false } })),
           livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
-          livestreamAPI.getAll().catch(() => ({ data: { success: false } }))
+          livestreamAPI.getAll().catch(() => ({ data: { success: false } })),
+          livestreamAPI.getParticipants(id).catch(() => ({ data: { success: false } }))
         ]);
 
         if (msgRes.data?.success && Array.isArray(msgRes.data.data)) {
@@ -620,10 +622,26 @@ export default function LivestreamPage() {
 
         if (currentStream) {
           setStreamData(currentStream);
-        if (currentStream.likeCount !== undefined) {
-          setLikeCount(currentStream.likeCount);
+          if (currentStream.likeCount !== undefined) {
+            setLikeCount(currentStream.likeCount);
+          }
         }
-      }
+
+        if (partRes.data?.success && Array.isArray(partRes.data.data)) {
+          const apiParticipants = partRes.data.data.map((p: any) => ({
+            id: String(p._id || p.id),
+            name: p.fullName || p.name || "Unknown",
+            role: p.role || "viewer",
+            isSelf: String(p._id || p.id) === String(currentUserId),
+            isMicOn: p.isMicOn ?? (p.role === 'host' || p.role === 'co-host'),
+            isCamOn: p.isCamOn ?? (p.role === 'host' || p.role === 'co-host')
+          }));
+          
+          setParticipants(prev => {
+            if (JSON.stringify(apiParticipants) === JSON.stringify(prev)) return prev;
+            return apiParticipants;
+          });
+        }
       } catch (error) {
         console.error("Polling error:", error);
       } finally {
@@ -915,13 +933,75 @@ export default function LivestreamPage() {
     if (!id) return;
     if (window.confirm(`Promote ${userName} to Co-Host?`)) {
       try {
-        // We emit a socket event to promote the user
+        // Optimistic UI/Socket emit
         socketService.emit('assign_cohost', { streamId: id, userId });
-        toast.info(`Promoting ${userName}...`);
-      } catch (error) {
-        console.error("Co-host assignment error:", error);
-        toast.error("Failed to assign co-host");
+        
+        // API Call
+        const response = await livestreamAPI.promoteCohost(id, userId);
+        if (response.data.success) {
+          toast.success(`${userName} is now a Co-Host`);
+          // Refresh stream data to get updated coHosts array
+          const myRes = await livestreamAPI.getMyStreams();
+          if (myRes.data.success) {
+            const stream = myRes.data.data.find((s: any) => s._id === id);
+            if (stream) setStreamData(stream);
+          }
+        }
+      } catch (error: any) {
+        console.error("Co-host promotion error:", error);
+        toast.error(error.response?.data?.message || "Failed to assign co-host");
       }
+    }
+  };
+
+  const handleRemoveCoHost = async (userId: string, userName: string) => {
+    if (!id) return;
+    if (window.confirm(`Remove ${userName} from Co-Hosts?`)) {
+      try {
+        const response = await livestreamAPI.removeCohost(id, userId);
+        if (response.data.success) {
+          toast.success(`${userName} removed from Co-Hosts`);
+          // Emit socket event for real-time update
+          socketService.emit('remove_cohost', { streamId: id, userId });
+          
+          // Refresh stream data
+          const myRes = await livestreamAPI.getMyStreams();
+          if (myRes.data.success) {
+            const stream = myRes.data.data.find((s: any) => s._id === id);
+            if (stream) setStreamData(stream);
+          }
+        }
+      } catch (error: any) {
+        console.error("Co-host removal error:", error);
+        toast.error(error.response?.data?.message || "Failed to remove co-host");
+      }
+    }
+  };
+
+  const [isRefreshingParticipants, setIsRefreshingParticipants] = useState(false);
+
+  const refreshParticipants = async () => {
+    if (!id || isRefreshingParticipants) return;
+    setIsRefreshingParticipants(true);
+    try {
+      const partRes = await livestreamAPI.getParticipants(id);
+      if (partRes.data?.success && Array.isArray(partRes.data.data)) {
+        const apiParticipants = partRes.data.data.map((p: any) => ({
+          id: String(p._id || p.id),
+          name: p.fullName || p.name || "Unknown",
+          role: p.role || "viewer",
+          isSelf: String(p._id || p.id) === String(user?.id),
+          isMicOn: p.isMicOn ?? (p.role === 'host' || p.role === 'co-host'),
+          isCamOn: p.isCamOn ?? (p.role === 'host' || p.role === 'co-host')
+        }));
+        setParticipants(apiParticipants);
+        toast.success("Participant list updated");
+      }
+    } catch (error) {
+      console.error("Failed to refresh participants:", error);
+      toast.error("Failed to update participant list");
+    } finally {
+      setIsRefreshingParticipants(false);
     }
   };
 
@@ -983,7 +1063,7 @@ export default function LivestreamPage() {
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary"><Users className="w-5 h-5" /></div>
                 <div>
                   <p className="text-sm font-bold">
-                    {streamData?.viewerCount || participants.length} { (streamData?.viewerCount || participants.length) === 1 ? 'person' : 'people' } in the room
+                    {participants.length} { participants.length === 1 ? 'person' : 'people' } in the room
                   </p>
                   <p className="text-[10px] text-slate-500 font-bold uppercase">
                     {isOwner ? "You are ready to start" : `Host: ${streamData?.hostId?.fullName || "Loading..."}`}
@@ -1033,8 +1113,8 @@ export default function LivestreamPage() {
             <div className="flex items-center gap-2 group cursor-help">
               <Users className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
               <span className="text-slate-300">
-                {isJoined ? (remoteUsers.length + 1) : (streamData?.viewerCount || participants.length)} 
-                <span className="text-slate-500 text-[10px] ml-0.5 uppercase">watching</span>
+                {participants.length} 
+                <span className="text-slate-500 text-[10px] ml-0.5 uppercase">participants</span>
               </span>
             </div>
             <div className="w-px h-4 bg-white/10" />
@@ -1531,11 +1611,25 @@ export default function LivestreamPage() {
               {activeTab === "people" && (
                 <div className="absolute inset-0 flex flex-col p-6 space-y-6">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.2em]">Participants</h3>
-                      <Badge className="bg-white/5 text-slate-400 rounded-lg text-[10px] h-5 border-none px-2">
-                        {isJoined ? (remoteUsers.length + 1) : (streamData?.viewerCount || participants.length)}
-                      </Badge>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-[11px] font-black uppercase text-slate-500 tracking-[0.2em]">Participants</h3>
+                        <Badge className="bg-primary/10 text-primary rounded-lg text-[10px] h-5 border-none px-2 font-bold">
+                          {participants.length}
+                        </Badge>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={cn(
+                          "h-7 w-7 rounded-lg hover:bg-white/5 text-slate-500 transition-all",
+                          isRefreshingParticipants && "animate-spin text-primary"
+                        )}
+                        onClick={refreshParticipants}
+                        disabled={isRefreshingParticipants}
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
                     {isOwner && (
                       <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
@@ -1625,6 +1719,12 @@ export default function LivestreamPage() {
                                     <DropdownMenuItem className="text-xs gap-3 py-3 rounded-xl cursor-pointer hover:bg-primary/10 text-primary transition-colors" onClick={() => handleMakeCoHost(p.id, p.name)}>
                                       <Shield className="w-4 h-4" />
                                       <span className="font-bold">Make Co-Host</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                  {p.role === "co-host" && (
+                                    <DropdownMenuItem className="text-xs gap-3 py-3 rounded-xl cursor-pointer hover:bg-destructive/10 text-destructive transition-colors" onClick={() => handleRemoveCoHost(p.id, p.name)}>
+                                      <Shield className="w-4 h-4" />
+                                      <span className="font-bold">Remove Co-Host</span>
                                     </DropdownMenuItem>
                                   )}
                                   <DropdownMenuSeparator className="bg-white/5 mx-2 my-1" />

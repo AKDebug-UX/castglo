@@ -64,6 +64,9 @@ export const API_ENDPOINTS = {
     INVITE: (id: string) => `/livestream/${id}/invite`,
     LEAVE: (id: string) => `/livestream/${id}/leave`,
     END: (id: string) => `/livestream/${id}/end`,
+    GET_PARTICIPANTS: (id: string) => `/livestream/${id}/participants`,
+    PROMOTE_COHOST: (id: string) => `/livestream/${id}/cohost`,
+    REMOVE_COHOST: (id: string, userId: string) => `/livestream/${id}/cohost/${userId}`,
   },
   MESSAGING: {
     GET_OR_CREATE_CONVERSATION: '/messaging/conversations',
@@ -224,6 +227,9 @@ export const livestreamAPI = {
   invite: (id: string, emails: string[]) => api.post(API_ENDPOINTS.LIVESTREAM.INVITE(id), { emails }),
   leave: (id: string) => api.post(API_ENDPOINTS.LIVESTREAM.LEAVE(id)),
   end: (id: string) => api.patch(API_ENDPOINTS.LIVESTREAM.END(id)),
+  getParticipants: (id: string) => api.get(API_ENDPOINTS.LIVESTREAM.GET_PARTICIPANTS(id)),
+  promoteCohost: (id: string, userId: string) => api.post(API_ENDPOINTS.LIVESTREAM.PROMOTE_COHOST(id), { userId }),
+  removeCohost: (id: string, userId: string) => api.delete(API_ENDPOINTS.LIVESTREAM.REMOVE_COHOST(id, userId)),
 };
 
 // --- MESSAGING ENDPOINTS ---
