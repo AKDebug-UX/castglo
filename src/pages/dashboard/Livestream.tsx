@@ -62,17 +62,19 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 // Component to handle Agora remote tracks
-const RemoteVideoPlayer = ({ user }: { user: IRemoteUser }) => {
+const RemoteVideoPlayer = ({ user, isPaused }: { user: IRemoteUser, isPaused?: boolean }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (containerRef.current && user.videoTrack) {
+    if (containerRef.current && user.videoTrack && !isPaused) {
       user.videoTrack.play(containerRef.current);
+    } else {
+      user.videoTrack?.stop();
     }
     return () => {
       user.videoTrack?.stop();
     };
-  }, [user.videoTrack]);
+  }, [user.videoTrack, isPaused]);
 
   return <div ref={containerRef} className="w-full h-full object-cover" />;
 };
@@ -99,7 +101,15 @@ export default function LivestreamPage() {
   const isMountedRef = useRef(true);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [localVideoRef, previewVideoRef] = [useRef<HTMLVideoElement>(null), useRef<HTMLVideoElement>(null)];
-  const [layoutMode, setLayoutMode] = useState<"grid" | "speaker">("grid");
+  const [layoutMode, setLayoutMode] = useState<"grid" | "speaker" | "cinema">("grid");
+  const [isPaused, setIsPaused] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [mics, setMics] = useState<MediaDeviceInfo[]>([]);
+  const [selectedCamera, setSelectedCamera] = useState<string>("");
+  const [selectedMic, setSelectedMic] = useState<string>("");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Agora State
   const agoraClientRef = useRef<IAgoraRTCClient | null>(null);
@@ -738,6 +748,78 @@ export default function LivestreamPage() {
 
   const sendReaction = (emoji: string) => toast(`Sent ${emoji} reaction`, { duration: 1000 });
 
+  const togglePlayPause = () => {
+    const newState = !isPaused;
+    setIsPaused(newState);
+    
+    if (isBroadcaster) {
+      if (newState) {
+        localVideoTrack?.stop();
+      } else {
+        if (localVideoRef.current) localVideoTrack?.play(localVideoRef.current);
+      }
+    }
+    
+    remoteUsers.forEach(user => {
+      if (newState) {
+        user.videoTrack?.stop();
+      } else {
+        // We need to find the correct container to play into, 
+        // which depends on the layout mode and user role. 
+        // For simplicity, we can let the RemoteVideoPlayer's effect handle this 
+        // if we just force a re-render or pass isPaused down.
+      }
+    });
+  };
+
+  const toggleFullscreen = () => {
+    if (!videoContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      videoContainerRef.current.requestFullscreen().catch(err => {
+        toast.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  const loadDevices = async () => {
+    try {
+      const cameraList = await AgoraRTC.getCameras();
+      const micList = await AgoraRTC.getMicrophones();
+      setCameras(cameraList);
+      setMics(micList);
+      
+      if (localVideoTrack) setSelectedCamera(localVideoTrack.getTrackLabel());
+      if (localAudioTrack) setSelectedMic(localAudioTrack.getTrackLabel());
+    } catch (err) {
+      console.error("Error loading devices:", err);
+    }
+  };
+
+  const handleDeviceChange = async (type: 'cam' | 'mic', deviceId: string) => {
+    try {
+      if (type === 'cam' && localVideoTrack) {
+        await localVideoTrack.setDevice(deviceId);
+        setSelectedCamera(deviceId);
+      } else if (type === 'mic' && localAudioTrack) {
+        await localAudioTrack.setDevice(deviceId);
+        setSelectedMic(deviceId);
+      }
+      toast.success(`${type === 'cam' ? 'Camera' : 'Microphone'} updated`);
+    } catch (err) {
+      toast.error("Failed to switch device");
+    }
+  };
+
   const handleKickUser = (userId: string, userName: string) => {
     if (window.confirm(`Remove ${userName}?`)) {
       setParticipants(prev => prev.filter(p => p.id !== userId));
@@ -892,7 +974,7 @@ export default function LivestreamPage() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 bg-[#0B0D11] relative">
           <div className="flex-1 relative flex items-center justify-center p-4 lg:p-6 overflow-hidden">
-            <div className={cn(
+            <div ref={videoContainerRef} className={cn(
               "w-full h-full max-w-6xl rounded-[2rem] overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-white/5 relative group transition-all duration-500 p-4",
               layoutMode === "grid" && (isBroadcaster ? remoteUsers.length + 1 : remoteUsers.length) > 1 
                 ? "grid grid-cols-1 md:grid-cols-2 gap-4" 
@@ -902,7 +984,8 @@ export default function LivestreamPage() {
               {isBroadcaster && (
                 <div className={cn(
                   "relative w-full h-full rounded-2xl overflow-hidden bg-[#12141A]",
-                  layoutMode === "speaker" && "absolute inset-0 z-10"
+                  (layoutMode === "speaker" || layoutMode === "cinema") && isOwner && "absolute inset-0 z-10",
+                  (layoutMode === "speaker" || layoutMode === "cinema") && !isOwner && "hidden" // Only owner is main in speaker/cinema
                 )}>
                   {isCamOn ? (
                     <div className="w-full h-full bg-black">
@@ -937,16 +1020,52 @@ export default function LivestreamPage() {
                 return (
                   <div key={remoteUser.uid} className={cn(
                     "relative w-full h-full rounded-2xl overflow-hidden bg-[#12141A]",
-                    layoutMode === "speaker" && isHost && "absolute inset-0 z-10",
-                    layoutMode === "speaker" && !isHost && "absolute top-6 right-6 w-56 aspect-video z-20 shadow-2xl border border-white/10"
+                    // In speaker/cinema, host is always main
+                    (layoutMode === "speaker" || layoutMode === "cinema") && isHost && "absolute inset-0 z-10",
+                    // In speaker, co-hosts are floating
+                    layoutMode === "speaker" && !isHost && "absolute top-6 right-6 w-56 aspect-video z-20 shadow-2xl border border-white/10",
+                    // In cinema, co-hosts are at the bottom (this list will be handled below if needed, but let's keep them here for now)
+                    layoutMode === "cinema" && !isHost && "hidden" 
                   )}>
-                    <RemoteVideoPlayer user={remoteUser} />
+                    <RemoteVideoPlayer user={remoteUser} isPaused={isPaused} />
                     <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 text-[10px] font-bold z-20">
                       {isHost ? "Host" : "Co-Host"} {!remoteUser.hasAudio && <MicOff className="inline-block ml-2 w-3 h-3 text-destructive" />}
                     </div>
                   </div>
                 );
               })}
+
+              {/* Cinema Mode Co-Host Bar */}
+              {layoutMode === "cinema" && (isBroadcaster ? remoteUsers.length + 1 : remoteUsers.length) > 1 && (
+                <div className="absolute bottom-24 left-6 right-6 h-32 flex items-center gap-4 overflow-x-auto no-scrollbar z-20 pb-2">
+                  {/* Local Co-Host in Cinema Bar */}
+                  {isBroadcaster && !isOwner && (
+                    <div className="h-full aspect-video rounded-xl overflow-hidden bg-[#12141A] shrink-0 border border-white/10 shadow-xl relative">
+                      {isCamOn ? (
+                        <div ref={localVideoRef} className="w-full h-full object-cover scale-x-[-1]" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-800">
+                          <Avatar className="h-10 w-10"><AvatarFallback>{user?.fullName?.[0]}</AvatarFallback></Avatar>
+                        </div>
+                      )}
+                      <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded-lg text-[8px] font-bold">You</div>
+                    </div>
+                  )}
+                  {/* Remote Co-Hosts in Cinema Bar */}
+                  {remoteUsers.filter(ru => {
+                    const isHost = String(ru.uid) === String(streamData?.hostId?._id || streamData?.hostId?.id || streamData?.hostId);
+                    const isCoHostRemote = Array.isArray(streamData?.coHosts) && streamData.coHosts.some((ch: any) => 
+                      String(typeof ch === 'object' ? ch._id || ch.id : ch) === String(ru.uid)
+                    );
+                    return !isHost && isCoHostRemote;
+                  }).map(ru => (
+                    <div key={ru.uid} className="h-full aspect-video rounded-xl overflow-hidden bg-[#12141A] shrink-0 border border-white/10 shadow-xl relative">
+                      <RemoteVideoPlayer user={ru} isPaused={isPaused} />
+                      <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded-lg text-[8px] font-bold">Co-Host</div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Placeholder for Viewers if no one is broadcasting */}
               {!isBroadcaster && remoteUsers.length === 0 && (
@@ -965,8 +1084,16 @@ export default function LivestreamPage() {
 
               {/* Video Overlay Controls - Modern Floating Bar */}
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[1.5rem] opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 shadow-2xl z-30">
-                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-white/5 text-white hover:bg-white/15 transition-all">
-                  <Play className="w-5 h-5 fill-current" />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={cn(
+                    "h-12 w-12 rounded-2xl bg-white/5 text-white hover:bg-white/15 transition-all",
+                    isPaused && "bg-primary/20 text-primary"
+                  )}
+                  onClick={togglePlayPause}
+                >
+                  {isPaused ? <Play className="w-5 h-5 fill-current" /> : <div className="flex gap-1"><div className="w-1.5 h-5 bg-white rounded-full"/><div className="w-1.5 h-5 bg-white rounded-full"/></div>}
                 </Button>
                 <div className="w-px h-6 bg-white/10 mx-1" />
                 <div className="flex items-center gap-1 group/volume pr-2">
@@ -992,18 +1119,44 @@ export default function LivestreamPage() {
                       size="icon" 
                       className={cn(
                         "h-12 w-12 rounded-2xl transition-all",
-                        layoutMode === "grid" ? "bg-primary/20 text-primary" : "text-white hover:bg-white/5"
+                        layoutMode !== "grid" ? "bg-primary/20 text-primary" : "text-white hover:bg-white/5"
                       )}
-                      onClick={() => setLayoutMode(layoutMode === "grid" ? "speaker" : "grid")}
-                      title={layoutMode === "grid" ? "Switch to Speaker View" : "Switch to Grid View"}
+                      onClick={() => {
+                        if (layoutMode === "grid") setLayoutMode("speaker");
+                        else if (layoutMode === "speaker") setLayoutMode("cinema");
+                        else setLayoutMode("grid");
+                      }}
+                      title={`Current: ${layoutMode}. Click to switch.`}
                     >
-                      {layoutMode === "grid" ? <Monitor className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                      {layoutMode === "grid" && <Monitor className="w-5 h-5" />}
+                      {layoutMode === "speaker" && <Maximize className="w-5 h-5" />}
+                      {layoutMode === "cinema" && <Monitor className="w-5 h-5 opacity-50" />}
                     </Button>
                     <div className="w-px h-6 bg-white/10 mx-1" />
                   </>
                 )}
-                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-white hover:bg-white/5">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-12 w-12 rounded-2xl text-white hover:bg-white/5"
+                  onClick={() => {
+                    loadDevices();
+                    setIsSettingsOpen(true);
+                  }}
+                >
                   <Settings className="w-5 h-5" />
+                </Button>
+                <div className="w-px h-6 bg-white/10 mx-1" />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={cn(
+                    "h-12 w-12 rounded-2xl text-white hover:bg-white/5",
+                    isFullscreen && "text-primary"
+                  )}
+                  onClick={toggleFullscreen}
+                >
+                  <Maximize className="w-5 h-5" />
                 </Button>
               </div>
 
@@ -1028,7 +1181,7 @@ export default function LivestreamPage() {
                   return !isHost && !isCoHostRemote;
                 }).map((remoteUser) => (
                   <div key={remoteUser.uid} className="aspect-video bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/10 overflow-hidden relative shadow-2xl group/mini pointer-events-auto transition-transform hover:scale-105 duration-300">
-                    <RemoteVideoPlayer user={remoteUser} />
+                    <RemoteVideoPlayer user={remoteUser} isPaused={isPaused} />
                     <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-xl px-2.5 py-1.5 rounded-xl flex items-center justify-between border border-white/5">
                       <span className="text-[9px] font-bold truncate pr-2 text-white/90 tracking-tight">Viewer {remoteUser.uid}</span>
                       {!remoteUser.hasAudio && <MicOff className="w-3 h-3 text-destructive" />}
@@ -1443,6 +1596,57 @@ export default function LivestreamPage() {
           </div>
         </div>
       </div>
+
+      {/* Settings Dialog */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="bg-[#12141A] border-white/10 text-white sm:max-w-md rounded-[2rem]">
+          <DialogHeader className="space-y-4">
+            <div className="h-16 w-16 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto">
+              <Settings className="w-8 h-8 text-primary" />
+            </div>
+            <div className="text-center space-y-2">
+              <DialogTitle className="text-2xl font-black uppercase tracking-tight">Media Settings</DialogTitle>
+              <DialogDescription className="text-slate-400 text-sm">
+                Select your preferred camera and microphone for this session.
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+          <div className="space-y-6 py-6">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] px-1">Camera</label>
+              <select 
+                className="w-full bg-[#0B0D11] border border-white/10 rounded-2xl h-14 px-5 text-sm outline-none focus:border-primary/50 transition-all text-white"
+                value={selectedCamera}
+                onChange={(e) => handleDeviceChange('cam', e.target.value)}
+              >
+                {cameras.map(cam => (
+                  <option key={cam.deviceId} value={cam.deviceId}>{cam.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] px-1">Microphone</label>
+              <select 
+                className="w-full bg-[#0B0D11] border border-white/10 rounded-2xl h-14 px-5 text-sm outline-none focus:border-primary/50 transition-all text-white"
+                value={selectedMic}
+                onChange={(e) => handleDeviceChange('mic', e.target.value)}
+              >
+                {mics.map(mic => (
+                  <option key={mic.deviceId} value={mic.deviceId}>{mic.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              className="w-full h-14 rounded-2xl font-black uppercase tracking-[0.2em]"
+              onClick={() => setIsSettingsOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
