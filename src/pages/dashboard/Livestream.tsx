@@ -111,6 +111,7 @@ export default function LivestreamPage() {
   const [selectedMic, setSelectedMic] = useState<string>("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [reactions, setReactions] = useState<{ id: number, emoji: string, left: number }[]>([]);
+  const [likeCount, setLikeCount] = useState(0);
 
   // Agora State
   const agoraClientRef = useRef<IAgoraRTCClient | null>(null);
@@ -545,6 +546,12 @@ export default function LivestreamPage() {
     }
   };
 
+  const formatCount = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return num.toString();
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -608,7 +615,10 @@ export default function LivestreamPage() {
 
         if (currentStream) {
           setStreamData(currentStream);
+        if (currentStream.likeCount !== undefined) {
+          setLikeCount(currentStream.likeCount);
         }
+      }
       } catch (error) {
         console.error("Polling error:", error);
       } finally {
@@ -694,6 +704,21 @@ export default function LivestreamPage() {
 
       socketService.on('livestream_reaction', handleIncomingReaction);
 
+      const handleIncomingLike = (data: any) => {
+        const { count } = data;
+        if (count !== undefined) setLikeCount(count);
+        
+        // Trigger a floating heart reaction automatically
+        const rid = Date.now() + Math.random();
+        const left = Math.floor(Math.random() * 80) + 10;
+        setReactions(prev => [...prev, { id: rid, emoji: "💖", left }]);
+        setTimeout(() => {
+          setReactions(prev => prev.filter(r => r.id !== rid));
+        }, 3000);
+      };
+
+      socketService.on('livestream_like', handleIncomingLike);
+
       return () => {
         pollRef.active = false;
         if (timeoutId) clearTimeout(timeoutId);
@@ -702,6 +727,7 @@ export default function LivestreamPage() {
         socketService.off('user_left', handleUserLeft);
         socketService.off('cohost_assigned', handleCohostAssigned);
         socketService.off('livestream_reaction', handleIncomingReaction);
+        socketService.off('livestream_like', handleIncomingLike);
         socketService.emit('leave_livestream', id);
       };
     }
@@ -770,6 +796,19 @@ export default function LivestreamPage() {
     const rid = Date.now() + Math.random();
     const left = Math.floor(Math.random() * 80) + 10;
     setReactions(prev => [...prev, { id: rid, emoji, left }]);
+    setTimeout(() => {
+      setReactions(prev => prev.filter(r => r.id !== rid));
+    }, 3000);
+  };
+
+  const handleLike = () => {
+    if (!id) return;
+    socketService.emit('send_like', { streamId: id });
+    // Optimistically update locally
+    setLikeCount(prev => prev + 1);
+    const rid = Date.now() + Math.random();
+    const left = Math.floor(Math.random() * 80) + 10;
+    setReactions(prev => [...prev, { id: rid, emoji: "💖", left }]);
     setTimeout(() => {
       setReactions(prev => prev.filter(r => r.id !== rid));
     }, 3000);
@@ -1111,34 +1150,6 @@ export default function LivestreamPage() {
 
               {/* Video Overlay Controls - Modern Floating Bar */}
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 p-2 bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[1.5rem] opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 shadow-2xl z-30">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className={cn(
-                    "h-12 w-12 rounded-2xl bg-white/5 text-white hover:bg-white/15 transition-all",
-                    isPaused && "bg-primary/20 text-primary"
-                  )}
-                  onClick={togglePlayPause}
-                >
-                  {isPaused ? <Play className="w-5 h-5 fill-current" /> : <div className="flex gap-1"><div className="w-1.5 h-5 bg-white rounded-full"/><div className="w-1.5 h-5 bg-white rounded-full"/></div>}
-                </Button>
-                <div className="w-px h-6 bg-white/10 mx-1" />
-                <div className="flex items-center gap-1 group/volume pr-2">
-                  <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-white hover:bg-white/5" onClick={() => setIsMuted(!isMuted)}>
-                    {isMuted || volume === 0 ? <VolumeX className="w-5 h-5 text-destructive" /> : <Volume2 className="w-5 h-5" />}
-                  </Button>
-                  <div className="w-0 group-hover/volume:w-28 overflow-hidden transition-all duration-500">
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="100" 
-                      value={volume} 
-                      onChange={(e) => setVolume(parseInt(e.target.value))} 
-                      className="w-full h-1.5 bg-white/20 rounded-full appearance-none cursor-pointer accent-primary" 
-                    />
-                  </div>
-                </div>
-                <div className="w-px h-6 bg-white/10 mx-1" />
                 {isOwner && (
                   <>
                     <Button 
@@ -1270,6 +1281,7 @@ export default function LivestreamPage() {
                   >
                     {isMicOn ? <Mic className="w-4 lg:w-5 h-4 lg:h-5" /> : <MicOff className="w-4 lg:w-5 h-4 lg:h-5" />}
                   </Button>
+                  <div className="w-px h-6 lg:h-8 bg-white/10 mx-1 lg:mx-1.5" />
                   <Button 
                     variant="ghost" 
                     size="icon" 
@@ -1277,10 +1289,6 @@ export default function LivestreamPage() {
                     onClick={() => setIsCamOn(!isCamOn)}
                   >
                     {isCamOn ? <Video className="w-4 lg:w-5 h-4 lg:h-5" /> : <VideoOff className="w-4 lg:w-5 h-4 lg:h-5" />}
-                  </Button>
-                  <div className="w-px h-6 lg:h-8 bg-white/10 mx-1 lg:mx-1.5" />
-                  <Button variant="ghost" size="icon" className="h-10 lg:h-12 w-10 lg:w-12 rounded-xl text-slate-400 hover:text-white hover:bg-white/10">
-                    <Settings className="w-4 lg:w-5 h-4 lg:h-5" />
                   </Button>
                 </div>
               ) : (
@@ -1301,9 +1309,12 @@ export default function LivestreamPage() {
             </div>
 
             <div className="flex items-center justify-end gap-3 lg:gap-4 w-full lg:w-1/3">
-              <div className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-white/5 border border-white/5 rounded-xl text-slate-400 hover:text-primary transition-colors group cursor-pointer">
+              <div 
+                className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-white/5 border border-white/5 rounded-xl text-slate-400 hover:text-primary transition-colors group cursor-pointer active:scale-95"
+                onClick={handleLike}
+              >
                 <Heart className="w-3.5 lg:w-4 h-3.5 lg:h-4 group-hover:scale-110 group-hover:fill-current transition-all" />
-                <span className="text-[10px] lg:text-xs font-bold tracking-tight">4.2k</span>
+                <span className="text-[10px] lg:text-xs font-bold tracking-tight">{formatCount(likeCount)}</span>
               </div>
               <Button 
                 variant="ghost" 
