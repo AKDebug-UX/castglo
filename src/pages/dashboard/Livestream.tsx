@@ -946,7 +946,7 @@ export default function LivestreamPage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-4">
                     <Avatar className="w-32 h-32 border-4 border-white/5 bg-slate-800"><AvatarFallback className="text-4xl">{user?.fullName?.[0]}</AvatarFallback></Avatar>
-                    <p className="text-slate-400 font-medium uppercase text-xs tracking-widest">Camera Off</p>
+                    {/* <p className="text-slate-400 font-medium uppercase text-xs tracking-widest">Camera Off</p> */}
                   </div>
                 )}
                 <div className="absolute bottom-6 right-6 flex items-center gap-3">
@@ -1072,12 +1072,18 @@ export default function LivestreamPage() {
                     </div>
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11]">
-                      <Avatar className="w-24 h-24 border-4 border-white/5 shadow-xl">
-                        <AvatarFallback className="bg-[#252831] text-primary text-2xl font-black">
-                          {user?.fullName?.[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">You (Broadcaster)</p>
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl animate-pulse" />
+                        <Avatar className="w-24 h-24 border-4 border-white/5 shadow-2xl relative z-10">
+                          <AvatarFallback className="bg-[#252831] text-primary text-3xl font-black">
+                            {user?.fullName?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      {/* <div className="flex flex-col items-center gap-1.5 relative z-10">
+                        <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">Camera Off</p>
+                        <div className="h-1 w-8 bg-primary/30 rounded-full" />
+                      </div> */}
                     </div>
                   )}
                   <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 text-[10px] font-bold z-20">
@@ -1108,12 +1114,18 @@ export default function LivestreamPage() {
                   )}>
                     {remoteCameraStatus[String(remoteUser.uid)] === false ? (
                       <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11]">
-                        <Avatar className="w-20 h-20 border-4 border-white/5 shadow-xl">
-                          <AvatarFallback className="bg-[#252831] text-primary text-xl font-black">
-                            {participants.find(p => String(p.id) === String(remoteUser.uid))?.name?.[0] || "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Camera Off</p>
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl animate-pulse" />
+                          <Avatar className="w-24 h-24 border-4 border-white/5 shadow-2xl relative z-10">
+                            <AvatarFallback className="bg-[#252831] text-primary text-3xl font-black">
+                              {participants.find(p => String(p.id) === String(remoteUser.uid))?.name?.[0] || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
+                        {/* <div className="flex flex-col items-center gap-1.5 relative z-10">
+                          <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">Camera Off</p>
+                          <div className="h-1 w-8 bg-primary/30 rounded-full" />
+                        </div> */}
                       </div>
                     ) : (
                       <RemoteVideoPlayer user={remoteUser} isPaused={isPaused} />
@@ -1151,9 +1163,13 @@ export default function LivestreamPage() {
                   }).map(ru => (
                     <div key={ru.uid} className="h-full aspect-video rounded-xl overflow-hidden bg-[#12141A] shrink-0 border border-white/10 shadow-xl relative">
                       {remoteCameraStatus[String(ru.uid)] === false ? (
-                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-slate-800">
-                          <Avatar className="h-8 w-8"><AvatarFallback>{participants.find(p => String(p.id) === String(ru.uid))?.name?.[0] || "?"}</AvatarFallback></Avatar>
-                          <p className="text-[8px] text-slate-400 font-bold uppercase">Off</p>
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-slate-800">
+                          <Avatar className="h-10 w-10 border border-white/10 shadow-lg">
+                            <AvatarFallback className="bg-[#252831] text-primary text-xs font-bold">
+                              {participants.find(p => String(p.id) === String(ru.uid))?.name?.[0] || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">Off</p>
                         </div>
                       ) : (
                         <RemoteVideoPlayer user={ru} isPaused={isPaused} />
@@ -1265,7 +1281,18 @@ export default function LivestreamPage() {
                   return !isHost && !isCoHostRemote;
                 }).map((remoteUser) => (
                   <div key={remoteUser.uid} className="aspect-video bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/10 overflow-hidden relative shadow-2xl group/mini pointer-events-auto transition-transform hover:scale-105 duration-300">
-                    <RemoteVideoPlayer user={remoteUser} isPaused={isPaused} />
+                    {remoteCameraStatus[String(remoteUser.uid)] === false ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[#1A1D24]">
+                        <Avatar className="h-8 w-8 border border-white/5 shadow-md">
+                          <AvatarFallback className="bg-[#252831] text-primary text-[10px] font-bold">
+                            {participants.find(p => String(p.id) === String(remoteUser.uid))?.name?.[0] || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <p className="text-[6px] text-slate-500 font-black uppercase tracking-tighter">Off</p>
+                      </div>
+                    ) : (
+                      <RemoteVideoPlayer user={remoteUser} isPaused={isPaused} />
+                    )}
                     <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-xl px-2.5 py-1.5 rounded-xl flex items-center justify-between border border-white/5">
                       <span className="text-[9px] font-bold truncate pr-2 text-white/90 tracking-tight">Viewer {remoteUser.uid}</span>
                       {!remoteUser.hasAudio && <MicOff className="w-3 h-3 text-destructive" />}
