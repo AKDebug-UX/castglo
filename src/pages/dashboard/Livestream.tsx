@@ -112,6 +112,7 @@ export default function LivestreamPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [reactions, setReactions] = useState<{ id: number, emoji: string, left: number }[]>([]);
   const [likeCount, setLikeCount] = useState(0);
+  const [remoteCameraStatus, setRemoteCameraStatus] = useState<Record<string, boolean>>({});
 
   // Agora State
   const agoraClientRef = useRef<IAgoraRTCClient | null>(null);
@@ -213,7 +214,11 @@ export default function LivestreamPage() {
     if (localVideoTrack) {
       localVideoTrack.setEnabled(isCamOn);
     }
-  }, [isCamOn, localStream, localVideoTrack]);
+    // Broadcast camera status to other participants
+    if (id && isBroadcaster) {
+      socketService.emit('toggle_camera', { streamId: id, isCamOn });
+    }
+  }, [isCamOn, localStream, localVideoTrack, id, isBroadcaster]);
 
   // Handle Mic Toggle (Local MediaStream)
   useEffect(() => {
@@ -719,6 +724,13 @@ export default function LivestreamPage() {
 
       socketService.on('livestream_like', handleIncomingLike);
 
+      const handleUserCameraToggled = (data: any) => {
+        const { userId, isCamOn } = data;
+        setRemoteCameraStatus(prev => ({ ...prev, [userId]: isCamOn }));
+      };
+
+      socketService.on('user_camera_toggled', handleUserCameraToggled);
+
       return () => {
         pollRef.active = false;
         if (timeoutId) clearTimeout(timeoutId);
@@ -728,6 +740,7 @@ export default function LivestreamPage() {
         socketService.off('cohost_assigned', handleCohostAssigned);
         socketService.off('livestream_reaction', handleIncomingReaction);
         socketService.off('livestream_like', handleIncomingLike);
+        socketService.off('user_camera_toggled', handleUserCameraToggled);
         socketService.emit('leave_livestream', id);
       };
     }
@@ -1093,7 +1106,18 @@ export default function LivestreamPage() {
                     // In cinema, co-hosts are at the bottom (this list will be handled below if needed, but let's keep them here for now)
                     layoutMode === "cinema" && !isHost && "hidden" 
                   )}>
-                    <RemoteVideoPlayer user={remoteUser} isPaused={isPaused} />
+                    {remoteCameraStatus[String(remoteUser.uid)] === false ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11]">
+                        <Avatar className="w-20 h-20 border-4 border-white/5 shadow-xl">
+                          <AvatarFallback className="bg-[#252831] text-primary text-xl font-black">
+                            {participants.find(p => String(p.id) === String(remoteUser.uid))?.name?.[0] || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <p className="text-slate-400 font-black uppercase text-[10px] tracking-widest">Camera Off</p>
+                      </div>
+                    ) : (
+                      <RemoteVideoPlayer user={remoteUser} isPaused={isPaused} />
+                    )}
                     <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 text-[10px] font-bold z-20">
                       {isHost ? "Host" : "Co-Host"} {!remoteUser.hasAudio && <MicOff className="inline-block ml-2 w-3 h-3 text-destructive" />}
                     </div>
@@ -1126,7 +1150,14 @@ export default function LivestreamPage() {
                     return !isHost && isCoHostRemote;
                   }).map(ru => (
                     <div key={ru.uid} className="h-full aspect-video rounded-xl overflow-hidden bg-[#12141A] shrink-0 border border-white/10 shadow-xl relative">
-                      <RemoteVideoPlayer user={ru} isPaused={isPaused} />
+                      {remoteCameraStatus[String(ru.uid)] === false ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-slate-800">
+                          <Avatar className="h-8 w-8"><AvatarFallback>{participants.find(p => String(p.id) === String(ru.uid))?.name?.[0] || "?"}</AvatarFallback></Avatar>
+                          <p className="text-[8px] text-slate-400 font-bold uppercase">Off</p>
+                        </div>
+                      ) : (
+                        <RemoteVideoPlayer user={ru} isPaused={isPaused} />
+                      )}
                       <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded-lg text-[8px] font-bold">Co-Host</div>
                     </div>
                   ))}
