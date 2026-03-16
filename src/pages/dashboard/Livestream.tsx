@@ -644,6 +644,9 @@ export default function LivestreamPage() {
 
         if (currentStream) {
           setStreamData(currentStream);
+          if (currentStream.layout && (currentStream.layout === "grid" || currentStream.layout === "speaker" || currentStream.layout === "cinema")) {
+            setLayoutMode(currentStream.layout);
+          }
           if (currentStream.likeCount !== undefined) {
             setLikeCount(currentStream.likeCount);
           }
@@ -820,6 +823,15 @@ export default function LivestreamPage() {
       socketService.on('cohost_added', handleCohostAdded);
       socketService.on('cohost_demoted', handleCohostDemoted);
 
+      const handleLayoutChanged = (data: any) => {
+        const { layout } = data;
+        if (layout && (layout === "grid" || layout === "speaker" || layout === "cinema")) {
+          setLayoutMode(layout);
+        }
+      };
+
+      socketService.on('layout_changed', handleLayoutChanged);
+
       const handleIncomingReaction = (data: any) => {
         const { emoji } = data;
         const id = Date.now() + Math.random();
@@ -866,6 +878,7 @@ export default function LivestreamPage() {
         socketService.off('cohost_promoted', handleCohostPromoted);
         socketService.off('cohost_added', handleCohostAdded);
         socketService.off('cohost_demoted', handleCohostDemoted);
+        socketService.off('layout_changed', handleLayoutChanged);
         socketService.off('livestream_reaction', handleIncomingReaction);
         socketService.off('livestream_like', handleIncomingLike);
         socketService.off('user_camera_toggled', handleUserCameraToggled);
@@ -1418,9 +1431,14 @@ export default function LivestreamPage() {
                         layoutMode !== "grid" ? "bg-primary/20 text-primary" : "text-white hover:bg-white/5"
                       )}
                       onClick={() => {
-                        if (layoutMode === "grid") setLayoutMode("speaker");
-                        else if (layoutMode === "speaker") setLayoutMode("cinema");
-                        else setLayoutMode("grid");
+                        let nextLayout: "grid" | "speaker" | "cinema" = "grid";
+                        if (layoutMode === "grid") nextLayout = "speaker";
+                        else if (layoutMode === "speaker") nextLayout = "cinema";
+                        else nextLayout = "grid";
+                        
+                        setLayoutMode(nextLayout);
+                        // Sync layout with all participants via WebSocket
+                        socketService.emit('change_layout', { streamId: id, layout: nextLayout });
                       }}
                       title={`Current: ${layoutMode}. Click to switch.`}
                     >
