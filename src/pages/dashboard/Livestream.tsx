@@ -94,7 +94,25 @@ export default function LivestreamPage() {
   const [activeTab, setActiveTab] = useState("chat");
   const [participants, setParticipants] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false);
+
+  // Set sidebar visibility based on screen size on mount
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setShowSidebar(true);
+      } else {
+        setShowSidebar(false);
+      }
+    };
+    
+    // Initial check
+    handleResize();
+
+    // Optional: listen for resize events if you want it to be dynamic
+    // window.addEventListener('resize', handleResize);
+    // return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [isCopied, setIsCopied] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(100);
@@ -632,9 +650,11 @@ export default function LivestreamPage() {
             id: String(p._id || p.id),
             name: p.fullName || p.name || "Unknown",
             role: p.role || "viewer",
-            isSelf: String(p._id || p.id) === String(currentUserId),
+            isSelf: String(p._id || p.id) === String(user?.id),
             isMicOn: p.isMicOn ?? (p.role === 'host' || p.role === 'co-host'),
-            isCamOn: p.isCamOn ?? (p.role === 'host' || p.role === 'co-host')
+            isCamOn: p.isCamOn ?? (p.role === 'host' || p.role === 'co-host'),
+            headline: p.headline,
+            skills: p.skills
           }));
           
           setParticipants(prev => {
@@ -673,8 +693,9 @@ export default function LivestreamPage() {
 
       socketService.on('livestream_message', handleNewLivestreamMessage);
 
-      const handleUserJoined = (data: any) => {
-        const newUser = data.user;
+      const handleParticipantJoined = (data: any) => {
+        const newUser = data.participant;
+        if (!newUser) return;
         setParticipants(prev => {
           if (prev.some(p => String(p.id) === String(newUser._id || newUser.id))) return prev;
           return [...prev, {
@@ -683,18 +704,55 @@ export default function LivestreamPage() {
             role: newUser.role || "viewer",
             isSelf: String(user?.id) === String(newUser._id || newUser.id),
             isMicOn: false,
-            isCamOn: false
+            isCamOn: false,
+            headline: newUser.headline,
+            skills: newUser.skills
           }];
         });
         toast.info(`${newUser.fullName} joined the live`);
       };
 
-      const handleUserLeft = (data: any) => {
+      const handleParticipantLeft = (data: any) => {
         const userId = data.userId;
         setParticipants(prev => prev.filter(p => String(p.id) !== String(userId)));
       };
 
-      const handleCohostAssigned = (data: any) => {
+      const handleCohostPromoted = async (data: any) => {
+        const { streamId } = data;
+        toast.success("You have been promoted to Co-Host!", { 
+          duration: 5000,
+          icon: "🎙️" 
+        });
+        // Re-call start to get publisher token and switch to publishing mode
+        if (id) {
+          try {
+            const startRes = await livestreamAPI.start(id);
+            if (startRes.data.success) {
+              const { token, channelName } = startRes.data.data;
+              // Leave current channel and join as publisher
+              if (agoraClientRef.current) {
+                const appId = import.meta.env.VITE_AGORA_APP_ID;
+                await agoraClientRef.current.leave();
+                await agoraClientRef.current.join(appId, channelName, token, String(user?.id));
+                // Create and publish local tracks
+                const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+                setLocalAudioTrack(audioTrack);
+                setLocalVideoTrack(videoTrack);
+                await agoraClientRef.current.publish([audioTrack, videoTrack]);
+                setIsJoined(true);
+                setIsBroadcaster(true);
+                // Inform others we are now broadcasting
+                socketService.emit('toggle_camera', { streamId: id, isCamOn: true });
+              }
+            }
+          } catch (error) {
+            console.error("Re-join as co-host error:", error);
+            toast.error("Failed to switch to broadcasting mode");
+          }
+        }
+      };
+
+      const handleCohostAdded = (data: any) => {
         const { userId, stream } = data;
         setStreamData(stream);
         
@@ -703,48 +761,56 @@ export default function LivestreamPage() {
           String(p.id) === String(userId) ? { ...p, role: "co-host" } : p
         ));
 
-        if (String(userId) === String(user?.id)) {
-          toast.success("You have been promoted to Co-Host!", { 
-            duration: 5000,
-            icon: "🎙️" 
-          });
-        } else {
-          const promotedUser = participants.find(p => String(p.id) === String(userId));
-          if (promotedUser) {
-            toast.info(`${promotedUser.name} is now a Co-Host`);
+        const promotedUser = participants.find(p => String(p.id) === String(userId));
+        if (promotedUser && String(userId) !== String(user?.id)) {
+          toast.info(`${promotedUser.name} is now a Co-Host`);
+        }
+      };
+
+      const handleCohostDemoted = async (data: any) => {
+        toast.error("Your Co-Host permissions have been removed.", { 
+          duration: 5000,
+          icon: "🚫" 
+        });
+        // Disable local media tracks if they were on and stop publishing
+        if (localVideoTrack) {
+          localVideoTrack.stop();
+          localVideoTrack.close();
+        }
+        if (localAudioTrack) {
+          localAudioTrack.stop();
+          localAudioTrack.close();
+        }
+        setLocalVideoTrack(null);
+        setLocalAudioTrack(null);
+        setIsMicOn(false);
+        setIsCamOn(false);
+        setIsBroadcaster(false);
+
+        // Re-join as viewer (subscriber)
+        if (id) {
+          try {
+            const joinRes = await livestreamAPI.join(id);
+            if (joinRes.data.success) {
+              const { token, channelName } = joinRes.data.data;
+              if (agoraClientRef.current) {
+                const appId = import.meta.env.VITE_AGORA_APP_ID;
+                await agoraClientRef.current.leave();
+                await agoraClientRef.current.join(appId, channelName, token, String(user?.id));
+                setIsJoined(true);
+              }
+            }
+          } catch (error) {
+            console.error("Re-join as viewer error:", error);
           }
         }
       };
 
-      const handleCohostRemoved = (data: any) => {
-        const { userId, stream } = data;
-        setStreamData(stream);
-
-        // Update local participants role
-        setParticipants(prev => prev.map(p => 
-          String(p.id) === String(userId) ? { ...p, role: "viewer" } : p
-        ));
-
-        if (String(userId) === String(user?.id)) {
-          toast.error("Your Co-Host permissions have been removed.", { 
-            duration: 5000,
-            icon: "🚫" 
-          });
-          // Also disable local media tracks if they were on
-          setIsMicOn(false);
-          setIsCamOn(false);
-        } else {
-          const removedUser = participants.find(p => String(p.id) === String(userId));
-          if (removedUser) {
-            toast.info(`${removedUser.name} is no longer a Co-Host`);
-          }
-        }
-      };
-
-      socketService.on('user_joined', handleUserJoined);
-      socketService.on('user_left', handleUserLeft);
-      socketService.on('cohost_assigned', handleCohostAssigned);
-      socketService.on('cohost_removed', handleCohostRemoved);
+      socketService.on('participant_joined', handleParticipantJoined);
+      socketService.on('participant_left', handleParticipantLeft);
+      socketService.on('cohost_promoted', handleCohostPromoted);
+      socketService.on('cohost_added', handleCohostAdded);
+      socketService.on('cohost_demoted', handleCohostDemoted);
 
       const handleIncomingReaction = (data: any) => {
         const { emoji } = data;
@@ -787,10 +853,11 @@ export default function LivestreamPage() {
         pollRef.active = false;
         if (timeoutId) clearTimeout(timeoutId);
         socketService.off('livestream_message', handleNewLivestreamMessage);
-        socketService.off('user_joined', handleUserJoined);
-        socketService.off('user_left', handleUserLeft);
-        socketService.off('cohost_assigned', handleCohostAssigned);
-        socketService.off('cohost_removed', handleCohostRemoved);
+        socketService.off('participant_joined', handleParticipantJoined);
+        socketService.off('participant_left', handleParticipantLeft);
+        socketService.off('cohost_promoted', handleCohostPromoted);
+        socketService.off('cohost_added', handleCohostAdded);
+        socketService.off('cohost_demoted', handleCohostDemoted);
         socketService.off('livestream_reaction', handleIncomingReaction);
         socketService.off('livestream_like', handleIncomingLike);
         socketService.off('user_camera_toggled', handleUserCameraToggled);
@@ -1729,12 +1796,29 @@ export default function LivestreamPage() {
                               </div>
                             )}
                           </div>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-bold text-slate-200 truncate max-w-[140px] tracking-tight">{p.name}</p>
                               {p.isSelf && <Badge variant="outline" className="text-[8px] h-4 px-1 border-white/20 text-slate-500 uppercase font-black">You</Badge>}
                             </div>
-                            <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-0.5">{p.role || "Viewer"}</p>
+                            <div className="flex flex-col mt-0.5">
+                              <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">{p.role || "Viewer"}</p>
+                              {p.headline && (
+                                <p className="text-[10px] text-slate-400 truncate mt-1 italic font-medium leading-tight">{p.headline}</p>
+                              )}
+                              {p.skills && p.skills.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1.5">
+                                  {p.skills.slice(0, 3).map((skill: string, i: number) => (
+                                    <Badge key={i} variant="secondary" className="bg-white/5 text-slate-500 text-[8px] px-1.5 py-0 border-none font-bold uppercase tracking-wider h-4">
+                                      {skill}
+                                    </Badge>
+                                  ))}
+                                  {p.skills.length > 3 && (
+                                    <span className="text-[8px] text-slate-600 font-bold">+{p.skills.length - 3}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
