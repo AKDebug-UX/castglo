@@ -1607,7 +1607,7 @@ export default function LivestreamPage() {
                   { id: "chat", icon: MessageSquare, label: "Chat" },
                   { id: "people", icon: Users, label: "People" },
                   { id: "info", icon: Info, label: "Info" }
-                ].map((tab) => (
+                ].filter(tab => tab.id !== "people" || isBroadcaster).map((tab) => (
                   <Button 
                     key={tab.id}
                     variant="ghost" 
