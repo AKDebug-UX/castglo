@@ -599,22 +599,26 @@ export default function LivestreamPage() {
 
       try {
         const [msgRes, myRes, publicRes, partRes] = await Promise.all([
-          livestreamAPI.getMessages(id).catch(() => ({ data: { success: false } })),
+          livestreamAPI.getMessages(id).catch(() => ({ data: [] })),
           livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
           livestreamAPI.getAll().catch(() => ({ data: { success: false } })),
           livestreamAPI.getParticipants(id).catch(() => ({ data: { success: false } }))
         ]);
 
-        if (msgRes.data?.success && Array.isArray(msgRes.data.data)) {
-          const formattedMessages = msgRes.data.data.map((msg: any) => ({
+        // Handle messages more robustly
+        const rawMessages = msgRes.data?.data || (Array.isArray(msgRes.data) ? msgRes.data : []);
+        if (Array.isArray(rawMessages)) {
+          const formattedMessages = rawMessages.map((msg: any) => ({
             id: msg._id || msg.id,
-            sender: msg.sender?.fullName || msg.senderName || msg.sender || "Unknown",
+            sender: msg.sender?.fullName || msg.senderName || (typeof msg.sender === 'string' ? msg.sender : "Unknown"),
             text: msg.message || msg.text,
             timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSelf: (msg.sender?._id || msg.senderId || msg.sender) === user?.id
+            isSelf: (msg.sender?._id || msg.senderId || (typeof msg.sender === 'string' ? msg.sender : null)) === user?.id
           }));
           
           setChatMessages(prev => {
+            if (formattedMessages.length === 0) return prev;
+            // Only update if the last message ID has changed or length is different
             if (prev.length === formattedMessages.length && 
                 prev[prev.length-1]?.id === formattedMessages[formattedMessages.length-1]?.id) {
               return prev;
@@ -678,19 +682,19 @@ export default function LivestreamPage() {
       socketService.emit('join_livestream', id);
 
       const handleNewLivestreamMessage = (data: any) => {
-        const msg = data.message;
-        if (!msg) return;
+        const msg = data.message || data; // Handle both wrapped and direct payloads
+        if (!msg || (!msg.text && !msg.message)) return;
+        
         setChatMessages(prev => {
-          // Check for existing ID to avoid duplicates (important since we update local state optimistically)
           const msgId = msg._id || msg.id;
-          if (prev.some(m => m.id === msgId)) return prev;
+          if (msgId && prev.some(m => m.id === msgId)) return prev;
           
           return [...prev, {
-            id: msgId,
-            sender: msg.sender?.fullName || msg.senderName || msg.sender || "Unknown",
+            id: msgId || Date.now().toString(),
+            sender: msg.sender?.fullName || msg.senderName || (typeof msg.sender === 'string' ? msg.sender : "Unknown"),
             text: msg.message || msg.text,
             timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSelf: (msg.sender?._id || msg.senderId || msg.sender) === user?.id
+            isSelf: (msg.sender?._id || msg.senderId || (typeof msg.sender === 'string' ? msg.sender : null)) === user?.id
           }];
         });
       };
@@ -912,8 +916,10 @@ export default function LivestreamPage() {
       // 1. Official API call to persist the message
       const response = await livestreamAPI.postMessage(id, messageText);
       
-      if (response.data.success) {
-        const msg = response.data.data;
+      const success = response.data?.success || response.status === 201 || response.status === 200;
+      const msg = response.data?.data || response.data;
+
+      if (success && msg) {
         // 2. Broadcast the message via Socket.IO for real-time delivery
         socketService.emit('send_livestream_message', {
           streamId: id,
@@ -928,10 +934,10 @@ export default function LivestreamPage() {
 
         // 3. Update local UI (Optimistic/Immediate)
         setChatMessages(prev => {
-          // Prevent double-adding if socket already delivered it
-          if (prev.some(m => m.id === (msg._id || msg.id))) return prev;
+          const msgId = msg._id || msg.id;
+          if (msgId && prev.some(m => m.id === msgId)) return prev;
           return [...prev, {
-            id: msg._id || msg.id || Date.now().toString(),
+            id: msgId || Date.now().toString(),
             sender: user?.fullName,
             text: messageText,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
