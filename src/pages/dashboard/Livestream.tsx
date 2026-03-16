@@ -608,10 +608,10 @@ export default function LivestreamPage() {
         if (msgRes.data?.success && Array.isArray(msgRes.data.data)) {
           const formattedMessages = msgRes.data.data.map((msg: any) => ({
             id: msg._id || msg.id,
-            sender: msg.sender?.fullName || msg.senderName || "Unknown",
+            sender: msg.sender?.fullName || msg.senderName || msg.sender || "Unknown",
             text: msg.message || msg.text,
-            timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSelf: (msg.sender?._id || msg.senderId) === currentUserId
+            timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isSelf: (msg.sender?._id || msg.senderId || msg.sender) === user?.id
           }));
           
           setChatMessages(prev => {
@@ -679,14 +679,18 @@ export default function LivestreamPage() {
 
       const handleNewLivestreamMessage = (data: any) => {
         const msg = data.message;
+        if (!msg) return;
         setChatMessages(prev => {
-          if (prev.some(m => m.id === (msg._id || msg.id))) return prev;
+          // Check for existing ID to avoid duplicates (important since we update local state optimistically)
+          const msgId = msg._id || msg.id;
+          if (prev.some(m => m.id === msgId)) return prev;
+          
           return [...prev, {
-            id: msg._id || msg.id,
-            sender: msg.sender?.fullName || msg.senderName || "Unknown",
+            id: msgId,
+            sender: msg.sender?.fullName || msg.senderName || msg.sender || "Unknown",
             text: msg.message || msg.text,
-            timestamp: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSelf: (msg.sender?._id || msg.senderId) === currentUserId
+            timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isSelf: (msg.sender?._id || msg.senderId || msg.sender) === user?.id
           }];
         });
       };
@@ -905,16 +909,35 @@ export default function LivestreamPage() {
     const messageText = chatInput;
     setChatInput("");
     try {
+      // 1. Official API call to persist the message
       const response = await livestreamAPI.postMessage(id, messageText);
+      
       if (response.data.success) {
         const msg = response.data.data;
-        setChatMessages(prev => [...prev, {
-          id: msg._id || msg.id || Date.now().toString(),
-          sender: user?.fullName,
-          text: messageText,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isSelf: true
-        }]);
+        // 2. Broadcast the message via Socket.IO for real-time delivery
+        socketService.emit('send_livestream_message', {
+          streamId: id,
+          message: {
+            id: msg._id || msg.id || Date.now().toString(),
+            sender: user?.fullName,
+            senderId: user?.id,
+            text: messageText,
+            createdAt: new Date().toISOString()
+          }
+        });
+
+        // 3. Update local UI (Optimistic/Immediate)
+        setChatMessages(prev => {
+          // Prevent double-adding if socket already delivered it
+          if (prev.some(m => m.id === (msg._id || msg.id))) return prev;
+          return [...prev, {
+            id: msg._id || msg.id || Date.now().toString(),
+            sender: user?.fullName,
+            text: messageText,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isSelf: true
+          }];
+        });
       }
     } catch (error) {
       toast.error("Failed to send message");
