@@ -7,27 +7,40 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Plus, X, Upload, Loader2, ShieldCheck, FileCheck, History, KeyRound, Smartphone } from "lucide-react";
-import { profileAPI, userAPI, blockchainAPI, authAPI } from "@/lib/api";
+import { Camera, Plus, X, Upload, Loader2, ShieldCheck, FileCheck, History, KeyRound, Smartphone, Mail, CreditCard, Bell, UserMinus, Globe, Link2, ExternalLink, BadgeCheck } from "lucide-react";
+import { profileAPI, userAPI, blockchainAPI, authAPI, subscriptionAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("basic");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [profileData, setProfileData] = useState(null);
+  const [profileData, setProfileData] = useState<any>(null);
   
   // Blockchain states
-  const [verificationHistory, setVerificationHistory] = useState([]);
+  const [verificationHistory, setVerificationHistory] = useState<any[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
+
+  // Security states
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  // Subscription states
+  const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
 
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const [authRes, profileRes, historyRes] = await Promise.all([
+        const [authRes, profileRes, historyRes, subRes] = await Promise.all([
           authAPI.getMe().catch(() => ({ data: { success: false } })),
           profileAPI.getMe().catch(() => ({ data: { success: false } })),
-          blockchainAPI.getHistory({ limit: 5 }).catch(() => ({ data: { success: false } }))
+          blockchainAPI.getHistory({ limit: 5 }).catch(() => ({ data: { success: false } })),
+          subscriptionAPI.getStatus().catch(() => ({ data: { success: false } }))
         ]);
 
         let combinedData = {};
@@ -45,6 +58,10 @@ export default function Profile() {
         if (historyRes.data?.success) {
           setVerificationHistory(historyRes.data.data.records || []);
         }
+
+        if (subRes.data?.success) {
+          setSubscriptionInfo(subRes.data.data);
+        }
       } catch (error) {
         console.error("Profile fetch error:", error);
         toast.error("Failed to load profile data");
@@ -58,14 +75,22 @@ export default function Profile() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Update both User profile and Talent profile
+      // Update User profile
       const userUpdate = userAPI.updateProfile({
         fullName: profileData.fullName,
         bio: profileData.bio,
         location: profileData.location,
-        phoneNumber: profileData.phone
+        phoneNumber: profileData.phone,
+        address: profileData.address,
+        stageName: profileData.stageName,
+        organisationType: profileData.organisationType,
+        jobTitle: profileData.jobTitle,
+        website: profileData.website,
+        professionalLinks: profileData.professionalLinks,
+        notificationSettings: profileData.notificationSettings
       });
 
+      // Update Talent/Profile data
       const profileUpdate = profileAPI.updateMe({
         bio: profileData.bio,
         skills: profileData?.talent?.skills || profileData?.skills,
@@ -77,10 +102,44 @@ export default function Profile() {
 
       await Promise.all([userUpdate, profileUpdate]);
       toast.success("Profile updated successfully");
-    } catch (error) {
+    } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await authAPI.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+      toast.success("Password updated successfully");
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update password");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) {
+      try {
+        await userAPI.deleteAccount();
+        toast.success("Account deleted successfully");
+        // Redirect to home or sign out
+        window.location.href = "/";
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Failed to delete account");
+      }
     }
   };
 
@@ -100,7 +159,7 @@ export default function Profile() {
         const historyRes = await blockchainAPI.getHistory({ limit: 5 });
         setVerificationHistory(historyRes.data.data.records || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error(error.response?.data?.message || "Blockchain anchoring failed");
     } finally {
       setIsVerifying(false);
@@ -109,11 +168,26 @@ export default function Profile() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setProfileData((prev) => ({ ...prev, [name]: value }));
+    setProfileData((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setProfileData((prev) => ({ ...prev, [name]: value }));
+    setProfileData((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handleNotificationToggle = (key: string, value: boolean) => {
+    setProfileData((prev: any) => ({
+      ...prev,
+      notificationSettings: {
+        ...(prev.notificationSettings || {}),
+        [key]: value
+      }
+    }));
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,12 +201,12 @@ export default function Profile() {
       const response = await profileAPI.addHeadshot(formData);
       if (response.data.success) {
         toast.success("Profile picture updated");
-        setProfileData((prev) => ({ 
+        setProfileData((prev: any) => ({ 
           ...prev, 
           profilePicture: response.data.data.url // Adjust based on actual API response
         }));
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to upload photo");
     } finally {
       setIsSaving(false);
@@ -151,8 +225,11 @@ export default function Profile() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Profile Setting</h1>
-          <p className="text-muted-foreground">Manage your professional profile and portfolio</p>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            Account Settings
+            {profileData?.isVerified && <BadgeCheck className="w-6 h-6 text-blue-500" />}
+          </h1>
+          <p className="text-muted-foreground">Manage your personal information and account preferences</p>
         </div>
         <Button onClick={handleSave} disabled={isSaving}>
           {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -161,21 +238,27 @@ export default function Profile() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 h-auto p-1 gap-1">
-          <TabsTrigger value="basic" className="py-2">Basic</TabsTrigger>
-          <TabsTrigger value="physical" className="py-2">Physical</TabsTrigger>
-          <TabsTrigger value="skills" className="py-2">Skills</TabsTrigger>
-          <TabsTrigger value="education" className="py-2">Education</TabsTrigger>
-          <TabsTrigger value="equipment" className="py-2">Equipment</TabsTrigger>
-          <TabsTrigger value="portfolio" className="py-2">Portfolio</TabsTrigger>
-          <TabsTrigger value="verification" className="py-2">Verification</TabsTrigger>
-          <TabsTrigger value="security" className="py-2">Security</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-2">
+          <TabsList className="h-auto p-1 gap-1 inline-flex">
+            <TabsTrigger value="basic" className="py-2 px-4">Basic</TabsTrigger>
+            <TabsTrigger value="details" className="py-2 px-4">Professional</TabsTrigger>
+            <TabsTrigger value="physical" className="py-2 px-4">Physical</TabsTrigger>
+            <TabsTrigger value="skills" className="py-2 px-4">Skills</TabsTrigger>
+            <TabsTrigger value="education" className="py-2 px-4">Education</TabsTrigger>
+            <TabsTrigger value="equipment" className="py-2 px-4">Equipment</TabsTrigger>
+            <TabsTrigger value="portfolio" className="py-2 px-4">Portfolio</TabsTrigger>
+            <TabsTrigger value="subscription" className="py-2 px-4">Subscription</TabsTrigger>
+            <TabsTrigger value="verification" className="py-2 px-4">Verification</TabsTrigger>
+            <TabsTrigger value="payments" className="py-2 px-4">Payments</TabsTrigger>
+            <TabsTrigger value="notifications" className="py-2 px-4">Notifications</TabsTrigger>
+            <TabsTrigger value="security" className="py-2 px-4">Security</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="basic" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle>Basic Details</CardTitle>
               <p className="text-sm text-muted-foreground">Update your personal and contact information</p>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -183,7 +266,7 @@ export default function Profile() {
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={profileData?.talent?.headshots[0]?.url} />
+                    <AvatarImage src={profileData?.talent?.headshots?.[0]?.url || profileData?.profilePicture} />
                     <AvatarFallback>{profileData?.fullName?.[0] || "U"}</AvatarFallback>
                   </Avatar>
                   <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-secondary flex items-center justify-center cursor-pointer shadow-sm hover:bg-secondary/80">
@@ -198,12 +281,15 @@ export default function Profile() {
                     />
                   </label>
                 </div>
-                <Button variant="outline" size="sm" asChild disabled={isSaving}>
-                  <label htmlFor="avatar-upload" className="cursor-pointer">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Photo
-                  </label>
-                </Button>
+                <div className="space-y-1">
+                  <Button variant="outline" size="sm" asChild disabled={isSaving}>
+                    <label htmlFor="avatar-upload" className="cursor-pointer">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Photo
+                    </label>
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground">JPG, GIF or PNG. Max size of 800K</p>
+                </div>
               </div>
 
               {/* Form Fields */}
@@ -214,7 +300,184 @@ export default function Profile() {
                     name="fullName"
                     value={profileData?.fullName || ""} 
                     onChange={handleInputChange}
+                    placeholder="Enter your full name"
                   />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Stage Name</label>
+                  <Input 
+                    name="stageName"
+                    value={profileData?.stageName || ""} 
+                    onChange={handleInputChange}
+                    placeholder="Enter your stage name (optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Email</label>
+                  <Input 
+                    name="email"
+                    type="email" 
+                    value={profileData?.email || ""} 
+                    disabled 
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Telephone Number</label>
+                  <Input 
+                    name="phone"
+                    type="tel" 
+                    value={profileData?.phone || ""} 
+                    onChange={handleInputChange}
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Address</label>
+                <Textarea
+                  name="address"
+                  rows={2}
+                  value={profileData?.address || ""}
+                  onChange={handleInputChange}
+                  placeholder="Enter your full address"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Location</label>
+                <Input 
+                  name="location"
+                  value={profileData?.location || ""} 
+                  onChange={handleInputChange}
+                  placeholder="City, Country"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="details" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Professional Details</CardTitle>
+              <p className="text-sm text-muted-foreground">Update your professional and organizational information</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Organisation Type</label>
+                  <Select 
+                    value={profileData?.organisationType || ""} 
+                    onValueChange={(v) => handleSelectChange("organisationType", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select organization type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="creative-agency">Creative / Marketing Agency</SelectItem>
+                      <SelectItem value="casting">Casting</SelectItem>
+                      <SelectItem value="production">Production Company</SelectItem>
+                      <SelectItem value="theatre">Theatre</SelectItem>
+                      <SelectItem value="brand">Brand / Company</SelectItem>
+                      <SelectItem value="others">Others</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Job Title / Role</label>
+                  <Select 
+                    value={profileData?.jobTitle || ""} 
+                    onValueChange={(v) => handleSelectChange("jobTitle", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select job title" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="actor">Actor</SelectItem>
+                      <SelectItem value="director">Director</SelectItem>
+                      <SelectItem value="producer">Producer</SelectItem>
+                      <SelectItem value="casting-director">Casting Director</SelectItem>
+                      <SelectItem value="agent">Agent</SelectItem>
+                      <SelectItem value="crew">Crew / Technical</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Website (Company or Personal)</label>
+                <div className="relative">
+                  <Globe className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    name="website"
+                    className="pl-10"
+                    value={profileData?.website || ""} 
+                    onChange={handleInputChange}
+                    placeholder="https://yourwebsite.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Professional Links</label>
+                <div className="space-y-2">
+                  {(profileData?.professionalLinks || []).map((link: string, i: number) => (
+                    <div key={i} className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Link2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          value={link} 
+                          className="pl-10"
+                          readOnly
+                        />
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => {
+                        const newLinks = profileData.professionalLinks.filter((_: any, idx: number) => idx !== i);
+                        setProfileData((prev: any) => ({ ...prev, professionalLinks: newLinks }));
+                      }}>
+                        <X className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Link2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="new-link"
+                        className="pl-10"
+                        placeholder="Add professional link (IMDb, Spotlight, etc.)"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const val = (e.target as HTMLInputElement).value;
+                            if (val) {
+                              setProfileData((prev: any) => ({
+                                ...prev,
+                                professionalLinks: [...(prev.professionalLinks || []), val]
+                              }));
+                              (e.target as HTMLInputElement).value = "";
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                    <Button variant="outline" size="icon" onClick={() => {
+                      const input = document.getElementById("new-link") as HTMLInputElement;
+                      if (input.value) {
+                        setProfileData((prev: any) => ({
+                          ...prev,
+                          professionalLinks: [...(prev.professionalLinks || []), input.value]
+                        }));
+                        input.value = "";
+                      }
+                    }}>
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -225,8 +488,9 @@ export default function Profile() {
                   value={profileData?.professionalRoles?.join(", ") || ""} 
                   onChange={(e) => {
                     const roles = e.target.value.split(",").map(r => r.trim());
-                    setProfileData((prev) => ({ ...prev, professionalRoles: roles }));
+                    setProfileData((prev: any) => ({ ...prev, professionalRoles: roles }));
                   }}
+                  placeholder="e.g. Lead Actor, Voice Artist"
                 />
               </div>
 
@@ -239,88 +503,8 @@ export default function Profile() {
                   rows={4}
                   value={profileData?.bio || ""}
                   onChange={handleInputChange}
+                  placeholder="Tell us about yourself and your professional background..."
                 />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">
-                  Career Highlights <span className="text-muted-foreground font-normal">({profileData?.highlights?.length || 0}/1500)</span>
-                </label>
-                <Textarea
-                  name="highlights"
-                  rows={3}
-                  value={profileData?.highlights || ""}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Gender</label>
-                  <Select 
-                    value={profileData?.gender || ""} 
-                    onValueChange={(v) => handleSelectChange("gender", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="non-binary">Non-binary</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Age Range</label>
-                  <Select 
-                    value={profileData?.ageRange || ""} 
-                    onValueChange={(v) => handleSelectChange("ageRange", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="18-25">18-25</SelectItem>
-                      <SelectItem value="25-35">25-35</SelectItem>
-                      <SelectItem value="35-45">35-45</SelectItem>
-                      <SelectItem value="45+">45+</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Email</label>
-                  <Input 
-                    name="email"
-                    type="email" 
-                    value={profileData?.email || ""} 
-                    disabled // Email usually managed via Auth
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Phone</label>
-                  <Input 
-                    name="phone"
-                    type="tel" 
-                    value={profileData?.phone || ""} 
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Location</label>
-                  <Input 
-                    name="location"
-                    value={profileData?.location || ""} 
-                    onChange={handleInputChange}
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -573,7 +757,7 @@ export default function Profile() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-                {profileData?.talent?.headshots?.map((shot, i: number) => (
+                {profileData?.talent?.headshots?.map((shot: any, i: number) => (
                   <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
                     <img src={shot.url} className="w-full h-full object-cover" />
                     <Button 
@@ -607,50 +791,128 @@ export default function Profile() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="subscription" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription Information</CardTitle>
+              <p className="text-sm text-muted-foreground">Manage your account subscription and billing cycle</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-6 rounded-xl border bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-[#009698]">{subscriptionInfo?.plan?.name || "Free Plan"}</Badge>
+                    {subscriptionInfo?.status === "active" && (
+                      <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">Active</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {subscriptionInfo?.status === "active" 
+                      ? `Your plan renews on ${new Date(subscriptionInfo?.currentPeriodEnd).toLocaleDateString()}`
+                      : "Upgrade to unlock premium features and casting opportunities"}
+                  </p>
+                </div>
+                {!subscriptionInfo || subscriptionInfo.status !== "active" ? (
+                  <Button asChild className="bg-[#009698] hover:bg-[#009698]/90">
+                    <a href="/pricing">Upgrade Plan</a>
+                  </Button>
+                ) : (
+                  <Button variant="outline">Manage Subscription</Button>
+                )}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="p-4 rounded-lg border bg-white">
+                  <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Status</p>
+                  <p className="font-medium capitalize">{subscriptionInfo?.status || "Inactive"}</p>
+                </div>
+                <div className="p-4 rounded-lg border bg-white">
+                  <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Billing Cycle</p>
+                  <p className="font-medium capitalize">{subscriptionInfo?.billingCycle || "N/A"}</p>
+                </div>
+                <div className="p-4 rounded-lg border bg-white">
+                  <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Price</p>
+                  <p className="font-medium">{subscriptionInfo?.plan?.price ? `$${subscriptionInfo.plan.price}/mo` : "$0"}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="verification" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-primary" />
-                Blockchain Credential Verification
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Anchor your professional documents, awards, and identity to the blockchain for immutable, investor-ready verification.
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                    Account Verification
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Verify your identity and professional credentials
+                  </p>
+                </div>
+                <Badge variant={profileData?.isVerified ? "default" : "secondary"}>
+                  {profileData?.isVerified ? "Verified" : "Not Verified"}
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="p-6 border-2 border-dashed rounded-xl text-center space-y-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                  <FileCheck className="w-6 h-6 text-primary" />
+              {!profileData?.isVerified && (
+                <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-100 flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-yellow-600 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-yellow-800">Your account is not verified</p>
+                    <p className="text-xs text-yellow-700">Verified accounts get 3x more visibility and trust from casting directors.</p>
+                    <Button variant="link" className="p-0 h-auto text-yellow-800 font-bold" asChild>
+                      <a href="/verification-process">Start Verification Process</a>
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <p className="font-medium">Anchor New Document</p>
-                  <p className="text-sm text-muted-foreground">Upload certificates, contracts, or identity documents</p>
-                </div>
-                <div className="relative inline-block">
-                  <input
-                    type="file"
-                    id="blockchain-upload"
-                    className="hidden"
-                    onChange={handleBlockchainVerify}
-                    disabled={isVerifying}
-                  />
-                  <Button asChild disabled={isVerifying}>
-                    <label htmlFor="blockchain-upload" className="cursor-pointer flex items-center gap-2">
-                      {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                      Select & Anchor Document
-                    </label>
-                  </Button>
-                </div>
-              </div>
+              )}
 
-              {/* History */}
+              <Separator />
+
               <div className="space-y-4">
                 <h3 className="font-semibold flex items-center gap-2">
-                  <History className="w-4 h-4" />
-                  Verification History
+                  <FileCheck className="w-4 h-4" />
+                  Blockchain Document Anchoring
                 </h3>
+                <p className="text-sm text-muted-foreground">
+                  Anchor your professional documents, awards, and identity to the blockchain for immutable verification.
+                </p>
+                
+                <div className="p-6 border-2 border-dashed rounded-xl text-center space-y-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                    <Upload className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-medium">Anchor New Document</p>
+                    <p className="text-sm text-muted-foreground">Upload certificates, contracts, or identity documents</p>
+                  </div>
+                  <div className="relative inline-block">
+                    <input
+                      type="file"
+                      id="blockchain-upload"
+                      className="hidden"
+                      onChange={handleBlockchainVerify}
+                      disabled={isVerifying}
+                    />
+                    <Button asChild disabled={isVerifying}>
+                      <label htmlFor="blockchain-upload" className="cursor-pointer flex items-center gap-2">
+                        {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        Select & Anchor Document
+                      </label>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* History */}
                 <div className="space-y-2">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <History className="w-4 h-4" />
+                    Verification History
+                  </h4>
                   {verificationHistory.length > 0 ? (
                     verificationHistory.map((record) => (
                       <div key={record._id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
@@ -677,6 +939,163 @@ export default function Profile() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="payments" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-primary" />
+                Payments & Billing Address
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Manage your payment methods and billing information</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Saved Cards</h3>
+                {profileData?.paymentMethods?.length > 0 ? (
+                  <div className="grid gap-4">
+                    {profileData.paymentMethods.map((card: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-6 bg-slate-200 rounded flex items-center justify-center">
+                            <CreditCard className="w-5 h-5 text-slate-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">•••• •••• •••• {card.last4}</p>
+                            <p className="text-xs text-muted-foreground">Expires {card.expMonth}/{card.expYear}</p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 border-2 border-dashed rounded-xl text-center">
+                    <CreditCard className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+                    <p className="text-sm text-muted-foreground mb-4">No payment cards added yet</p>
+                    <Button variant="outline" size="sm">
+                      <Plus className="w-4 h-4 mr-2" /> Add New Card
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Billing Address</h3>
+                <div className="grid gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Full Name on Bill</label>
+                    <Input placeholder="John Doe" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Country</label>
+                      <Input placeholder="United Kingdom" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Postcode / ZIP</label>
+                      <Input placeholder="SW1A 1AA" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-muted-foreground uppercase mb-1 block">Street Address</label>
+                    <Input placeholder="10 Downing Street" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-primary" />
+                Notification Settings
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Manage how you receive updates and alerts</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="font-semibold text-sm">Job Alerts & Recommendations</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">Job Search Notifications</p>
+                      <p className="text-xs text-muted-foreground">Get casting notices that are most relevant to you</p>
+                    </div>
+                    <Switch 
+                      checked={profileData?.notificationSettings?.jobSearchEmail || false} 
+                      onCheckedChange={(v) => handleNotificationToggle("jobSearchEmail", v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">Job Recommendations</p>
+                      <p className="text-xs text-muted-foreground">Get relevant jobs based on your casting roles</p>
+                    </div>
+                    <Select 
+                      value={profileData?.notificationSettings?.jobRecFrequency || "none"}
+                      onValueChange={(v) => handleNotificationToggle("jobRecFrequency", v)}
+                    >
+                      <SelectTrigger className="w-[140px] h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="none">Opt Out</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-sm">Your Activity</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">Job Postings</p>
+                      <p className="text-xs text-muted-foreground">Get notified when there are new applications for your jobs</p>
+                    </div>
+                    <Switch 
+                      checked={profileData?.notificationSettings?.jobPostingAlerts || false} 
+                      onCheckedChange={(v) => handleNotificationToggle("jobPostingAlerts", v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">Your Applications</p>
+                      <p className="text-xs text-muted-foreground">Reminders if you've been invited to apply to a role</p>
+                    </div>
+                    <Switch 
+                      checked={profileData?.notificationSettings?.applicationAlerts || false} 
+                      onCheckedChange={(v) => handleNotificationToggle("applicationAlerts", v)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">Saved Jobs Roundup</p>
+                      <p className="text-xs text-muted-foreground">Get a summary of the jobs you've bookmarked</p>
+                    </div>
+                    <Switch 
+                      checked={profileData?.notificationSettings?.savedJobsRoundup || false} 
+                      onCheckedChange={(v) => handleNotificationToggle("savedJobsRoundup", v)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="security" className="mt-6">
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
@@ -690,17 +1109,42 @@ export default function Profile() {
               <CardContent className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Current Password</label>
-                  <Input type="password" placeholder="••••••••" />
+                  <Input 
+                    type="password" 
+                    name="currentPassword"
+                    value={passwordForm.currentPassword}
+                    onChange={handlePasswordInputChange}
+                    placeholder="••••••••" 
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">New Password</label>
-                  <Input type="password" placeholder="••••••••" />
+                  <Input 
+                    type="password" 
+                    name="newPassword"
+                    value={passwordForm.newPassword}
+                    onChange={handlePasswordInputChange}
+                    placeholder="••••••••" 
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Confirm New Password</label>
-                  <Input type="password" placeholder="••••••••" />
+                  <Input 
+                    type="password" 
+                    name="confirmPassword"
+                    value={passwordForm.confirmPassword}
+                    onChange={handlePasswordInputChange}
+                    placeholder="••••••••" 
+                  />
                 </div>
-                <Button className="w-full bg-[#009698] hover:bg-[#009698]/90">Update Password</Button>
+                <Button 
+                  className="w-full bg-[#009698] hover:bg-[#009698]/90"
+                  onClick={handleChangePassword}
+                  disabled={isSaving}
+                >
+                  {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Update Password
+                </Button>
               </CardContent>
             </Card>
 
@@ -708,31 +1152,69 @@ export default function Profile() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Smartphone className="w-5 h-5 text-primary" />
-                  Two-Factor Authentication (2FA)
+                  Security Settings
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+                <p className="text-sm text-muted-foreground">Manage your account security and authentication</p>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
-                  <div className="space-y-1">
-                    <p className="font-bold text-sm">Authenticator App</p>
-                    <p className="text-xs text-muted-foreground">Use an app like Google Authenticator or Authy</p>
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium">Two-Factor Authentication (2FA)</h3>
+                  
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <p className="font-bold text-sm">Email Authentication</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Receive a verification code via email</p>
+                    </div>
+                    <Button variant="outline" size="sm">Enable</Button>
                   </div>
-                  <Button variant="outline" size="sm">Enable</Button>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
-                  <div className="space-y-1">
-                    <p className="font-bold text-sm">SMS Authentication</p>
-                    <p className="text-xs text-muted-foreground">Receive a code via text message</p>
+
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-muted-foreground" />
+                        <p className="font-bold text-sm">SMS Authentication</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Receive a code via text message</p>
+                    </div>
+                    <Button variant="outline" size="sm">Enable</Button>
                   </div>
-                  <Button variant="outline" size="sm">Enable</Button>
+                  
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                        <p className="font-bold text-sm">Google Authenticator</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Use Google Authenticator for secure codes</p>
+                    </div>
+                    <Button variant="outline" size="sm">Enable</Button>
+                  </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
-                  <p className="text-xs text-blue-600 font-medium leading-relaxed">
-                    Two-factor authentication adds an extra layer of security to your account by requiring more than just a password to log in.
-                  </p>
+                <Separator />
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-medium text-destructive">Danger Zone</h3>
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-red-100 bg-red-50">
+                    <div className="space-y-1">
+                      <p className="font-bold text-sm text-red-900">Delete Account</p>
+                      <p className="text-xs text-red-700">Permanently delete your account and all data</p>
+                    </div>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={handleDeleteAccount}
+                    >
+                      <UserMinus className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                  <Button variant="outline" size="sm" className="w-full text-muted-foreground">
+                    Deactivate Account Temporarily
+                  </Button>
                 </div>
               </CardContent>
             </Card>

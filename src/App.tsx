@@ -47,6 +47,7 @@ import Notifications from "./pages/dashboard/Notifications";
 import InstantAudition from "./pages/dashboard/InstantAudition";
 import Livestream from "./pages/dashboard/Livestream";
 import LivestreamsList from "./pages/dashboard/LivestreamsList";
+import VerificationProcess from "./pages/dashboard/VerificationProcess";
 
 // Director Dashboard
 import { DirectorLayout } from "./components/dashboard/DirectorLayout";
@@ -65,6 +66,7 @@ import UsersManagement from "./pages/admin/UsersManagement";
 import AdminSubmissions from "./pages/admin/AdminSubmissions";
 import AdminBookings from "./pages/admin/AdminBookings";
 import AdminNotifications from "./pages/admin/AdminNotifications";
+import VerificationManagement from "./pages/admin/VerificationManagement";
 
 // Professional Dashboard
 import { ProfessionalLayout } from "./components/dashboard/ProfessionalLayout";
@@ -74,6 +76,11 @@ import ProfessionalServices from "./pages/professional/ProfessionalServices";
 import BrowseTalents from "./pages/professional/BrowseTalents";
 import ProfessionalBookings from "./pages/professional/ProfessionalBookings";
 import ProfessionalMessages from "./pages/professional/ProfessionalMessages";
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import CheckoutPage from './pages/CheckoutPage';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const queryClient = new QueryClient();
 
@@ -83,108 +90,125 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <ScrollToTop />
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/browse-talent" element={<BrowseTalent />} />
-            <Route path="/sign-in" element={<SignIn />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/help" element={<Help />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/guides" element={<Guides />} />
-            <Route path="/hub" element={<Hub />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/careers" element={<Careers />} />
-            <Route path="/join" element={<Join />} />
-            <Route path="/join/:type" element={<SignUp />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/news" element={<News />} />
-            <Route path="/news/:id" element={<NewsArticle />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/cookies" element={<Cookies />} />
-            <Route path="/talent/:id" element={<TalentProfile />} />
-            <Route path="/browse-cast" element={<PublicCasting />} />
-            <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
-            <Route path="/cast/:id" element={<PublicCastingDetail />} />
+        <Elements stripe={stripePromise}>
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/browse-talent" element={<BrowseTalent />} />
+              <Route path="/sign-in" element={<SignIn />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/guides" element={<Guides />} />
+              <Route path="/hub" element={<Hub />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/join" element={<Join />} />
+              <Route path="/join/:type" element={<SignUp />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/news" element={<News />} />
+              <Route path="/news/:id" element={<NewsArticle />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/cookies" element={<Cookies />} />
+              <Route path="/talent/:id" element={<TalentProfile />} />
+              <Route path="/browse-cast" element={<PublicCasting />} />
+              <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
+              <Route path="/cast/:id" element={<PublicCastingDetail />} />
               <Route path="/livestream/:id" element={<Livestream />} />
-            {/* Talent Dashboard Routes */}
-            <Route path="/dashboard" element={
-              <ProtectedRoute allowedRoles={["talent"]}>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<Dashboard />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="browse-cast" element={<BrowseCast />} />
-              <Route path="browse-cast/:id" element={<CastingDetail />} />
-              <Route path="browse-cast/:id/submit" element={<SubmitAudition />} />
-              <Route path="submissions" element={<Submissions />} />
-              <Route path="messages" element={<Messages />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="livestreams" element={<LivestreamsList />} />
-              <Route path="audition" element={<InstantAudition />} />
-              <Route path="livestream/:id" element={<Livestream />} />
-            </Route>
+              <Route path="/checkout" element={<CheckoutPage />} />
+              {/* Talent Dashboard Routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={["talent"]}>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="browse-cast" element={<BrowseCast />} />
+                <Route path="browse-cast/:id" element={<CastingDetail />} />
+                <Route path="browse-cast/:id/submit" element={<SubmitAudition />} />
+                <Route path="submissions" element={<Submissions />} />
+                <Route path="messages" element={<Messages />} />
+                <Route path="notifications" element={<Notifications />} />
+                <Route path="livestreams" element={<LivestreamsList />} />
+                <Route path="audition" element={<InstantAudition />} />
+                <Route path="livestream/:id" element={<Livestream />} />
+                <Route path="verification-process" element={<VerificationProcess />} />
+              </Route>
 
-            {/* Director Dashboard Routes */}
-            <Route path="/director" element={
-              <ProtectedRoute allowedRoles={["casting_director"]}>
-                <DirectorLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<DirectorDashboard />} />
-              <Route path="projects" element={<MyProjects />} />
-              <Route path="projects/:id/edit" element={<CreateCasting />} />
-              <Route path="create" element={<CreateCasting />} />
-              <Route path="submissions" element={<DirectorSubmissions />} />
-              <Route path="submissions/:id" element={<DirectorSubmissions />} />
-              <Route path="messages" element={<DirectorMessages />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="livestreams" element={<LivestreamsList />} />
-              <Route path="audition" element={<InstantAudition />} />
-              <Route path="livestream/:id" element={<Livestream />} />
-            </Route>
+              {/* Director Dashboard Routes */}
+              <Route
+                path="/director"
+                element={
+                  <ProtectedRoute allowedRoles={["casting_director"]}>
+                    <DirectorLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<DirectorDashboard />} />
+                <Route path="projects" element={<MyProjects />} />
+                <Route path="projects/:id/edit" element={<CreateCasting />} />
+                <Route path="create" element={<CreateCasting />} />
+                <Route path="submissions" element={<DirectorSubmissions />} />
+                <Route path="submissions/:id" element={<DirectorSubmissions />} />
+                <Route path="messages" element={<DirectorMessages />} />
+                <Route path="notifications" element={<Notifications />} />
+                <Route path="livestreams" element={<LivestreamsList />} />
+                <Route path="audition" element={<InstantAudition />} />
+                <Route path="livestream/:id" element={<Livestream />} />
+              </Route>
 
-            {/* Professional Dashboard Routes */}
-            <Route path="/professional" element={
-              <ProtectedRoute allowedRoles={["industry_professional"]}>
-                <ProfessionalLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<ProfessionalDashboard />} />
-              <Route path="profile" element={<ProfessionalProfile />} />
-              <Route path="services" element={<ProfessionalServices />} />
-              <Route path="talents" element={<BrowseTalents />} />
-              <Route path="bookings" element={<ProfessionalBookings />} />
-              <Route path="messages" element={<ProfessionalMessages />} />
-              <Route path="notifications" element={<Notifications />} />
-            </Route>
+              {/* Professional Dashboard Routes */}
+              <Route
+                path="/professional"
+                element={
+                  <ProtectedRoute allowedRoles={["industry_professional"]}>
+                    <ProfessionalLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<ProfessionalDashboard />} />
+                <Route path="profile" element={<ProfessionalProfile />} />
+                <Route path="services" element={<ProfessionalServices />} />
+                <Route path="talents" element={<BrowseTalents />} />
+                <Route path="bookings" element={<ProfessionalBookings />} />
+                <Route path="messages" element={<ProfessionalMessages />} />
+                <Route path="notifications" element={<Notifications />} />
+              </Route>
 
-            {/* Admin Dashboard Routes */}
-            <Route path="/admin" element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminLayout />
-              </ProtectedRoute>
-            }>
-              <Route index element={<AdminDashboard />} />
-              <Route path="moderation" element={<ModerationQueue />} />
-              <Route path="analytics" element={<AdminAnalytics />} />
-              <Route path="users" element={<UsersManagement />} />
-              <Route path="submissions" element={<AdminSubmissions />} />
-              <Route path="bookings" element={<AdminBookings />} />
-              <Route path="notifications" element={<AdminNotifications />} />
-            </Route>
+              {/* Admin Dashboard Routes */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="moderation" element={<ModerationQueue />} />
+                <Route path="analytics" element={<AdminAnalytics />} />
+                <Route path="users" element={<UsersManagement />} />
+                <Route path="submissions" element={<AdminSubmissions />} />
+                <Route path="bookings" element={<AdminBookings />} />
+                <Route path="notifications" element={<AdminNotifications />} />
+                <Route path="verification" element={<VerificationManagement />} />
+              </Route>
 
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </Elements>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
