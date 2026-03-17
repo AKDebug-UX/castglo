@@ -10,40 +10,66 @@ export default function Cookies() {
           <header>
             <h1 className="text-3xl font-bold">Cookie Policy</h1>
             <p className="mt-2 text-muted-foreground">
-              Last updated: March 11, 2026
+              Effective Date: 16th March 2026
             </p>
           </header>
 
           <section className="space-y-4">
             <h2 className="text-xl font-semibold">1. What Are Cookies</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Cookies are small text files that are placed on your computer or mobile device when you visit a website. They are widely used to make websites work more efficiently and provide information to the owners of the site.
+              Cookies are small text files placed on your device when visiting a website. They help websites function properly and improve user experience.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold">2. How We Use Cookies</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              We use cookies for several reasons, including:
-            </p>
+            <h2 className="text-xl font-semibold">2. Types of Cookies We Use</h2>
             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-2">
-              <li>To provide you with the service you have requested (Essential Cookies).</li>
-              <li>To understand how you use our website and to improve your experience.</li>
-              <li>To remember your preferences and settings.</li>
-              <li>To provide relevant advertisements to you.</li>
+              <li><b>Essential Cookies:</b> Necessary for core site functionality such as login and security.</li>
+              <li><b>Functional Cookies:</b> Remember user preferences and settings.</li>
+              <li><b>Analytics Cookies:</b> Help us understand how visitors interact with the website.</li>
+              <li><b>Marketing Cookies:</b> Used to measure marketing effectiveness where applicable.</li>
             </ul>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold">3. Your Choices</h2>
+            <h2 className="text-xl font-semibold">3. Why We Use Cookies</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Most web browsers allow some control of most cookies through the browser settings. To find out more about cookies, including how to see what cookies have been set and how to manage and delete them, visit <a href="https://www.allaboutcookies.org" className="text-primary hover:underline">allaboutcookies.org</a>.
+              We use cookies to:
+            </p>
+            <ul className="list-disc list-inside text-sm text-muted-foreground space-y-2">
+              <li>operate the Platform</li>
+              <li>remember user preferences</li>
+              <li>improve website performance</li>
+              <li>analyse traffic and behaviour</li>
+              <li>support security and fraud prevention</li>
+            </ul>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-xl font-semibold">4. Third-Party Cookies</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Some cookies may be placed by third-party services used on the Platform, such as analytics providers or payment processors.
+            </p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-xl font-semibold">5. Managing Cookies</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Users can manage cookie settings through their browser settings or through the website cookie consent tool. Disabling certain cookies may affect website functionality. Where required by law, non-essential cookies will only be placed after user consent through the website cookie banner.
+            </p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-xl font-semibold">6. Updates</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              This Cookie Policy may be updated periodically.
             </p>
           </section>
 
           <section className="space-y-4 border-t pt-8">
+            <h2 className="text-xl font-semibold">7. Contact</h2>
             <p className="text-sm text-muted-foreground">
-              If you have any questions about our use of cookies, please contact us at <a href="mailto:privacy@castglo.com" className="text-primary hover:underline">privacy@castglo.com</a>.
+              Questions regarding this policy can be sent to <a href="mailto:admin@castglo.com" className="text-primary hover:underline">admin@castglo.com</a>.
             </p>
           </section>
         </section>
