@@ -79,6 +79,10 @@ import ProfessionalMessages from "./pages/professional/ProfessionalMessages";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import CheckoutPage from './pages/CheckoutPage';
+import CommunityGuidelines from './pages/CommunityGuidelines';
+import SafetyGuidelines from './pages/SafetyGuidelines';
+import CopyrightPolicy from './pages/CopyrightPolicy';
+import AntiScamGuidelines from './pages/AntiScamGuidelines';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -122,6 +126,10 @@ const App = () => (
               <Route path="/cast/:id" element={<PublicCastingDetail />} />
               <Route path="/livestream/:id" element={<Livestream />} />
               <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+              <Route path="/safety-guidelines" element={<SafetyGuidelines />} />
+              <Route path="/copyright-policy" element={<CopyrightPolicy />} />
+              <Route path="/anti-scam-guidelines" element={<AntiScamGuidelines />} />
               {/* Talent Dashboard Routes */}
               <Route
                 path="/dashboard"

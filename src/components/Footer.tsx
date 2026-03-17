@@ -16,11 +16,15 @@ const footerLinks = {
     { label: "Glo Hub", href: "/hub" },
     { label: "Glo Chat", href: "/chat" },
     { label: "Audition Guides", href: "/guides" },
+    { label: "Community Guidelines", href: "/community-guidelines" },
+    { label: "Anti-Scam Guidelines", href: "/anti-scam-guidelines" },
   ],
   legal: [
     { label: "Terms of Service", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Cookie Policy", href: "/cookies" },
+    { label: "Safety Guidelines", href: "/safety-guidelines" },
+    { label: "Copyright Policy", href: "/copyright-policy" },
   ],
 };
 
