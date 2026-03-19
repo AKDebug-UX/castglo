@@ -55,7 +55,7 @@ export default function Pricing() {
         } else {
           toast.error("Could not initiate checkout. Please try again.");
         }
-      } catch (error: any) {
+      } catch (error) {
         toast.error(error.response?.data?.message || "An unexpected error occurred");
       } finally {
         setIsProcessing(null);

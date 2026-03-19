@@ -31,11 +31,23 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('@tanstack')) {
               return 'vendor-tanstack';
             }
+            if (id.includes('agora-rtc-sdk-ng')) {
+              return 'vendor-agora';
+            }
+            if (id.includes('recharts')) {
+              return 'vendor-recharts';
+            }
+            if (id.includes('axios') || id.includes('socket.io-client')) {
+              return 'vendor-network';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-radix';
+            }
             return 'vendor';
           }
         },
       },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1500,
   },
 }));
