@@ -137,23 +137,28 @@ export default function Contact() {
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-xl bg-card p-6 shadow-card">
-              <h3 className="font-semibold">Contact Information</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Email: support@castglo.com
-                <br />
-                Press: press@castglo.com
-                <br />
-                Careers: careers@castglo.com
-              </p>
-            </div>
-            <div className="rounded-xl bg-card p-6 shadow-card">
-              <h3 className="font-semibold">Office</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Los Angeles, CA
-                <br />
-                Mon–Fri: 9:00am – 6:00pm PT
-              </p>
+            <div className="rounded-xl bg-card p-6 shadow-card h-full flex flex-col justify-center">
+              <h3 className="text-xl font-bold mb-4">Contact Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Support Email</p>
+                  <a href="mailto:support@castglo.com" className="text-lg font-medium text-[#009698] hover:underline">
+                    support@castglo.com
+                  </a>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Press & Media</p>
+                  <a href="mailto:support@castglo.com" className="text-lg font-medium text-slate-700 hover:underline">
+                    support@castglo.com
+                  </a>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Careers</p>
+                  <a href="mailto:support@castglo.com" className="text-lg font-medium text-slate-700 hover:underline">
+                    support@castglo.com
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </section>
