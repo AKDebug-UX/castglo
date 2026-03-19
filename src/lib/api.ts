@@ -37,6 +37,8 @@ export const API_ENDPOINTS = {
     DETAILS: (id: string) => `/bookings/${id}`,
     UPDATE_STATUS: (id: string) => `/bookings/${id}/status`,
     STATS: '/bookings/professional/stats',
+    CANCEL: (id: string) => `/bookings/${id}/cancel`,
+    COMPLETE: (id: string) => `/bookings/${id}/complete`,
   },
   AUTH: {
     REGISTER: '/auth/register',
@@ -124,6 +126,9 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/services/${id}`,
     DELETE: (id: string) => `/services/${id}`,
     STATS: '/services/stats',
+    SEARCH: '/services/search',
+    GET_ONE: (id: string) => `/services/${id}`,
+    FEATURED: '/services/featured',
   },
   SUBSCRIPTIONS: {
     CREATE_CHECKOUT_SESSION: '/subscriptions/create-checkout-session',
@@ -307,6 +312,8 @@ export const bookingAPI = {
   getDetails: (id: string) => api.get(API_ENDPOINTS.BOOKINGS.DETAILS(id)),
   updateStatus: (id: string, status: string) => api.patch(API_ENDPOINTS.BOOKINGS.UPDATE_STATUS(id), { status }),
   getStats: () => api.get(API_ENDPOINTS.BOOKINGS.STATS),
+  cancel: (id: string) => api.post(API_ENDPOINTS.BOOKINGS.CANCEL(id)),
+  complete: (id: string) => api.post(API_ENDPOINTS.BOOKINGS.COMPLETE(id)),
 };
 
 // --- NEWS ENDPOINTS ---
@@ -326,6 +333,9 @@ export const serviceAPI = {
   update: (id: string, data) => api.put(API_ENDPOINTS.SERVICES.UPDATE(id), data),
   delete: (id: string) => api.delete(API_ENDPOINTS.SERVICES.DELETE(id)),
   getStats: () => api.get(API_ENDPOINTS.SERVICES.STATS),
+  search: (params) => api.get(API_ENDPOINTS.SERVICES.SEARCH, { params }),
+  getOne: (id: string) => api.get(API_ENDPOINTS.SERVICES.GET_ONE(id)),
+  getFeatured: () => api.get(API_ENDPOINTS.SERVICES.FEATURED),
 };
 
 // --- SUBSCRIPTION ENDPOINTS ---
