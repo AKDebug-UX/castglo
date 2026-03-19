@@ -9,13 +9,19 @@ import { Check, Loader2, Sparkles, Zap, Shield, Rocket } from "lucide-react";
 import { subscriptionAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 export default function Pricing() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const categoryParam = searchParams.get("category");
+  
   const [plans, setPlans] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [activeTab, setActiveTab] = useState(categoryParam || "talent");
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -34,29 +40,29 @@ export default function Pricing() {
     fetchPlans();
   }, []);
 
-  const handleSubscribe = async (planKey: string) => {
-    if (!user) {
-      toast.error("Please sign in to subscribe to a plan");
-      window.location.href = "/sign-in";
-      return;
-    }
+  const handleSubscribe = async (plan: any) => {
+    // If user is already logged in, redirect to Stripe checkout
+    if (user) {
+      setIsProcessing(plan.planKey);
+      try {
+        const response = await subscriptionAPI.createCheckoutSession({
+          planName: plan.planKey,
+          billingCycle: billingCycle
+        });
 
-    setIsProcessing(planKey);
-    try {
-      const response = await subscriptionAPI.createCheckoutSession({
-        planName: planKey,
-        billingCycle: billingCycle
-      });
-
-      if (response.data.success && response.data.data.url) {
-        window.location.href = response.data.data.url;
-      } else {
-        toast.error("Could not initiate checkout. Please try again.");
+        if (response.data.success && response.data.data.url) {
+          window.location.href = response.data.data.url;
+        } else {
+          toast.error("Could not initiate checkout. Please try again.");
+        }
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "An unexpected error occurred");
+      } finally {
+        setIsProcessing(null);
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "An unexpected error occurred");
-    } finally {
-      setIsProcessing(null);
+    } else {
+      // If not logged in, redirect to register with plan and category info
+      navigate(`/join/${activeTab}?plan=${plan.planKey}&cycle=${billingCycle}`);
     }
   };
 
@@ -113,7 +119,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <Tabs defaultValue="talent" className="max-w-6xl mx-auto">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
             <TabsList className="grid grid-cols-2 md:grid-cols-4 h-auto p-1 bg-white/50 backdrop-blur shadow-sm rounded-xl mb-12">
               {categories.map((cat) => (
                 <TabsTrigger 
@@ -172,7 +178,7 @@ export default function Pricing() {
                         <CardFooter className="pt-8">
                           <Button 
                             className={`w-full h-12 rounded-2xl font-bold text-lg transition-all ${plan.name === 'Standard' ? 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20' : 'bg-slate-900 hover:bg-slate-800'}`}
-                            onClick={() => handleSubscribe(plan.planKey)}
+                            onClick={() => handleSubscribe(plan)}
                             disabled={isProcessing === plan.planKey}
                           >
                             {isProcessing === plan.planKey ? (

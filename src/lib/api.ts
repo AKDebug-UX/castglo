@@ -16,6 +16,8 @@ export const API_ENDPOINTS = {
     SUBSCRIPTIONS: '/admin/subscriptions',
     MODERATION: '/admin/moderation',
     REPORTS: '/admin/reports',
+    SETTINGS: '/admin/settings',
+    SET_FREE_TIER: '/admin/settings/free-tier',
   },
   APPLICATIONS: {
     CREATE: '/applications',
@@ -356,6 +358,8 @@ export const adminAPI = {
   updateModerationStatus: (id: string, status: string, notes?: string) => 
     api.patch(`${API_ENDPOINTS.ADMIN.MODERATION}/${id}`, { status, notes }),
   getReports: (params?: any) => api.get(API_ENDPOINTS.ADMIN.REPORTS, { params }),
+  getSettings: () => api.get(API_ENDPOINTS.ADMIN.SETTINGS),
+  setFreeTier: (data: { days: number, role: string }) => api.post(API_ENDPOINTS.ADMIN.SET_FREE_TIER, data),
 };
 
 // --- LEAD ENDPOINTS ---

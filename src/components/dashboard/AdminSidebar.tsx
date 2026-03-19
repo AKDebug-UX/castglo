@@ -9,6 +9,7 @@
    FileVideo,
    Calendar,
    Bell,
+   Clock,
  } from "lucide-react";
  
  const navItems = [
@@ -16,6 +17,7 @@
    { Icon: Shield, label: "Moderation Queue", href: "/admin/moderation" },
    { Icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
    { Icon: Users, label: "Users Management", href: "/admin/users" },
+   { Icon: Clock, label: "Free Tier Settings", href: "/admin/free-tier" },
    { Icon: FileVideo, label: "Submissions", href: "/admin/submissions" },
    { Icon: Calendar, label: "Bookings", href: "/admin/bookings" },
    { Icon: Bell, label: "Notifications", href: "/admin/notifications" },

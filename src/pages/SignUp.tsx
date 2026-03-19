@@ -1,36 +1,46 @@
  import { useState, useEffect } from "react";
- import { Link, useParams, useNavigate } from "react-router-dom";
+ import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Mail, CheckCircle, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { Mail, CheckCircle, ArrowLeft, ArrowRight, Loader2, Info } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
-const typeLabels: Record<string, { title: string; description: string }> = {
+const typeLabels: Record<string, { title: string; description: string; role: UserRole }> = {
   talent: {
     title: "Join as Talent",
     description: "Showcase your skills and connect with casting directors",
+    role: "talent"
   },
-  director: {
+  casting_director: {
     title: "Join as Casting Director",
     description: "Discover exceptional talent for your productions",
+    role: "casting_director"
   },
-  professional: {
+  industry_professional: {
     title: "Join as Industry Professional",
     description: "Showcase your craft and get hired for your next production",
+    role: "industry_professional"
   },
    admin: {
      title: "Join as Admin",
      description: "Manage and moderate the platform",
+     role: "admin"
    },
 };
 
 export default function SignUp() {
   const { type = "talent" } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { signUp } = useAuth();
+  
+  const selectedPlan = searchParams.get("plan");
+  const selectedCycle = searchParams.get("cycle");
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +49,7 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const { title, description } = typeLabels[type] || typeLabels.talent;
+  const config = typeLabels[type] || typeLabels.talent;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,11 +66,10 @@ export default function SignUp() {
 
     setIsLoading(true);
 
-    const role = (type as UserRole) || "talent";
     const { error } = await signUp({ 
       email, 
       password, 
-      role, 
+      role: config.role, 
       fullName 
     });
 
@@ -68,6 +77,13 @@ export default function SignUp() {
       toast.error(error);
       setIsLoading(false);
       return;
+    }
+
+    // After successful registration, if they picked a plan, we might want to 
+    // redirect them to the checkout page once they've verified their email.
+    // For now, we'll store the plan info in session storage or just proceed to success page.
+    if (selectedPlan) {
+      sessionStorage.setItem('pendingPlan', JSON.stringify({ plan: selectedPlan, cycle: selectedCycle }));
     }
 
     setIsSuccess(true);
@@ -120,12 +136,31 @@ export default function SignUp() {
 
         <div className="bg-card rounded-2xl shadow-card p-8">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold">{title}</h1>
-            <p className="text-muted-foreground mt-1">{description}</p>
+            <h1 className="text-2xl font-bold">{config.title}</h1>
+            <p className="text-muted-foreground mt-1">{config.description}</p>
           </div>
 
+          {selectedPlan && (
+            <div className="mb-6 p-4 rounded-xl bg-[#DEFCFE]/50 border border-[#009698]/20 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white shadow-sm">
+                  <Badge variant="outline" className="text-[#009698] border-[#009698]/20 bg-[#009698]/5">
+                    {selectedPlan.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase">Selected Plan</p>
+                  <p className="text-sm font-medium text-slate-900 capitalize">{selectedCycle} Billing</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" asChild className="text-xs text-[#009698] hover:text-[#009698] hover:bg-[#009698]/5">
+                <Link to="/pricing">Change</Link>
+              </Button>
+            </div>
+          )}
+
           {/* Social Login */}
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <Button variant="social" className="w-full" type="button">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -141,16 +176,16 @@ export default function SignUp() {
               </svg>
               Continue with Facebook
             </Button>
-          </div>
+          </div> */}
 
-          <div className="relative my-6">
+          {/* <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
             </div>
-          </div>
+          </div> */}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

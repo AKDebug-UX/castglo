@@ -66,6 +66,7 @@ const ModerationQueue = lazy(() => import("./pages/admin/ModerationQueue"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const UsersManagement = lazy(() => import("./pages/admin/UsersManagement"));
 const AdminSubmissions = lazy(() => import("./pages/admin/AdminSubmissions"));
+const FreeTierManagement = lazy(() => import("./pages/admin/FreeTierManagement"));
 const AdminBookings = lazy(() => import("./pages/admin/AdminBookings"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const VerificationManagement = lazy(() => import("./pages/admin/VerificationManagement"));
@@ -105,6 +106,7 @@ const App = () => (
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/browse-talent" element={<BrowseTalent />} />
               <Route path="/sign-in" element={<SignIn />} />
               <Route path="/about" element={<About />} />
@@ -130,7 +132,6 @@ const App = () => (
               <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
               <Route path="/cast/:id" element={<PublicCastingDetail />} />
               <Route path="/livestream/:id" element={<Livestream />} />
-              <Route path="/pricing" element={<Pricing />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/community-guidelines" element={<CommunityGuidelines />} />
               <Route path="/safety-guidelines" element={<SafetyGuidelines />} />
@@ -212,6 +213,7 @@ const App = () => (
                 <Route path="moderation" element={<ModerationQueue />} />
                 <Route path="analytics" element={<AdminAnalytics />} />
                 <Route path="users" element={<UsersManagement />} />
+                <Route path="free-tier" element={<FreeTierManagement />} />
                 <Route path="submissions" element={<AdminSubmissions />} />
                 <Route path="bookings" element={<AdminBookings />} />
                 <Route path="notifications" element={<AdminNotifications />} />

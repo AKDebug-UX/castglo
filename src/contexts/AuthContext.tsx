@@ -26,7 +26,10 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const storedUser = localStorage.getItem('userData');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -37,18 +40,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const response = await authAPI.getMe();
           if (response.data.success) {
             const userData = response.data.data;
-            setUser({
+            const userObj: User = {
               id: userData._id || userData.id,
               email: userData.email,
-              role: userData.role as UserRole,
+              role: userData.roles[0] as UserRole,
               fullName: userData.fullName,
               profilePicture: userData.profilePicture,
-            });
+            };
+            setUser(userObj);
+            localStorage.setItem('userData', JSON.stringify(userObj));
           }
         } catch (error) {
           console.error("Session verification failed:", error);
           localStorage.removeItem('token');
+          localStorage.removeItem('userData');
+          setUser(null);
         }
+      } else {
+        localStorage.removeItem('userData');
+        setUser(null);
       }
       setIsLoading(false);
     };
@@ -71,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           profilePicture: userData.profilePicture,
         };
         setUser(userObj);
+        localStorage.setItem('userData', JSON.stringify(userObj));
         return { role: userObj.role };
       }
       return { error: response.data.message || "Sign in failed" };
@@ -98,6 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Logout API failed:", error);
     } finally {
       localStorage.removeItem('token');
+      localStorage.removeItem('userData');
       setUser(null);
     }
   };
