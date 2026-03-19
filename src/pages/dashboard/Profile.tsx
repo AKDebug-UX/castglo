@@ -32,15 +32,19 @@ export default function Profile() {
 
   // Subscription states
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
+  const [subscriptionQuota, setSubscriptionQuota] = useState<any>(null);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const [authRes, profileRes, historyRes, subRes] = await Promise.all([
+        const [authRes, profileRes, historyRes, subRes, quotaRes, pmRes] = await Promise.all([
           authAPI.getMe().catch(() => ({ data: { success: false } })),
           profileAPI.getMe().catch(() => ({ data: { success: false } })),
           blockchainAPI.getHistory({ limit: 5 }).catch(() => ({ data: { success: false } })),
-          subscriptionAPI.getStatus().catch(() => ({ data: { success: false } }))
+          subscriptionAPI.getStatus().catch(() => ({ data: { success: false } })),
+          subscriptionAPI.getQuota().catch(() => ({ data: { success: false } })),
+          subscriptionAPI.getPaymentMethods().catch(() => ({ data: { success: false } }))
         ]);
 
         let combinedData = {};
@@ -62,6 +66,14 @@ export default function Profile() {
         if (subRes.data?.success) {
           setSubscriptionInfo(subRes.data.data);
         }
+
+        if (quotaRes.data?.success) {
+          setSubscriptionQuota(quotaRes.data.data);
+        }
+
+        if (pmRes.data?.success) {
+          setPaymentMethods(pmRes.data.data.paymentMethods || []);
+        }
       } catch (error) {
         console.error("Profile fetch error:", error);
         toast.error("Failed to load profile data");
@@ -75,7 +87,7 @@ export default function Profile() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Update User profile
+      // Update User profile (PATCH /user/profile)
       const userUpdate = userAPI.updateProfile({
         fullName: profileData.fullName,
         bio: profileData.bio,
@@ -90,7 +102,7 @@ export default function Profile() {
         notificationSettings: profileData.notificationSettings
       });
 
-      // Update Talent/Profile data
+      // Update Talent/Profile data (PATCH /profiles/me)
       const profileUpdate = profileAPI.updateMe({
         bio: profileData.bio,
         skills: profileData?.talent?.skills || profileData?.skills,
@@ -131,11 +143,19 @@ export default function Profile() {
   };
 
   const handleDeleteAccount = async () => {
+    const password = prompt("To confirm deletion, please enter your password:");
+    if (password === null) return; // User cancelled
+    
+    if (!password) {
+      toast.error("Password is required to delete account");
+      return;
+    }
+
     if (confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) {
       try {
-        await userAPI.deleteAccount();
+        await userAPI.deleteAccount({ password });
         toast.success("Account deleted successfully");
-        // Redirect to home or sign out
+        localStorage.removeItem('token');
         window.location.href = "/";
       } catch (error: any) {
         toast.error(error.response?.data?.message || "Failed to delete account");
@@ -266,8 +286,10 @@ export default function Profile() {
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={profileData?.talent?.headshots?.[0]?.url || profileData?.profilePicture} />
-                    <AvatarFallback>{profileData?.fullName?.[0] || "U"}</AvatarFallback>
+                    <AvatarImage src={profileData?.profilePicture || profileData?.talent?.headshots?.[0]?.url} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
+                      {profileData?.fullName?.[0]?.toUpperCase() || "U"}
+                    </AvatarFallback>
                   </Avatar>
                   <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-secondary flex items-center justify-center cursor-pointer shadow-sm hover:bg-secondary/80">
                     <Camera className="h-3.5 w-3.5" />
@@ -827,8 +849,12 @@ export default function Profile() {
                   <p className="font-medium capitalize">{subscriptionInfo?.status || "Inactive"}</p>
                 </div>
                 <div className="p-4 rounded-lg border bg-white">
-                  <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Billing Cycle</p>
-                  <p className="font-medium capitalize">{subscriptionInfo?.billingCycle || "N/A"}</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Usage Quota</p>
+                  <p className="font-medium">
+                    {subscriptionQuota?.applicationsLeft !== null 
+                      ? `${subscriptionQuota?.applicationsLeft} Apps Left` 
+                      : "Unlimited Applications"}
+                  </p>
                 </div>
                 <div className="p-4 rounded-lg border bg-white">
                   <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Price</p>
@@ -951,9 +977,9 @@ export default function Profile() {
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <h3 className="text-sm font-medium">Saved Cards</h3>
-                {profileData?.paymentMethods?.length > 0 ? (
+                {paymentMethods.length > 0 ? (
                   <div className="grid gap-4">
-                    {profileData.paymentMethods.map((card: any, i: number) => (
+                    {paymentMethods.map((card: any, i: number) => (
                       <div key={i} className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-6 bg-slate-200 rounded flex items-center justify-center">
@@ -974,8 +1000,10 @@ export default function Profile() {
                   <div className="p-8 border-2 border-dashed rounded-xl text-center">
                     <CreditCard className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
                     <p className="text-sm text-muted-foreground mb-4">No payment cards added yet</p>
-                    <Button variant="outline" size="sm">
-                      <Plus className="w-4 h-4 mr-2" /> Add New Card
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="/pricing">
+                        <Plus className="w-4 h-4 mr-2" /> Add New Card
+                      </a>
                     </Button>
                   </div>
                 )}
@@ -1040,7 +1068,7 @@ export default function Profile() {
                     </div>
                     <Select 
                       value={profileData?.notificationSettings?.jobRecFrequency || "none"}
-                      onValueChange={(v) => handleNotificationToggle("jobRecFrequency", v)}
+                      onValueChange={(v: any) => handleNotificationToggle("jobRecFrequency", v)}
                     >
                       <SelectTrigger className="w-[140px] h-8">
                         <SelectValue />

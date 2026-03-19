@@ -205,7 +205,7 @@ export default function BrowseTalents() {
                               )}
 
                               <Button className="w-full" asChild>
-                                <Link to={`/professional/messages?talentId=${selectedTalent._id}`}>
+                                <Link to={`/professional/messages?talentId=${selectedTalent.userId ? (typeof selectedTalent.userId === 'object' ? (selectedTalent.userId?._id || selectedTalent.userId?.id) : selectedTalent.userId) : selectedTalent._id}`}>
                                   <Mail className="w-4 h-4 mr-2" />
                                   Send Message
                                 </Link>
@@ -215,7 +215,7 @@ export default function BrowseTalents() {
                         </DialogContent>
                       </Dialog>
                       <Button variant="outline" size="icon" className="h-8 w-8" asChild>
-                        <Link to={`/professional/messages?talentId=${talent._id}`}>
+                        <Link to={`/professional/messages?talentId=${talent.userId ? (typeof talent.userId === 'object' ? (talent.userId?._id || talent.userId?.id) : talent.userId) : talent._id}`}>
                           <Mail className="w-4 h-4" />
                         </Link>
                       </Button>

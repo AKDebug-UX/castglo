@@ -4,6 +4,7 @@ import { Logo } from "./Logo";
 const footerLinks = {
   company: [
     { label: "About Us", href: "/about" },
+    { label: "Pricing", href: "/pricing" },
     { label: "Careers", href: "/careers" },
     { label: "Press", href: "/press" },
   ],

@@ -3,15 +3,12 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, User, Video, Users, Loader2 } from "lucide-react";
+import { Search, User, Video, Loader2 } from "lucide-react";
 import { castingCallAPI, profileAPI, livestreamAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent } from "@/components/ui/card";
 import { MOCK_CASTINGS, MOCK_TALENTS } from "@/lib/data";
 
 import talentMichael from "@/assets/talent-michael.jpg";
-import talentTom from "@/assets/talent-tom.jpg";
-import talentSarah from "@/assets/talent-sarah.jpg";
 import newsProduction from "@/assets/news-production.jpg";
 import newsAudition from "@/assets/news-audition.jpg";
 
@@ -49,10 +46,13 @@ export function HeroSection() {
         }
 
         if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
-          setPublicStreams(streamsRes.data.data.filter((s: any) => 
-            s.isPublic !== false && 
-            (typeof s.hostId === 'object' ? s.hostId._id : s.hostId) !== user?.id
-          ).slice(0, 4));
+          setPublicStreams(streamsRes.data.data.filter((s) => {
+            if (!s) return false;
+            if (s.isPublic === false) return false;
+            
+            const hostId = typeof s.hostId === 'object' ? s.hostId?._id : s.hostId;
+            return hostId !== user?.id;
+          }).slice(0, 4));
         }
       } catch (error) {
         console.error("Error fetching landing page data:", error);
@@ -391,7 +391,7 @@ export function HeroSection() {
                       </div>
                       <div className="p-2">
                         <Button variant="outline" size="sm" className="w-full text-xs h-8 text-secondary border-secondary hover:bg-secondary/5" asChild>
-                          <Link to={`/talent/${talent.userId?._id || talent.userId}`}>View Profile</Link>
+                          <Link to={talent.userId ? `/talent/${typeof talent.userId === 'object' ? (talent.userId?._id || talent.userId?.id) : talent.userId}` : "#"}>View Profile</Link>
                         </Button>
                       </div>
                     </div>

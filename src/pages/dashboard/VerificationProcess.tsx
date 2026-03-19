@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, ShieldCheck, Upload } from 'lucide-react';
+import { blockchainAPI } from '@/lib/api';
 import { toast } from 'sonner';
 
 export default function VerificationProcess() {
@@ -27,16 +28,24 @@ export default function VerificationProcess() {
 
     setIsSubmitting(true);
     try {
-      // This is a placeholder for the actual API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Submitting verification request:', { verificationType, document, notes });
-      toast.success('Verification request submitted successfully!');
-      // Reset form
-      setVerificationType('');
-      setDocument(null);
-      setNotes('');
+      const formData = new FormData();
+      formData.append('document', document);
+      formData.append('documentType', verificationType);
+      formData.append('notes', notes);
+
+      const response = await blockchainAPI.verify(formData);
+      
+      if (response.data.success) {
+        toast.success('Verification request submitted and anchored to blockchain successfully!');
+        // Reset form
+        setVerificationType('');
+        setDocument(null);
+        setNotes('');
+      } else {
+        throw new Error(response.data.message || 'Failed to submit verification request.');
+      }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to submit verification request.');
+      toast.error(error.response?.data?.message || error.message || 'Failed to submit verification request.');
     } finally {
       setIsSubmitting(false);
     }

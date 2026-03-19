@@ -34,7 +34,7 @@ export const API_ENDPOINTS = {
     PROFESSIONAL_ME: '/bookings/professional/me',
     DETAILS: (id: string) => `/bookings/${id}`,
     UPDATE_STATUS: (id: string) => `/bookings/${id}/status`,
-    STATS: '/bookings/stats',
+    STATS: '/bookings/professional/stats',
   },
   AUTH: {
     REGISTER: '/auth/register',
@@ -73,6 +73,7 @@ export const API_ENDPOINTS = {
     GET_MY_CONVERSATIONS: '/messaging/conversations',
     SEND_MESSAGE: '/messaging/messages',
     GET_MESSAGES: (id: string) => `/messaging/conversations/${id}/messages`,
+    BULK_MESSAGE: '/messaging/bulk-message',
   },
   NEWS: {
     GET_ALL: '/news',
@@ -130,12 +131,14 @@ export const API_ENDPOINTS = {
     CANCEL: '/subscriptions/cancel',
     WEBHOOK: '/subscriptions/webhook',
     PLANS: '/subscriptions/plans',
+    QUOTA: '/subscriptions/quota',
+    PAYMENT_METHODS: '/subscriptions/payment-methods',
   },
   USERS: {
     PROFILE: '/users/profile',
-    UPDATE_PROFILE: '/users/profile',
+    UPDATE_PROFILE: '/user/profile',
     UPDATE_PROFILE_PICTURE: '/users/profile-picture',
-    DELETE_ACCOUNT: '/users/account',
+    DELETE_ACCOUNT: '/user/account',
     SEARCH: '/users/search',
     GET_ONE: (userId: string) => `/users/${userId}`,
   },
@@ -153,11 +156,11 @@ const api = axios.create({
 // --- USER ENDPOINTS ---
 export const userAPI = {
   getProfile: () => api.get(API_ENDPOINTS.USERS.PROFILE),
-  updateProfile: (data) => api.put(API_ENDPOINTS.USERS.UPDATE_PROFILE, data),
+  updateProfile: (data) => api.patch(API_ENDPOINTS.USERS.UPDATE_PROFILE, data),
   updateProfilePicture: (formData: FormData) => api.put(API_ENDPOINTS.USERS.UPDATE_PROFILE_PICTURE, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  deleteAccount: () => api.delete(API_ENDPOINTS.USERS.DELETE_ACCOUNT),
+  deleteAccount: (data: { password?: string }) => api.delete(API_ENDPOINTS.USERS.DELETE_ACCOUNT, { data }),
   search: (params) => api.get(API_ENDPOINTS.USERS.SEARCH, { params }),
   getOne: (userId: string) => api.get(API_ENDPOINTS.USERS.GET_ONE(userId)),
 };
@@ -240,6 +243,8 @@ export const messagingAPI = {
   sendMessage: (data: { conversationId: string, text: string, mediaUrl?: string }) => 
     api.post(API_ENDPOINTS.MESSAGING.SEND_MESSAGE, data),
   getMessages: (id: string, params) => api.get(API_ENDPOINTS.MESSAGING.GET_MESSAGES(id), { params }),
+  sendBulkMessage: (data: { recipientIds: string[], text: string }) => 
+    api.post(API_ENDPOINTS.MESSAGING.BULK_MESSAGE, data),
 };
 
 // --- NOTIFICATION ENDPOINTS ---
@@ -256,7 +261,7 @@ export const notificationAPI = {
 export const profileAPI = {
   create: (data) => api.post(API_ENDPOINTS.PROFILES.CREATE, data),
   getMe: () => api.get(API_ENDPOINTS.PROFILES.ME),
-  updateMe: (data) => api.put(API_ENDPOINTS.PROFILES.UPDATE_ME, data),
+  updateMe: (data) => api.patch(API_ENDPOINTS.PROFILES.UPDATE_ME, data),
   addHeadshot: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.ADD_HEADSHOT, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
@@ -327,6 +332,8 @@ export const subscriptionAPI = {
   createCheckoutSession: (data) => api.post(API_ENDPOINTS.SUBSCRIPTIONS.CREATE_CHECKOUT_SESSION, data),
   getStatus: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.STATUS),
   getDetails: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.DETAILS),
+  getQuota: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.QUOTA),
+  getPaymentMethods: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.PAYMENT_METHODS),
   upgrade: (data) => api.post(API_ENDPOINTS.SUBSCRIPTIONS.UPGRADE, data),
   cancel: () => api.post(API_ENDPOINTS.SUBSCRIPTIONS.CANCEL),
 };
@@ -339,8 +346,12 @@ export const adminAPI = {
   verifyUser: (id: string) => api.put(API_ENDPOINTS.ADMIN.VERIFY_USER(id)),
   deleteUser: (id: string) => api.delete(API_ENDPOINTS.ADMIN.DELETE_USER(id)),
   getActionLogs: (params) => api.get(API_ENDPOINTS.ADMIN.ACTION_LOGS, { params }),
-  getAnalytics: () => api.get(API_ENDPOINTS.ADMIN.ANALYTICS),
+  getAnalytics: (params?: any) => api.get(API_ENDPOINTS.ADMIN.ANALYTICS, { params }),
   getLeads: (params) => api.get(API_ENDPOINTS.ADMIN.LEADS, { params }),
+  getLead: (id: string) => api.get(API_ENDPOINTS.LEADS.ADMIN_GET_ONE(id)),
+  deleteLead: (id: string) => api.delete(API_ENDPOINTS.LEADS.ADMIN_DELETE(id)),
+  convertLead: (id: string, role: string) => api.put(API_ENDPOINTS.LEADS.ADMIN_CONVERT(id), { role }),
+  getSubscriptions: (params) => api.get(API_ENDPOINTS.ADMIN.SUBSCRIPTIONS, { params }),
   getModerationQueue: (params?: any) => api.get(API_ENDPOINTS.ADMIN.MODERATION, { params }),
   updateModerationStatus: (id: string, status: string, notes?: string) => 
     api.patch(`${API_ENDPOINTS.ADMIN.MODERATION}/${id}`, { status, notes }),

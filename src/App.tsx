@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,87 +7,91 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ScrollToTop } from "./components/ScrollToTop";
-import TalentProfile from "./pages/TalentProfile";
+import { Loader2 } from "lucide-react";
 
 // Public pages
-import Index from "./pages/Index";
-import BrowseTalent from "./pages/BrowseTalent";
-import SignIn from "./pages/SignIn";
-import Join from "./pages/Join";
-import SignUp from "./pages/SignUp";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import VerifyEmail from "./pages/VerifyEmail";
-import NotFound from "./pages/NotFound";
-import News from "./pages/News";
-import NewsArticle from "./pages/NewsArticle";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import Cookies from "./pages/Cookies";
-import Help from "./pages/Help";
-import FAQ from "./pages/FAQ";
-import Guides from "./pages/Guides";
-import Careers from "./pages/Careers";
-import Hub from "./pages/Hub";
-import Chat from "./pages/Chat";
-import PublicCastingDetail from "./pages/PublicCasting/PublicCastingDetail";
-import PublicCasting from "./pages/PublicCasting";
+const Index = lazy(() => import("./pages/Index"));
+const BrowseTalent = lazy(() => import("./pages/BrowseTalent"));
+const SignIn = lazy(() => import("./pages/SignIn"));
+const Join = lazy(() => import("./pages/Join"));
+const SignUp = lazy(() => import("./pages/SignUp"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const News = lazy(() => import("./pages/News"));
+const NewsArticle = lazy(() => import("./pages/NewsArticle"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Cookies = lazy(() => import("./pages/Cookies"));
+const Help = lazy(() => import("./pages/Help"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Guides = lazy(() => import("./pages/Guides"));
+const Careers = lazy(() => import("./pages/Careers"));
+const Hub = lazy(() => import("./pages/Hub"));
+const Chat = lazy(() => import("./pages/Chat"));
+const PublicCastingDetail = lazy(() => import("./pages/PublicCasting/PublicCastingDetail"));
+const PublicCasting = lazy(() => import("./pages/PublicCasting"));
+const TalentProfile = lazy(() => import("./pages/TalentProfile"));
 
 // Talent Dashboard
-import { DashboardLayout } from "./components/dashboard/DashboardLayout";
-import Dashboard from "./pages/dashboard/Dashboard";
-import Profile from "./pages/dashboard/Profile";
-import BrowseCast from "./pages/dashboard/BrowseCast";
-import CastingDetail from "./pages/dashboard/CastingDetail";
-import SubmitAudition from "./pages/dashboard/SubmitAudition";
-import Submissions from "./pages/dashboard/Submissions";
-import Messages from "./pages/dashboard/Messages";
-import Notifications from "./pages/dashboard/Notifications";
-import InstantAudition from "./pages/dashboard/InstantAudition";
-import Livestream from "./pages/dashboard/Livestream";
-import LivestreamsList from "./pages/dashboard/LivestreamsList";
-import VerificationProcess from "./pages/dashboard/VerificationProcess";
+const DashboardLayout = lazy(() => import("./components/dashboard/DashboardLayout").then(m => ({ default: m.DashboardLayout })));
+const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
+const Profile = lazy(() => import("./pages/dashboard/Profile"));
+const BrowseCast = lazy(() => import("./pages/dashboard/BrowseCast"));
+const CastingDetail = lazy(() => import("./pages/dashboard/CastingDetail"));
+const SubmitAudition = lazy(() => import("./pages/dashboard/SubmitAudition"));
+const Submissions = lazy(() => import("./pages/dashboard/Submissions"));
+const Messages = lazy(() => import("./pages/dashboard/Messages"));
+const Notifications = lazy(() => import("./pages/dashboard/Notifications"));
+const InstantAudition = lazy(() => import("./pages/dashboard/InstantAudition"));
+const Livestream = lazy(() => import("./pages/dashboard/Livestream"));
+const LivestreamsList = lazy(() => import("./pages/dashboard/LivestreamsList"));
+const VerificationProcess = lazy(() => import("./pages/dashboard/VerificationProcess"));
 
 // Director Dashboard
-import { DirectorLayout } from "./components/dashboard/DirectorLayout";
-import DirectorDashboard from "./pages/director/DirectorDashboard";
-import MyProjects from "./pages/director/MyProjects";
-import CreateCasting from "./pages/director/CreateCasting";
-import DirectorSubmissions from "./pages/director/DirectorSubmissions";
-import DirectorMessages from "./pages/director/DirectorMessages";
+const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DirectorLayout })));
+const DirectorDashboard = lazy(() => import("./pages/director/DirectorDashboard"));
+const MyProjects = lazy(() => import("./pages/director/MyProjects"));
+const CreateCasting = lazy(() => import("./pages/director/CreateCasting"));
+const DirectorSubmissions = lazy(() => import("./pages/director/DirectorSubmissions"));
+const DirectorMessages = lazy(() => import("./pages/director/DirectorMessages"));
+
+// Admin Dashboard
+const AdminLayout = lazy(() => import("./components/dashboard/AdminLayout").then(m => ({ default: m.AdminLayout })));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const ModerationQueue = lazy(() => import("./pages/admin/ModerationQueue"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
+const UsersManagement = lazy(() => import("./pages/admin/UsersManagement"));
+const AdminSubmissions = lazy(() => import("./pages/admin/AdminSubmissions"));
+const AdminBookings = lazy(() => import("./pages/admin/AdminBookings"));
+const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const VerificationManagement = lazy(() => import("./pages/admin/VerificationManagement"));
 
 // Professional Dashboard
-import { AdminLayout } from "./components/dashboard/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import ModerationQueue from "./pages/admin/ModerationQueue";
-import AdminAnalytics from "./pages/admin/AdminAnalytics";
-import UsersManagement from "./pages/admin/UsersManagement";
-import AdminSubmissions from "./pages/admin/AdminSubmissions";
-import AdminBookings from "./pages/admin/AdminBookings";
-import AdminNotifications from "./pages/admin/AdminNotifications";
-import VerificationManagement from "./pages/admin/VerificationManagement";
-
-// Professional Dashboard
-import { ProfessionalLayout } from "./components/dashboard/ProfessionalLayout";
-import ProfessionalDashboard from "./pages/professional/ProfessionalDashboard";
-import ProfessionalProfile from "./pages/professional/ProfessionalProfile";
-import ProfessionalServices from "./pages/professional/ProfessionalServices";
-import BrowseTalents from "./pages/professional/BrowseTalents";
-import ProfessionalBookings from "./pages/professional/ProfessionalBookings";
-import ProfessionalMessages from "./pages/professional/ProfessionalMessages";
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import CheckoutPage from './pages/CheckoutPage';
-import CommunityGuidelines from './pages/CommunityGuidelines';
-import SafetyGuidelines from './pages/SafetyGuidelines';
-import CopyrightPolicy from './pages/CopyrightPolicy';
-import AntiScamGuidelines from './pages/AntiScamGuidelines';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const ProfessionalLayout = lazy(() => import("./components/dashboard/ProfessionalLayout").then(m => ({ default: m.ProfessionalLayout })));
+const ProfessionalDashboard = lazy(() => import("./pages/professional/ProfessionalDashboard"));
+const ProfessionalProfile = lazy(() => import("./pages/professional/ProfessionalProfile"));
+const ProfessionalServices = lazy(() => import("./pages/professional/ProfessionalServices"));
+const BrowseTalents = lazy(() => import("./pages/professional/BrowseTalents"));
+const ProfessionalBookings = lazy(() => import("./pages/professional/ProfessionalBookings"));
+const ProfessionalMessages = lazy(() => import("./pages/professional/ProfessionalMessages"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
+const CommunityGuidelines = lazy(() => import('./pages/CommunityGuidelines'));
+const SafetyGuidelines = lazy(() => import('./pages/SafetyGuidelines'));
+const CopyrightPolicy = lazy(() => import('./pages/CopyrightPolicy'));
+const AntiScamGuidelines = lazy(() => import('./pages/AntiScamGuidelines'));
 
 const queryClient = new QueryClient();
+
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-screen bg-slate-50">
+    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -94,9 +99,9 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <Elements stripe={stripePromise}>
-          <BrowserRouter>
-            <ScrollToTop />
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <ScrollToTop />
+          <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
@@ -125,6 +130,7 @@ const App = () => (
               <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
               <Route path="/cast/:id" element={<PublicCastingDetail />} />
               <Route path="/livestream/:id" element={<Livestream />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/community-guidelines" element={<CommunityGuidelines />} />
               <Route path="/safety-guidelines" element={<SafetyGuidelines />} />
@@ -215,8 +221,8 @@ const App = () => (
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </Elements>
+          </Suspense>
+        </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

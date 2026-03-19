@@ -31,6 +31,9 @@ export function Header() {
            <Link to="/news" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
              News
            </Link>
+          <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Pricing
+          </Link>
           <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             About
           </Link>

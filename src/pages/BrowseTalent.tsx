@@ -319,7 +319,7 @@ export default function BrowseTalent() {
                           className="w-full h-12 border-slate-200 text-slate-900 font-medium text-lg rounded-xl hover:bg-slate-50 transition-colors mt-2"
                           asChild
                         >
-                          <Link to={`/talent/${talent._id}`}>
+                          <Link to={talent.userId ? `/talent/${typeof talent.userId === 'object' ? (talent.userId?._id || talent.userId?.id) : talent.userId}` : (talent._id ? `/talent/${talent._id}` : "#")}>
                             View Profile
                           </Link>
                         </Button>
@@ -370,7 +370,7 @@ export default function BrowseTalent() {
                         <h3 className="font-bold text-lg text-slate-900 leading-tight mb-1">{talent.fullName}</h3>
                         <p className="text-[#009698] text-sm font-semibold uppercase tracking-wider mb-4">{talent.category || "Talent"}</p>
                         <Button variant="outline" className="w-full rounded-xl border-slate-200 font-bold group-hover/card:bg-primary group-hover/card:text-white transition-all" asChild>
-                          <Link to={`/talent/${talent._id}`}>View Profile</Link>
+                          <Link to={talent.userId ? `/talent/${typeof talent.userId === 'object' ? (talent.userId?._id || talent.userId?.id) : talent.userId}` : (talent._id ? `/talent/${talent._id}` : "#")}>View Profile</Link>
                         </Button>
                       </div>
                     </CardContent>
