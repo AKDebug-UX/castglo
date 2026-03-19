@@ -6,7 +6,7 @@ const footerLinks = {
     { label: "About Us", href: "/about" },
     { label: "Pricing", href: "/pricing" },
     { label: "Careers", href: "/careers" },
-    { label: "Press", href: "/press" },
+    { label: "Press", href: "/news" },
   ],
   support: [
     { label: "Contact", href: "/contact" },
