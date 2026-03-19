@@ -69,8 +69,7 @@ export default function Pricing() {
   const categories = [
     { id: "talent", label: "For Talent", icon: Sparkles },
     { id: "casting_director", label: "For Casting Directors", icon: Zap },
-    { id: "agency", label: "For Agencies", icon: Shield },
-    { id: "enterprise", label: "Enterprise", icon: Rocket }
+    { id: "industry_professional", label: "For Agencies & Enterprise", icon: Shield }
   ];
 
   const getIcon = (planName: string) => {
@@ -120,7 +119,7 @@ export default function Pricing() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 h-auto p-1 bg-white/50 backdrop-blur shadow-sm rounded-xl mb-12">
+            <TabsList className="grid grid-cols-2 md:grid-cols-3 h-auto p-1 bg-white/50 backdrop-blur shadow-sm rounded-xl mb-12">
               {categories.map((cat) => (
                 <TabsTrigger 
                   key={cat.id} 
@@ -135,9 +134,14 @@ export default function Pricing() {
 
             {categories.map((cat) => (
               <TabsContent key={cat.id} value={cat.id} className="animate-in fade-in-50 duration-500">
-                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-center">
+                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 justify-center">
                   {plans
-                    .filter((p) => p.category === cat.id)
+                    .filter((p) => {
+                      if (cat.id === "industry_professional") {
+                        return p.category === "agency" || p.category === "enterprise" || p.category === "industry_professional";
+                      }
+                      return p.category === cat.id;
+                    })
                     .map((plan) => (
                       <Card key={plan.planKey} className={`relative flex flex-col border-none shadow-xl rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] ${plan.name === 'Standard' ? 'ring-2 ring-primary ring-offset-4 ring-offset-[#DEFCFE]' : ''}`}>
                         {plan.name === 'Standard' && (
