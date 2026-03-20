@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, Ban, Trash2, Loader2, CheckCircle2 } from "lucide-react";
+import { Eye, Ban, Trash2, Loader2, CheckCircle2, Gift } from "lucide-react";
 import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -88,6 +88,24 @@ export default function UsersManagement() {
       } else {
         toast.error(message);
       }
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleGrantTrial = async (userId: string) => {
+    const days = prompt("How many days of free trial would you like to grant?", "14");
+    if (!days || isNaN(Number(days))) return;
+
+    setIsActionLoading(true);
+    try {
+      const response = await adminAPI.grantTrial(userId, Number(days));
+      if (response.data.success) {
+        toast.success(`Granted ${days} days of free trial!`);
+        fetchUsers();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to grant free trial");
     } finally {
       setIsActionLoading(false);
     }
@@ -194,6 +212,15 @@ export default function UsersManagement() {
                             <CheckCircle2 className="w-4 h-4 text-success" />
                           </Button>
                         )}
+                        <Button 
+                          variant="ghost" 
+                          size="icon-sm" 
+                          onClick={() => handleGrantTrial(user._id)}
+                          disabled={isActionLoading}
+                          title="Grant Free Trial"
+                        >
+                          <Gift className="w-4 h-4 text-[#009698]" />
+                        </Button>
                         <Button variant="ghost" size="icon-sm" onClick={() => setSelectedUser(user)}>
                           <Eye className="w-4 h-4" />
                         </Button>

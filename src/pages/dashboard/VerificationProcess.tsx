@@ -44,7 +44,7 @@ export default function VerificationProcess() {
       } else {
         throw new Error(response.data.message || 'Failed to submit verification request.');
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || error.message || 'Failed to submit verification request.');
     } finally {
       setIsSubmitting(false);

@@ -109,7 +109,7 @@ export default function DirectorSubmissions() {
     rejected: "bg-destructive text-destructive-foreground",
   };
 
-  const renderLocation = (location: any) => {
+  const renderLocation = (location) => {
     if (!location) return "N/A";
     if (typeof location === 'string') return location;
     if (typeof location === 'object') {

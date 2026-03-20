@@ -42,7 +42,7 @@ export default function LivestreamsList() {
 
         if (publicRes.data?.success && Array.isArray(publicRes.data.data)) {
           // Filter out private streams and the user's own streams (already in myStreams)
-          const discovered = publicRes.data.data.filter((s: any) => 
+          const discovered = publicRes.data.data.filter((s) => 
             s.isPublic !== false && 
             (typeof s.hostId === 'object' ? s.hostId._id : s.hostId) !== user?.id
           );
@@ -59,7 +59,7 @@ export default function LivestreamsList() {
     fetchData();
   }, [user?.id]);
 
-  const renderStreamGrid = (streams: any[], emptyTitle: string, emptyDesc: string) => (
+  const renderStreamGrid = (streams[], emptyTitle: string, emptyDesc: string) => (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {streams.length > 0 ? streams.map((stream) => (
         <Card key={stream._id} className="overflow-hidden group card-elevated border-destructive/10">

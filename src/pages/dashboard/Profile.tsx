@@ -20,7 +20,7 @@ export default function Profile() {
   const [profileData, setProfileData] = useState<any>(null);
   
   // Blockchain states
-  const [verificationHistory, setVerificationHistory] = useState<any[]>([]);
+  const [verificationHistory, setVerificationHistory] = useState([]);
   const [isVerifying, setIsVerifying] = useState(false);
 
   // Security states
@@ -33,7 +33,7 @@ export default function Profile() {
   // Subscription states
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [subscriptionQuota, setSubscriptionQuota] = useState<any>(null);
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -114,7 +114,7 @@ export default function Profile() {
 
       await Promise.all([userUpdate, profileUpdate]);
       toast.success("Profile updated successfully");
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update profile");
     } finally {
       setIsSaving(false);
@@ -135,7 +135,7 @@ export default function Profile() {
       });
       toast.success("Password updated successfully");
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update password");
     } finally {
       setIsSaving(false);
@@ -157,7 +157,7 @@ export default function Profile() {
         toast.success("Account deleted successfully");
         localStorage.removeItem('token');
         window.location.href = "/";
-      } catch (error: any) {
+      } catch (error) {
         toast.error(error.response?.data?.message || "Failed to delete account");
       }
     }
@@ -179,7 +179,7 @@ export default function Profile() {
         const historyRes = await blockchainAPI.getHistory({ limit: 5 });
         setVerificationHistory(historyRes.data.data.records || []);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Blockchain anchoring failed");
     } finally {
       setIsVerifying(false);
@@ -188,7 +188,7 @@ export default function Profile() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setProfileData((prev: any) => ({ ...prev, [name]: value }));
+    setProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handlePasswordInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,11 +197,11 @@ export default function Profile() {
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setProfileData((prev: any) => ({ ...prev, [name]: value }));
+    setProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleNotificationToggle = (key: string, value: boolean) => {
-    setProfileData((prev: any) => ({
+    setProfileData((prev) => ({
       ...prev,
       notificationSettings: {
         ...(prev.notificationSettings || {}),
@@ -221,12 +221,12 @@ export default function Profile() {
       const response = await profileAPI.addHeadshot(formData);
       if (response.data.success) {
         toast.success("Profile picture updated");
-        setProfileData((prev: any) => ({ 
+        setProfileData((prev) => ({ 
           ...prev, 
           profilePicture: response.data.data.url // Adjust based on actual API response
         }));
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to upload photo");
     } finally {
       setIsSaving(false);
@@ -459,8 +459,8 @@ export default function Profile() {
                         />
                       </div>
                       <Button variant="ghost" size="icon" onClick={() => {
-                        const newLinks = profileData.professionalLinks.filter((_: any, idx: number) => idx !== i);
-                        setProfileData((prev: any) => ({ ...prev, professionalLinks: newLinks }));
+                        const newLinks = profileData.professionalLinks.filter((_, idx: number) => idx !== i);
+                        setProfileData((prev) => ({ ...prev, professionalLinks: newLinks }));
                       }}>
                         <X className="w-4 h-4 text-destructive" />
                       </Button>
@@ -477,7 +477,7 @@ export default function Profile() {
                           if (e.key === "Enter") {
                             const val = (e.target as HTMLInputElement).value;
                             if (val) {
-                              setProfileData((prev: any) => ({
+                              setProfileData((prev) => ({
                                 ...prev,
                                 professionalLinks: [...(prev.professionalLinks || []), val]
                               }));
@@ -490,7 +490,7 @@ export default function Profile() {
                     <Button variant="outline" size="icon" onClick={() => {
                       const input = document.getElementById("new-link") as HTMLInputElement;
                       if (input.value) {
-                        setProfileData((prev: any) => ({
+                        setProfileData((prev) => ({
                           ...prev,
                           professionalLinks: [...(prev.professionalLinks || []), input.value]
                         }));
@@ -510,7 +510,7 @@ export default function Profile() {
                   value={profileData?.professionalRoles?.join(", ") || ""} 
                   onChange={(e) => {
                     const roles = e.target.value.split(",").map(r => r.trim());
-                    setProfileData((prev: any) => ({ ...prev, professionalRoles: roles }));
+                    setProfileData((prev) => ({ ...prev, professionalRoles: roles }));
                   }}
                   placeholder="e.g. Lead Actor, Voice Artist"
                 />
@@ -546,7 +546,7 @@ export default function Profile() {
                     name="height"
                     type="number"
                     value={profileData?.physicalAttributes?.height || ""} 
-                    onChange={(e) => setProfileData((prev: any) => ({
+                    onChange={(e) => setProfileData((prev) => ({
                       ...prev,
                       physicalAttributes: { ...(prev?.physicalAttributes || {}), height: e.target.value }
                     }))}
@@ -558,7 +558,7 @@ export default function Profile() {
                     name="weight"
                     type="number"
                     value={profileData?.physicalAttributes?.weight || ""} 
-                    onChange={(e) => setProfileData((prev: any) => ({
+                    onChange={(e) => setProfileData((prev) => ({
                       ...prev,
                       physicalAttributes: { ...(prev?.physicalAttributes || {}), weight: e.target.value }
                     }))}
@@ -569,7 +569,7 @@ export default function Profile() {
                   <Input 
                     name="eyeColor"
                     value={profileData?.physicalAttributes?.eyeColor || ""} 
-                    onChange={(e) => setProfileData((prev: any) => ({
+                    onChange={(e) => setProfileData((prev) => ({
                       ...prev,
                       physicalAttributes: { ...(prev?.physicalAttributes || {}), eyeColor: e.target.value }
                     }))}
@@ -592,8 +592,8 @@ export default function Profile() {
                     {skill}
                     <X className="w-3 h-3 cursor-pointer" onClick={() => {
                       const currentSkills = (profileData?.talent?.skills || profileData?.skills || []);
-                      const newSkills = currentSkills.filter((_: any, idx: number) => idx !== i);
-                      setProfileData((prev: any) => ({
+                      const newSkills = currentSkills.filter((_, idx: number) => idx !== i);
+                      setProfileData((prev) => ({
                         ...prev,
                         talent: prev.talent ? { ...prev.talent, skills: newSkills } : prev.talent,
                         skills: newSkills 
@@ -609,7 +609,7 @@ export default function Profile() {
                     const currentSkills = (profileData?.talent?.skills || profileData?.skills || []);
                     if (val && !currentSkills.includes(val)) {
                       const newSkills = [...currentSkills, val];
-                      setProfileData((prev: any) => ({
+                      setProfileData((prev) => ({
                         ...prev,
                         talent: prev.talent ? { ...prev.talent, skills: newSkills } : prev.talent,
                         skills: newSkills
@@ -624,7 +624,7 @@ export default function Profile() {
                   const currentSkills = (profileData?.talent?.skills || profileData?.skills || []);
                   if (val && !currentSkills.includes(val)) {
                     const newSkills = [...currentSkills, val];
-                    setProfileData((prev: any) => ({
+                    setProfileData((prev) => ({
                       ...prev,
                       talent: prev.talent ? { ...prev.talent, skills: newSkills } : prev.talent,
                       skills: newSkills
@@ -647,7 +647,7 @@ export default function Profile() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                {(profileData?.talent?.education || profileData?.education || []).map((edu: any, i: number) => (
+                {(profileData?.talent?.education || profileData?.education || []).map((edu, i: number) => (
                   <div key={i} className="flex items-start justify-between p-4 rounded-lg border bg-muted/30">
                     <div className="space-y-1">
                       <p className="font-bold">{edu.degree || edu.qualification}</p>
@@ -656,8 +656,8 @@ export default function Profile() {
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => {
                       const currentEdu = (profileData?.talent?.education || profileData?.education || []);
-                      const newEdu = currentEdu.filter((_: any, idx: number) => idx !== i);
-                      setProfileData((prev: any) => ({
+                      const newEdu = currentEdu.filter((_, idx: number) => idx !== i);
+                      setProfileData((prev) => ({
                         ...prev,
                         talent: prev.talent ? { ...prev.talent, education: newEdu } : prev.talent,
                         education: newEdu
@@ -694,7 +694,7 @@ export default function Profile() {
                     const currentEdu = (profileData?.talent?.education || profileData?.education || []);
                     const newEdu = [...currentEdu, newEntry];
                     
-                    setProfileData((prev: any) => ({
+                    setProfileData((prev) => ({
                       ...prev,
                       talent: prev.talent ? { ...prev.talent, education: newEdu } : prev.talent,
                       education: newEdu
@@ -725,8 +725,8 @@ export default function Profile() {
                     {item}
                     <X className="w-3 h-3 cursor-pointer ml-1" onClick={() => {
                       const currentEq = (profileData?.talent?.equipment || profileData?.equipment || []);
-                      const newEq = currentEq.filter((_: any, idx: number) => idx !== i);
-                      setProfileData((prev: any) => ({
+                      const newEq = currentEq.filter((_, idx: number) => idx !== i);
+                      setProfileData((prev) => ({
                         ...prev,
                         talent: prev.talent ? { ...prev.talent, equipment: newEq } : prev.talent,
                         equipment: newEq
@@ -742,7 +742,7 @@ export default function Profile() {
                     const currentEq = (profileData?.talent?.equipment || profileData?.equipment || []);
                     if (val && !currentEq.includes(val)) {
                       const newEq = [...currentEq, val];
-                      setProfileData((prev: any) => ({
+                      setProfileData((prev) => ({
                         ...prev,
                         talent: prev.talent ? { ...prev.talent, equipment: newEq } : prev.talent,
                         equipment: newEq
@@ -757,7 +757,7 @@ export default function Profile() {
                   const currentEq = (profileData?.talent?.equipment || profileData?.equipment || []);
                   if (val && !currentEq.includes(val)) {
                     const newEq = [...currentEq, val];
-                    setProfileData((prev: any) => ({
+                    setProfileData((prev) => ({
                       ...prev,
                       talent: prev.talent ? { ...prev.talent, equipment: newEq } : prev.talent,
                       equipment: newEq
@@ -779,7 +779,7 @@ export default function Profile() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-                {profileData?.talent?.headshots?.map((shot: any, i: number) => (
+                {profileData?.talent?.headshots?.map((shot, i: number) => (
                   <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
                     <img src={shot.url} className="w-full h-full object-cover" />
                     <Button 
@@ -789,11 +789,11 @@ export default function Profile() {
                       onClick={async () => {
                         try {
                           await profileAPI.deleteHeadshot(shot._id);
-                          setProfileData((prev: any) => ({
+                          setProfileData((prev) => ({
                             ...prev,
                             talent: {
                               ...prev?.talent,
-                              headshots: (prev?.talent?.headshots || []).filter((s: any) => s._id !== shot._id)
+                              headshots: (prev?.talent?.headshots || []).filter((s) => s._id !== shot._id)
                             }
                           }));
                         } catch (e) { toast.error("Failed to delete headshot"); }
@@ -979,7 +979,7 @@ export default function Profile() {
                 <h3 className="text-sm font-medium">Saved Cards</h3>
                 {paymentMethods.length > 0 ? (
                   <div className="grid gap-4">
-                    {paymentMethods.map((card: any, i: number) => (
+                    {paymentMethods.map((card, i: number) => (
                       <div key={i} className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-6 bg-slate-200 rounded flex items-center justify-center">
@@ -1068,7 +1068,7 @@ export default function Profile() {
                     </div>
                     <Select 
                       value={profileData?.notificationSettings?.jobRecFrequency || "none"}
-                      onValueChange={(v: any) => handleNotificationToggle("jobRecFrequency", v)}
+                      onValueChange={(v) => handleNotificationToggle("jobRecFrequency", v)}
                     >
                       <SelectTrigger className="w-[140px] h-8">
                         <SelectValue />

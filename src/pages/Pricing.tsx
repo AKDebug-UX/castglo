@@ -17,7 +17,7 @@ export default function Pricing() {
   const navigate = useNavigate();
   const categoryParam = searchParams.get("category");
   
-  const [plans, setPlans] = useState<any[]>([]);
+  const [plans, setPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
@@ -40,7 +40,7 @@ export default function Pricing() {
     fetchPlans();
   }, []);
 
-  const handleSubscribe = async (plan: any) => {
+  const handleSubscribe = async (plan) => {
     // If user is already logged in, redirect to Stripe checkout
     if (user) {
       setIsProcessing(plan.planKey);

@@ -150,7 +150,7 @@ export default function LivestreamPage() {
     streamData &&
     user &&
     Array.isArray(streamData.coHosts) &&
-    streamData.coHosts.some((coHost: any) =>
+    streamData.coHosts.some((coHost) =>
       (typeof coHost === "object" ? coHost?._id || coHost?.id : coHost) === user.id
     )
   );
@@ -288,7 +288,7 @@ export default function LivestreamPage() {
     }
 
     if (Array.isArray(streamData.coHosts)) {
-      streamData.coHosts.forEach((coHost: any) => {
+      streamData.coHosts.forEach((coHost) => {
         const coHostId = typeof coHost === 'object' ? (coHost?._id || coHost?.id) : coHost;
         if (coHostId && !realParticipants.some(p => String(p.id) === String(coHostId))) {
           realParticipants.push({
@@ -305,7 +305,7 @@ export default function LivestreamPage() {
 
     // Add viewers if they exist in streamData
     if (Array.isArray(streamData.viewers)) {
-      streamData.viewers.forEach((viewer: any) => {
+      streamData.viewers.forEach((viewer) => {
         const viewerId = typeof viewer === 'object' ? (viewer?._id || viewer?.id) : viewer;
         // Don't add if already in participants (host/cohost)
         if (viewerId && !realParticipants.some(p => String(p.id) === String(viewerId))) {
@@ -346,10 +346,10 @@ export default function LivestreamPage() {
 
         let stream = null;
         if (myRes.data?.success && Array.isArray(myRes.data.data)) {
-          stream = myRes.data.data.find((s: any) => s._id === id);
+          stream = myRes.data.data.find((s) => s._id === id);
         }
         if (!stream && publicRes.data?.success && Array.isArray(publicRes.data.data)) {
-          stream = publicRes.data.data.find((s: any) => s._id === id);
+          stream = publicRes.data.data.find((s) => s._id === id);
         }
 
         if (stream) {
@@ -520,7 +520,7 @@ export default function LivestreamPage() {
       setIsJoined(true);
       toast.success(isBroadcaster ? "Started the live audition" : "Joined the live audition");
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Agora Implementation Error:", error);
       toast.error(error.message || "Failed to connect to the session");
     } finally {
@@ -608,7 +608,7 @@ export default function LivestreamPage() {
         // Handle messages more robustly
         const rawMessages = msgRes.data?.data || (Array.isArray(msgRes.data) ? msgRes.data : []);
         if (Array.isArray(rawMessages)) {
-          const formattedMessages = rawMessages.map((msg: any) => ({
+          const formattedMessages = rawMessages.map((msg) => ({
             id: msg._id || msg.id,
             sender: msg.sender?.fullName || msg.senderName || (typeof msg.sender === 'string' ? msg.sender : "Unknown"),
             text: msg.message || msg.text,
@@ -629,10 +629,10 @@ export default function LivestreamPage() {
 
         let currentStream = null;
         if (myRes.data?.success && Array.isArray(myRes.data.data)) {
-          currentStream = myRes.data.data.find((s: any) => s._id === id);
+          currentStream = myRes.data.data.find((s) => s._id === id);
         }
         if (!currentStream && publicRes.data?.success && Array.isArray(publicRes.data.data)) {
-          currentStream = publicRes.data.data.find((s: any) => s._id === id);
+          currentStream = publicRes.data.data.find((s) => s._id === id);
         }
 
         if (currentStream && currentStream.status === 'ended' && !isBroadcaster) {
@@ -653,7 +653,7 @@ export default function LivestreamPage() {
         }
 
         if (partRes.data?.success && Array.isArray(partRes.data.data)) {
-          const apiParticipants = partRes.data.data.map((p: any) => ({
+          const apiParticipants = partRes.data.data.map((p) => ({
             id: String(p._id || p.id),
             name: p.fullName || p.name || "Unknown",
             role: p.role || "viewer",
@@ -684,7 +684,7 @@ export default function LivestreamPage() {
     if (id) {
       socketService.emit('join_livestream', id);
 
-      const handleNewLivestreamMessage = (data: any) => {
+      const handleNewLivestreamMessage = (data) => {
         const msg = data.message || data; // Handle both wrapped and direct payloads
         if (!msg || (!msg.text && !msg.message)) return;
         
@@ -704,7 +704,7 @@ export default function LivestreamPage() {
 
       socketService.on('livestream_message', handleNewLivestreamMessage);
 
-      const handleParticipantJoined = (data: any) => {
+      const handleParticipantJoined = (data) => {
         const newUser = data.participant;
         if (!newUser) return;
         setParticipants(prev => {
@@ -723,12 +723,12 @@ export default function LivestreamPage() {
         toast.info(`${newUser.fullName} joined the live`);
       };
 
-      const handleParticipantLeft = (data: any) => {
+      const handleParticipantLeft = (data) => {
         const userId = data.userId;
         setParticipants(prev => prev.filter(p => String(p.id) !== String(userId)));
       };
 
-      const handleCohostPromoted = async (data: any) => {
+      const handleCohostPromoted = async (data) => {
         const { streamId } = data;
         toast.success("You have been promoted to Co-Host!", { 
           duration: 5000,
@@ -763,7 +763,7 @@ export default function LivestreamPage() {
         }
       };
 
-      const handleCohostAdded = (data: any) => {
+      const handleCohostAdded = (data) => {
         const { userId, stream } = data;
         setStreamData(stream);
         
@@ -778,7 +778,7 @@ export default function LivestreamPage() {
         }
       };
 
-      const handleCohostDemoted = async (data: any) => {
+      const handleCohostDemoted = async (data) => {
         toast.error("Your Co-Host permissions have been removed.", { 
           duration: 5000,
           icon: "🚫" 
@@ -823,7 +823,7 @@ export default function LivestreamPage() {
       socketService.on('cohost_added', handleCohostAdded);
       socketService.on('cohost_demoted', handleCohostDemoted);
 
-      const handleLayoutChanged = (data: any) => {
+      const handleLayoutChanged = (data) => {
         const { layout } = data;
         if (layout && (layout === "grid" || layout === "speaker" || layout === "cinema")) {
           setLayoutMode(layout);
@@ -832,7 +832,7 @@ export default function LivestreamPage() {
 
       socketService.on('layout_changed', handleLayoutChanged);
 
-      const handleIncomingReaction = (data: any) => {
+      const handleIncomingReaction = (data) => {
         const { emoji } = data;
         const id = Date.now() + Math.random();
         const left = Math.floor(Math.random() * 80) + 10; // Random position 10% to 90%
@@ -847,7 +847,7 @@ export default function LivestreamPage() {
 
       socketService.on('livestream_reaction', handleIncomingReaction);
 
-      const handleIncomingLike = (data: any) => {
+      const handleIncomingLike = (data) => {
         const { count } = data;
         if (count !== undefined) setLikeCount(count);
         
@@ -862,7 +862,7 @@ export default function LivestreamPage() {
 
       socketService.on('livestream_like', handleIncomingLike);
 
-      const handleUserCameraToggled = (data: any) => {
+      const handleUserCameraToggled = (data) => {
         const { userId, isCamOn } = data;
         setRemoteCameraStatus(prev => ({ ...prev, [userId]: isCamOn }));
       };
@@ -913,7 +913,7 @@ export default function LivestreamPage() {
         setInviteEmails("");
         setIsInviteDialogOpen(false);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Invite error:", error);
       toast.error(error.response?.data?.message || "Failed to send invitations");
     } finally {
@@ -1087,11 +1087,11 @@ export default function LivestreamPage() {
           // Refresh stream data to get updated coHosts array
           const myRes = await livestreamAPI.getMyStreams();
           if (myRes.data.success) {
-            const stream = myRes.data.data.find((s: any) => s._id === id);
+            const stream = myRes.data.data.find((s) => s._id === id);
             if (stream) setStreamData(stream);
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error("Co-host promotion error:", error);
         toast.error(error.response?.data?.message || "Failed to assign co-host");
       }
@@ -1111,11 +1111,11 @@ export default function LivestreamPage() {
           // Refresh stream data
           const myRes = await livestreamAPI.getMyStreams();
           if (myRes.data.success) {
-            const stream = myRes.data.data.find((s: any) => s._id === id);
+            const stream = myRes.data.data.find((s) => s._id === id);
             if (stream) setStreamData(stream);
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         console.error("Co-host removal error:", error);
         toast.error(error.response?.data?.message || "Failed to remove co-host");
       }
@@ -1130,7 +1130,7 @@ export default function LivestreamPage() {
     try {
       const partRes = await livestreamAPI.getParticipants(id);
       if (partRes.data?.success && Array.isArray(partRes.data.data)) {
-        const apiParticipants = partRes.data.data.map((p: any) => ({
+        const apiParticipants = partRes.data.data.map((p) => ({
           id: String(p._id || p.id),
           name: p.fullName || p.name || "Unknown",
           role: p.role || "viewer",
@@ -1319,7 +1319,7 @@ export default function LivestreamPage() {
               {/* Remote Broadcasters (Host/Co-Hosts) */}
               {remoteUsers.map((remoteUser) => {
                 const isHost = String(remoteUser.uid) === String(streamData?.hostId?._id || streamData?.hostId?.id || streamData?.hostId);
-                const isCoHostRemote = Array.isArray(streamData?.coHosts) && streamData.coHosts.some((ch: any) => 
+                const isCoHostRemote = Array.isArray(streamData?.coHosts) && streamData.coHosts.some((ch) => 
                   String(typeof ch === 'object' ? ch._id || ch.id : ch) === String(remoteUser.uid)
                 );
                 
@@ -1380,7 +1380,7 @@ export default function LivestreamPage() {
                   {/* Remote Co-Hosts in Cinema Bar */}
                   {remoteUsers.filter(ru => {
                     const isHost = String(ru.uid) === String(streamData?.hostId?._id || streamData?.hostId?.id || streamData?.hostId);
-                    const isCoHostRemote = Array.isArray(streamData?.coHosts) && streamData.coHosts.some((ch: any) => 
+                    const isCoHostRemote = Array.isArray(streamData?.coHosts) && streamData.coHosts.some((ch) => 
                       String(typeof ch === 'object' ? ch._id || ch.id : ch) === String(ru.uid)
                     );
                     return !isHost && isCoHostRemote;
@@ -1504,7 +1504,7 @@ export default function LivestreamPage() {
               <div className="absolute top-6 right-6 w-56 space-y-4 z-30 pointer-events-none">
                 {remoteUsers.filter(ru => {
                   const isHost = String(ru.uid) === String(streamData?.hostId?._id || streamData?.hostId?.id || streamData?.hostId);
-                  const isCoHostRemote = Array.isArray(streamData?.coHosts) && streamData.coHosts.some((ch: any) => 
+                  const isCoHostRemote = Array.isArray(streamData?.coHosts) && streamData.coHosts.some((ch) => 
                     String(typeof ch === 'object' ? ch._id || ch.id : ch) === String(ru.uid)
                   );
                   return !isHost && !isCoHostRemote;

@@ -42,15 +42,15 @@ class SocketService {
     }
   }
 
-  on(event: string, callback: (...args: any[]) => void) {
+  on(event: string, callback: (...args[]) => void) {
     this.socket?.on(event, callback);
   }
 
-  off(event: string, callback?: (...args: any[]) => void) {
+  off(event: string, callback?: (...args[]) => void) {
     this.socket?.off(event, callback);
   }
 
-  emit(event: string, data: any) {
+  emit(event: string, data) {
     this.socket?.emit(event, data);
   }
 

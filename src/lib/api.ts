@@ -18,6 +18,18 @@ export const API_ENDPOINTS = {
     REPORTS: '/admin/reports',
     SETTINGS: '/admin/settings',
     SET_FREE_TIER: '/admin/settings/free-tier',
+    GRANT_TRIAL: (userId: string) => `/admin/users/${userId}/grant-trial`,
+  },
+  VERIFICATIONS: {
+    GET_ALL: '/admin/verifications',
+    UPDATE_STATUS: (id: string) => `/admin/verifications/${id}/status`,
+    STATS: '/admin/verifications/stats',
+  },
+  SUBMISSIONS: {
+    GET_ALL: '/admin/submissions',
+    GET_ONE: (id: string) => `/admin/submissions/${id}`,
+    UPDATE_STATUS: (id: string) => `/admin/submissions/${id}/status`,
+    STATS: '/admin/submissions/stats',
   },
   APPLICATIONS: {
     CREATE: '/applications',
@@ -39,6 +51,10 @@ export const API_ENDPOINTS = {
     STATS: '/bookings/professional/stats',
     CANCEL: (id: string) => `/bookings/${id}/cancel`,
     COMPLETE: (id: string) => `/bookings/${id}/complete`,
+    ADMIN_GET_ALL: '/admin/bookings',
+    ADMIN_GET_ONE: (id: string) => `/admin/bookings/${id}`,
+    ADMIN_UPDATE_STATUS: (id: string) => `/admin/bookings/${id}/status`,
+    ADMIN_STATS: '/admin/bookings/stats',
   },
   AUTH: {
     REGISTER: '/auth/register',
@@ -221,7 +237,7 @@ export const blockchainAPI = {
 // --- LIVESTREAM ENDPOINTS ---
 export const livestreamAPI = {
   create: (data) => api.post(API_ENDPOINTS.LIVESTREAM.CREATE, data),
-  getAll: (params?: any) => api.get(API_ENDPOINTS.LIVESTREAM.GET_ALL, { params }),
+  getAll: (params?) => api.get(API_ENDPOINTS.LIVESTREAM.GET_ALL, { params }),
   getActive: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_ACTIVE),
   getMyStreams: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_MY_STREAMS),
   postMessage: (id: string, message: string) => api.post(API_ENDPOINTS.LIVESTREAM.POST_MESSAGE(id), { text: message }),
@@ -307,8 +323,8 @@ export const applicationAPI = {
 // --- BOOKING ENDPOINTS ---
 export const bookingAPI = {
   create: (data) => api.post(API_ENDPOINTS.BOOKINGS.CREATE, data),
-  getMe: (params?: any) => api.get(API_ENDPOINTS.BOOKINGS.ME, { params }),
-  getProfessionalBookings: (params?: any) => api.get(API_ENDPOINTS.BOOKINGS.PROFESSIONAL_ME, { params }),
+  getMe: (params?) => api.get(API_ENDPOINTS.BOOKINGS.ME, { params }),
+  getProfessionalBookings: (params?) => api.get(API_ENDPOINTS.BOOKINGS.PROFESSIONAL_ME, { params }),
   getDetails: (id: string) => api.get(API_ENDPOINTS.BOOKINGS.DETAILS(id)),
   updateStatus: (id: string, status: string) => api.patch(API_ENDPOINTS.BOOKINGS.UPDATE_STATUS(id), { status }),
   getStats: () => api.get(API_ENDPOINTS.BOOKINGS.STATS),
@@ -318,7 +334,7 @@ export const bookingAPI = {
 
 // --- NEWS ENDPOINTS ---
 export const newsAPI = {
-  getAll: (params?: any) => api.get(API_ENDPOINTS.NEWS.GET_ALL, { params }),
+  getAll: (params?) => api.get(API_ENDPOINTS.NEWS.GET_ALL, { params }),
   getOne: (id: string) => api.get(API_ENDPOINTS.NEWS.GET_ONE(id)),
   create: (data) => api.post(API_ENDPOINTS.NEWS.CREATE, data),
   update: (id: string, data) => api.put(API_ENDPOINTS.NEWS.UPDATE(id), data),
@@ -327,7 +343,7 @@ export const newsAPI = {
 
 // --- SERVICE ENDPOINTS ---
 export const serviceAPI = {
-  getAll: (params?: any) => api.get(API_ENDPOINTS.SERVICES.GET_ALL, { params }),
+  getAll: (params?) => api.get(API_ENDPOINTS.SERVICES.GET_ALL, { params }),
   getMyServices: () => api.get(API_ENDPOINTS.SERVICES.GET_MY_SERVICES),
   create: (data) => api.post(API_ENDPOINTS.SERVICES.CREATE, data),
   update: (id: string, data) => api.put(API_ENDPOINTS.SERVICES.UPDATE(id), data),
@@ -358,18 +374,32 @@ export const adminAPI = {
   verifyUser: (id: string) => api.put(API_ENDPOINTS.ADMIN.VERIFY_USER(id)),
   deleteUser: (id: string) => api.delete(API_ENDPOINTS.ADMIN.DELETE_USER(id)),
   getActionLogs: (params) => api.get(API_ENDPOINTS.ADMIN.ACTION_LOGS, { params }),
-  getAnalytics: (params?: any) => api.get(API_ENDPOINTS.ADMIN.ANALYTICS, { params }),
+  getAnalytics: (params?) => api.get(API_ENDPOINTS.ADMIN.ANALYTICS, { params }),
   getLeads: (params) => api.get(API_ENDPOINTS.ADMIN.LEADS, { params }),
   getLead: (id: string) => api.get(API_ENDPOINTS.LEADS.ADMIN_GET_ONE(id)),
   deleteLead: (id: string) => api.delete(API_ENDPOINTS.LEADS.ADMIN_DELETE(id)),
   convertLead: (id: string, role: string) => api.put(API_ENDPOINTS.LEADS.ADMIN_CONVERT(id), { role }),
   getSubscriptions: (params) => api.get(API_ENDPOINTS.ADMIN.SUBSCRIPTIONS, { params }),
-  getModerationQueue: (params?: any) => api.get(API_ENDPOINTS.ADMIN.MODERATION, { params }),
+  getModerationQueue: (params?) => api.get(API_ENDPOINTS.ADMIN.MODERATION, { params }),
   updateModerationStatus: (id: string, status: string, notes?: string) => 
     api.patch(`${API_ENDPOINTS.ADMIN.MODERATION}/${id}`, { status, notes }),
-  getReports: (params?: any) => api.get(API_ENDPOINTS.ADMIN.REPORTS, { params }),
+  getReports: (params?) => api.get(API_ENDPOINTS.ADMIN.REPORTS, { params }),
   getSettings: () => api.get(API_ENDPOINTS.ADMIN.SETTINGS),
   setFreeTier: (data: { days: number, role: string }) => api.post(API_ENDPOINTS.ADMIN.SET_FREE_TIER, data),
+  getVerifications: (params?) => api.get(API_ENDPOINTS.VERIFICATIONS.GET_ALL, { params }),
+  updateVerificationStatus: (id: string, status: string, notes?: string) => 
+    api.patch(API_ENDPOINTS.VERIFICATIONS.UPDATE_STATUS(id), { status, notes }),
+  getVerificationStats: () => api.get(API_ENDPOINTS.VERIFICATIONS.STATS),
+  getSubmissions: (params?) => api.get(API_ENDPOINTS.SUBMISSIONS.GET_ALL, { params }),
+  updateSubmissionStatus: (id: string, status: string, feedback?: string) => 
+    api.patch(API_ENDPOINTS.SUBMISSIONS.UPDATE_STATUS(id), { status, feedback }),
+  getSubmissionStats: () => api.get(API_ENDPOINTS.SUBMISSIONS.STATS),
+  getAdminBookings: (params?) => api.get(API_ENDPOINTS.BOOKINGS.ADMIN_GET_ALL, { params }),
+  getAdminBookingDetails: (id: string) => api.get(API_ENDPOINTS.BOOKINGS.ADMIN_GET_ONE(id)),
+  updateAdminBookingStatus: (id: string, status: string) => api.patch(API_ENDPOINTS.BOOKINGS.ADMIN_UPDATE_STATUS(id), { status }),
+  getAdminBookingStats: () => api.get(API_ENDPOINTS.BOOKINGS.ADMIN_STATS),
+  grantTrial: (userId: string, days: number) => 
+    api.post(API_ENDPOINTS.ADMIN.GRANT_TRIAL(userId), { days }),
 };
 
 // --- LEAD ENDPOINTS ---

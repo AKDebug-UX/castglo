@@ -20,7 +20,7 @@ export default function Notifications() {
         const data = response.data.data;
         setNotifications(Array.isArray(data) ? data : (data?.notifications || []));
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to load notifications");
     } finally {
       setIsLoading(false);
@@ -39,7 +39,7 @@ export default function Notifications() {
           n._id === id ? { ...n, isRead: true } : n
         ));
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to mark notification as read");
     }
   };
@@ -52,7 +52,7 @@ export default function Notifications() {
         setNotifications(notifications.map(n => ({ ...n, isRead: true })));
         toast.success("All notifications marked as read");
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error("Failed to mark all as read");
     } finally {
       setIsMarkingAllRead(false);

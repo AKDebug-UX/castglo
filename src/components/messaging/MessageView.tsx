@@ -56,7 +56,7 @@ const Sidebar = ({
       <ScrollArea className="flex-1">
         <div className="space-y-1 p-2">
           {filteredConversations.length > 0 ? filteredConversations.map((conv) => {
-            const otherParticipant = conv.participants?.find((p: any) => p._id !== user?.id);
+            const otherParticipant = conv.participants?.find((p) => p._id !== user?.id);
             const isSelected = selectedConversation?._id === conv._id;
             return (
               <button
@@ -139,7 +139,7 @@ const ChatView = ({
                 </Button>
               )}
               {(() => {
-                const otherParticipant = selectedConversation.participants?.find((p: any) => p._id !== user?.id);
+                const otherParticipant = selectedConversation.participants?.find((p) => p._id !== user?.id);
                 return (
                   <>
                     <Avatar className="h-10 w-10 border border-slate-100">
@@ -257,16 +257,16 @@ interface MessageViewProps {
 
 export default function MessageView({ title = "Messages", subtitle }: MessageViewProps) {
   const { user } = useAuth();
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userSearch, setUserSearch] = useState("");
-  const [searchResult, setSearchResult] = useState<any[]>([]);
+  const [searchResult, setSearchResult] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [formSubject, setFormSubject] = useState("");
   const [formMessage, setFormMessage] = useState("");
@@ -357,7 +357,7 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     fetchMessagesAndPoll();
 
     // Listen for new messages via Socket
-    const handleNewMessage = (data: any) => {
+    const handleNewMessage = (data) => {
       const message = data.message;
       if (message.conversationId === selectedConversation._id) {
         setMessages(prev => {
@@ -398,7 +398,7 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
           c._id === selectedConversation._id ? { ...c, lastMessage: response.data.data } : c
         ));
       }
-    } catch (error: any) {
+    } catch (error) {
       if (error.response?.status === 403) {
         toast.error("You can only message casting directors if your application is shortlisted or accepted.");
       } else {
@@ -417,11 +417,11 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
         const response = await userAPI.search({ query: userSearch, limit: 20 });
         if (response.data.success && Array.isArray(response.data.data?.users)) {
           const users = response.data.data.users
-            .map((item: any) => item.user)
-            .filter((u: any) => u && u._id !== user?.id);
+            .map((item) => item.user)
+            .filter((u) => u && u._id !== user?.id);
           setSearchResult(users);
         } else if (response.data.success && Array.isArray(response.data.data)) {
-          setSearchResult(response.data.data.filter((u: any) => u._id !== user?.id));
+          setSearchResult(response.data.data.filter((u) => u._id !== user?.id));
         }
       } catch (error) {
         console.error("User search failed:", error);

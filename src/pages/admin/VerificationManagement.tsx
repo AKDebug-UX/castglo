@@ -5,57 +5,49 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Check, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
-
-// Mock data for verification requests
-const mockVerificationRequests = [
-  {
-    id: '1',
-    user: 'John Doe',
-    userType: 'Talent',
-    verificationType: 'Identity',
-    documentUrl: '#',
-    status: 'Pending',
-    submittedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    user: 'Jane Smith',
-    userType: 'Director',
-    verificationType: 'Professional',
-    documentUrl: '#',
-    status: 'Pending',
-    submittedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    user: 'Creative Inc.',
-    userType: 'Company',
-    verificationType: 'Company',
-    documentUrl: '#',
-    status: 'Approved',
-    submittedAt: new Date().toISOString(),
-  },
-];
+import { adminAPI } from '@/lib/api';
 
 export default function VerificationManagement() {
-  const [requests, setRequests] = useState(mockVerificationRequests);
+  const [requests, setRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 });
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [requestsRes, statsRes] = await Promise.all([
+        adminAPI.getVerifications(),
+        adminAPI.getVerificationStats()
+      ]);
+
+      if (requestsRes.data.success) {
+        setRequests(requestsRes.data.data.requests || []);
+      }
+      if (statsRes.data.success) {
+        setStats(statsRes.data.data);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to fetch verification requests');
+      // Fallback for UI if API is not fully ready
+      setRequests([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
+    fetchData();
   }, []);
 
   const handleVerification = async (id: string, status: 'Approved' | 'Rejected') => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setRequests(requests.map(req => req.id === id ? { ...req, status } : req));
-      toast.success(`Verification status updated to ${status}`);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update verification status.');
+      const response = await adminAPI.updateVerificationStatus(id, status);
+      if (response.data.success) {
+        toast.success(`Verification status updated to ${status}`);
+        fetchData();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to update verification status.');
     }
   };
 
@@ -69,7 +61,37 @@ export default function VerificationManagement() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Verification Management</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Verification Management</h1>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground mb-1">Total</p>
+            <p className="text-2xl font-bold">{stats.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground mb-1">Pending</p>
+            <p className="text-2xl font-bold text-amber-600">{stats.pending}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground mb-1">Approved</p>
+            <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground mb-1">Rejected</p>
+            <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Pending Verification Requests</CardTitle>

@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { role: userObj.role };
       }
       return { error: response.data.message || "Sign in failed" };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred during sign in" };
     }
   };
@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return {};
       }
       return { error: response.data.message || "Registration failed" };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred during registration" };
     }
   };
@@ -119,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await authAPI.forgotPassword(email);
       if (response.data.success) return {};
       return { error: response.data.message };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };
@@ -129,7 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await authAPI.resetPassword(data);
       if (response.data.success) return {};
       return { error: response.data.message };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };
@@ -139,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await authAPI.verifyEmail({ token });
       if (response.data.success) return {};
       return { error: response.data.message };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };
@@ -149,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await authAPI.resendVerification(email);
       if (response.data.success) return {};
       return { error: response.data.message };
-    } catch (error: any) {
+    } catch (error) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };

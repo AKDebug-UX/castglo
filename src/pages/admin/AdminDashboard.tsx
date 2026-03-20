@@ -58,45 +58,43 @@ export default function AdminDashboard() {
     {
       label: "Total Users",
       value: analytics?.summary?.totalUsers?.toLocaleString() || "0",
-      change: analytics?.userGrowthRate || "0%",
+      change: analytics?.summary?.suspendedUsers || "0",
+      changeLabel: "suspended",
       Icon: Users,
     },
     {
-      label: "Active Castings",
-      value: analytics?.activeCastingCalls?.toLocaleString() || "0",
-      change: "+8.2%",
+      label: "Total Castings",
+      value: analytics?.summary?.totalCastingCalls?.toLocaleString() || "0",
+      change: analytics?.castingCallStatus?.find(s => s._id === 'open')?.count || "0",
+      changeLabel: "active calls",
       Icon: FileText,
     },
     {
       label: "Applications",
-      value: analytics?.totalApplications?.toLocaleString() || "0",
-      change: "+18.3%",
+      value: analytics?.summary?.totalApplications?.toLocaleString() || "0",
+      change: "0",
+      changeLabel: "new today",
       Icon: ThumbsUp,
     },
     {
-      label: "Total Revenue",
-      value: `$${analytics?.totalRevenue?.toLocaleString() || "0"}`,
-      change: "+5.7%",
+      label: "Total Leads",
+      value: analytics?.summary?.totalLeads?.toLocaleString() || "0",
+      change: "+0%",
+      changeLabel: "conversion",
       Icon: Calendar,
     },
   ];
 
-  // Map analytics chart data or fallback to defaults
-  const userGrowthData = analytics?.userGrowthData || [
-    { name: "Jan", value: 120 },
-    { name: "Feb", value: 180 },
-    { name: "Mar", value: 250 },
-    { name: "Apr", value: 380 },
-    { name: "May", value: 520 },
-    { name: "Jun", value: 680 },
-  ];
+  // Map analytics chart data
+  const usersByRoleData = analytics?.usersByRole?.map(item => ({
+    name: item._id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    value: item.count
+  })) || [];
 
-  const submissionsData = analytics?.submissionsData || [
-    { name: "Mon 1", value: 65 },
-    { name: "Mon 2", value: 72 },
-    { name: "Mon 3", value: 58 },
-    { name: "Mon 4", value: 80 },
-  ];
+  const castingStatusData = analytics?.castingCallStatus?.map(item => ({
+    name: item._id.replace(/\b\w/g, l => l.toUpperCase()),
+    value: item.count
+  })) || [];
 
   return (
     <div className="space-y-6">
@@ -115,9 +113,9 @@ export default function AdminDashboard() {
                 <stat.Icon className="w-5 h-5 text-muted-foreground" />
               </div>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="flex items-center gap-1 text-sm text-success">
-                <TrendingUp className="w-4 h-4" />
-                {stat.change} from last month
+              <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                <TrendingUp className="w-4 h-4 text-success" />
+                <span className="font-medium text-slate-900">{stat.change}</span> {stat.changeLabel}
               </div>
             </CardContent>
           </Card>
@@ -128,13 +126,13 @@ export default function AdminDashboard() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Submissions Volume</CardTitle>
-            <p className="text-sm text-muted-foreground">Weekly submission trends</p>
+            <CardTitle className="text-base font-semibold">Users by Role</CardTitle>
+            <p className="text-sm text-muted-foreground">Distribution of platform users</p>
           </CardHeader>
           <CardContent>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={submissionsData}>
+                <BarChart data={usersByRoleData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
@@ -154,13 +152,13 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold">User Growth</CardTitle>
-            <p className="text-sm text-muted-foreground">Monthly user registration by role</p>
+            <CardTitle className="text-base font-semibold">Casting Calls Status</CardTitle>
+            <p className="text-sm text-muted-foreground">Active vs Closed listings</p>
           </CardHeader>
           <CardContent>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={userGrowthData}>
+                <AreaChart data={castingStatusData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                   <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />

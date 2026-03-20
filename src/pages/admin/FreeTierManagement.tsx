@@ -12,7 +12,7 @@ export default function FreeTierManagement() {
   const [role, setRole] = useState<string>("talent");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentSettings, setCurrentSettings] = useState<any[]>([]);
+  const [currentSettings, setCurrentSettings] = useState([]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -49,7 +49,7 @@ export default function FreeTierManagement() {
           setCurrentSettings(updatedResponse.data.data.freeTier);
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update free tier settings");
     } finally {
       setIsSubmitting(false);
@@ -168,7 +168,7 @@ export default function FreeTierManagement() {
   );
 }
 
-function Info(props: any) {
+function Info(props) {
   return (
     <svg
       {...props}

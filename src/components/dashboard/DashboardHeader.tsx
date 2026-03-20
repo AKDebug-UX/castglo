@@ -31,7 +31,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         if (response.data.success && Array.isArray(response.data.data)) {
           const fetchedNotifications = response.data.data;
           setNotifications(fetchedNotifications);
-          const unread = fetchedNotifications.filter((n: any) => !n.isRead).length;
+          const unread = fetchedNotifications.filter((n) => !n.isRead).length;
           setUnreadCount(unread);
         }
       } catch (error) {

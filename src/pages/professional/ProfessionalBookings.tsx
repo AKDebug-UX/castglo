@@ -29,10 +29,10 @@ const statusColors: Record<string, string> = {
 export default function ProfessionalBookings() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("upcoming");
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [stats, setStats] = useState<any[]>([]);
+  const [bookings, setBookings] = useState([]);
+  const [stats, setStats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   const fetchBookings = async () => {
     try {

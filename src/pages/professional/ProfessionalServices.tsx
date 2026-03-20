@@ -25,8 +25,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function ProfessionalServices() {
   const { user } = useAuth();
-  const [services, setServices] = useState<any[]>([]);
-  const [stats, setStats] = useState<any[]>([]);
+  const [services, setServices] = useState([]);
+  const [stats, setStats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -101,7 +101,7 @@ export default function ProfessionalServices() {
         setSelectedImage(null);
         fetchServices();
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create service");
     } finally {
       setIsSubmitting(false);

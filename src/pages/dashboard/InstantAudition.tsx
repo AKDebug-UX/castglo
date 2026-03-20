@@ -90,7 +90,7 @@ export default function InstantAudition() {
           navigate(user?.role === "talent" ? "/dashboard/livestreams" : "/director/livestreams");
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to create audition");
     } finally {
       setIsLoading(false);

@@ -70,7 +70,7 @@ export default function MyProjects() {
     return true;
   });
 
-  const renderLocation = (location: any) => {
+  const renderLocation = (location) => {
     if (!location) return "N/A";
     if (typeof location === 'string') return location;
     if (typeof location === 'object') {

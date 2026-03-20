@@ -21,10 +21,9 @@ export default function AdminNotifications() {
   });
 
   const fetchUsers = async (search: string = "") => {
-    if (formData.recipient === "all") return;
     setIsLoadingUsers(true);
     try {
-      const response = await adminAPI.getUsers({ search, limit: 10 });
+      const response = await adminAPI.getUsers({ search, limit: 20 });
       if (response.data.success) {
         setUsers(response.data.data.users || []);
       }
@@ -36,10 +35,8 @@ export default function AdminNotifications() {
   };
 
   useEffect(() => {
-    if (formData.recipient !== "all") {
-      fetchUsers();
-    }
-  }, [formData.recipient]);
+    fetchUsers();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,16 +61,18 @@ export default function AdminNotifications() {
       const payload: any = {
         title: formData.title,
         message: formData.message,
-        type: formData.type,
+        type: "message", // Only "message" is supported by backend enum
         metadata,
       };
 
       if (formData.recipient !== "all") {
         payload.userId = formData.recipient;
       } else {
-        // If broadcasting is supported via userId: "all" or sendToAll flag
-        payload.userId = "all";
-        payload.sendToAll = true;
+        // Backend requires userId for validation, and does not support "sendToAll" flag yet
+        // Removing "all" logic until backend is updated to support broadcasts
+        toast.error("Broadcast to all users is currently not supported by the backend. Please select an individual user.");
+        setIsSending(false);
+        return;
       }
 
       const response = await notificationAPI.send(payload);
@@ -87,7 +86,7 @@ export default function AdminNotifications() {
           metadata: "",
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.response?.data?.message || "Failed to send notification");
     } finally {
       setIsSending(false);
@@ -124,26 +123,39 @@ export default function AdminNotifications() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Registered Users</SelectItem>
-                    {users.map(user => (
+                    {users.map((user: any) => (
                       <SelectItem key={user._id} value={user._id}>
-                        {user.fullName} ({user.email})
+                        <div className="flex flex-col">
+                          <span>{user.fullName}</span>
+                          <span className="text-[10px] text-muted-foreground">{user.email}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                
+                <div className="relative mt-2">
+                  <Input 
+                    placeholder="Search users by name or email..." 
+                    onChange={(e) => fetchUsers(e.target.value)}
+                    className="text-xs h-8"
+                  />
+                  {isLoadingUsers && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+
                 {formData.recipient === "all" ? (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 italic">
                     <Users className="w-3 h-3" />
-                    This notification will be broadcast to all platform users.
+                    Broadcast mode selected.
                   </p>
                 ) : (
-                  <div className="relative mt-2">
-                    <Input 
-                      placeholder="Search users by name or email..." 
-                      onChange={(e) => fetchUsers(e.target.value)}
-                      className="text-xs h-8"
-                    />
-                  </div>
+                  <p className="text-xs text-[#009698] font-medium flex items-center gap-1 mt-1">
+                    Targeted user selected.
+                  </p>
                 )}
               </div>
 
@@ -152,18 +164,18 @@ export default function AdminNotifications() {
                 <Select 
                   value={formData.type} 
                   onValueChange={(v) => setFormData({ ...formData, type: v })}
+                  disabled // Currently only "message" is supported by backend
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="message">General Message</SelectItem>
-                    <SelectItem value="announcement">Announcement</SelectItem>
-                    <SelectItem value="alert">Alert/Warning</SelectItem>
-                    <SelectItem value="update">Platform Update</SelectItem>
-                    <SelectItem value="promotion">Promotion</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-[10px] text-amber-600 font-medium">
+                  Note: Only 'General Message' is currently supported by the server.
+                </p>
               </div>
 
               <div className="space-y-2">

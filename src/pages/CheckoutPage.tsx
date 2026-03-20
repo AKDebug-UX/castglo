@@ -24,7 +24,7 @@ export default function CheckoutPage() {
       } else {
         toast.error('Could not initiate checkout. Please try again.');
       }
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'An unexpected error occurred.');
       setIsProcessing(false);
     }
