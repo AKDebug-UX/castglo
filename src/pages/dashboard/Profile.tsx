@@ -30,6 +30,11 @@ export default function Profile() {
     confirmPassword: ""
   });
 
+  // Education state
+  const [newEdu, setNewEdu] = useState({ institution: "", degree: "", year: "" });
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: currentYear - 1950 + 6 }, (_, i) => (currentYear + 5 - i).toString());
+
   // Subscription states
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [subscriptionQuota, setSubscriptionQuota] = useState<any>(null);
@@ -672,37 +677,52 @@ export default function Profile() {
               <div className="grid gap-4 p-4 border rounded-lg bg-slate-50/50">
                 <div className="grid gap-2">
                   <label className="text-xs font-bold uppercase text-slate-500">Institution</label>
-                  <Input id="edu-inst" placeholder="e.g. Royal Academy of Dramatic Art" />
+                  <Input 
+                    placeholder="e.g. Royal Academy of Dramatic Art" 
+                    value={newEdu.institution}
+                    onChange={(e) => setNewEdu(prev => ({ ...prev, institution: e.target.value }))}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <label className="text-xs font-bold uppercase text-slate-500">Degree / Qualification</label>
-                    <Input id="edu-deg" placeholder="e.g. BA in Acting" />
+                    <Input 
+                      placeholder="e.g. BA in Acting" 
+                      value={newEdu.degree}
+                      onChange={(e) => setNewEdu(prev => ({ ...prev, degree: e.target.value }))}
+                    />
                   </div>
                   <div className="grid gap-2">
                     <label className="text-xs font-bold uppercase text-slate-500">Year</label>
-                    <Input id="edu-year" placeholder="e.g. 2020" />
+                    <Select 
+                      value={newEdu.year} 
+                      onValueChange={(v) => setNewEdu(prev => ({ ...prev, year: v }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {years.map((year) => (
+                          <SelectItem key={year} value={year}>{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <Button className="w-full mt-2" onClick={() => {
-                  const inst = (document.getElementById("edu-inst") as HTMLInputElement).value;
-                  const deg = (document.getElementById("edu-deg") as HTMLInputElement).value;
-                  const year = (document.getElementById("edu-year") as HTMLInputElement).value;
-                  
-                  if (inst && deg) {
-                    const newEntry = { institution: inst, degree: deg, year: year };
+                  if (newEdu.institution && newEdu.degree) {
                     const currentEdu = (profileData?.talent?.education || profileData?.education || []);
-                    const newEdu = [...currentEdu, newEntry];
+                    const newEduList = [...currentEdu, newEdu];
                     
                     setProfileData((prev) => ({
                       ...prev,
-                      talent: prev.talent ? { ...prev.talent, education: newEdu } : prev.talent,
-                      education: newEdu
+                      talent: prev.talent ? { ...prev.talent, education: newEduList } : prev.talent,
+                      education: newEduList
                     }));
                     
-                    (document.getElementById("edu-inst") as HTMLInputElement).value = "";
-                    (document.getElementById("edu-deg") as HTMLInputElement).value = "";
-                    (document.getElementById("edu-year") as HTMLInputElement).value = "";
+                    setNewEdu({ institution: "", degree: "", year: "" });
+                  } else {
+                    toast.error("Please enter both institution and degree");
                   }
                 }}>
                   <Plus className="w-4 h-4 mr-2" /> Add Education

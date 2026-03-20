@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Loader2 } from "lucide-react";
+import { safeLazy as lazy } from "@/lib/lazy-loader";
 
 // Public pages
 const Index = lazy(() => import("./pages/Index"));
