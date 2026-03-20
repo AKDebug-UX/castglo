@@ -309,10 +309,29 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     if (token) {
       socketService.connect(token);
     }
+    
+    const handleNewMessage = (data: any) => {
+      console.log("Socket message received:", data);
+      const message = data.message;
+      if (message && selectedConversation?._id === message.conversationId) {
+        setMessages(prev => {
+          if (prev.some(m => m._id === message._id)) return prev;
+          return [...prev, message];
+        });
+      }
+      
+      // Also update conversations list to show last message
+      setConversations(prev => prev.map(conv => 
+        conv._id === message.conversationId ? { ...conv, lastMessage: message } : conv
+      ));
+    }
+
+    socketService.on('new_message', handleNewMessage);
+
     return () => {
-      socketService.disconnect();
+      socketService.off('new_message', handleNewMessage);
     };
-  }, []);
+  }, [selectedConversation?._id]);
 
   useEffect(() => {
     if (!selectedConversation?._id) return;
@@ -356,23 +375,11 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
 
     fetchMessagesAndPoll();
 
-    // Listen for new messages via Socket
-    const handleNewMessage = (data) => {
-      const message = data.message;
-      if (message.conversationId === selectedConversation._id) {
-        setMessages(prev => {
-          if (prev.some(m => m._id === message._id)) return prev;
-          return [...prev, message];
-        });
-      }
-    };
-
-    socketService.on('new_message', handleNewMessage);
-
+    // The logic below is redundant now that we have it in the separate useEffect
+    // removing to avoid multiple listeners
     return () => {
       isPolling = false;
       if (timeoutId) clearTimeout(timeoutId);
-      socketService.off('new_message', handleNewMessage);
     };
   }, [selectedConversation?._id]); // Depend on ID instead of object reference
 
