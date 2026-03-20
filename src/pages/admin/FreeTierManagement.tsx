@@ -8,49 +8,52 @@ import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function FreeTierManagement() {
-  const [days, setDays] = useState<number>(30);
-  const [role, setRole] = useState<string>("talent");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentSettings, setCurrentSettings] = useState([]);
+  const [durations, setDurations] = useState<Record<string, number>>({
+    talent: 30,
+    casting_director: 14,
+    industry_professional: 14,
+    professional: 14
+  });
+
+  const fetchSettings = async () => {
+    try {
+      const response = await adminAPI.getSettings();
+      if (response.data && response.data.success) {
+        // Handle both object format and array format for flexibility
+        const data = response.data.data;
+        if (data && data.freeTierDurations) {
+          setDurations(data.freeTierDurations);
+        } else if (data && Array.isArray(data.freeTier)) {
+          const mapped = data.freeTier.reduce((acc, curr) => ({
+            ...acc,
+            [curr.role]: curr.days
+          }), {});
+          setDurations(prev => ({ ...prev, ...mapped }));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const response = await adminAPI.getSettings();
-        if (response.data.success) {
-          setCurrentSettings(response.data.data.freeTier || []);
-        }
-      } catch (error) {
-        console.error("Failed to fetch settings:", error);
-        // Fallback to empty if API fails or doesn't exist yet
-        setCurrentSettings([
-          { role: "talent", days: 30 },
-          { role: "casting_director", days: 14 },
-          { role: "industry_professional", days: 14 }
-        ]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchSettings();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateRole = async (role: string, days: number) => {
     setIsSubmitting(true);
     try {
       const response = await adminAPI.setFreeTier({ days, role });
       if (response.data.success) {
-        toast.success(`Free tier for ${role} updated to ${days} days`);
-        // Refresh settings
-        const updatedResponse = await adminAPI.getSettings();
-        if (updatedResponse.data.success) {
-          setCurrentSettings(updatedResponse.data.data.freeTier);
-        }
+        toast.success(`Updated ${role.replace('_', ' ')} trial to ${days} days`);
+        setDurations(prev => ({ ...prev, [role]: days }));
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update free tier settings");
+      toast.error("Failed to update settings");
     } finally {
       setIsSubmitting(false);
     }
@@ -67,100 +70,67 @@ export default function FreeTierManagement() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-bold">Free Tier Management</h1>
-        <p className="text-muted-foreground">Configure trial periods for different user categories</p>
+        <h1 className="text-2xl font-bold">Platform Settings</h1>
+        <p className="text-muted-foreground">Configure global platform behavior and trial durations</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Update Free Tier</CardTitle>
-            <CardDescription>Set the number of trial days for new registrations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Select User Category</label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="talent">Talent</SelectItem>
-                    <SelectItem value="casting_director">Casting Director</SelectItem>
-                    <SelectItem value="industry_professional">Industry Professional</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Trial Duration (Days)</label>
-                <div className="relative">
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    max="365"
-                    value={days}
-                    onChange={(e) => setDays(parseInt(e.target.value))}
-                    className="pl-10"
-                  />
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                </div>
-                <p className="text-xs text-muted-foreground">Users will have full access for this duration after signing up.</p>
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Settings
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Current Settings</CardTitle>
-            <CardDescription>Active free tier durations by role</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {currentSettings.map((setting) => (
-                <div key={setting.role} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-primary/10">
-                      <ShieldCheck className="w-4 h-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold capitalize">{setting.role.replace('_', ' ')}</p>
-                      <p className="text-xs text-muted-foreground">New users</p>
-                    </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary" />
+            Trial Configurations
+          </CardTitle>
+          <CardDescription>
+            Configure how many days of free access new users receive based on their role.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6">
+            {Object.entries(durations || {}).map(([role, days]) => (
+              <div key={role} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 rounded-xl bg-white shadow-sm border border-slate-100">
+                    <ShieldCheck className="w-5 h-5 text-[#009698]" />
                   </div>
-                  <div className="flex items-center gap-1.5 text-slate-900 font-semibold">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    {setting.days} Days
+                  <div>
+                    <p className="font-bold capitalize text-slate-900">{role.replace('_', ' ')}</p>
+                    <p className="text-xs text-muted-foreground">Initial free access period</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                
+                <div className="flex items-center gap-3">
+                  <div className="relative w-32">
+                    <Input 
+                      type="number" 
+                      value={days}
+                      onChange={(e) => setDurations(prev => ({ ...prev, [role]: parseInt(e.target.value) || 0 }))}
+                      className="pr-12 font-bold"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 uppercase">Days</span>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="bg-[#009698] hover:bg-[#009698]/90 h-10 px-4"
+                    onClick={() => handleUpdateRole(role, durations[role])}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-      <Card className="bg-amber-50 border-amber-200">
+      <Card className="bg-[#DEFCFE]/30 border-[#009698]/10">
         <CardContent className="p-4 flex gap-3">
-          <Info className="w-5 h-5 text-amber-600 mt-0.5" />
-          <div className="text-sm text-amber-800">
-            <p className="font-bold">Important Note</p>
-            <p>Changes to free tier settings will only apply to new users who register after the update. Existing users' trial periods will remain unchanged.</p>
+          <div className="w-10 h-10 rounded-full bg-[#009698]/10 flex items-center justify-center shrink-0">
+            <Info className="w-5 h-5 text-[#009698]" />
+          </div>
+          <div className="text-sm">
+            <p className="font-bold text-slate-900">Automatic Application</p>
+            <p className="text-slate-600">These settings are applied automatically to all new registrations. Changes do not affect users who have already signed up.</p>
           </div>
         </CardContent>
       </Card>

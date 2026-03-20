@@ -29,12 +29,11 @@ export default function AdminDashboard() {
           adminAPI.getActionLogs({ limit: 4 })
         ]);
 
-        if (analyticsRes.data.success) {
+        if (analyticsRes.data && analyticsRes.data.success) {
           setAnalytics(analyticsRes.data.data);
-          // console.log(analyticsRes.data.data);
         }
-        if (logsRes.data.success) {
-          setLogs(logsRes.data.data);
+        if (logsRes.data && logsRes.data.success) {
+          setLogs(logsRes.data.data || []);
         }
       } catch (error) {
         toast.error(error.response?.data?.message || "Failed to load dashboard data");

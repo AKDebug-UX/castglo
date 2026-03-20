@@ -1,6 +1,7 @@
  import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -39,13 +40,16 @@ export default function UsersManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isGrantTrialOpen, setIsGrantTrialOpen] = useState(false);
+  const [trialUser, setTrialUser] = useState<any>(null);
+  const [trialDays, setTrialDays] = useState("14");
 
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
       const response = await adminAPI.getUsers({});
       if (response.data.success) {
-        setUsers(response.data.data.users);
+        setUsers(response.data.data.users || []);
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to fetch users");
@@ -93,15 +97,16 @@ export default function UsersManagement() {
     }
   };
 
-  const handleGrantTrial = async (userId: string) => {
-    const days = prompt("How many days of free trial would you like to grant?", "14");
-    if (!days || isNaN(Number(days))) return;
+  const handleGrantTrialSubmit = async () => {
+    if (!trialUser || isNaN(Number(trialDays))) return;
 
     setIsActionLoading(true);
     try {
-      const response = await adminAPI.grantTrial(userId, Number(days));
+      const response = await adminAPI.grantTrial(trialUser._id, Number(trialDays));
       if (response.data.success) {
-        toast.success(`Granted ${days} days of free trial!`);
+        toast.success(`Granted ${trialDays} days of free trial to ${trialUser.fullName}!`);
+        setIsGrantTrialOpen(false);
+        setTrialUser(null);
         fetchUsers();
       }
     } catch (error) {
@@ -109,6 +114,12 @@ export default function UsersManagement() {
     } finally {
       setIsActionLoading(false);
     }
+  };
+
+  const openGrantTrial = (user: any) => {
+    setTrialUser(user);
+    setTrialDays("14");
+    setIsGrantTrialOpen(true);
   };
 
   const handleDelete = async (userId: string) => {
@@ -215,7 +226,7 @@ export default function UsersManagement() {
                         <Button 
                           variant="ghost" 
                           size="icon-sm" 
-                          onClick={() => handleGrantTrial(user._id)}
+                          onClick={() => openGrantTrial(user)}
                           disabled={isActionLoading}
                           title="Grant Free Trial"
                         >
@@ -294,6 +305,61 @@ export default function UsersManagement() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Grant Trial Dialog */}
+      <Dialog open={isGrantTrialOpen} onOpenChange={setIsGrantTrialOpen}>
+        <DialogContent className="max-w-sm rounded-[32px] border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Grant Free Trial</DialogTitle>
+            <p className="text-sm text-muted-foreground">Extend access for {trialUser?.fullName}</p>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="p-4 rounded-2xl bg-[#DEFCFE]/30 border border-[#009698]/10 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                <Gift className="w-6 h-6 text-[#009698]" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Current Plan</p>
+                <p className="text-xs text-[#009698] font-bold uppercase tracking-wider">{trialUser?.subscription?.planId?.name || 'Free Tier'}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">Number of Days</label>
+              <div className="relative">
+                <Input 
+                  type="number" 
+                  value={trialDays}
+                  onChange={(e) => setTrialDays(e.target.value)}
+                  className="rounded-xl h-12 pl-4 font-bold text-lg"
+                  min="1"
+                  max="365"
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 uppercase">Days</div>
+              </div>
+              <p className="text-[10px] text-muted-foreground px-1 italic">Trial will expire automatically after this period.</p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1 rounded-xl h-12 font-bold" 
+                onClick={() => setIsGrantTrialOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 rounded-xl h-12 font-bold bg-[#009698] hover:bg-[#009698]/90" 
+                onClick={handleGrantTrialSubmit}
+                disabled={isActionLoading}
+              >
+                {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                Grant Now
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
