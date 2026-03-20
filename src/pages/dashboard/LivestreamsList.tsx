@@ -59,7 +59,7 @@ export default function LivestreamsList() {
     fetchData();
   }, [user?.id]);
 
-  const renderStreamGrid = (streams[], emptyTitle: string, emptyDesc: string) => (
+  const renderStreamGrid = (streams: any[], emptyTitle: string, emptyDesc: string) => (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {streams.length > 0 ? streams.map((stream) => (
         <Card key={stream._id} className="overflow-hidden group card-elevated border-destructive/10">

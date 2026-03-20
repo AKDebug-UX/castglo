@@ -61,18 +61,16 @@ export default function AdminNotifications() {
       const payload: any = {
         title: formData.title,
         message: formData.message,
-        type: "message", // Only "message" is supported by backend enum
+        type: formData.type,
         metadata,
       };
 
       if (formData.recipient !== "all") {
         payload.userId = formData.recipient;
       } else {
-        // Backend requires userId for validation, and does not support "sendToAll" flag yet
-        // Removing "all" logic until backend is updated to support broadcasts
-        toast.error("Broadcast to all users is currently not supported by the backend. Please select an individual user.");
-        setIsSending(false);
-        return;
+        // Backend now supports broadcast when userId is "all" or omitted
+        payload.userId = "all";
+        payload.sendToAll = true;
       }
 
       const response = await notificationAPI.send(payload);
@@ -164,17 +162,20 @@ export default function AdminNotifications() {
                 <Select 
                   value={formData.type} 
                   onValueChange={(v) => setFormData({ ...formData, type: v })}
-                  disabled // Currently only "message" is supported by backend
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="message">General Message</SelectItem>
+                    <SelectItem value="announcement">Announcement</SelectItem>
+                    <SelectItem value="alert">Alert/Warning</SelectItem>
+                    <SelectItem value="update">Platform Update</SelectItem>
+                    <SelectItem value="promotion">Promotion</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-[10px] text-amber-600 font-medium">
-                  Note: Only 'General Message' is currently supported by the server.
+                <p className="text-[10px] text-muted-foreground font-medium">
+                  Note: Different types may trigger different notification styles on mobile devices.
                 </p>
               </div>
 
