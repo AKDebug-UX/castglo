@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { formatLocation } from "@/lib/utils";
 
 export default function BrowseTalents() {
   const [search, setSearch] = useState("");
@@ -146,7 +147,7 @@ export default function BrowseTalents() {
                     <p className="text-sm text-muted-foreground capitalize">{talent.professionalRoles?.join(", ") || "Performer"}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                       <MapPin className="w-3 h-3" />
-                      {talent.location || "Remote"}
+                      {formatLocation(talent.location)}
                     </p>
                     
                     <div className="flex flex-wrap gap-1 mt-3">
@@ -190,7 +191,7 @@ export default function BrowseTalents() {
                                     <Star className="w-3 h-3 fill-warning text-warning" />
                                     {selectedTalent.rating || "0.0"} ({selectedTalent.reviewCount || 0} reviews) • 
                                     <MapPin className="w-3 h-3 ml-1" />
-                                    {selectedTalent.location || "Remote"}
+                                    {formatLocation(selectedTalent.location)}
                                   </p>
                                 </div>
                               </div>

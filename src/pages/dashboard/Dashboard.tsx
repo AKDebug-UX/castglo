@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { applicationAPI, castingCallAPI, authAPI, livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { formatLocation } from "@/lib/utils";
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -184,7 +185,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
-                      {casting.location || "Remote"}
+                      {formatLocation(casting.location)}
                     </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />

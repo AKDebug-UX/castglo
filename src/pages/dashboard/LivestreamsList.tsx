@@ -44,7 +44,7 @@ export default function LivestreamsList() {
           // Filter out private streams and the user's own streams (already in myStreams)
           const discovered = publicRes.data.data.filter((s) => 
             s.isPublic !== false && 
-            (typeof s.hostId === 'object' ? s.hostId._id : s.hostId) !== user?.id
+            (s.hostId && (typeof s.hostId === 'object' ? s.hostId._id : s.hostId)) !== user?.id
           );
           setPublicStreams(discovered);
         }
@@ -86,9 +86,9 @@ export default function LivestreamsList() {
               {stream.description || "Join this live session to perform your monologue and receive feedback."}
             </p>
             <Button className="w-full" size="sm" asChild>
-              <Link to={user?.role === "talent" ? `/livestream/${stream._id}` : `/livestream/${stream._id}`}>
+              <Link to={`/livestream/${stream._id}`}>
                 <Play className="w-3 h-3 mr-2" />
-                {(typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId) === user?.id ? "Start Session" : "Join Session"}
+                {(stream.hostId && (typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId)) === user?.id ? "Start Session" : "Join Session"}
               </Link>
             </Button>
           </CardContent>

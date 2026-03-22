@@ -25,7 +25,7 @@ export function BrowseCastSection() {
   const fetchCastings = async () => {
     setIsLoading(true);
     try {
-      const response = await castingCallAPI.getAll({ 
+      const response = await castingCallAPI.getAll({
         search, 
         status: "open",
         limit: 6

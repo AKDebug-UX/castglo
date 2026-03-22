@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, MapPin, Star, Briefcase, Mail, ShieldCheck } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { formatLocation } from "@/lib/utils";
 
 export default function TalentProfile() {
   const { id } = useParams();
@@ -92,7 +93,7 @@ export default function TalentProfile() {
                   <CardContent className="p-6 space-y-4">
                     <div className="flex items-center gap-3 text-sm">
                       <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <span>{talent.location || "Remote / Worldwide"}</span>
+                      <span>{formatLocation(talent.location) || "Remote / Worldwide"}</span>
                     </div>
                     {talent.email && (
                       <div className="flex items-center gap-3 text-sm">

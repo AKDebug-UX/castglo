@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/pagination";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { formatLocation } from "@/lib/utils";
 
 export default function BrowseTalent() {
   const [search, setSearch] = useState("");
@@ -304,7 +305,7 @@ export default function BrowseTalent() {
                           </p>
                           <p className="text-slate-400 flex items-center gap-1.5 text-lg font-light">
                             <MapPin className="w-4 h-4" />
-                            {talent.location || "Worldwide"}
+                            {formatLocation(talent.location)}
                           </p>
                         </div>
 

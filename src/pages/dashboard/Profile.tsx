@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, Plus, X, Upload, Loader2, ShieldCheck, FileCheck, History, KeyRound, Smartphone, Mail, CreditCard, Bell, UserMinus, Globe, Link2, ExternalLink, BadgeCheck } from "lucide-react";
 import { profileAPI, userAPI, blockchainAPI, authAPI, subscriptionAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import { getAvatarUrl, getInitials } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";

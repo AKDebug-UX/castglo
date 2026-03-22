@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { applicationAPI, castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { formatLocation } from "@/lib/utils";
 
 export default function DirectorSubmissions() {
   const { id } = useParams(); // castingCallId
@@ -109,16 +110,6 @@ export default function DirectorSubmissions() {
     rejected: "bg-destructive text-destructive-foreground",
   };
 
-  const renderLocation = (location) => {
-    if (!location) return "N/A";
-    if (typeof location === 'string') return location;
-    if (typeof location === 'object') {
-      if (location.remote) return "Remote";
-      return location.name || location.city || "On-site";
-    }
-    return "N/A";
-  };
-
   const filteredSubmissions = submissions.filter((sub) => {
     if (activeTab === "all") return true;
     if (activeTab === "pending") return sub.status === "applied";
@@ -199,7 +190,7 @@ export default function DirectorSubmissions() {
                       <p className="font-semibold">{submission.talent?.fullName}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
-                        {renderLocation(submission.talent?.location)}
+                        {formatLocation(submission.talent?.location)}
                       </p>
                     </div>
                   </div>

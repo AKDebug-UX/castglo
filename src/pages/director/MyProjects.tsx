@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { formatLocation } from "@/lib/utils";
 
 export default function MyProjects() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -69,16 +70,6 @@ export default function MyProjects() {
     if (activeTab === "drafts") return project.status === "draft";
     return true;
   });
-
-  const renderLocation = (location) => {
-    if (!location) return "N/A";
-    if (typeof location === 'string') return location;
-    if (typeof location === 'object') {
-      if (location.remote) return "Remote";
-      return location.name || location.city || "On-site";
-    }
-    return "N/A";
-  };
 
   if (isLoading) {
     return (
@@ -166,7 +157,7 @@ export default function MyProjects() {
                   </div>
                   <div className="flex justify-between">
                     <span>Location:</span>
-                    <span className="font-medium text-foreground">{renderLocation(project.location)}</span>
+                    <span className="font-medium text-foreground">{formatLocation(project.location)}</span>
                   </div>
                 </div>
 
