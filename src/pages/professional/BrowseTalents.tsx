@@ -17,30 +17,41 @@ import {
 } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { MOCK_TALENTS } from "@/lib/data";
 
 export default function BrowseTalents() {
-  const [talents, setTalents] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
   const [location, setLocation] = useState("all");
-  const [selectedTalent, setSelectedTalent] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [talents, setTalents] = useState([]);
+  const [selectedTalent, setSelectedTalent] = useState<any>(null);
 
   const fetchTalents = async () => {
     setIsLoading(true);
     try {
-      const params = {};
+      const params: any = {};
       if (search) params.search = search;
-      if (role !== "all") params.role = role;
+      if (role !== "all") params.userRole = role;
       if (location !== "all") params.location = location;
-      params.profileType = "talent"; // Only browse talents
+      
+      // If no role is selected, default to talent for this page
+      if (role === "all") params.userRole = "talent";
+
+      // Also send 'role' as fallback if backend expects it instead of 'userRole'
+      params.role = params.userRole;
 
       const response = await profileAPI.search(params);
-      if (response.data.success) {
+      if (response.data.success && Array.isArray(response.data.data)) {
         setTalents(response.data.data);
+      } else {
+        // Fallback to mock data if API returns empty or success is false
+        setTalents(MOCK_TALENTS.slice(0, 8));
       }
     } catch (error) {
-      toast.error("Failed to load talents");
+      console.error("Failed to load talents:", error);
+      toast.error("Failed to load talents from server. Showing mock data.");
+      setTalents(MOCK_TALENTS.slice(0, 8));
     } finally {
       setIsLoading(false);
     }

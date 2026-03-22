@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Loader2, Sparkles, Zap, Shield, Rocket } from "lucide-react";
+import { Check, Loader2, Sparkles, Zap, Shield, Rocket, ChevronDown, ChevronUp } from "lucide-react";
 import { subscriptionAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -79,6 +79,45 @@ export default function Pricing() {
     return <Zap className="w-5 h-5 text-slate-500" />;
   };
 
+  const activeTabDetails = categories.find(c => c.id === activeTab);
+
+  const FeatureList = ({ features }: { features: Record<string, any> }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const featureEntries = Object.entries(features);
+    const hasMore = featureEntries.length > 10;
+    const displayedFeatures = isExpanded ? featureEntries : featureEntries.slice(0, 10);
+
+    return (
+      <div className="space-y-3">
+        {displayedFeatures.map(([key, value], idx) => (
+          <div key={idx} className="flex items-start gap-3 text-sm animate-in fade-in slide-in-from-top-1 duration-300">
+            <div className="mt-1 bg-green-100 rounded-full p-0.5">
+              <Check className="w-3 h-3 text-green-600" />
+            </div>
+            <span className="text-slate-600 leading-tight">
+              {typeof value === 'boolean' 
+                ? key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) 
+                : `${value} ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`}
+            </span>
+          </div>
+        ))}
+        
+        {hasMore && (
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-2 text-sm font-bold text-primary hover:text-primary/80 transition-colors mt-4 w-full justify-center py-2 rounded-lg bg-primary/5 border border-primary/10"
+          >
+            {isExpanded ? (
+              <>Show Less <ChevronUp className="w-4 h-4" /></>
+            ) : (
+              <>See All Features <ChevronDown className="w-4 h-4" /></>
+            )}
+          </button>
+        )}
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -118,7 +157,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">
             <TabsList className="grid grid-cols-2 md:grid-cols-3 h-auto p-1 bg-white/50 backdrop-blur shadow-sm rounded-xl mb-12">
               {categories.map((cat) => (
                 <TabsTrigger 
@@ -134,7 +173,7 @@ export default function Pricing() {
 
             {categories.map((cat) => (
               <TabsContent key={cat.id} value={cat.id} className="animate-in fade-in-50 duration-500">
-                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 justify-center">
+                <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4 justify-center">
                   {plans
                     .filter((p) => {
                       if (cat.id === "industry_professional") {
@@ -166,18 +205,7 @@ export default function Pricing() {
                           </div>
                         </CardHeader>
                         <CardContent className="flex-1 space-y-6">
-                          <div className="space-y-3">
-                            {Object.entries(plan.features || {}).map(([key, value]: [string, any], idx) => (
-                              <div key={idx} className="flex items-start gap-3 text-sm">
-                                <div className="mt-1 bg-green-100 rounded-full p-0.5">
-                                  <Check className="w-3 h-3 text-green-600" />
-                                </div>
-                                <span className="text-slate-600 leading-tight">
-                                  {typeof value === 'boolean' ? key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) : `${value} ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                          <FeatureList features={plan.features || {}} />
                         </CardContent>
                         <CardFooter className="pt-8">
                           <Button 

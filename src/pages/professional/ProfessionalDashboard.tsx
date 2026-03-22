@@ -26,27 +26,32 @@ export default function ProfessionalDashboard() {
     const fetchData = async () => {
       try {
         const [userRes, profileRes] = await Promise.all([
-          authAPI.getMe(),
-          profileAPI.getMe()
+          authAPI.getMe().catch(err => {
+            console.error("Auth fetch error:", err);
+            return { data: { success: false } };
+          }),
+          profileAPI.getMe().catch(err => {
+            console.error("Profile fetch error:", err);
+            return { data: { success: false } };
+          })
         ]);
 
-        if (userRes.data.success) {
+        if (userRes.data?.success) {
           setUser(userRes.data.data);
         }
 
-        if (profileRes.data.success) {
-          const profileData = profileRes.data.data;
-          setProfile(profileData);
+        const profileData = profileRes.data?.success ? profileRes.data.data : null;
+        setProfile(profileData);
 
-          // Calculate basic stats
-          setStats([
-            { label: "Total Bookings", value: "0", change: "Live data", Icon: Calendar },
-            { label: "Revenue", value: "$0", change: "This month", Icon: DollarSign },
-            { label: "Profile Views", value: profileData.views?.toString() || "0", change: "Total views", Icon: Eye },
-            { label: "Rating", value: profileData.rating?.toString() || "0.0", change: "From reviews", Icon: Star },
-          ]);
-        }
+        // Calculate stats with safe defaults
+        setStats([
+          { label: "Total Bookings", value: "0", change: "Live data", Icon: Calendar },
+          { label: "Revenue", value: "£0", change: "This month", Icon: DollarSign },
+          { label: "Profile Views", value: profileData?.views?.toString() || "0", change: "Total views", Icon: Eye },
+          { label: "Rating", value: profileData?.rating?.toString() || "0.0", change: "From reviews", Icon: Star },
+        ]);
       } catch (error) {
+        console.error("Dashboard data fetch error:", error);
         toast.error("Failed to load dashboard data");
       } finally {
         setIsLoading(false);
