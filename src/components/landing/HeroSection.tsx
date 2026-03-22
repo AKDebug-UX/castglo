@@ -29,7 +29,7 @@ export function HeroSection() {
       try {
         const [callsRes, profilesRes, streamsRes] = await Promise.all([
           castingCallAPI.getAll({ limit: 5, status: 'open' }).catch(err => ({ data: { success: false } })),
-          profileAPI.search({ limit: 4 }).catch(err => ({ data: { success: false } })),
+          profileAPI.search({ limit: 4, userRole: 'talent' }).catch(err => ({ data: { success: false } })),
           livestreamAPI.getAll().catch(err => ({ data: { success: false } }))
         ]);
 
@@ -39,8 +39,8 @@ export function HeroSection() {
           setFeaturedCalls([]);
         }
 
-        if (profilesRes.data?.success && Array.isArray(profilesRes.data.data)) {
-          setFeaturedTalents(profilesRes.data.data.slice(0, 4));
+        if (profilesRes.data?.success && profilesRes.data.data?.profiles) {
+          setFeaturedTalents(profilesRes.data.data.profiles.slice(0, 4));
         } else {
           setFeaturedTalents([]);
         }
@@ -378,14 +378,14 @@ export function HeroSection() {
                     <div key={`${talent._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                       <div className="relative h-48">
                         <img 
-                          src={talent.profilePicture || talentMichael} 
+                          src={talent.talent.headshots[0].url || talentMichael} 
                           alt={talent.fullName}
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                          <h4 className="font-semibold text-white text-xs">{talent.fullName}</h4>
+                          <h4 className="font-semibold text-white text-xs">{talent.userId?.fullName}</h4>
                           <p className="text-[10px] text-white/80 line-clamp-1">
-                            {talent.category} • {talent.subCategory}
+                            {talent.category || talent.userRole} {talent.subCategory ? `• ${talent.subCategory}` : ""}
                           </p>
                         </div>
                       </div>

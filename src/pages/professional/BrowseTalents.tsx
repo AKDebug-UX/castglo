@@ -30,20 +30,16 @@ export default function BrowseTalents() {
   const fetchTalents = async () => {
     setIsLoading(true);
     try {
-      const params: any = {};
-      if (search) params.search = search;
-      if (role !== "all") params.userRole = role;
-      if (location !== "all") params.location = location;
+      const params: any = {
+        userRole: "talent", // Force to talent as requested
+      };
       
-      // If no role is selected, default to talent for this page
-      if (role === "all") params.userRole = "talent";
-
-      // Also send 'role' as fallback if backend expects it instead of 'userRole'
-      params.role = params.userRole;
+      if (search) params.search = search;
+      if (location !== "all") params.location = location;
 
       const response = await profileAPI.search(params);
-      if (response.data.success && Array.isArray(response.data.data)) {
-        setTalents(response.data.data);
+      if (response.data.success && response.data.data?.profiles) {
+        setTalents(response.data.data.profiles);
       } else {
         setTalents([]);
       }
@@ -130,21 +126,21 @@ export default function BrowseTalents() {
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                   <Avatar className="w-12 h-12">
-                    <AvatarImage src={talent.profilePicture} />
+                    <AvatarImage src={talent.talent.headshots[0].url} />
                     <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                      {talent.fullName?.[0] || 'T'}
+                      {talent.userId?.fullName?.[0] || 'T'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold truncate">{talent.fullName}</h3>
+                      <h3 className="font-semibold truncate">{talent.userId?.fullName}</h3>
                       <div className="flex items-center gap-1 text-sm">
                         <Star className="w-4 h-4 fill-warning text-warning" />
                         <span>{talent.rating || "0.0"}</span>
                         <span className="text-muted-foreground">({talent.reviewCount || 0})</span>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground capitalize">{talent.professionalRoles?.join(", ") || "Performer"}</p>
+                    <p className="text-sm text-muted-foreground capitalize">{talent.professionalRoles?.join(", ") || talent.userRole}</p>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                       <MapPin className="w-3 h-3" />
                       {formatLocation(talent.location)}
@@ -179,14 +175,14 @@ export default function BrowseTalents() {
                             <div className="space-y-4 mt-4">
                               <div className="flex items-center gap-4">
                                 <Avatar className="w-16 h-16">
-                                  <AvatarImage src={selectedTalent.profilePicture} />
+                                  <AvatarImage src={selectedTalent.talent.headshots[0].url} />
                                   <AvatarFallback className="bg-primary/10 text-primary text-xl">
-                                    {selectedTalent.fullName?.[0]}
+                                    {selectedTalent.userId?.fullName?.[0]}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <h3 className="font-semibold text-lg">{selectedTalent.fullName}</h3>
-                                  <p className="text-muted-foreground capitalize">{selectedTalent.professionalRoles?.join(", ")}</p>
+                                  <h3 className="font-semibold text-lg">{selectedTalent.userId?.fullName}</h3>
+                                  <p className="text-muted-foreground capitalize">{selectedTalent.professionalRoles?.join(", ") || selectedTalent.userRole}</p>
                                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                                     <Star className="w-3 h-3 fill-warning text-warning" />
                                     {selectedTalent.rating || "0.0"} ({selectedTalent.reviewCount || 0} reviews) • 

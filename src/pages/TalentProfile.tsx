@@ -65,14 +65,14 @@ export default function TalentProfile() {
               <div className="space-y-6">
                 <div className="rounded-2xl bg-card overflow-hidden shadow-card">
                   <img 
-                    src={talent.profilePicture || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
-                    alt={talent.fullName} 
+                    src={talent.talent.headshots[0].url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
+                    alt={talent.userId?.fullName} 
                     className="w-full aspect-square object-cover" 
                   />
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold">{talent.fullName}</h1>
+                    <h1 className="text-2xl font-bold">{talent.userId?.fullName}</h1>
                     <p className="text-sm text-primary font-medium capitalize mt-1">
-                      {talent.professionalRoles?.join(" • ") || "Talent"}
+                      {talent.professionalRoles?.join(" • ") || talent.userRole}
                     </p>
                     <div className="flex items-center gap-1 text-sm mt-3">
                       <Star className="w-4 h-4 fill-warning text-warning" />
@@ -149,11 +149,11 @@ export default function TalentProfile() {
                   </div>
 
                   {/* Portfolio Gallery */}
-                  {talent.headshots && talent.headshots.length > 0 && (
+                  {talent.talent.headshots && talent.talent.headshots.length > 0 && (
                     <div className="mt-10 border-t pt-8">
                       <h3 className="font-bold text-xl mb-6">Portfolio</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {talent.headshots.map((shot) => (
+                        {talent.talent.headshots.map((shot) => (
                           <div key={shot._id} className="aspect-square rounded-xl overflow-hidden border bg-muted">
                             <img src={shot.url} className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" alt="Portfolio" />
                           </div>

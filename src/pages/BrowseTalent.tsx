@@ -99,14 +99,15 @@ export default function BrowseTalent() {
 
       const response = await profileAPI.search({ 
         search, 
-        userRole: categoryMap[activeCategory] || "talent",
+        userRole: "talent", // Force to talent as requested
         page,
         limit: itemsPerPage
       });
       
-      if (response.data.success && Array.isArray(response.data.data)) {
-        setTalents(response.data.data);
-        setTotalPages(Math.ceil((response.data.total || 0) / itemsPerPage));
+      if (response.data.success && response.data.data?.profiles) {
+        setTalents(response.data.data.profiles);
+        const total = response.data.data.pagination?.total || 0;
+        setTotalPages(Math.ceil(total / itemsPerPage));
       } else {
         setTalents([]);
         setTotalPages(0);
@@ -131,14 +132,14 @@ export default function BrowseTalent() {
       };
 
       const response = await profileAPI.search({ 
-        userRole: categoryMap[activeCategory] || "talent",
+        userRole: "talent", // Force to talent
         page: 1,
         limit: 4,
         sort: "newest"
       });
       
-      if (response.data.success && Array.isArray(response.data.data)) {
-        setNewTalents(response.data.data);
+      if (response.data.success && response.data.data?.profiles) {
+        setNewTalents(response.data.data.profiles);
       } else {
         setNewTalents([]);
       }
@@ -214,13 +215,14 @@ export default function BrowseTalent() {
                     setIsLoading(true);
                     profileAPI.search({ 
                       search: term, 
-                      userRole: categories.find(c => c.name === activeCategory)?.key || "talent",
+                      userRole: "talent",
                       page: 1,
                       limit: itemsPerPage
                     }).then(response => {
-                      if (response.data.success && Array.isArray(response.data.data)) {
-                        setTalents(response.data.data);
-                        setTotalPages(Math.ceil((response.data.total || 0) / itemsPerPage));
+                      if (response.data.success && response.data.data?.profiles) {
+                        setTalents(response.data.data.profiles);
+                        const total = response.data.data.pagination?.total || 0;
+                        setTotalPages(Math.ceil(total / itemsPerPage));
                       }
                       setIsLoading(false);
                     }).catch(() => setIsLoading(false));
@@ -285,9 +287,9 @@ export default function BrowseTalent() {
                     <CardContent className="p-0">
                       <div className="relative aspect-square overflow-hidden bg-slate-100">
                         <img 
-                          src={talent.profilePicture || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
+                          src={talent.talent.headshots[0].url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
                           className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                          alt={talent.fullName}
+                          alt={talent.userId?.fullName}
                         />
                         <div className="absolute top-2 right-2">
                           <Badge className="bg-white/90 backdrop-blur text-slate-900 border-none font-bold text-xs px-2 py-1 flex items-center gap-1 shadow-sm">
@@ -299,9 +301,9 @@ export default function BrowseTalent() {
 
                       <div className="p-5 space-y-4">
                         <div className="space-y-1">
-                          <h3 className="font-bold text-xl text-slate-900 leading-tight">{talent.fullName}</h3>
+                          <h3 className="font-bold text-xl text-slate-900 leading-tight">{talent.userId?.fullName}</h3>
                           <p className="text-[#009698] font-medium text-lg">
-                            {talent.category || "Talent"}
+                            {talent.category || talent.userRole}
                           </p>
                           <p className="text-slate-400 flex items-center gap-1.5 text-lg font-light">
                             <MapPin className="w-4 h-4" />
@@ -351,9 +353,9 @@ export default function BrowseTalent() {
                     <CardContent className="p-0">
                       <div className="relative aspect-square overflow-hidden bg-slate-50">
                         <img 
-                          src={talent.profilePicture || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
+                          src={talent.talent.headshots[0].url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
                           className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-                          alt={talent.fullName}
+                          alt={talent.userId?.fullName}
                         />
                         <div className="absolute bottom-4 left-4">
                           <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-bold text-xs px-3 py-1 shadow-lg">
@@ -362,8 +364,8 @@ export default function BrowseTalent() {
                         </div>
                       </div>
                       <div className="p-5">
-                        <h3 className="font-bold text-lg text-slate-900 leading-tight mb-1">{talent.fullName}</h3>
-                        <p className="text-[#009698] text-sm font-semibold uppercase tracking-wider mb-4">{talent.category || "Talent"}</p>
+                        <h3 className="font-bold text-lg text-slate-900 leading-tight mb-1">{talent.userId?.fullName}</h3>
+                        <p className="text-[#009698] text-sm font-semibold uppercase tracking-wider mb-4">{talent.category || talent.userRole}</p>
                         <Button variant="outline" className="w-full rounded-xl border-slate-200 font-bold group-hover/card:bg-primary group-hover/card:text-white transition-all" asChild>
                           <Link to={talent.userId ? `/talent/${typeof talent.userId === 'object' ? (talent.userId?._id || talent.userId?.id) : talent.userId}` : (talent._id ? `/talent/${talent._id}` : "#")}>View Profile</Link>
                         </Button>
