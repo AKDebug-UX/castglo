@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -257,6 +258,9 @@ interface MessageViewProps {
 
 export default function MessageView({ title = "Messages", subtitle }: MessageViewProps) {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const talentId = searchParams.get("talentId");
+  
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messages, setMessages] = useState([]);
@@ -272,6 +276,7 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   const [formMessage, setFormMessage] = useState("");
   const [selectedRecipientId, setSelectedRecipientId] = useState("");
   const [isMobileView, setIsMobileView] = useState(false);
+  const [preselectedUser, setPreselectedUser] = useState<any>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -286,9 +291,39 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     try {
       const response = await messagingAPI.getMyConversations();
       if (response.data.success && Array.isArray(response.data.data)) {
-        setConversations(response.data.data);
-        if (response.data.data.length > 0 && !selectedConversation && !isMobileView) {
-          setSelectedConversation(response.data.data[0]);
+        const convs = response.data.data;
+        setConversations(convs);
+        
+        // Handle talentId from URL
+        if (talentId) {
+          const existingConv = convs.find(c => 
+            c.participants?.some(p => p._id === talentId)
+          );
+          
+          if (existingConv) {
+            setSelectedConversation(existingConv);
+          } else {
+            // No existing conversation, open modal and pre-select user
+            setSelectedRecipientId(talentId);
+            setIsModalOpen(true);
+            
+            // Fetch user info to show in the select if not in results
+            try {
+              const userRes = await userAPI.getOne(talentId);
+              if (userRes.data?.success) {
+                setPreselectedUser(userRes.data.data);
+              }
+            } catch (err) {
+              console.error("Failed to fetch preselected user:", err);
+            }
+          }
+          
+          // Clear the param after handling it to avoid re-triggering
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete("talentId");
+          setSearchParams(newParams, { replace: true });
+        } else if (convs.length > 0 && !selectedConversation && !isMobileView) {
+          setSelectedConversation(convs[0]);
         }
       } else {
         setConversations([]);
@@ -534,21 +569,39 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
                       </div>
                       {isSearching ? (
                         <div className="p-4 text-center"><Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" /></div>
-                      ) : searchResult.length > 0 ? (
-                        searchResult.map((u) => (
-                          <SelectItem key={u._id} value={u._id}>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-5 w-5">
-                                <AvatarImage src={u.profilePicture} />
-                                <AvatarFallback className="text-[10px]">{u.fullName?.[0]}</AvatarFallback>
-                              </Avatar>
-                              <span>{u.fullName}</span>
-                              <span className="text-[10px] text-slate-400 uppercase">({u.role?.replace('_', ' ')})</span>
-                            </div>
-                          </SelectItem>
-                        ))
                       ) : (
-                        <div className="p-4 text-center text-xs text-slate-500">No users found</div>
+                        <>
+                          {/* Show preselected user if not in search results */}
+                          {preselectedUser && !searchResult.some(u => u._id === preselectedUser._id) && (
+                            <SelectItem key={preselectedUser._id} value={preselectedUser._id}>
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={preselectedUser.profilePicture} />
+                                  <AvatarFallback className="text-[10px]">{preselectedUser.fullName?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <span>{preselectedUser.fullName}</span>
+                                <span className="text-[10px] text-slate-400 uppercase">({preselectedUser.role?.replace('_', ' ')})</span>
+                              </div>
+                            </SelectItem>
+                          )}
+                          
+                          {searchResult.length > 0 ? (
+                            searchResult.map((u) => (
+                              <SelectItem key={u._id} value={u._id}>
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-5 w-5">
+                                    <AvatarImage src={u.profilePicture} />
+                                    <AvatarFallback className="text-[10px]">{u.fullName?.[0]}</AvatarFallback>
+                                  </Avatar>
+                                  <span>{u.fullName}</span>
+                                  <span className="text-[10px] text-slate-400 uppercase">({u.role?.replace('_', ' ')})</span>
+                                </div>
+                              </SelectItem>
+                            ))
+                          ) : !preselectedUser && (
+                            <div className="p-4 text-center text-xs text-slate-500">No users found</div>
+                          )}
+                        </>
                       )}
                     </SelectContent>
                   </Select>
