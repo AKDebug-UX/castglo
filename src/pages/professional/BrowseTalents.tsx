@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { MOCK_TALENTS } from "@/lib/data";
 
 export default function BrowseTalents() {
   const [search, setSearch] = useState("");
@@ -45,13 +44,12 @@ export default function BrowseTalents() {
       if (response.data.success && Array.isArray(response.data.data)) {
         setTalents(response.data.data);
       } else {
-        // Fallback to mock data if API returns empty or success is false
-        setTalents(MOCK_TALENTS.slice(0, 8));
+        setTalents([]);
       }
     } catch (error) {
       console.error("Failed to load talents:", error);
-      toast.error("Failed to load talents from server. Showing mock data.");
-      setTalents(MOCK_TALENTS.slice(0, 8));
+      toast.error("Failed to load talents from server.");
+      setTalents([]);
     } finally {
       setIsLoading(false);
     }

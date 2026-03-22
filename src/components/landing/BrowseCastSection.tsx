@@ -13,7 +13,7 @@ import {
   Loader2
 } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
-import { MOCK_CASTINGS } from "@/lib/data";
+import { formatLocation, formatBudget } from "@/lib/utils";
 
 import castingIndieDrama from "@/assets/casting-indie-drama.jpg";
 
@@ -30,14 +30,14 @@ export function BrowseCastSection() {
         status: "open",
         limit: 6
       });
-      if (response.data.success && Array.isArray(response.data.data)) {
-        setCastings(response.data.data);
+      if (response.data.success && Array.isArray(response.data.data.castingCalls)) {
+        setCastings(response.data.data.castingCalls);
       } else {
-        setCastings(MOCK_CASTINGS.slice(0, 6));
+        setCastings([]);
       }
     } catch (error) {
       console.error("Failed to fetch casting calls:", error);
-      setCastings(MOCK_CASTINGS.slice(0, 6));
+      setCastings([]);
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +120,7 @@ export function BrowseCastSection() {
                         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
                           <MapPin className="w-4 h-4 text-slate-400" />
                         </div>
-                        {casting.location}
+                        {formatLocation(casting.location)}
                       </div>
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
@@ -132,7 +132,7 @@ export function BrowseCastSection() {
                         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
                           <DollarSign className="w-4 h-4 text-slate-400" />
                         </div>
-                        {casting.budget || "Competitive Pay"}
+                        {formatBudget(casting.budget)}
                       </div>
                     </div>
                   </div>

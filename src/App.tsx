@@ -53,8 +53,9 @@ const LivestreamsList = lazy(() => import("./pages/dashboard/LivestreamsList"));
 const VerificationProcess = lazy(() => import("./pages/dashboard/VerificationProcess"));
 
 // Director Dashboard
-const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DirectorLayout })));
+const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DashboardLayout })));
 const DirectorDashboard = lazy(() => import("./pages/director/DirectorDashboard"));
+const DirectorSettings = lazy(() => import("./pages/director/DirectorSettings"));
 const MyProjects = lazy(() => import("./pages/director/MyProjects"));
 const CreateCasting = lazy(() => import("./pages/director/CreateCasting"));
 const DirectorSubmissions = lazy(() => import("./pages/director/DirectorSubmissions"));
@@ -171,6 +172,7 @@ const App = () => (
                 }
               >
                 <Route index element={<DirectorDashboard />} />
+                <Route path="settings" element={<DirectorSettings />} />
                 <Route path="projects" element={<MyProjects />} />
                 <Route path="projects/:id/edit" element={<CreateCasting />} />
                 <Route path="create" element={<CreateCasting />} />

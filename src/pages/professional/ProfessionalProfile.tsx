@@ -9,10 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Upload, Camera, Plus, Loader2, X } from "lucide-react";
 import { profileAPI, authAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { getAvatarUrl, getInitials } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const workingDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function ProfessionalProfile() {
+  const { refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState(null);
@@ -22,15 +25,22 @@ export default function ProfessionalProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await profileAPI.getMe();
-        if (response.data.success) {
-          setProfileData(response.data.data);
-        } else {
-          const userRes = await authAPI.getMe();
-          if (userRes.data.success) {
-            setProfileData(userRes.data.data);
-          }
+        const [authRes, profileRes] = await Promise.all([
+          authAPI.getMe().catch(() => ({ data: { success: false } })),
+          profileAPI.getMe().catch(() => ({ data: { success: false } }))
+        ]);
+
+        let combinedData = {};
+
+        if (authRes.data?.success) {
+          combinedData = { ...combinedData, ...authRes.data.data };
         }
+
+        if (profileRes.data?.success) {
+          combinedData = { ...combinedData, ...profileRes.data.data };
+        }
+
+        setProfileData(combinedData);
       } catch (error) {
         toast.error("Failed to load profile");
       } finally {
@@ -88,11 +98,21 @@ export default function ProfessionalProfile() {
 
       if (profileResponse.data.success || userResponse.data.success) {
         toast.success("Profile updated successfully");
+        
+        // Refresh global user state for header/sidebar
+        await refreshUser();
+
         // Refresh data from server to ensure state is in sync
-        const updated = await profileAPI.getMe();
-        if (updated.data.success) {
-          setProfileData(updated.data.data);
-        }
+        const [authRes, profileRes] = await Promise.all([
+          authAPI.getMe().catch(() => ({ data: { success: false } })),
+          profileAPI.getMe().catch(() => ({ data: { success: false } }))
+        ]);
+
+        let combinedData = {};
+        if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
+        if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
+        
+        setProfileData(combinedData);
       }
     } catch (error) {
       console.error("Save error:", error);
@@ -168,8 +188,8 @@ export default function ProfessionalProfile() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={pendingProfilePhoto?.preview || profileData?.profilePicture} />
-                <AvatarFallback>{profileData?.fullName?.[0]}</AvatarFallback>
+                <AvatarImage src={pendingProfilePhoto?.preview || profileData?.profilePicture || getAvatarUrl(profileData?.fullName)} />
+                <AvatarFallback>{getInitials(profileData?.fullName)}</AvatarFallback>
               </Avatar>
               <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-secondary flex items-center justify-center cursor-pointer shadow-sm hover:bg-secondary/80">
                 <Camera className="h-3.5 w-3.5" />

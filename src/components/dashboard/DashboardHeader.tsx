@@ -13,6 +13,7 @@ import { Menu, Bell, Settings, LogOut } from "lucide-react";
 import userAvatar from "@/assets/user-avatar.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { notificationAPI } from "@/lib/api";
+import { getAvatarUrl, getInitials } from "@/lib/utils";
 
 interface DashboardHeaderProps {
   onMenuClick?: () => void;
@@ -73,7 +74,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       case "admin":
         return "/admin";
       case "casting_director":
-        return "/director";
+        return "/director/settings";
       case "industry_professional":
         return "/professional/profile";
       case "talent":
@@ -148,7 +149,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={user?.profilePicture || userAvatar} alt={user?.fullName || "User"} />
+                <AvatarImage src={user?.profilePicture || getAvatarUrl(user?.fullName)} alt={user?.fullName || "User"} />
                 <AvatarFallback>{getInitials(user?.fullName || "")}</AvatarFallback>
               </Avatar>
             </Button>

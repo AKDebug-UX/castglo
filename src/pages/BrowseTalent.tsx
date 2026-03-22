@@ -38,7 +38,6 @@ import {
 } from "@/components/ui/pagination";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { MOCK_TALENTS } from "@/lib/data";
 
 export default function BrowseTalent() {
   const [search, setSearch] = useState("");
@@ -106,19 +105,15 @@ export default function BrowseTalent() {
       
       if (response.data.success && Array.isArray(response.data.data)) {
         setTalents(response.data.data);
-        setTotalPages(Math.ceil((response.data.total || MOCK_TALENTS.length) / itemsPerPage));
+        setTotalPages(Math.ceil((response.data.total || 0) / itemsPerPage));
       } else {
-        const start = (page - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        setTalents(MOCK_TALENTS.slice(start, end));
-        setTotalPages(Math.ceil(MOCK_TALENTS.length / itemsPerPage));
+        setTalents([]);
+        setTotalPages(0);
       }
     } catch (error) {
       console.error("Failed to fetch talents", error);
-      const start = (page - 1) * itemsPerPage;
-      const end = start + itemsPerPage;
-      setTalents(MOCK_TALENTS.slice(start, end));
-      setTotalPages(Math.ceil(MOCK_TALENTS.length / itemsPerPage));
+      setTalents([]);
+      setTotalPages(0);
     } finally {
       setIsLoading(false);
     }
@@ -144,12 +139,11 @@ export default function BrowseTalent() {
       if (response.data.success && Array.isArray(response.data.data)) {
         setNewTalents(response.data.data);
       } else {
-        // Fallback to a different slice of mock data
-        setNewTalents(MOCK_TALENTS.slice(4, 8));
+        setNewTalents([]);
       }
     } catch (error) {
       console.error("Failed to fetch new talents", error);
-      setNewTalents(MOCK_TALENTS.slice(4, 8));
+      setNewTalents([]);
     } finally {
       setIsNewLoading(false);
     }
@@ -225,7 +219,7 @@ export default function BrowseTalent() {
                     }).then(response => {
                       if (response.data.success && Array.isArray(response.data.data)) {
                         setTalents(response.data.data);
-                        setTotalPages(Math.ceil((response.data.total || MOCK_TALENTS.length) / itemsPerPage));
+                        setTotalPages(Math.ceil((response.data.total || 0) / itemsPerPage));
                       }
                       setIsLoading(false);
                     }).catch(() => setIsLoading(false));

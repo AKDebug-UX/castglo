@@ -10,10 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, Plus, X, Upload, Loader2, ShieldCheck, FileCheck, History, KeyRound, Smartphone, Mail, CreditCard, Bell, UserMinus, Globe, Link2, ExternalLink, BadgeCheck } from "lucide-react";
 import { profileAPI, userAPI, blockchainAPI, authAPI, subscriptionAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { getAvatarUrl, getInitials } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 
 export default function Profile() {
+  const { refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState("basic");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -138,6 +140,10 @@ export default function Profile() {
       });
 
       await Promise.all([userUpdate, profileUpdate]);
+      
+      // Refresh global user state for header/sidebar
+      await refreshUser();
+      
       toast.success("Profile updated successfully");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update profile");
@@ -316,9 +322,9 @@ export default function Profile() {
               <div className="flex items-center gap-4">
                 <div className="relative">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={pendingProfilePhoto?.preview || profileData?.profilePicture || profileData?.talent?.headshots?.[0]?.url} />
+                    <AvatarImage src={pendingProfilePhoto?.preview || profileData?.profilePicture || profileData?.talent?.headshots?.[0]?.url || getAvatarUrl(profileData?.fullName)} />
                     <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
-                      {profileData?.fullName?.[0]?.toUpperCase() || "U"}
+                      {getInitials(profileData?.fullName)}
                     </AvatarFallback>
                   </Avatar>
                   <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-secondary flex items-center justify-center cursor-pointer shadow-sm hover:bg-secondary/80">

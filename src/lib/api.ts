@@ -158,7 +158,7 @@ export const API_ENDPOINTS = {
     PAYMENT_METHODS: '/subscriptions/payment-methods',
   },
   USERS: {
-    PROFILE: '/users/profile',
+    PROFILE: '/user/profile',
     UPDATE_PROFILE: '/user/profile',
     UPDATE_PROFILE_PICTURE: '/users/profile-picture',
     DELETE_ACCOUNT: '/user/account',

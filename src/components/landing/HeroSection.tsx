@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, User, Video, Loader2 } from "lucide-react";
 import { castingCallAPI, profileAPI, livestreamAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { MOCK_CASTINGS, MOCK_TALENTS } from "@/lib/data";
+import { formatLocation, formatBudget } from "@/lib/utils";
 
 import talentMichael from "@/assets/talent-michael.jpg";
 import newsProduction from "@/assets/news-production.jpg";
@@ -33,16 +33,16 @@ export function HeroSection() {
           livestreamAPI.getAll().catch(err => ({ data: { success: false } }))
         ]);
 
-        if (callsRes.data?.success && Array.isArray(callsRes.data.data)) {
-          setFeaturedCalls(callsRes.data.data.slice(0, 5));
+        if (callsRes.data?.success && Array.isArray(callsRes.data.data.castingCalls)) {
+          setFeaturedCalls(callsRes.data.data.castingCalls.slice(0, 5));
         } else {
-          setFeaturedCalls(MOCK_CASTINGS.slice(0, 5));
+          setFeaturedCalls([]);
         }
 
         if (profilesRes.data?.success && Array.isArray(profilesRes.data.data)) {
           setFeaturedTalents(profilesRes.data.data.slice(0, 4));
         } else {
-          setFeaturedTalents(MOCK_TALENTS.slice(0, 4));
+          setFeaturedTalents([]);
         }
 
         if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
@@ -56,8 +56,8 @@ export function HeroSection() {
         }
       } catch (error) {
         console.error("Error fetching landing page data:", error);
-        setFeaturedCalls(MOCK_CASTINGS.slice(0, 5));
-        setFeaturedTalents(MOCK_TALENTS.slice(0, 4));
+        setFeaturedCalls([]);
+        setFeaturedTalents([]);
       } finally {
         setIsLoading(false);
       }
@@ -68,7 +68,7 @@ export function HeroSection() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (castingScrollRef.current) {
+      if (castingScrollRef.current && featuredCalls.length > 0) {
         const { scrollTop, scrollHeight, clientHeight } = castingScrollRef.current;
         if (scrollTop + clientHeight >= scrollHeight - 10) {
           castingScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -77,7 +77,7 @@ export function HeroSection() {
         }
       }
       
-      if (talentScrollRef.current) {
+      if (talentScrollRef.current && featuredTalents.length > 0) {
         const { scrollTop, scrollHeight, clientHeight } = talentScrollRef.current;
         if (scrollTop + clientHeight >= scrollHeight - 10) {
           talentScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -137,7 +137,7 @@ export function HeroSection() {
                 </div>
               ) : (
                 <div className="space-y-3 pb-10">
-                  {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : [...MOCK_CASTINGS, ...MOCK_CASTINGS]).map((call, index) => (
+                  {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : []).map((call, index) => (
                     <div key={`${call._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                       <div className="relative h-48">
                         <img 
@@ -147,7 +147,7 @@ export function HeroSection() {
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
                           <h4 className="font-semibold text-white text-xs line-clamp-1">{call.title}</h4>
-                          <p className="text-[10px] text-white/80">{call.location} • {call.category}</p>
+                          <p className="text-[10px] text-white/80">{formatLocation(call.location)} • {call.category}</p>
                         </div>
                       </div>
                       <div className="p-2">
@@ -374,7 +374,7 @@ export function HeroSection() {
                 </div>
               ) : (
                 <div className="space-y-3 pb-10">
-                  {(featuredTalents.length > 0 ? [...featuredTalents, ...featuredTalents] : [...MOCK_TALENTS, ...MOCK_TALENTS]).map((talent, index) => (
+                  {(featuredTalents.length > 0 ? [...featuredTalents, ...featuredTalents] : []).map((talent, index) => (
                     <div key={`${talent._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                       <div className="relative h-48">
                         <img 

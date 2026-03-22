@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Video, Upload, Loader2 } from "lucide-react";
 import { castingCallAPI, applicationAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { MOCK_CASTINGS } from "@/lib/data";
+import { formatLocation } from "@/lib/utils";
 
 export default function SubmitAudition() {
   const { id } = useParams();
@@ -22,24 +22,6 @@ export default function SubmitAudition() {
     const fetchCasting = async () => {
       if (!id) return;
       setIsLoading(true);
-
-      // Handle mock data
-      if (id.startsWith('mock-')) {
-        const mockCasting = MOCK_CASTINGS.find(c => c._id === id);
-        if (mockCasting) {
-          setCasting({
-            ...mockCasting,
-            status: "Open",
-            description: "Mock casting call for audition submission testing.",
-            requirements: ["Professional attitude", "Available for travel", "Previous experience preferred"],
-            payRate: "$500 - $1,000 per day",
-            postedBy: { fullName: "Mock Casting Agency" },
-            deadline: "2026-12-31"
-          });
-          setIsLoading(false);
-          return;
-        }
-      }
 
       try {
         const response = await castingCallAPI.getOne(id);
@@ -63,16 +45,6 @@ export default function SubmitAudition() {
     }
 
     setIsSubmitting(true);
-
-    // Mock submission for mock IDs
-    if (id.startsWith('mock-')) {
-      setTimeout(() => {
-        toast.success("Mock audition submitted successfully!");
-        setIsSubmitting(false);
-        navigate("/dashboard/submissions");
-      }, 1500);
-      return;
-    }
 
     try {
       const formData = new FormData();
@@ -146,7 +118,7 @@ export default function SubmitAudition() {
               <p className="text-sm text-muted-foreground">{casting.postedBy?.fullName}</p>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="secondary">{casting.category}</Badge>
-                <span className="text-sm text-muted-foreground">{casting.location}</span>
+                <span className="text-sm text-muted-foreground">{formatLocation(casting.location)}</span>
               </div>
             </div>
           </div>

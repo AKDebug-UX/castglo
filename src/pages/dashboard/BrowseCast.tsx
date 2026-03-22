@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { MOCK_CASTINGS } from "@/lib/data";
+import { formatLocation, formatBudget } from "@/lib/utils";
 
 import castingIndieDrama from "@/assets/casting-indie-drama.jpg";
 import castingCommercial from "@/assets/casting-commercial.jpg";
@@ -26,6 +26,7 @@ import castingCommercial from "@/assets/casting-commercial.jpg";
 export default function BrowseCast() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [castings, setCastings] = useState([]);
+  const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 1 });
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("all");
@@ -40,16 +41,18 @@ export default function BrowseCast() {
         status: "open", // Use the backend enum status: "open"
         page: 1 
       });
-      if (response.data.success && Array.isArray(response.data.data)) {
-        setCastings(response.data.data);
+      if (response.data.success && Array.isArray(response.data.data.castingCalls)) {
+        setCastings(response.data.data.castingCalls);
+        if (response.data.data.pagination) {
+          setPagination(response.data.data.pagination);
+        }
       } else {
-        setCastings(MOCK_CASTINGS);
+        setCastings([]);
       }
     } catch (error) {
       console.error("Failed to fetch casting calls:", error);
-      // Fallback to mock data on server error (500)
-      setCastings(MOCK_CASTINGS);
-      toast.error(error.response?.data?.message || "Server issue detected. Showing featured opportunities.");
+      setCastings([]);
+      toast.error(error.response?.data?.message || "Server issue detected. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -168,7 +171,7 @@ export default function BrowseCast() {
 
       {/* Results Count */}
       <p className="text-sm font-medium text-slate-500 px-1">
-        {isLoading ? "Loading opportunities..." : `Showing ${castings.length} casting calls`}
+        {isLoading ? "Loading opportunities..." : `Showing ${castings.length} of ${pagination.total} casting calls`}
       </p>
 
       {/* Grid View */}
@@ -194,7 +197,7 @@ export default function BrowseCast() {
                   <div className="space-y-2.5 text-sm text-slate-500 mb-6">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-slate-400" />
-                      {casting.location}
+                      {formatLocation(casting.location)}
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-slate-400" />
@@ -202,7 +205,7 @@ export default function BrowseCast() {
                     </div>
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-slate-400" />
-                      {casting.budget || "Competitive Pay"}
+                      {formatBudget(casting.budget)}
                     </div>
                   </div>
                 </div>
@@ -257,7 +260,7 @@ export default function BrowseCast() {
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-4 text-sm text-slate-400">
                       <span className="flex items-center gap-1.5">
                         <MapPin className="w-4 h-4" />
-                        {casting.location}
+                        {formatLocation(casting.location)}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Calendar className="w-4 h-4" />
@@ -265,7 +268,7 @@ export default function BrowseCast() {
                       </span>
                       <span className="flex items-center gap-1.5 font-medium text-slate-500">
                         <DollarSign className="w-4 h-4" />
-                        {casting.budget || "Competitive Pay"}
+                        {formatBudget(casting.budget)}
                       </span>
                     </div>
                   </div>

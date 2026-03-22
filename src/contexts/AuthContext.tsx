@@ -21,6 +21,7 @@ interface AuthContextType {
   resetPassword: (data: { token: string, newPassword: string, confirmPassword: string }) => Promise<{ error?: string }>;
   verifyEmail: (token: string) => Promise<{ error?: string }>;
   resendVerification: (email: string) => Promise<{ error?: string }>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -154,6 +155,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const refreshUser = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const response = await authAPI.getMe();
+        if (response.data.success) {
+          const userData = response.data.data;
+          const userObj: User = {
+            id: userData._id || userData.id,
+            email: userData.email,
+            role: userData.roles[0] as UserRole,
+            fullName: userData.fullName,
+            profilePicture: userData.profilePicture,
+          };
+          setUser(userObj);
+          localStorage.setItem('userData', JSON.stringify(userObj));
+        }
+      } catch (error) {
+        console.error("User refresh failed:", error);
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -164,7 +188,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       forgotPassword,
       resetPassword,
       verifyEmail,
-      resendVerification
+      resendVerification,
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>

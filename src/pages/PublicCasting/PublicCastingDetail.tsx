@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { MOCK_CASTINGS } from "@/lib/data";
 import { useNavigate } from "react-router-dom";
+import { formatLocation, formatBudget } from "@/lib/utils";
 
 export default function PublicCastingDetail() {
   const navigate = useNavigate();
@@ -27,23 +27,6 @@ export default function PublicCastingDetail() {
     const fetchCasting = async () => {
       if (!id) return;
       setIsLoading(true);
-
-      if (id.startsWith('mock-')) {
-        const mockCasting = MOCK_CASTINGS.find(c => c._id === id);
-        if (mockCasting) {
-          setCasting({
-            ...mockCasting,
-            status: "Open",
-            description: "This is a mock casting call for demonstration purposes. It includes all the necessary details to showcase how a real casting call would look on the platform.",
-            requirements: ["Professional attitude", "Available for travel", "Previous experience preferred"],
-            payRate: "$500 - $1,000 per day",
-            postedBy: { fullName: "Mock Casting Agency" },
-            deadline: "2026-12-31"
-          });
-          setIsLoading(false);
-          return;
-        }
-      }
 
       try {
         const response = await castingCallAPI.getOne(id);
@@ -152,7 +135,7 @@ export default function PublicCastingDetail() {
                       <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#009698]/10 group-hover:text-[#009698] transition-colors">
                         <MapPin className="w-5 h-5" />
                       </div>
-                      <span className="text-slate-600 font-medium">{casting.location}</span>
+                      <span className="text-slate-600 font-medium">{formatLocation(casting.location)}</span>
                     </div>
                     <div className="flex items-center gap-4 group">
                       <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#009698]/10 group-hover:text-[#009698] transition-colors">
@@ -164,7 +147,7 @@ export default function PublicCastingDetail() {
                       <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#009698]/10 group-hover:text-[#009698] transition-colors">
                         <DollarSign className="w-5 h-5" />
                       </div>
-                      <span className="text-slate-600 font-medium">{casting.payRate || casting.budget || "$"}</span>
+                      <span className="text-slate-600 font-medium">{formatBudget(casting.payRate || casting.budget)}</span>
                     </div>
                     <div className="pt-2">
                       <Badge variant="secondary" className="bg-[#D98EB3]/10 text-[#D98EB3] hover:bg-[#D98EB3]/20 border-none px-4 py-1.5 rounded-full font-bold">

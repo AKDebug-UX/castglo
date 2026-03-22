@@ -7,11 +7,13 @@ import {
   Plus, 
   Users,
   MessageSquare,
-  Bell
+  Bell,
+  Settings
 } from "lucide-react";
 
 const navItems = [
   { title: "Dashboard", href: "/director", Icon: LayoutDashboard },
+  { title: "Settings", href: "/director/settings", Icon: Settings },
   { title: "My Projects", href: "/director/projects", Icon: FolderOpen },
   { title: "Create Casting Calls", href: "/director/create", Icon: Plus },
   { title: "Submissions", href: "/director/submissions", Icon: Users },

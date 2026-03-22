@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { applicationAPI, castingCallAPI, authAPI, livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { MOCK_CASTINGS } from "@/lib/data";
 
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -77,21 +76,15 @@ export default function Dashboard() {
           ]);
         }
 
-        if (castingsRes.data?.success && Array.isArray(castingsRes.data.data) && castingsRes.data.data.length > 0) {
-          setUpcomingCastings(castingsRes.data.data.slice(0, 2));
+        if (castingsRes.data?.success && Array.isArray(castingsRes.data.data.castingCalls) && castingsRes.data.data.castingCalls.length > 0) {
+          setUpcomingCastings(castingsRes.data.data.castingCalls.slice(0, 2));
         } else {
-          // If no actual data from API or API failed, show mock ones to avoid empty page
-          setUpcomingCastings(MOCK_CASTINGS.slice(0, 2));
-          if (!castingsRes.data?.success) {
-            console.warn("Casting calls API failed, using mock data fallback.");
-          }
+          setUpcomingCastings([]);
         }
 
       } catch (error) {
         console.error("Dashboard data fetch error:", error);
         toast.error("Some dashboard data could not be loaded. Showing latest updates.");
-        // Ensure defaults are set if everything fails
-        if (upcomingCastings.length === 0) setUpcomingCastings(MOCK_CASTINGS.slice(0, 2));
       } finally {
         setIsLoading(false);
       }
