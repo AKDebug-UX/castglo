@@ -87,6 +87,8 @@ const CommunityGuidelines = lazy(() => import('./pages/CommunityGuidelines'));
 const SafetyGuidelines = lazy(() => import('./pages/SafetyGuidelines'));
 const CopyrightPolicy = lazy(() => import('./pages/CopyrightPolicy'));
 const AntiScamGuidelines = lazy(() => import('./pages/AntiScamGuidelines'));
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
+const PaymentCancel = lazy(() => import('./pages/PaymentCancel'));
 
 const queryClient = new QueryClient();
 
@@ -139,6 +141,8 @@ const App = () => (
               <Route path="/safety-guidelines" element={<SafetyGuidelines />} />
               <Route path="/copyright-policy" element={<CopyrightPolicy />} />
               <Route path="/anti-scam-guidelines" element={<AntiScamGuidelines />} />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentCancel />} />
               {/* Talent Dashboard Routes */}
               <Route
                 path="/dashboard"
