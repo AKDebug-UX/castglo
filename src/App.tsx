@@ -53,7 +53,7 @@ const LivestreamsList = lazy(() => import("./pages/dashboard/LivestreamsList"));
 const VerificationProcess = lazy(() => import("./pages/dashboard/VerificationProcess"));
 
 // Director Dashboard
-const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DashboardLayout })));
+const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DirectorLayout })));
 const DirectorDashboard = lazy(() => import("./pages/director/DirectorDashboard"));
 const DirectorSettings = lazy(() => import("./pages/director/DirectorSettings"));
 const MyProjects = lazy(() => import("./pages/director/MyProjects"));
