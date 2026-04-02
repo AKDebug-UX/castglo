@@ -9,9 +9,10 @@
    SelectTrigger,
    SelectValue,
  } from "@/components/ui/select";
- import { Play, Loader2 } from "lucide-react";
+ import { Play, Loader2, Search, Filter } from "lucide-react";
  import { adminAPI } from "@/lib/api";
  import { toast } from "sonner";
+ import { Input } from "@/components/ui/input";
  
  const getStatusBadge = (status: string) => {
    switch (status) {
@@ -28,6 +29,7 @@
  
  export default function AdminSubmissions() {
   const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [submissions, setSubmissions] = useState([]);
   const [stats, setStats] = useState({ total: 0, approved: 0, underReview: 0, flagged: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -36,7 +38,10 @@
     setIsLoading(true);
     try {
       const [submissionsRes, statsRes] = await Promise.all([
-        adminAPI.getSubmissions({ status: statusFilter === "all" ? undefined : statusFilter }),
+        adminAPI.getSubmissions({ 
+          status: statusFilter === "all" ? undefined : statusFilter,
+          search: searchQuery || undefined
+        }),
         adminAPI.getSubmissionStats()
       ]);
 
@@ -60,8 +65,11 @@
   };
 
   useEffect(() => {
-    fetchData();
-  }, [statusFilter]);
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 500); // Debounce search
+    return () => clearTimeout(timer);
+  }, [statusFilter, searchQuery]);
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
@@ -103,22 +111,33 @@
 
       {/* Submissions List */}
       <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-base font-semibold">All Submissions</CardTitle>
             <p className="text-sm text-muted-foreground">Review audition submissions and AI feedback</p>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="under-review">Under Review</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="flagged">Flagged</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by title or talent..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-36">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="under-review">Under Review</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="flagged">Flagged</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (

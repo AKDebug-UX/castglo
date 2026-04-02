@@ -13,17 +13,27 @@ import {
   Eye,
   Pencil,
   Trash2,
-  Loader2
+  Loader2,
+  Copy,
+  MoreVertical
 } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 export default function MyProjects() {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState("all");
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
 
   const fetchProjects = async () => {
     setIsLoading(true);
@@ -60,6 +70,39 @@ export default function MyProjects() {
       }
     } catch (error) {
       toast.error("Failed to delete project");
+    }
+  };
+
+  const handleDuplicate = async (project: any) => {
+    setIsDuplicating(project._id);
+    try {
+      const payload = {
+        projectName: `${project.projectName} (Copy)`,
+        projectType: project.projectType,
+        title: project.title,
+        description: project.description,
+        requirements: project.requirements,
+        category: project.category,
+        location: project.location,
+        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 30 days from now
+        status: "draft",
+        image: project.image,
+        roles: project.roles || [{
+          roleName: project.title,
+          description: project.description,
+          requirements: project.requirements
+        }]
+      };
+
+      const response = await castingCallAPI.create(payload);
+      if (response.data.success) {
+        toast.success("Project duplicated as draft");
+        fetchProjects();
+      }
+    } catch (error) {
+      toast.error("Failed to duplicate project");
+    } finally {
+      setIsDuplicating(null);
     }
   };
 
@@ -168,15 +211,38 @@ export default function MyProjects() {
                       Submissions
                     </Link>
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1" asChild>
-                    <Link to={`/director/projects/${project._id}/edit`}>
-                      <Pencil className="w-3 h-3 mr-1" />
-                      Edit
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(project._id)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="px-2">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link to={`/director/projects/${project._id}/edit`}>
+                          <Pencil className="w-4 h-4 mr-2" /> Edit Project
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleDuplicate(project)}
+                        disabled={isDuplicating === project._id}
+                      >
+                        {isDuplicating === project._id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Copy className="w-4 h-4 mr-2" />
+                        )}
+                        Duplicate as Draft
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-destructive" 
+                        onClick={() => handleDelete(project._id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete Project
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardContent>
             </Card>

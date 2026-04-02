@@ -16,6 +16,8 @@ import {
 import { profileAPI, authAPI } from "@/lib/api";
 import { toast } from "sonner";
 
+import { Link } from "react-router-dom";
+
 export default function ProfessionalDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
@@ -71,9 +73,22 @@ export default function ProfessionalDashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold">Welcome back, {user?.fullName || 'Professional'}!</h1>
-        <p className="text-muted-foreground">Manage your services and connect with talent</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Welcome back, {user?.fullName || 'Professional'}!</h1>
+          <p className="text-muted-foreground">Manage your services and connect with talent</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link to={`/professional/${user?._id || user?.id}`}>
+              <Eye className="w-4 h-4 mr-2" />
+              View Public Profile
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/professional/profile">Edit Profile</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Grid */}

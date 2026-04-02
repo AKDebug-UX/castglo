@@ -6,13 +6,30 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Upload, Camera, Plus, Loader2, X } from "lucide-react";
+import { ArrowLeft, Upload, Camera, Plus, Loader2, X, Globe, Instagram, Linkedin, Building2, Briefcase, Award } from "lucide-react";
 import { profileAPI, authAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { getAvatarUrl, getInitials } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { Separator } from "@/components/ui/separator";
 
-const workingDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const professionalCategories = [
+  "Talent Agent",
+  "Talent Manager",
+  "Casting Professional",
+  "Photographer",
+  "Videographer",
+  "Stylist",
+  "Makeup Artist",
+  "Acting Coach",
+  "Voice Coach",
+  "Producer",
+  "Director",
+  "Other"
+];
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 export default function ProfessionalProfile() {
   const { refreshUser } = useAuth();
@@ -83,12 +100,22 @@ export default function ProfessionalProfile() {
         professionalRoles: profileData?.professionalRoles || [],
         location: profileData?.location,
         stageName: profileData?.stageName || profileData?.fullName,
+        // Added industry professional fields
+        companyName: profileData?.companyName || "",
+        website: profileData?.website || "",
+        instagram: profileData?.instagram || "",
+        linkedin: profileData?.linkedin || "",
+        professionalCategory: profileData?.professionalCategory || "",
+        experienceYears: profileData?.experienceYears || "",
+        specialties: profileData?.specialties || [],
       };
 
       const userPayload = {
         fullName: profileData?.fullName,
         location: profileData?.location,
         bio: profileData?.bio,
+        // Sync these to user if needed
+        companyName: profileData?.companyName,
       };
 
       const [profileResponse, userResponse] = await Promise.all([
@@ -216,48 +243,135 @@ export default function ProfessionalProfile() {
       <Card>
         <CardHeader>
           <CardTitle>Basic Information</CardTitle>
-          <p className="text-sm text-muted-foreground">Your professional details and contact information</p>
+          <p className="text-sm text-muted-foreground">Your professional identity on the platform</p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Full Name</label>
-            <Input 
-              name="fullName"
-              value={profileData?.fullName || profileData?.stageName || ""} 
-              onChange={handleInputChange}
-            />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input 
+                name="fullName"
+                value={profileData?.fullName || profileData?.stageName || ""} 
+                onChange={handleInputChange}
+                placeholder="e.g. John Doe"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Professional Category</Label>
+              <Select 
+                value={profileData?.professionalCategory || ""} 
+                onValueChange={(v) => setProfileData(p => ({ ...p, professionalCategory: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {professionalCategories.map(cat => (
+                    <SelectItem key={cat} value={cat.toLowerCase().replace(/\s+/g, '_')}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Profession (e.g., Photographer, Stylist)</label>
-            <Input 
-              name="professionalRoles"
-              value={profileData?.professionalRoles?.join(", ") || ""} 
-              onChange={(e) => {
-                const roles = e.target.value.split(",").map(r => r.trim());
-                setProfileData((prev) => ({ ...prev, professionalRoles: roles }));
-              }}
-            />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-primary" />
+                Company / Agency Name
+              </Label>
+              <Input 
+                name="companyName"
+                value={profileData?.companyName || ""} 
+                onChange={handleInputChange}
+                placeholder="e.g. Elite Casting Agency"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-primary" />
+                Years of Experience
+              </Label>
+              <Input 
+                name="experienceYears"
+                type="number"
+                value={profileData?.experienceYears || ""} 
+                onChange={handleInputChange}
+                placeholder="e.g. 10"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">About Me</label>
-            <Textarea 
-              name="bio"
-              rows={3}
-              value={profileData?.bio || ""}
-              onChange={handleInputChange}
-              placeholder="Tell clients about your experience and expertise..."
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Location</label>
+          <div className="space-y-2">
+            <Label>Location</Label>
             <Input 
               name="location"
               value={profileData?.location || ""}
               onChange={handleInputChange}
+              placeholder="e.g. London, UK"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>About / Professional Bio</Label>
+            <Textarea 
+              name="bio"
+              rows={4}
+              value={profileData?.bio || ""}
+              onChange={handleInputChange}
+              placeholder="Tell clients about your career, achievements, and what you offer..."
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Online Presence */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Online Presence</CardTitle>
+          <p className="text-sm text-muted-foreground">Links to your work and social profiles</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-1">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-primary" />
+                Website / Portfolio URL
+              </Label>
+              <Input 
+                name="website"
+                value={profileData?.website || ""} 
+                onChange={handleInputChange}
+                placeholder="https://www.yourportfolio.com"
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Instagram className="w-4 h-4 text-primary" />
+                Instagram Profile
+              </Label>
+              <Input 
+                name="instagram"
+                value={profileData?.instagram || ""} 
+                onChange={handleInputChange}
+                placeholder="@username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Linkedin className="w-4 h-4 text-primary" />
+                LinkedIn Profile
+              </Label>
+              <Input 
+                name="linkedin"
+                value={profileData?.linkedin || ""} 
+                onChange={handleInputChange}
+                placeholder="linkedin.com/in/username"
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -9,6 +9,7 @@ interface User {
   role: UserRole;
   fullName: string;
   profilePicture?: string;
+  isEmailVerified: boolean;
 }
 
 interface AuthContextType {
@@ -47,6 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               role: userData.roles[0] as UserRole,
               fullName: userData.fullName,
               profilePicture: userData.profilePicture,
+              isEmailVerified: userData.isEmailVerified || false,
             };
             setUser(userObj);
             localStorage.setItem('userData', JSON.stringify(userObj));
@@ -80,6 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           role: userData.role as UserRole,
           fullName: userData.fullName,
           profilePicture: userData.profilePicture,
+          isEmailVerified: userData.isEmailVerified || false,
         };
         setUser(userObj);
         localStorage.setItem('userData', JSON.stringify(userObj));
@@ -168,6 +171,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             role: userData.roles[0] as UserRole,
             fullName: userData.fullName,
             profilePicture: userData.profilePicture,
+            isEmailVerified: userData.isEmailVerified || false,
           };
           setUser(userObj);
           localStorage.setItem('userData', JSON.stringify(userObj));

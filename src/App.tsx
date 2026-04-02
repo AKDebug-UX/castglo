@@ -19,6 +19,7 @@ const SignUp = lazy(() => import("./pages/SignUp"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
+const VerificationPending = lazy(() => import("./pages/VerificationPending"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const News = lazy(() => import("./pages/News"));
 const NewsArticle = lazy(() => import("./pages/NewsArticle"));
@@ -36,6 +37,7 @@ const Chat = lazy(() => import("./pages/Chat"));
 const PublicCastingDetail = lazy(() => import("./pages/PublicCasting/PublicCastingDetail"));
 const PublicCasting = lazy(() => import("./pages/PublicCasting"));
 const TalentProfile = lazy(() => import("./pages/TalentProfile"));
+const ProfessionalPublicProfile = lazy(() => import("./pages/ProfessionalPublicProfile"));
 
 // Talent Dashboard
 const DashboardLayout = lazy(() => import("./components/dashboard/DashboardLayout").then(m => ({ default: m.DashboardLayout })));
@@ -126,12 +128,14 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/verification-pending" element={<VerificationPending />} />
               <Route path="/news" element={<News />} />
               <Route path="/news/:id" element={<NewsArticle />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/cookies" element={<Cookies />} />
               <Route path="/talent/:id" element={<TalentProfile />} />
+              <Route path="/professional/:id" element={<ProfessionalPublicProfile />} />
               <Route path="/browse-cast" element={<PublicCasting />} />
               <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
               <Route path="/cast/:id" element={<PublicCastingDetail />} />

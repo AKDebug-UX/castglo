@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Plus, X, Upload, Loader2, ShieldCheck, FileCheck, History, KeyRound, Smartphone, Mail, CreditCard, Bell, UserMinus, Globe, Link2, ExternalLink, BadgeCheck } from "lucide-react";
+import { Camera, Plus, X, Upload, Loader2, ShieldCheck, FileCheck, History, KeyRound, Smartphone, Mail, CreditCard, Bell, UserMinus, Globe, Link2, ExternalLink, BadgeCheck, Ruler, Weight, Eye as EyeIcon, User, VenetianMask, Languages } from "lucide-react";
 import { profileAPI, userAPI, blockchainAPI, authAPI, subscriptionAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -127,7 +127,12 @@ export default function Profile() {
         jobTitle: profileData.jobTitle,
         website: profileData.website,
         professionalLinks: profileData.professionalLinks,
-        notificationSettings: profileData.notificationSettings
+        notificationSettings: profileData.notificationSettings,
+        // Sync demographic fields
+        gender: profileData.gender,
+        ethnicity: profileData.ethnicity,
+        languages: profileData.languages,
+        playingAge: profileData.playingAge
       });
 
       // Update Talent/Profile data (PATCH /profiles/me)
@@ -136,8 +141,13 @@ export default function Profile() {
         skills: profileData?.talent?.skills || profileData?.skills,
         education: profileData?.talent?.education || profileData?.education,
         equipment: profileData?.talent?.equipment || profileData?.equipment,
-        physicalAttributes: profileData?.talent?.physicalAttributes || profileData?.physicalAttributes,
+        physicalAttributes: profileData?.physicalAttributes || profileData?.talent?.physicalAttributes,
         experience: profileData.experience,
+        // Demographic fields for talent profile
+        gender: profileData.gender,
+        ethnicity: profileData.ethnicity,
+        languages: profileData.languages,
+        playingAge: profileData.playingAge
       });
 
       await Promise.all([userUpdate, profileUpdate]);
@@ -575,13 +585,16 @@ export default function Profile() {
         <TabsContent value="physical" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Physical Attributes</CardTitle>
-              <p className="text-sm text-muted-foreground">Provide physical details for casting considerations</p>
+              <CardTitle>Physical Attributes & Demographics</CardTitle>
+              <p className="text-sm text-muted-foreground">Provide details for casting considerations and diversity tracking</p>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Height (cm)</label>
+              <div className="grid gap-6 md:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    <Ruler className="w-4 h-4 text-primary" />
+                    Height (cm)
+                  </label>
                   <Input 
                     name="height"
                     type="number"
@@ -590,10 +603,14 @@ export default function Profile() {
                       ...prev,
                       physicalAttributes: { ...(prev?.physicalAttributes || {}), height: e.target.value }
                     }))}
+                    placeholder="e.g. 175"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Weight (kg)</label>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    <Weight className="w-4 h-4 text-primary" />
+                    Weight (kg)
+                  </label>
                   <Input 
                     name="weight"
                     type="number"
@@ -602,17 +619,112 @@ export default function Profile() {
                       ...prev,
                       physicalAttributes: { ...(prev?.physicalAttributes || {}), weight: e.target.value }
                     }))}
+                    placeholder="e.g. 70"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Eye Color</label>
-                  <Input 
-                    name="eyeColor"
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    <EyeIcon className="w-4 h-4 text-primary" />
+                    Eye Color
+                  </label>
+                  <Select 
                     value={profileData?.physicalAttributes?.eyeColor || ""} 
-                    onChange={(e) => setProfileData((prev) => ({
+                    onValueChange={(v) => setProfileData((prev) => ({
                       ...prev,
-                      physicalAttributes: { ...(prev?.physicalAttributes || {}), eyeColor: e.target.value }
+                      physicalAttributes: { ...(prev?.physicalAttributes || {}), eyeColor: v }
                     }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Eye Color" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="brown">Brown</SelectItem>
+                      <SelectItem value="blue">Blue</SelectItem>
+                      <SelectItem value="green">Green</SelectItem>
+                      <SelectItem value="hazel">Hazel</SelectItem>
+                      <SelectItem value="grey">Grey</SelectItem>
+                      <SelectItem value="amber">Amber</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    <User className="w-4 h-4 text-primary" />
+                    Gender Identity
+                  </label>
+                  <Select 
+                    value={profileData?.gender || ""} 
+                    onValueChange={(v) => handleSelectChange("gender", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="non-binary">Non-binary</SelectItem>
+                      <SelectItem value="transgender">Transgender</SelectItem>
+                      <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    <VenetianMask className="w-4 h-4 text-primary" />
+                    Ethnicity
+                  </label>
+                  <Select 
+                    value={profileData?.ethnicity || ""} 
+                    onValueChange={(v) => handleSelectChange("ethnicity", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Ethnicity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="caucasian">Caucasian / White</SelectItem>
+                      <SelectItem value="black">Black / African / Caribbean</SelectItem>
+                      <SelectItem value="asian">Asian (East, South, SE)</SelectItem>
+                      <SelectItem value="latino">Latino / Hispanic</SelectItem>
+                      <SelectItem value="middle-eastern">Middle Eastern</SelectItem>
+                      <SelectItem value="mixed">Mixed Ethnicity</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    <Languages className="w-4 h-4 text-primary" />
+                    Languages Spoken
+                  </label>
+                  <Input 
+                    name="languages"
+                    value={profileData?.languages?.join(", ") || ""} 
+                    onChange={(e) => {
+                      const langs = e.target.value.split(",").map(l => l.trim());
+                      setProfileData((prev) => ({ ...prev, languages: langs }));
+                    }}
+                    placeholder="e.g. English, Spanish, French"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    <History className="w-4 h-4 text-primary" />
+                    Playing Age Range
+                  </label>
+                  <Input 
+                    name="playingAge"
+                    placeholder="e.g. 18-25"
+                    value={profileData?.playingAge || ""}
+                    onChange={handleInputChange}
                   />
                 </div>
               </div>

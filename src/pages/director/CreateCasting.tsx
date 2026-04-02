@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, MapPin, Calendar, Loader2, Image as ImageIcon, Upload } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, Loader2, Image as ImageIcon, Upload, Award } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -27,7 +29,13 @@ export default function CreateCasting() {
     location: "",
     deadline: "",
     status: "open",
-    image: ""
+    image: "",
+    // Enhanced fields
+    ageRange: "18-35",
+    gender: "any",
+    ethnicity: "any",
+    unionStatus: "non-union",
+    payRate: "",
   });
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -222,44 +230,118 @@ export default function CreateCasting() {
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Category</label>
-                  <Select 
-                    value={formData.category}
-                    onValueChange={(v) => handleSelectChange("category", v)}
-                  >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select value={formData.category} onValueChange={(v) => handleSelectChange("category", v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="drama">Drama</SelectItem>
                       <SelectItem value="comedy">Comedy</SelectItem>
-                      <SelectItem value="thriller">Thriller</SelectItem>
                       <SelectItem value="commercial">Commercial</SelectItem>
-                      <SelectItem value="animation">Animation</SelectItem>
+                      <SelectItem value="modeling">Modeling</SelectItem>
+                      <SelectItem value="theatre">Theatre</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Location</label>
+                <div className="space-y-2">
+                  <Label htmlFor="deadline">Deadline</Label>
                   <Input 
-                    name="location"
-                    value={formData.location}
+                    id="deadline" 
+                    name="deadline"
+                    type="date" 
+                    required 
+                    value={formData.deadline}
                     onChange={handleChange}
-                    placeholder="e.g., Los Angeles, CA or Remote" 
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Application Deadline *</label>
+              <Separator className="my-6" />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Award className="w-5 h-5 text-primary" />
+                  Role Specifications
+                </h3>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="gender">Gender</Label>
+                    <Select value={formData.gender} onValueChange={(v) => handleSelectChange("gender", v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any</SelectItem>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="non-binary">Non-binary</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ageRange">Age Range</Label>
+                    <Input 
+                      id="ageRange"
+                      name="ageRange"
+                      placeholder="e.g. 18-35"
+                      value={formData.ageRange}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ethnicity">Ethnicity</Label>
+                    <Select value={formData.ethnicity} onValueChange={(v) => handleSelectChange("ethnicity", v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Ethnicity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any</SelectItem>
+                        <SelectItem value="caucasian">Caucasian</SelectItem>
+                        <SelectItem value="black">Black/African Descent</SelectItem>
+                        <SelectItem value="asian">Asian</SelectItem>
+                        <SelectItem value="latino">Latino/Hispanic</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unionStatus">Union Status</Label>
+                    <Select value={formData.unionStatus} onValueChange={(v) => handleSelectChange("unionStatus", v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Union Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="non-union">Non-Union</SelectItem>
+                        <SelectItem value="union">Union (SAG-AFTRA/Equity)</SelectItem>
+                        <SelectItem value="both">Open to Both</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 lg:col-span-2">
+                    <Label htmlFor="payRate">Pay Rate / Budget</Label>
+                    <Input 
+                      id="payRate"
+                      name="payRate"
+                      placeholder="e.g. £250/day, £1500 total, etc."
+                      value={formData.payRate}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
                 <Input 
-                  name="deadline"
-                  type="date" 
-                  value={formData.deadline}
+                  id="location"
+                  name="location"
+                  value={formData.location}
                   onChange={handleChange}
-                  required
+                  placeholder="e.g., Los Angeles, CA or Remote" 
                 />
               </div>
 

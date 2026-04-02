@@ -309,13 +309,16 @@ export const castingCallAPI = {
 
 // --- APPLICATION ENDPOINTS ---
 export const applicationAPI = {
-  create: (data) => api.post(API_ENDPOINTS.APPLICATIONS.CREATE, data),
+  create: (data: FormData | any) => api.post(API_ENDPOINTS.APPLICATIONS.CREATE, data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {}
+  }),
   getMe: () => api.get(API_ENDPOINTS.APPLICATIONS.ME),
   getByCastingCall: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.BY_CASTING_CALL(id)),
   getDetails: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.DETAILS(id)),
   shortlist: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.SHORTLIST(id)),
   reject: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.REJECT(id)),
   accept: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.ACCEPT(id)),
+  update: (id: string, data: any) => api.patch(API_ENDPOINTS.APPLICATIONS.DETAILS(id), data),
   addCommunication: (id: string, message: string) => api.post(API_ENDPOINTS.APPLICATIONS.COMMUNICATION(id), { message }),
   withdraw: (id: string) => api.delete(API_ENDPOINTS.APPLICATIONS.WITHDRAW(id)),
 };

@@ -14,11 +14,38 @@ import {
   XCircle,
   Award,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  Star,
+  Search,
+  MessageSquare,
+  MoreVertical,
+  CheckSquare,
+  Square,
+  UserCheck,
+  UserX,
+  CalendarDays,
+  ExternalLink
 } from "lucide-react";
 import { applicationAPI, castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogDescription
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
 export default function DirectorSubmissions() {
   const { id } = useParams(); // castingCallId
@@ -28,6 +55,16 @@ export default function DirectorSubmissions() {
   const [castingCall, setCastingCall] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // Review Modal State
+  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [reviewNotes, setReviewNotes] = useState("");
+  const [reviewScore, setReviewScore] = useState(0);
+  const [isReviewSaving, setIsReviewSaving] = useState(false);
+
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -103,6 +140,62 @@ export default function DirectorSubmissions() {
     }
   };
 
+  const handleBulkAction = async (action: 'shortlist' | 'reject') => {
+    if (selectedIds.length === 0) return;
+    
+    setActionLoading("bulk");
+    try {
+      await Promise.all(selectedIds.map(appId => 
+        action === 'shortlist' ? applicationAPI.shortlist(appId) : applicationAPI.reject(appId)
+      ));
+      
+      toast.success(`${selectedIds.length} applications ${action}ed successfully`);
+      fetchData();
+      setSelectedIds([]);
+    } catch (error) {
+      toast.error(`Failed to perform bulk ${action}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSaveReview = async () => {
+    if (!selectedSubmission) return;
+    
+    setIsReviewSaving(true);
+    try {
+      const response = await applicationAPI.update(selectedSubmission._id, {
+        directorNotes: reviewNotes,
+        directorScore: reviewScore
+      });
+      
+      if (response.data.success) {
+        toast.success("Review saved successfully");
+        setSubmissions(prev => prev.map(s => s._id === selectedSubmission._id ? { ...s, directorNotes: reviewNotes, directorScore: reviewScore } : s));
+        setSelectedSubmission(null);
+      }
+    } catch (error) {
+      toast.error("Failed to save review");
+    } finally {
+      setIsReviewSaving(true); // Should be false but wait...
+      setIsReviewSaving(false);
+    }
+  };
+
+  const toggleSelect = (appId: string) => {
+    setSelectedIds(prev => 
+      prev.includes(appId) ? prev.filter(id => id !== appId) : [...prev, appId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredSubmissions.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredSubmissions.map(s => s._id));
+    }
+  };
+
   const statusColors: Record<string, string> = {
     applied: "bg-warning text-warning-foreground",
     shortlisted: "bg-primary text-primary-foreground",
@@ -111,6 +204,12 @@ export default function DirectorSubmissions() {
   };
 
   const filteredSubmissions = submissions.filter((sub) => {
+    const matchesSearch = searchQuery === "" || 
+      sub.talent?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sub.castingCall?.title?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+    if (!matchesSearch) return false;
+
     if (activeTab === "all") return true;
     if (activeTab === "pending") return sub.status === "applied";
     if (activeTab === "shortlisted") return sub.status === "shortlisted";
@@ -137,25 +236,45 @@ export default function DirectorSubmissions() {
         Back to My Projects
       </Link>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">{castingCall?.title || "Project Submissions"}</h1>
           <p className="text-muted-foreground">Review and manage talent applications</p>
         </div>
+        <div className="relative w-full md:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search talent or project..." 
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Tabs and View Toggle */}
-      <div className="flex items-center justify-between">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
+          <TabsList className="grid grid-cols-5 h-auto">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="shortlisted">Shortlisted</TabsTrigger>
+            <TabsTrigger value="shortlisted">Short</TabsTrigger>
             <TabsTrigger value="accepted">Accepted</TabsTrigger>
             <TabsTrigger value="rejected">Rejected</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          {selectedIds.length > 0 && (
+            <div className="flex items-center gap-2 mr-2 animate-in fade-in slide-in-from-right-2">
+              <span className="text-xs font-bold text-muted-foreground">{selectedIds.length} selected</span>
+              <Button size="sm" variant="outline" className="h-8" onClick={() => handleBulkAction('shortlist')}>
+                Shortlist
+              </Button>
+              <Button size="sm" variant="outline" className="h-8 text-destructive" onClick={() => handleBulkAction('reject')}>
+                Reject
+              </Button>
+            </div>
+          )}
           <Button 
             variant={viewMode === "grid" ? "secondary" : "ghost"} 
             size="icon"
@@ -177,15 +296,22 @@ export default function DirectorSubmissions() {
       {viewMode === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredSubmissions.length > 0 ? filteredSubmissions.map((submission) => (
-            <Card key={submission._id} className="card-elevated overflow-hidden">
+            <Card key={submission._id} className={`card-elevated overflow-hidden transition-all ${selectedIds.includes(submission._id) ? 'ring-2 ring-primary bg-primary/5 shadow-lg' : ''}`}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {submission.talent?.fullName?.[0] || 'T'}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative group">
+                      <Checkbox 
+                        checked={selectedIds.includes(submission._id)}
+                        onCheckedChange={() => toggleSelect(submission._id)}
+                        className="absolute -top-1 -left-1 z-10 opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 transition-opacity"
+                      />
+                      <Avatar className="cursor-pointer" onClick={() => toggleSelect(submission._id)}>
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {submission.talent?.fullName?.[0] || 'T'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
                     <div>
                       <p className="font-semibold">{submission.talent?.fullName}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -199,12 +325,25 @@ export default function DirectorSubmissions() {
                   </Badge>
                 </div>
 
-                <div className="mb-3">
+                <div className="flex items-center justify-between mb-3">
                   <p className="text-xs text-muted-foreground">Submitted: {new Date(submission.createdAt).toLocaleDateString()}</p>
+                  {submission.directorScore > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-primary text-primary" />
+                      <span className="text-xs font-bold">{submission.directorScore}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Video Preview */}
-                <div className="relative aspect-video rounded-lg bg-muted mb-3 flex items-center justify-center group cursor-pointer overflow-hidden">
+                <div 
+                  className="relative aspect-video rounded-lg bg-muted mb-3 flex items-center justify-center group cursor-pointer overflow-hidden"
+                  onClick={() => {
+                    setSelectedSubmission(submission);
+                    setReviewNotes(submission.directorNotes || "");
+                    setReviewScore(submission.directorScore || 0);
+                  }}
+                >
                   {submission.auditionVideo ? (
                     <video src={submission.auditionVideo} className="w-full h-full object-cover" />
                   ) : (
@@ -212,10 +351,12 @@ export default function DirectorSubmissions() {
                        <Play className="w-8 h-8 text-white" />
                     </div>
                   )}
-                  <span className="absolute bottom-2 left-2 text-xs text-white/80 flex items-center gap-1">
-                    <Play className="w-3 h-3" />
-                    Review Audition
-                  </span>
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="text-white text-xs font-bold flex items-center gap-1">
+                      <Play className="w-4 h-4" />
+                      Review Audition
+                    </span>
+                  </div>
                 </div>
 
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-4 italic">
@@ -223,31 +364,300 @@ export default function DirectorSubmissions() {
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                  {submission.status === "applied" && (
-                    <>
-                      <Button 
-                        size="sm" 
-                        className="flex-1" 
-                        onClick={() => handleAction(submission._id, 'shortlist')}
-                        disabled={!!actionLoading}
-                      >
-                        {actionLoading === submission._id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Star className="w-3 h-3 mr-1" />}
-                        Shortlist
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => {
+                      setSelectedSubmission(submission);
+                      setReviewNotes(submission.directorNotes || "");
+                      setReviewScore(submission.directorScore || 0);
+                    }}
+                  >
+                    <Star className="w-3 h-3 mr-1" />
+                    Review
+                  </Button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="w-4 h-4" />
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleAction(submission._id, 'reject')}
-                        disabled={!!actionLoading}
-                      >
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Reject
-                      </Button>
-                    </>
-                  )}
-                  {submission.status === "shortlisted" && (
-                    <Button 
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleAction(submission._id, 'shortlist')}>
+                        <Star className="w-4 h-4 mr-2" /> Shortlist
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleAction(submission._id, 'accept')}>
+                        <CheckCircle className="w-4 h-4 mr-2" /> Accept
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleAction(submission._id, 'reject')} className="text-destructive">
+                        <XCircle className="w-4 h-4 mr-2" /> Reject
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardContent>
+            </Card>
+          )) : (
+            <div className="col-span-full text-center py-12 text-muted-foreground">
+               No submissions found.
+            </div>
+          )}
+        </div>
+      ) : (
+        /* List View */
+        <div className="space-y-3">
+          {filteredSubmissions.length > 0 ? (
+            <div className="border rounded-xl overflow-hidden bg-white">
+              <div className="bg-muted/50 p-3 flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <div className="w-6">
+                  <Checkbox 
+                    checked={selectedIds.length === filteredSubmissions.length && filteredSubmissions.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </div>
+                <div className="flex-1">Talent</div>
+                <div className="w-32">Status</div>
+                <div className="w-32">Date</div>
+                <div className="w-24 text-center">Score</div>
+                <div className="w-24">Actions</div>
+              </div>
+              {filteredSubmissions.map((submission) => (
+                <div 
+                  key={submission._id} 
+                  className={`flex items-center gap-4 p-3 border-t hover:bg-muted/30 transition-colors ${selectedIds.includes(submission._id) ? 'bg-primary/5' : ''}`}
+                >
+                  <div className="w-6">
+                    <Checkbox 
+                      checked={selectedIds.includes(submission._id)}
+                      onCheckedChange={() => toggleSelect(submission._id)}
+                    />
+                  </div>
+                  <div className="flex-1 flex items-center gap-3 min-w-0">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
+                        {submission.talent?.fullName?.[0] || 'T'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="truncate">
+                      <p className="font-medium text-sm truncate">{submission.talent?.fullName}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{submission.castingCall?.title}</p>
+                    </div>
+                  </div>
+                  <div className="w-32">
+                    <Badge className={`${statusColors[submission.status] || "bg-muted"} text-[10px] h-5`}>
+                      {submission.status}
+                    </Badge>
+                  </div>
+                  <div className="w-32 text-[10px] text-muted-foreground">
+                    {new Date(submission.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className="w-24 text-center">
+                    {submission.directorScore > 0 ? (
+                      <div className="flex items-center justify-center gap-1">
+                        <Star className="w-3 h-3 fill-primary text-primary" />
+                        <span className="text-xs font-bold">{submission.directorScore}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    )}
+                  </div>
+                  <div className="w-24 flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedSubmission(submission)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleAction(submission._id, 'shortlist')}>
+                          <Star className="w-4 h-4 mr-2" /> Shortlist
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleAction(submission._id, 'accept')}>
+                          <CheckCircle className="w-4 h-4 mr-2" /> Accept
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleAction(submission._id, 'reject')} className="text-destructive">
+                          <XCircle className="w-4 h-4 mr-2" /> Reject
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+               No submissions found.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Review Dialog */}
+      <Dialog open={!!selectedSubmission} onOpenChange={() => setSelectedSubmission(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-[32px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+              Reviewing Audition: {selectedSubmission?.talent?.fullName}
+              <Badge className={statusColors[selectedSubmission?.status] || "bg-muted"}>
+                {selectedSubmission?.status}
+              </Badge>
+            </DialogTitle>
+            <DialogDescription>
+              Project: {selectedSubmission?.castingCall?.title || castingCall?.title}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid md:grid-cols-[1fr,320px] gap-6 mt-4">
+            {/* Left Column: Media & Notes */}
+            <div className="space-y-6">
+              <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group">
+                {selectedSubmission?.auditionVideo ? (
+                  <video 
+                    src={selectedSubmission.auditionVideo} 
+                    controls 
+                    className="w-full h-full object-contain"
+                    autoPlay
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
+                    <Play className="w-16 h-16 opacity-50" />
+                    <p className="text-lg font-medium opacity-70">Audition video loading...</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-muted/30 p-4 rounded-2xl">
+                <h4 className="text-sm font-bold mb-2 flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
+                  <MessageSquare className="w-4 h-4" />
+                  Talent's Notes
+                </h4>
+                <p className="text-sm italic">
+                  "{selectedSubmission?.notes || "No notes provided by the talent."}"
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <Button variant="outline" className="flex-1 rounded-xl" asChild>
+                  <Link to={`/talent/${selectedSubmission?.talent?._id || selectedSubmission?.talentId}`}>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View Full Profile
+                  </Link>
+                </Button>
+                <Button variant="outline" className="flex-1 rounded-xl" asChild>
+                  <Link to={`/director/messages?talentId=${selectedSubmission?.talent?._id || selectedSubmission?.talentId}`}>
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    Message Talent
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Right Column: Director Review */}
+            <div className="space-y-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+              <div className="space-y-4">
+                <h4 className="text-sm font-bold flex items-center gap-2 uppercase tracking-wider text-slate-500">
+                  <Star className="w-4 h-4" />
+                  Audition Score
+                </h4>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewScore(star)}
+                      className={`transition-all ${reviewScore >= star ? 'scale-110' : 'scale-100 hover:scale-105'}`}
+                    >
+                      <Star 
+                        className={`w-8 h-8 ${reviewScore >= star ? 'fill-primary text-primary' : 'text-slate-300'}`} 
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 font-black text-xl text-primary">{reviewScore}/5</span>
+                </div>
+              </div>
+
+              <Separator className="bg-slate-200" />
+
+              <div className="space-y-3">
+                <h4 className="text-sm font-bold flex items-center gap-2 uppercase tracking-wider text-slate-500">
+                  <Pencil className="w-4 h-4" />
+                  Internal Notes
+                </h4>
+                <Textarea 
+                  placeholder="Private notes for your casting team..." 
+                  className="rounded-xl min-h-[150px] bg-white border-slate-200"
+                  value={reviewNotes}
+                  onChange={(e) => setReviewNotes(e.target.value)}
+                />
+                <p className="text-[10px] text-slate-400">These notes are only visible to you and your team.</p>
+              </div>
+
+              <div className="space-y-3 pt-4">
+                <Button 
+                  className="w-full h-12 rounded-2xl font-bold bg-[#009698] hover:bg-[#009698]/90 shadow-lg shadow-[#009698]/20"
+                  onClick={handleSaveReview}
+                  disabled={isReviewSaving}
+                >
+                  {isReviewSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Save Review
+                </Button>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="rounded-xl font-bold border-slate-200 h-10"
+                    onClick={() => handleAction(selectedSubmission._id, 'shortlist')}
+                    disabled={!!actionLoading}
+                  >
+                    {actionLoading === selectedSubmission?._id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Shortlist"}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="rounded-xl font-bold border-red-100 text-red-500 hover:bg-red-50 h-10"
+                    onClick={() => handleAction(selectedSubmission._id, 'reject')}
+                    disabled={!!actionLoading}
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <Button 
+                  className="w-full h-12 rounded-2xl font-bold bg-slate-900 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
+                  onClick={() => handleAction(selectedSubmission._id, 'accept')}
+                  disabled={!!actionLoading}
+                >
+                  <Award className="w-5 h-5 mr-2" />
+                  Accept Talent
+                </Button>
+              </div>
+              
+              <div className="flex justify-center pt-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs text-muted-foreground flex items-center gap-1"
+                  asChild
+                >
+                  <Link to={`/director/audition?talentId=${selectedSubmission?.talent?._id}`}>
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    Schedule Interview
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
                       size="sm" 
                       className="w-full bg-success hover:bg-success/90"
                       onClick={() => handleAction(submission._id, 'accept')}

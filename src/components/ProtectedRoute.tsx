@@ -22,6 +22,10 @@
      return <Navigate to="/sign-in" state={{ from: location }} replace />;
    }
  
+   if (!user.isEmailVerified && user.role !== "admin") {
+     return <Navigate to="/verification-pending" replace />;
+   }
+ 
    if (allowedRoles && !allowedRoles.includes(user.role)) {
      // Redirect to appropriate dashboard based on role
      const roleRoutes: Record<UserRole, string> = {

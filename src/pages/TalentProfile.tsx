@@ -9,11 +9,13 @@ import { Loader2, MapPin, Star, Briefcase, Mail, ShieldCheck } from "lucide-reac
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
+import { BookingDialog } from "@/components/BookingDialog";
 
 export default function TalentProfile() {
   const { id } = useParams();
   const [talent, setTalent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   useEffect(() => {
     const fetchTalent = async () => {
@@ -80,13 +82,22 @@ export default function TalentProfile() {
                       <span className="text-muted-foreground">({talent.reviewCount || 0} reviews)</span>
                     </div>
                     <div className="mt-6 flex flex-col gap-2">
-                      <Button variant="hero" className="w-full">Book Talent</Button>
+                      <Button variant="hero" className="w-full" onClick={() => setIsBookingOpen(true)}>Book Talent</Button>
                       <Button variant="outline" className="w-full" asChild>
                         <Link to="/browse-talent">Back to Browse</Link>
                       </Button>
                     </div>
                   </div>
                 </div>
+
+                {/* Booking Dialog */}
+                {talent && (
+                  <BookingDialog 
+                    isOpen={isBookingOpen} 
+                    onOpenChange={setIsBookingOpen} 
+                    talent={talent} 
+                  />
+                )}
 
                 {/* Additional Sidebar Info */}
                 <Card className="rounded-2xl shadow-card">
