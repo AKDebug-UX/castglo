@@ -24,11 +24,14 @@ import {
   UserCheck,
   UserX,
   CalendarDays,
-  ExternalLink
+  ExternalLink,
+  Pencil,
+  Eye
 } from "lucide-react";
 import { applicationAPI, castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 import { 
   Dialog, 
   DialogContent, 
@@ -655,71 +658,6 @@ export default function DirectorSubmissions() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-                      size="sm" 
-                      className="w-full bg-success hover:bg-success/90"
-                      onClick={() => handleAction(submission._id, 'accept')}
-                      disabled={!!actionLoading}
-                    >
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Accept Talent
-                    </Button>
-                  )}
-                  {submission.status === "accepted" && (
-                    <Badge variant="outline" className="w-full justify-center py-1">
-                       <Award className="w-3 h-3 mr-1 text-success" />
-                       Role Awarded
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )) : (
-            <div className="col-span-full text-center py-12 text-muted-foreground">
-               No submissions found in this category.
-            </div>
-          )}
-        </div>
-      ) : (
-        /* List View */
-        <div className="space-y-3">
-          {filteredSubmissions.length > 0 ? filteredSubmissions.map((submission) => (
-            <Card key={submission._id} className="card-elevated">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-12 h-12">
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {submission.talent?.fullName?.[0] || 'T'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold">{submission.talent?.fullName}</p>
-                        <Badge className={statusColors[submission.status] || "bg-muted"}>
-                          {submission.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Submitted: {new Date(submission.createdAt).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                       <Link to={`/director/submissions/${submission._id}`}>Review</Link>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )) : (
-            <div className="text-center py-12 text-muted-foreground">
-               No submissions found in this category.
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
