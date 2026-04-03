@@ -22,9 +22,14 @@
      return <Navigate to="/sign-in" state={{ from: location }} replace />;
    }
  
-   if (!user.isEmailVerified && user.role !== "admin") {
-     return <Navigate to="/verification-pending" replace />;
-   }
+  if (!user.isEmailVerified && user.role !== "admin") {
+    return <Navigate to="/verification-pending" replace />;
+  }
+
+  // Check if account is verified (for non-admin roles)
+  if (!user.isVerified && user.role !== "admin") {
+    return <Navigate to="/verification-pending" replace />;
+  }
  
    if (allowedRoles && !allowedRoles.includes(user.role)) {
      // Redirect to appropriate dashboard based on role

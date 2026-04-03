@@ -10,6 +10,7 @@ interface User {
   fullName: string;
   profilePicture?: string;
   isEmailVerified: boolean;
+  isVerified?: boolean;
 }
 
 interface AuthContextType {
@@ -45,10 +46,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const userObj: User = {
               id: userData._id || userData.id,
               email: userData.email,
-              role: userData.roles[0] as UserRole,
+              role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
               fullName: userData.fullName,
               profilePicture: userData.profilePicture,
-              isEmailVerified: userData.isEmailVerified || false,
+              isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
+              isVerified: userData.isVerified || false,
             };
             setUser(userObj);
             localStorage.setItem('userData', JSON.stringify(userObj));
@@ -79,10 +81,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userObj: User = {
           id: userData._id || userData.id,
           email: userData.email,
-          role: userData.role as UserRole,
+          role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
           fullName: userData.fullName,
           profilePicture: userData.profilePicture,
-          isEmailVerified: userData.isEmailVerified || false,
+          isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
+          isVerified: userData.isVerified || false,
         };
         setUser(userObj);
         localStorage.setItem('userData', JSON.stringify(userObj));
@@ -168,10 +171,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const userObj: User = {
             id: userData._id || userData.id,
             email: userData.email,
-            role: userData.roles[0] as UserRole,
+            role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
             fullName: userData.fullName,
             profilePicture: userData.profilePicture,
-            isEmailVerified: userData.isEmailVerified || false,
+            isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
+            isVerified: userData.isVerified || false,
           };
           setUser(userObj);
           localStorage.setItem('userData', JSON.stringify(userObj));
