@@ -17,8 +17,23 @@ import {
   Eye,
   Image as ImageIcon,
   Upload,
-  Loader2
+  Loader2,
+  Users,
+  Target,
+  Layers,
+  CheckCircle2,
+  Info
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { serviceAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,8 +49,15 @@ export default function ProfessionalServices() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    category: "",
+    pricing_model: "fixed",
     price: "",
     duration: "",
+    target_clients: [] as string[],
+    industry_areas: [] as string[],
+    availability_type: "project_based",
+    working_days: ["mon", "tue", "wed", "thu", "fri"] as string[],
+    lead_time: "1_week",
   });
 
   const fetchServices = async () => {
@@ -177,45 +199,171 @@ export default function ProfessionalServices() {
                 <p className="text-sm text-muted-foreground">Add a new service to your professional portfolio</p>
               </DialogHeader>
               <div className="grid gap-6 py-4">
-                <div className="grid gap-4">
-                  <div>
-                    <label className="text-sm font-bold text-slate-700 mb-1.5 block">Service Title</label>
-                    <Input 
-                      placeholder="e.g., Professional Headshot Session" 
-                      value={formData.title}
-                      onChange={(e) => setFormData({...formData, title: e.target.value})}
-                      className="rounded-xl"
-                    />
+                <div className="grid gap-5">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold">Service Title</Label>
+                      <Input 
+                        placeholder="e.g. Professional Headshot Session" 
+                        value={formData.title}
+                        onChange={(e) => setFormData({...formData, title: e.target.value})}
+                        className="rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold">Service Category</Label>
+                      <Select 
+                        value={formData.category} 
+                        onValueChange={(v) => setFormData({...formData, category: v})}
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue placeholder="Select Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="photography">Photography</SelectItem>
+                          <SelectItem value="makeup">Makeup & Hair</SelectItem>
+                          <SelectItem value="coaching">Acting/Voice Coaching</SelectItem>
+                          <SelectItem value="editing">Video Editing</SelectItem>
+                          <SelectItem value="styling">Fashion Styling</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-bold text-slate-700 mb-1.5 block">Description</label>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold">Service Description</Label>
                     <Textarea 
                       rows={3} 
                       placeholder="Describe your service in detail..." 
                       value={formData.description}
                       onChange={(e) => setFormData({...formData, description: e.target.value})}
-                      className="rounded-xl"
+                      className="rounded-xl resize-none"
                     />
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="text-sm font-bold text-slate-700 mb-1.5 block">Price (£)</label>
-                      <Input 
-                        placeholder="250" 
-                        type="number" 
-                        value={formData.price}
-                        onChange={(e) => setFormData({...formData, price: e.target.value})}
-                        className="rounded-xl"
-                      />
+
+                  <Separator className="my-2" />
+
+                  {/* Pricing & Target */}
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-[#009698]" /> 
+                        Pricing Model
+                      </Label>
+                      <Select 
+                        value={formData.pricing_model} 
+                        onValueChange={(v) => setFormData({...formData, pricing_model: v})}
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fixed">Fixed Price</SelectItem>
+                          <SelectItem value="hourly">Hourly Rate</SelectItem>
+                          <SelectItem value="daily">Daily Rate</SelectItem>
+                          <SelectItem value="starting_from">Starting From</SelectItem>
+                          <SelectItem value="package">Package Price</SelectItem>
+                          <SelectItem value="quote">Custom Quote</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div>
-                      <label className="text-sm font-bold text-slate-700 mb-1.5 block">Duration</label>
-                      <Input 
-                        placeholder="e.g., 2 hours" 
-                        value={formData.duration}
-                        onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                        className="rounded-xl"
-                      />
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold">
+                        {formData.pricing_model === 'quote' ? 'Currency Preference' : 'Price'}
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">£</span>
+                        <Input 
+                          placeholder={formData.pricing_model === 'quote' ? 'GBP' : '0.00'}
+                          type={formData.pricing_model === 'quote' ? 'text' : 'number'}
+                          value={formData.price}
+                          onChange={(e) => setFormData({...formData, price: e.target.value})}
+                          className="rounded-xl pl-7"
+                          disabled={formData.pricing_model === 'quote'}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Label className="text-sm font-bold flex items-center gap-2">
+                      <Target className="w-4 h-4 text-[#009698]" /> Target Clients
+                    </Label>
+                    <div className="grid grid-cols-2 gap-3 p-4 bg-muted/20 rounded-2xl border">
+                      {['Talent', 'Brands', 'Agencies', 'Events', 'Individuals'].map((type) => (
+                        <div key={type} className="flex items-center space-x-2">
+                          <Checkbox 
+                             id={`target-${type}`} 
+                             checked={formData.target_clients.includes(type.toLowerCase())}
+                             onCheckedChange={(checked) => {
+                               const val = type.toLowerCase();
+                               setFormData(p => ({
+                                 ...p,
+                                 target_clients: checked 
+                                   ? [...p.target_clients, val]
+                                   : p.target_clients.filter(v => v !== val)
+                               }));
+                             }}
+                          />
+                          <label htmlFor={`target-${type}`} className="text-xs font-medium cursor-pointer">{type}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator className="my-2" />
+
+                  {/* Availability */}
+                  <div className="space-y-4">
+                    <Label className="text-sm font-bold flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#009698]" /> Work Availability
+                    </Label>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Booking Lead Time</Label>
+                        <Select 
+                          value={formData.lead_time} 
+                          onValueChange={(v) => setFormData({...formData, lead_time: v})}
+                        >
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="instant">Instant Booking</SelectItem>
+                            <SelectItem value="24_hours">24 Hours Notice</SelectItem>
+                            <SelectItem value="1_week">1 Week Notice</SelectItem>
+                            <SelectItem value="flexible">Flexible</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                         <Label className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Working Days</Label>
+                         <div className="flex flex-wrap gap-1.5">
+                           {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => {
+                             const dayVal = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][i];
+                             const active = formData.working_days.includes(dayVal);
+                             return (
+                               <button
+                                 key={i}
+                                 type="button"
+                                 onClick={() => {
+                                   setFormData(p => ({
+                                     ...p,
+                                     working_days: active 
+                                       ? p.working_days.filter(d => d !== dayVal)
+                                       : [...p.working_days, dayVal]
+                                   }));
+                                 }}
+                                 className={`w-8 h-8 rounded-full text-[10px] font-bold transition-all ${
+                                   active ? 'bg-[#009698] text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                 }`}
+                               >
+                                 {day}
+                               </button>
+                             );
+                           })}
+                         </div>
+                      </div>
                     </div>
                   </div>
                 </div>

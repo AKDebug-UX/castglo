@@ -1,57 +1,96 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+// ── Constants from Reference Tables ──────────────────────────────────────────
+const TALENT_TYPES = [
+  "actor_performer", "model", "singer", "dancer", "voice_artist", "presenter_host",
+  "extra_supporting_artist", "musician", "content_creator", "comedian", "stunt_performer",
+  "child_talent", "mixed_cast", "other"
+];
+
+const GENRES = [
+  "Action", "Comedy", "Drama", "Horror", "Sci-Fi", "Thriller", "Documentary", 
+  "Reality", "Musical", "Commercial", "Corporate", "Educational", "Other"
+];
+
+const ETHNICITIES = [
+  "black_african", "black_caribbean", "black_british", "mixed_black_white", 
+  "mixed_asian_white", "mixed_other", "south_asian_indian", "south_asian_pakistani", 
+  "south_asian_bangladeshi", "south_asian_other", "east_asian_chinese", 
+  "east_asian_japanese", "east_asian_korean", "east_asian_other", "south_east_asian", 
+  "middle_eastern", "north_african", "hispanic_latinx", "white_british", 
+  "white_irish", "white_european", "white_other", "indigenous", "pacific_islander", 
+  "ethnically_ambiguous", "open_to_all"
+];
+
+const ROLE_SKILLS = [
+  "acting", "improvisation", "comedy", "dramatic_performance", "stage_combat", 
+  "screen_combat", "self_taping", "voiceover", "narration", "character_voice", 
+  "singing", "harmonising", "songwriting", "piano", "guitar", "drums", "violin", 
+  "dancing", "ballet", "contemporary_dance", "hip_hop", "commercial_dance", 
+  "choreography", "modelling", "runway_walk", "posing", "hosting", "presenting", 
+  "interviewing", "public_speaking", "accents", "multilingual", "horse_riding", 
+  "swimming", "cycling", "driving", "martial_arts", "weapons_handling", "stunts", 
+  "motion_capture", "sports_fitness", "content_creation", "social_media_presence", "other"
+];
+
+const HAIR_COLORS = ["Black", "Brown", "Blonde", "Red", "Grey", "White", "Bald", "Other"];
+const EYE_COLORS = ["Blue", "Brown", "Green", "Hazel", "Grey", "Other"];
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, MapPin, Calendar, Loader2, Image as ImageIcon, Upload, Award } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Clapperboard, HelpCircle, Rocket, X, Loader2, Trash2, Plus, Video } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function CreateCasting() {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const isEditMode = !!id;
-
-  const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ── Form State ─────────────────────────────────────────────────────────────
   const [formData, setFormData] = useState({
-    projectName: "",
-    projectType: "film",
-    title: "",
-    description: "",
-    requirements: "",
-    category: "drama",
-    location: "",
-    deadline: "",
+    // Step 1: Project Details
+    project_title: "",
+    project_description: "",
+    project_type: "",
     status: "open",
-    image: "",
-    // Enhanced fields
-    ageRange: "18-35",
-    gender: "any",
-    ethnicity: "any",
-    unionStatus: "non-union",
-    payRate: "",
+    genre: [] as string[],
+    product_website: "",
+    talent_type_needed: [] as string[],
+    payment_type: "paid",
+    payment_amount: "",
+    currency: "GBP",
+    submission_deadline: "",
+    audition_date: "",
+    callback_date: "",
+    location_scope: "nationwide",
+    city: "",
+    country: "UK",
+    address_details: "",
+    audition_type: "in_person",
+    
+    // Step 2 & 3: Roles & Pre-Audition
+    roles: [
+      {
+        customQuestions: "Tell us why you fit this role" // Mock single question for now
+      }
+    ],
+
+    // Step 3: Add-Ons
+    instantPosting: false,
+    featuredPosting: false,
+    urgentHiringBadge: false,
+    status: "open",
   });
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setSelectedImage(result);
-        setFormData(prev => ({ ...prev, image: result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   useEffect(() => {
     if (isEditMode) {
@@ -61,17 +100,18 @@ export default function CreateCasting() {
           const response = await castingCallAPI.getOne(id);
           if (response.data.success) {
             const data = response.data.data;
-            setFormData({
-              projectName: data.projectName || "",
+            setFormData(prev => ({
+              ...prev,
+              projectName: data.projectName || data.title || "",
               projectType: data.projectType || "film",
-              title: data.title || "",
               description: data.description || "",
-              requirements: Array.isArray(data.requirements) ? data.requirements.join("\n") : (data.requirements || ""),
               category: data.category || "drama",
               location: data.location || "",
               deadline: data.deadline ? new Date(data.deadline).toISOString().split('T')[0] : "",
               status: data.status || "open"
-            });
+              // Roles would ideally be populated here if the backend started supporting it.
+              // We'll leave the first role blank or mock it.
+            }));
           }
         } catch (error) {
           toast.error("Failed to load casting call details");
@@ -92,26 +132,108 @@ export default function CreateCasting() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent, status: string = "open") => {
-    e.preventDefault();
-    if (!formData.title || !formData.deadline || !formData.projectName) {
-      toast.error("Please fill in all required fields");
-      return;
+  const handleRoleChange = (roleID: string, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      roles: prev.roles.map(role => role.id === roleID ? { ...role, [field]: value } : role)
+    }));
+  };
+
+  const addRole = () => {
+    setFormData(prev => ({
+      ...prev,
+      roles: [
+        ...prev.roles,
+        {
+          id: Date.now().toString(),
+          title: "",
+          description: "",
+          roleType: "supporting",
+          minAge: "18",
+          maxAge: "35",
+          gender: "any",
+          ethnicity: "any",
+          unionStatus: "non-union",
+          payRate: "",
+          requirements: "",
+          requestVideo: false,
+          requestAudio: false,
+          requestCoverLetter: false,
+          customQuestions: ""
+        }
+      ]
+    }));
+  };
+
+  const removeRole = (roleID: string) => {
+    setFormData(prev => ({
+      ...prev,
+      roles: prev.roles.filter(r => r.id !== roleID)
+    }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setSelectedImage(result);
+        setFormData(prev => ({ ...prev, image: result }));
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const validateStep = (currentStep: number) => {
+    if (currentStep === 1) {
+      if (!formData.projectName || !formData.deadline || !formData.location) {
+        toast.error("Please fill all required project details.");
+        return false;
+      }
+    }
+    if (currentStep === 2) {
+      if (formData.roles.length === 0) {
+        toast.error("Please add at least one role.");
+        return false;
+      }
+      for (const role of formData.roles) {
+        if (!role.title) {
+          toast.error("All roles must have a title.");
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  const nextStep = () => {
+    if (validateStep(step)) {
+      setStep(prev => Math.min(prev + 1, totalSteps));
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const prevStep = () => {
+    setStep(prev => Math.max(prev - 1, 1));
+    window.scrollTo(0, 0);
+  };
+
+  const handleSubmit = async (e: React.FormEvent, statusOverride?: string) => {
+    e.preventDefault();
+    if (!validateStep(1) || !validateStep(2)) return;
 
     setIsSubmitting(true);
     try {
-      const requirementsArray = formData.requirements.split("\n").filter(r => r.trim() !== "");
-      
+      // Assemble payload matching current backend needs but including our new data where possible
+      // Existing backend expects 'title', 'requirements' array, so we try to format gracefully.
+      const firstRole = formData.roles[0];
       const payload = {
         ...formData,
-        requirements: requirementsArray,
-        status: status,
-        roles: [{
-          roleName: formData.title,
-          description: formData.description,
-          requirements: requirementsArray
-        }]
+        title: firstRole ? firstRole.title : formData.projectName, // Fallback for backwards compatibility
+        requirements: firstRole ? firstRole.requirements.split('\n') : [],
+        roles: formData.roles,
+        status: statusOverride || formData.status,
       };
 
       let response;
@@ -122,11 +244,11 @@ export default function CreateCasting() {
       }
 
       if (response.data.success) {
-        toast.success(isEditMode ? "Casting call updated" : "Casting call created");
+        toast.success(isEditMode ? "Project updated successfully!" : "Project created successfully!");
         navigate("/director/projects");
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to save casting call");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to save project");
     } finally {
       setIsSubmitting(false);
     }
@@ -141,114 +263,124 @@ export default function CreateCasting() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <Link 
-        to="/director/projects"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to My Projects
-      </Link>
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in pb-20">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <Link 
+            to="/director/projects"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to My Projects
+          </Link>
+          <h1 className="text-3xl font-bold">{isEditMode ? "Edit Project" : "Post a New Project"}</h1>
+          <p className="text-muted-foreground">Find the perfect talent for your upcoming production</p>
+        </div>
+      </div>
 
-      <div>
-        <h1 className="text-2xl font-bold">{isEditMode ? "Edit Casting Call" : "Create Casting Call"}</h1>
-        <p className="text-muted-foreground">Post a new casting opportunity to discover amazing talent</p>
+      {/* Stepper */}
+      <div className="flex items-center justify-between relative mb-12">
+        <div className="absolute left-0 right-0 top-1/2 h-1 bg-muted -z-10 translate-y-[-50%] rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-primary transition-all duration-300"
+            style={{ width: `${((step - 1) / (totalSteps - 1)) * 100}%` }}
+          />
+        </div>
+        {[
+          { num: 1, label: "Project Basics" },
+          { num: 2, label: "Roles & Auditions" },
+          { num: 3, label: "Promote & Publish" }
+        ].map(s => (
+          <div key={s.num} className="flex flex-col items-center gap-2 cursor-pointer" onClick={() => { if(s.num < step) setStep(s.num) }}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors border-2 ${
+              step >= s.num ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-muted"
+            }`}>
+              {s.num}
+            </div>
+            <span className={`text-xs font-semibold ${step >= s.num ? "text-foreground" : "text-muted-foreground"}`}>{s.label}</span>
+          </div>
+        ))}
       </div>
 
       <form onSubmit={(e) => handleSubmit(e)}>
-        <div className="space-y-6">
-          {/* Basic Information */}
+        {/* STEP 1: PROJECT DETAILS */}
+        <div className={step === 1 ? "block space-y-6 animate-fade-in" : "hidden"}>
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-              <p className="text-sm text-muted-foreground">Provide the essential details for your casting call</p>
+              <CardTitle>Project Information</CardTitle>
+              <CardDescription>Provide the high-level details that describe the production itself.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Project Name *</label>
+                <div className="space-y-2">
+                  <Label htmlFor="projectName">Project Title *</Label>
                   <Input 
+                    id="projectName"
                     name="projectName"
                     value={formData.projectName}
                     onChange={handleChange}
-                    placeholder="e.g., The Midnight Echo" 
+                    placeholder="e.g. Current Production Name" 
                     required
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Project Type *</label>
-                  <Select 
-                    value={formData.projectType}
-                    onValueChange={(v) => handleSelectChange("projectType", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
+                <div className="space-y-2">
+                  <Label htmlFor="projectType">Production Type *</Label>
+                  <Select value={formData.projectType} onValueChange={(v) => handleSelectChange("projectType", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="film">Film</SelectItem>
-                      <SelectItem value="tv">TV Series</SelectItem>
+                      <SelectItem value="tv">Television</SelectItem>
                       <SelectItem value="commercial">Commercial</SelectItem>
-                      <SelectItem value="web_series">Web Series</SelectItem>
-                      <SelectItem value="theater">Theater</SelectItem>
                       <SelectItem value="music_video">Music Video</SelectItem>
+                      <SelectItem value="theater">Theatre</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Role Title *</label>
-                <Input 
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  placeholder="e.g., Lead Role - Male (20-30)" 
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Description</label>
-                <Textarea 
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder="Describe the role, project and what you're looking for in talent..."
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Requirements (one per line)</label>
-                <Textarea 
-                  name="requirements"
-                  value={formData.requirements}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Specific skills, experience, or attributes required"
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="locationType">Location Type</Label>
+                  <Select value={formData.locationType} onValueChange={(v) => handleSelectChange("locationType", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select location type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="local">Local (In-Person)</SelectItem>
+                      <SelectItem value="nationwide">Nationwide</SelectItem>
+                      <SelectItem value="international">International</SelectItem>
+                      <SelectItem value="remote">Remote</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">City / Location *</Label>
+                  <Input 
+                    id="location"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder="e.g. London, UK" 
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Genre / Category</Label>
                   <Select value={formData.category} onValueChange={(v) => handleSelectChange("category", v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="drama">Drama</SelectItem>
                       <SelectItem value="comedy">Comedy</SelectItem>
-                      <SelectItem value="commercial">Commercial</SelectItem>
+                      <SelectItem value="action">Action</SelectItem>
+                      <SelectItem value="documentary">Documentary</SelectItem>
                       <SelectItem value="modeling">Modeling</SelectItem>
-                      <SelectItem value="theatre">Theatre</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="deadline">Deadline</Label>
+                  <Label htmlFor="deadline">Submission Deadline *</Label>
                   <Input 
                     id="deadline" 
                     name="deadline"
@@ -260,105 +392,28 @@ export default function CreateCasting() {
                 </div>
               </div>
 
-              <Separator className="my-6" />
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Award className="w-5 h-5 text-primary" />
-                  Role Specifications
-                </h3>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="gender">Gender</Label>
-                    <Select value={formData.gender} onValueChange={(v) => handleSelectChange("gender", v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">Any</SelectItem>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="non-binary">Non-binary</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ageRange">Age Range</Label>
-                    <Input 
-                      id="ageRange"
-                      name="ageRange"
-                      placeholder="e.g. 18-35"
-                      value={formData.ageRange}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="ethnicity">Ethnicity</Label>
-                    <Select value={formData.ethnicity} onValueChange={(v) => handleSelectChange("ethnicity", v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Ethnicity" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">Any</SelectItem>
-                        <SelectItem value="caucasian">Caucasian</SelectItem>
-                        <SelectItem value="black">Black/African Descent</SelectItem>
-                        <SelectItem value="asian">Asian</SelectItem>
-                        <SelectItem value="latino">Latino/Hispanic</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="unionStatus">Union Status</Label>
-                    <Select value={formData.unionStatus} onValueChange={(v) => handleSelectChange("unionStatus", v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Union Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="non-union">Non-Union</SelectItem>
-                        <SelectItem value="union">Union (SAG-AFTRA/Equity)</SelectItem>
-                        <SelectItem value="both">Open to Both</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2 lg:col-span-2">
-                    <Label htmlFor="payRate">Pay Rate / Budget</Label>
-                    <Input 
-                      id="payRate"
-                      name="payRate"
-                      placeholder="e.g. £250/day, £1500 total, etc."
-                      value={formData.payRate}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-              </div>
-
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input 
-                  id="location"
-                  name="location"
-                  value={formData.location}
+                <Label htmlFor="description">Production Description</Label>
+                <Textarea 
+                  id="description"
+                  name="description"
+                  value={formData.description}
                   onChange={handleChange}
-                  placeholder="e.g., Los Angeles, CA or Remote" 
+                  rows={4}
+                  placeholder="Describe the overall project, synopsis, and what you're trying to achieve..."
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-medium mb-3 block">Casting Header Image</label>
+              <div className="space-y-2">
+                <Label>Project Poster / Header</Label>
                 <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-8 hover:bg-slate-50 transition-colors cursor-pointer relative group">
-                  <input 
-                    type="file" 
-                    className="absolute inset-0 opacity-0 cursor-pointer" 
-                    onChange={handleImageChange}
-                    accept="image/*"
-                  />
+                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageChange} accept="image/*" />
                   {selectedImage || formData.image ? (
-                    <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-                      <img src={selectedImage || formData.image} alt="Casting" className="w-full h-full object-cover" />
+                    <div className="relative w-full aspect-[21/9] rounded-xl overflow-hidden max-w-2xl">
+                      <img src={selectedImage || formData.image} alt="Project Header" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <Upload className="w-8 h-8 text-white" />
+                        <span className="ml-2 text-white font-medium">Change Image</span>
                       </div>
                     </div>
                   ) : (
@@ -374,51 +429,279 @@ export default function CreateCasting() {
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Advanced Options - Mocked for now as backend might not support them yet */}
-          <Card>
+        {/* STEP 2: ROLES & AUDITIONS */}
+        <div className={step === 2 ? "block space-y-6 animate-fade-in" : "hidden"}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold">Characters & Roles</h2>
+            <Button type="button" onClick={addRole} variant="outline" size="sm" className="gap-1">
+              <Plus className="w-4 h-4" /> Add Role
+            </Button>
+          </div>
+
+          {formData.roles.map((role, index) => (
+            <Card key={role.id} className="border-primary/20 shadow-sm relative overflow-visible">
+              {formData.roles.length > 1 && (
+                <Button 
+                  type="button" 
+                  variant="destructive" 
+                  size="icon" 
+                  className="absolute -top-3 -right-3 h-8 w-8 rounded-full shadow-md z-10"
+                  onClick={() => removeRole(role.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+              <CardHeader className="bg-slate-50 border-b relative pb-4 rounded-t-xl">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-tl-xl" />
+                <CardTitle className="text-lg flex items-center gap-2">
+                  Role {index + 1}: {role.title || "Untitled Role"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Role Name / Character *</Label>
+                    <Input 
+                      value={role.title} 
+                      onChange={(e) => handleRoleChange(role.id, 'title', e.target.value)}
+                      placeholder="e.g. John Doe, Lead Dancer"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Role Type</Label>
+                    <Select value={role.roleType} onValueChange={(v) => handleRoleChange(role.id, 'roleType', v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lead">Lead</SelectItem>
+                        <SelectItem value="supporting">Supporting</SelectItem>
+                        <SelectItem value="featured">Featured</SelectItem>
+                        <SelectItem value="extra">Background / Extra</SelectItem>
+                        <SelectItem value="voice">Voiceover</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="space-y-2">
+                    <Label>Gender</Label>
+                    <Select value={role.gender} onValueChange={(v) => handleRoleChange(role.id, 'gender', v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any</SelectItem>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="non-binary">Non-binary</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Min Age</Label>
+                    <Input type="number" value={role.minAge} onChange={(e) => handleRoleChange(role.id, 'minAge', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Max Age</Label>
+                    <Input type="number" value={role.maxAge} onChange={(e) => handleRoleChange(role.id, 'maxAge', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ethnicity</Label>
+                    <Select value={role.ethnicity} onValueChange={(v) => handleRoleChange(role.id, 'ethnicity', v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="any">Any</SelectItem>
+                        <SelectItem value="caucasian">Caucasian</SelectItem>
+                        <SelectItem value="black">Black/African Descent</SelectItem>
+                        <SelectItem value="asian">Asian</SelectItem>
+                        <SelectItem value="latino">Latino</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Union Status</Label>
+                    <Select value={role.unionStatus} onValueChange={(v) => handleRoleChange(role.id, 'unionStatus', v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="non-union">Non-Union</SelectItem>
+                        <SelectItem value="union">Union Only</SelectItem>
+                        <SelectItem value="both">Open to Both</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Pay Rate & Detail</Label>
+                    <Input 
+                      value={role.payRate} 
+                      onChange={(e) => handleRoleChange(role.id, 'payRate', e.target.value)}
+                      placeholder="e.g. $500/day, TBD, Unpaid"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Character Description & Context</Label>
+                  <Textarea 
+                    value={role.description} 
+                    onChange={(e) => handleRoleChange(role.id, 'description', e.target.value)}
+                    rows={3}
+                    placeholder="Briefly describe the character's personality, arc, or the nature of this role."
+                  />
+                </div>
+                
+                <Separator />
+
+                {/* Pre-Audition Workflow configs */}
+                <div className="space-y-4 bg-muted/30 p-4 rounded-xl border">
+                  <h4 className="font-bold flex items-center gap-2">
+                    <Video className="w-4 h-4 text-primary" />
+                    Pre-Audition Requirements
+                  </h4>
+                  <p className="text-sm text-muted-foreground">What must talent submit when they apply for this role?</p>
+                  
+                  <div className="flex flex-col gap-3">
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <Checkbox 
+                        checked={role.requestVideo} 
+                        onCheckedChange={(c) => handleRoleChange(role.id, 'requestVideo', !!c)} 
+                      />
+                      <span className="text-sm font-medium">Require Video Reel / Self-Tape</span>
+                    </label>
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <Checkbox 
+                        checked={role.requestAudio} 
+                        onCheckedChange={(c) => handleRoleChange(role.id, 'requestAudio', !!c)} 
+                      />
+                      <span className="text-sm font-medium">Require Voice Reel</span>
+                    </label>
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <Checkbox 
+                        checked={role.requestCoverLetter} 
+                        onCheckedChange={(c) => handleRoleChange(role.id, 'requestCoverLetter', !!c)} 
+                      />
+                      <span className="text-sm font-medium">Require Cover Letter</span>
+                    </label>
+                  </div>
+
+                  <div className="space-y-2 pt-2">
+                    <Label>Custom Pre-Audition Question</Label>
+                    <Input 
+                      value={role.customQuestions} 
+                      onChange={(e) => handleRoleChange(role.id, 'customQuestions', e.target.value)}
+                      placeholder="e.g. Are you willing to cut your hair for this role?"
+                    />
+                    <p className="text-xs text-muted-foreground">Applicants will need to answer this when submitting.</p>
+                  </div>
+                </div>
+
+              </CardContent>
+            </Card>
+          ))}
+          
+          <Button type="button" onClick={addRole} variant="outline" className="w-full border-dashed border-2 py-8 text-muted-foreground hover:text-primary hover:border-primary transition-colors">
+            <Plus className="w-5 h-5 mr-2" /> Add Another Role
+          </Button>
+        </div>
+
+        {/* STEP 3: PROMOTE & PUBLISH */}
+        <div className={step === 3 ? "block space-y-6 animate-fade-in" : "hidden"}>
+          <Card className="border-amber-200 bg-amber-50/30">
             <CardHeader>
-              <CardTitle>Advanced Options</CardTitle>
-              <p className="text-sm text-muted-foreground">Configure additional features for your casting call</p>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-500" />
+                Boost Your Casting Call
+              </CardTitle>
+              <CardDescription>Upgrade your listing to gain maximum visibility and find talent faster.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg border border-border opacity-50">
-                <div>
-                  <p className="font-medium">Enable Public Voting</p>
-                  <p className="text-sm text-muted-foreground">Allow the public to vote on submissions to help with selection</p>
+              
+              <div className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.featuredPosting ? 'border-amber-400 bg-amber-100/50' : 'border-slate-200 bg-white hover:border-amber-200'}`} onClick={() => setFormData(p => ({...p, featuredPosting: !p.featuredPosting}))}>
+                <div className="flex items-start justify-between">
+                  <div className="flex gap-3">
+                    <div className="mt-1"><Star className={`w-5 h-5 ${formData.featuredPosting ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} /></div>
+                    <div>
+                      <h4 className="font-bold text-slate-800">Featured Listing</h4>
+                      <p className="text-sm text-slate-600 mt-1">Pin your project to the top of the Castglo job board for 7 days. Gets up to 5x more applications.</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-bold text-lg">£29.99</span>
+                    <Checkbox className="ml-2 mt-1 hidden" checked={formData.featuredPosting} readOnly />
+                  </div>
                 </div>
-                <Switch disabled />
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-lg border border-border opacity-50">
-                <div>
-                  <p className="font-medium">Escrow Prize</p>
-                  <p className="text-sm text-muted-foreground">Set up an escrow prize that will be automatically awarded to the selected talent</p>
+              <div className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.urgentHiringBadge ? 'border-red-400 bg-red-50/50' : 'border-slate-200 bg-white hover:border-red-200'}`} onClick={() => setFormData(p => ({...p, urgentHiringBadge: !p.urgentHiringBadge}))}>
+                <div className="flex items-start justify-between">
+                  <div className="flex gap-3">
+                    <div className="mt-1"><FastForward className={`w-5 h-5 ${formData.urgentHiringBadge ? 'text-red-500' : 'text-slate-400'}`} /></div>
+                    <div>
+                      <h4 className="font-bold text-slate-800">Urgent Hiring Badge</h4>
+                      <p className="text-sm text-slate-600 mt-1">Highlights your project in red and alerts matching talent that you are casting immediately.</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-bold text-lg">£14.99</span>
+                    <Checkbox className="ml-2 mt-1 hidden" checked={formData.urgentHiringBadge} readOnly />
+                  </div>
                 </div>
-                <Switch disabled />
               </div>
+
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 justify-end">
-            {!isEditMode && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="lg"
-                onClick={(e) => handleSubmit(e, "draft")}
-                disabled={isSubmitting}
-              >
-                Save as draft
+          <Card>
+             <CardHeader>
+                <CardTitle>Final Review</CardTitle>
+             </CardHeader>
+             <CardContent>
+                <p className="text-sm text-muted-foreground">You are about to publish <strong>{formData.projectName}</strong> with <strong>{formData.roles.length} role(s)</strong>.</p>
+                {formData.featuredPosting || formData.urgentHiringBadge ? (
+                  <div className="mt-4 p-4 bg-slate-50 rounded-lg border flex justify-between items-center">
+                     <span className="font-bold">Total Add-ons Cost:</span>
+                     <span className="font-bold text-lg">
+                        £{((formData.featuredPosting ? 29.99 : 0) + (formData.urgentHiringBadge ? 14.99 : 0)).toFixed(2)}
+                     </span>
+                  </div>
+                ) : null}
+             </CardContent>
+          </Card>
+        </div>
+
+        {/* BOTTOM NAVIGATION ACTIONS */}
+        <div className="flex justify-between items-center mt-10 pt-6 border-t">
+          {step > 1 ? (
+            <Button type="button" variant="outline" onClick={prevStep}>
+              Back
+            </Button>
+          ) : (
+            <div></div> // Placeholder for flex spacing
+          )}
+
+          <div className="flex gap-3">
+            {step === 1 && (
+              <Button type="button" variant="ghost" onClick={(e) => handleSubmit(e, "draft")} disabled={isSubmitting}>
+                Save Draft
               </Button>
             )}
-            <Button type="submit" size="lg" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isEditMode ? "Update Casting Call" : "Create Casting Call"}
-            </Button>
+            
+            {step < totalSteps ? (
+              <Button type="button" onClick={nextStep} className="gap-2">
+                Continue <ChevronRight className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button type="submit" disabled={isSubmitting} size="lg" className="min-w-32">
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (formData.featuredPosting || formData.urgentHiringBadge ? "Pay & Publish" : "Publish Project")}
+              </Button>
+            )}
           </div>
         </div>
+
       </form>
     </div>
   );

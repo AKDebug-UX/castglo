@@ -132,7 +132,22 @@ export default function Profile() {
         gender: profileData.gender,
         ethnicity: profileData.ethnicity,
         languages: profileData.languages,
-        playingAge: profileData.playingAge
+        playingAge: profileData.playingAge,
+        // New Spec Fields
+        nationality: profileData.nationality,
+        rightToWork: profileData.rightToWork,
+        validPassport: profileData.validPassport,
+        willingnessToTravel: profileData.willingnessToTravel,
+        openToRemote: profileData.openToRemote,
+        instagramUrl: profileData.instagramUrl,
+        tiktokUrl: profileData.tiktokUrl,
+        youtubeUrl: profileData.youtubeUrl,
+        unionStatus: profileData.unionStatus,
+        agencyName: profileData.agencyName,
+        expectedRate: profileData.expectedRate,
+        openToUnpaid: profileData.openToUnpaid,
+        careerGoals: profileData.careerGoals,
+        specialties: profileData.specialties
       });
 
       // Update Talent/Profile data (PATCH /profiles/me)
@@ -147,7 +162,11 @@ export default function Profile() {
         gender: profileData.gender,
         ethnicity: profileData.ethnicity,
         languages: profileData.languages,
-        playingAge: profileData.playingAge
+        playingAge: profileData.playingAge,
+        // Spec Fields
+        unionStatus: profileData.unionStatus,
+        agencyName: profileData.agencyName,
+        specialties: profileData.specialties
       });
 
       await Promise.all([userUpdate, profileUpdate]);
@@ -310,6 +329,7 @@ export default function Profile() {
             <TabsTrigger value="basic" className="py-2 px-4">Basic</TabsTrigger>
             <TabsTrigger value="details" className="py-2 px-4">Professional</TabsTrigger>
             <TabsTrigger value="physical" className="py-2 px-4">Physical</TabsTrigger>
+            <TabsTrigger value="specialized" className="py-2 px-4">Specialized</TabsTrigger>
             <TabsTrigger value="skills" className="py-2 px-4">Skills</TabsTrigger>
             <TabsTrigger value="education" className="py-2 px-4">Education</TabsTrigger>
             <TabsTrigger value="equipment" className="py-2 px-4">Equipment</TabsTrigger>
@@ -428,6 +448,67 @@ export default function Profile() {
                   placeholder="City, Country"
                 />
               </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Nationality</label>
+                  <Input 
+                    name="nationality"
+                    value={profileData?.nationality || ""} 
+                    onChange={handleInputChange}
+                    placeholder="Enter your nationality"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Willingness to Travel</label>
+                  <Select 
+                    value={profileData?.willingnessToTravel || ""} 
+                    onValueChange={(v) => handleSelectChange("willingnessToTravel", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select preference" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                      <SelectItem value="negotiable">Negotiable</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50">
+                  <div>
+                    <p className="font-semibold text-sm">Right to Work in Residence Country</p>
+                    <p className="text-xs text-muted-foreground">Do you have legal permission to work?</p>
+                  </div>
+                  <Switch 
+                    checked={profileData?.rightToWork || false} 
+                    onCheckedChange={(v) => setProfileData(prev => ({...prev, rightToWork: v}))}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50">
+                  <div>
+                    <p className="font-semibold text-sm">Valid Passport</p>
+                    <p className="text-xs text-muted-foreground">Do you have a passport valid for at least 6 months?</p>
+                  </div>
+                  <Switch 
+                    checked={profileData?.validPassport || false} 
+                    onCheckedChange={(v) => setProfileData(prev => ({...prev, validPassport: v}))}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50">
+                  <div>
+                    <p className="font-semibold text-sm">Open to Remote Work</p>
+                    <p className="text-xs text-muted-foreground">Are you available for remote casting and jobs?</p>
+                  </div>
+                  <Switch 
+                    checked={profileData?.openToRemote || false} 
+                    onCheckedChange={(v) => setProfileData(prev => ({...prev, openToRemote: v}))}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -478,6 +559,57 @@ export default function Profile() {
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Union Status</label>
+                  <Select 
+                    value={profileData?.unionStatus || ""} 
+                    onValueChange={(v) => handleSelectChange("unionStatus", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Union Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="non-union">Non-Union</SelectItem>
+                      <SelectItem value="sag-aftra">SAG-AFTRA</SelectItem>
+                      <SelectItem value="equity">Equity</SelectItem>
+                      <SelectItem value="other">Other Union</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Representation</label>
+                  <Input 
+                    name="agencyName"
+                    value={profileData?.agencyName || ""} 
+                    onChange={handleInputChange}
+                    placeholder="Agency Name (or Self-Represented)"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Expected Rate Range</label>
+                  <Input 
+                    name="expectedRate"
+                    value={profileData?.expectedRate || ""} 
+                    onChange={handleInputChange}
+                    placeholder="e.g., $100 - $500 / day"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50">
+                  <div>
+                    <p className="font-semibold text-sm">Open to TFPs / Unpaid</p>
+                    <p className="text-xs text-muted-foreground">Open to portfolio or unpaid work?</p>
+                  </div>
+                  <Switch 
+                    checked={profileData?.openToUnpaid || false} 
+                    onCheckedChange={(v) => setProfileData(prev => ({...prev, openToUnpaid: v}))}
+                  />
                 </div>
               </div>
 
@@ -578,6 +710,37 @@ export default function Profile() {
                   placeholder="Tell us about yourself and your professional background..."
                 />
               </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Career Goals
+                </label>
+                <Textarea
+                  name="careerGoals"
+                  rows={3}
+                  value={profileData?.careerGoals || ""}
+                  onChange={handleInputChange}
+                  placeholder="What are your main goals directly related to your work with Castglo?"
+                />
+              </div>
+              
+              <div className="border-t pt-4">
+                <label className="text-sm font-bold mb-3 block text-primary">Social Media Presence</label>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-xs font-bold text-muted-foreground">IG</span>
+                    <Input name="instagramUrl" placeholder="Instagram URL" value={profileData?.instagramUrl || ""} onChange={handleInputChange} className="pl-8" />
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-xs font-bold text-muted-foreground">TT</span>
+                    <Input name="tiktokUrl" placeholder="TikTok URL" value={profileData?.tiktokUrl || ""} onChange={handleInputChange} className="pl-8" />
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-xs font-bold text-muted-foreground">YT</span>
+                    <Input name="youtubeUrl" placeholder="YouTube URL" value={profileData?.youtubeUrl || ""} onChange={handleInputChange} className="pl-8" />
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -648,6 +811,106 @@ export default function Profile() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    Build / Body Type
+                  </label>
+                  <Select 
+                    value={profileData?.physicalAttributes?.build || ""} 
+                    onValueChange={(v) => setProfileData((prev) => ({
+                      ...prev,
+                      physicalAttributes: { ...(prev?.physicalAttributes || {}), build: v }
+                    }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Build" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="slim">Slim</SelectItem>
+                      <SelectItem value="athletic">Athletic</SelectItem>
+                      <SelectItem value="average">Average</SelectItem>
+                      <SelectItem value="muscular">Muscular</SelectItem>
+                      <SelectItem value="curvy">Curvy</SelectItem>
+                      <SelectItem value="heavy">Heavy</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    Hair Color
+                  </label>
+                  <Input 
+                    name="hairColor"
+                    value={profileData?.physicalAttributes?.hairColor || ""} 
+                    onChange={(e) => setProfileData((prev) => ({
+                      ...prev,
+                      physicalAttributes: { ...(prev?.physicalAttributes || {}), hairColor: e.target.value }
+                    }))}
+                    placeholder="e.g. Blonde, Brown, Black"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    Hair Length
+                  </label>
+                  <Input 
+                    name="hairLength"
+                    value={profileData?.physicalAttributes?.hairLength || ""} 
+                    onChange={(e) => setProfileData((prev) => ({
+                      ...prev,
+                      physicalAttributes: { ...(prev?.physicalAttributes || {}), hairLength: e.target.value }
+                    }))}
+                    placeholder="e.g. Short, Medium, Long, Bald"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    Skin Tone
+                  </label>
+                  <Input 
+                    name="skinTone"
+                    value={profileData?.physicalAttributes?.skinTone || ""} 
+                    onChange={(e) => setProfileData((prev) => ({
+                      ...prev,
+                      physicalAttributes: { ...(prev?.physicalAttributes || {}), skinTone: e.target.value }
+                    }))}
+                    placeholder="e.g. Fair, Medium, Deep"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold flex items-center gap-2">
+                    Distinguishing Features
+                  </label>
+                  <Input 
+                    name="distinguishingFeatures"
+                    value={profileData?.physicalAttributes?.distinguishingFeatures || ""} 
+                    onChange={(e) => setProfileData((prev) => ({
+                      ...prev,
+                      physicalAttributes: { ...(prev?.physicalAttributes || {}), distinguishingFeatures: e.target.value }
+                    }))}
+                    placeholder="Tattoos, Scars, Piercings (Optional)"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50">
+                <div>
+                  <p className="font-semibold text-sm">Open to Appearance Changes</p>
+                  <p className="text-xs text-muted-foreground">Are you open to cutting/dyeing hair for a role?</p>
+                </div>
+                <Switch 
+                  checked={profileData?.physicalAttributes?.openToAppearanceChanges || false} 
+                  onCheckedChange={(v) => setProfileData((prev) => ({
+                    ...prev,
+                    physicalAttributes: { ...(prev?.physicalAttributes || {}), openToAppearanceChanges: v }
+                  }))}
+                />
               </div>
 
               <Separator />
@@ -728,6 +991,128 @@ export default function Profile() {
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="specialized" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Specialized Talent Fields</CardTitle>
+              <p className="text-sm text-muted-foreground">Provide specific details based on your reported talent types.</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-4 border rounded-lg bg-blue-50/50 mb-4">
+                <p className="text-sm text-blue-800">
+                  These fields dynamically populate based on your Professional Roles (in the Professional tab).
+                </p>
+              </div>
+
+              {(profileData?.professionalRoles || []).join(" ").toLowerCase().includes("actor") && (
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="font-bold text-lg text-primary">Actor Specifics</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Training (e.g. Drama School)</label>
+                      <Input 
+                        value={profileData?.specialties?.actor?.training || ""} 
+                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, actor: {...prev.specialties?.actor, training: e.target.value}}}))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Techniques (e.g. Meisner)</label>
+                      <Input 
+                        value={profileData?.specialties?.actor?.techniques || ""} 
+                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, actor: {...prev.specialties?.actor, techniques: e.target.value}}}))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Accents</label>
+                      <Input 
+                        value={profileData?.specialties?.actor?.accents || ""} 
+                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, actor: {...prev.specialties?.actor, accents: e.target.value}}}))}
+                        placeholder="British, Southern US, etc."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Monologue Link</label>
+                      <Input 
+                        value={profileData?.specialties?.actor?.monologueLink || ""} 
+                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, actor: {...prev.specialties?.actor, monologueLink: e.target.value}}}))}
+                        placeholder="YouTube/Vimeo link"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {(profileData?.professionalRoles || []).join(" ").toLowerCase().includes("model") && (
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="font-bold text-lg text-primary">Model Specifics</h3>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Categories</label>
+                      <Input 
+                        value={profileData?.specialties?.model?.categories || ""} 
+                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, model: {...prev.specialties?.model, categories: e.target.value}}}))}
+                        placeholder="Runway, Editorial, Parts"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Measurements (Chest/Waist/Hips)</label>
+                      <Input 
+                        value={profileData?.specialties?.model?.measurements || ""} 
+                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, model: {...prev.specialties?.model, measurements: e.target.value}}}))}
+                        placeholder="e.g. 34-24-34"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Dress/Shoe Size</label>
+                      <Input 
+                        value={profileData?.specialties?.model?.shoeSize || ""} 
+                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, model: {...prev.specialties?.model, shoeSize: e.target.value}}}))}
+                        placeholder="e.g. Size 4 / Size 8 (US)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {((profileData?.professionalRoles || []).join(" ").toLowerCase().includes("singer") || (profileData?.professionalRoles || []).join(" ").toLowerCase().includes("musician")) && (
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="font-bold text-lg text-primary">Singer / Musician Specifics</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Voice Type / Instruments</label>
+                      <Input 
+                        value={profileData?.specialties?.singer?.voiceType || ""} 
+                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, singer: {...prev.specialties?.singer, voiceType: e.target.value}}}))}
+                        placeholder="Soprano, Bass, Guitar, etc."
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Genres</label>
+                      <Input 
+                        value={profileData?.specialties?.singer?.genres || ""} 
+                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, singer: {...prev.specialties?.singer, genres: e.target.value}}}))}
+                        placeholder="Jazz, Pop, Afrobeats"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium mb-1.5 block">Audio / Vocal Reel Link</label>
+                      <Input 
+                        value={profileData?.specialties?.singer?.reelLink || ""} 
+                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, singer: {...prev.specialties?.singer, reelLink: e.target.value}}}))}
+                        placeholder="SoundCloud / Spotify link"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {!(profileData?.professionalRoles || []).some((role: string) => ["actor", "model", "singer", "musician"].some(t => role.toLowerCase().includes(t))) && (
+                <p className="text-sm text-muted-foreground">Add "Actor", "Model", or "Singer" to your Professional Roles to see specific fields here.</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

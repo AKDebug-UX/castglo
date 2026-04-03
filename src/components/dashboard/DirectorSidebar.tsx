@@ -4,22 +4,25 @@ import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
   FolderOpen, 
-  Plus, 
   Users,
   MessageSquare,
-  Bell,
-  Settings
+  Settings,
+  Sparkles,
+  Handshake,
+  CreditCard,
+  UserCircle
 } from "lucide-react";
 
 const navItems = [
   { title: "Dashboard", href: "/director", Icon: LayoutDashboard },
-  { title: "Settings", href: "/director/settings", Icon: Settings },
-  { title: "My Projects", href: "/director/projects", Icon: FolderOpen },
-  { title: "Create Casting Calls", href: "/director/create", Icon: Plus },
-  { title: "Submissions", href: "/director/submissions", Icon: Users },
+  { title: "Projects", href: "/director/projects", Icon: FolderOpen },
+  { title: "Roles", href: "/director/roles", Icon: UserCircle },
+  { title: "Applicants", href: "/director/applicants", Icon: Users },
+  { title: "Matched", href: "/director/matched", Icon: Sparkles },
   { title: "Messages", href: "/director/messages", Icon: MessageSquare },
-  { title: "Notifications", href: "/director/notifications", Icon: Bell },
-  { title: "Livestreams", href: "/director/livestreams", Icon: Users },
+  { title: "Collaborators", href: "/director/collaborators", Icon: Handshake },
+  { title: "Billing / Add-ons", href: "/director/billing", Icon: CreditCard },
+  { title: "Settings", href: "/director/settings", Icon: Settings },
 ];
 
 interface DirectorSidebarProps {

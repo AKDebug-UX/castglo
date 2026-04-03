@@ -38,6 +38,7 @@ const PublicCastingDetail = lazy(() => import("./pages/PublicCasting/PublicCasti
 const PublicCasting = lazy(() => import("./pages/PublicCasting"));
 const TalentProfile = lazy(() => import("./pages/TalentProfile"));
 const ProfessionalPublicProfile = lazy(() => import("./pages/ProfessionalPublicProfile"));
+const WhatsNew = lazy(() => import("./pages/WhatsNew"));
 
 // Talent Dashboard
 const DashboardLayout = lazy(() => import("./components/dashboard/DashboardLayout").then(m => ({ default: m.DashboardLayout })));
@@ -62,6 +63,11 @@ const MyProjects = lazy(() => import("./pages/director/MyProjects"));
 const CreateCasting = lazy(() => import("./pages/director/CreateCasting"));
 const DirectorSubmissions = lazy(() => import("./pages/director/DirectorSubmissions"));
 const DirectorMessages = lazy(() => import("./pages/director/DirectorMessages"));
+const ApplicantsManagement = lazy(() => import("./pages/director/ApplicantsManagement"));
+const DirectorRoles = lazy(() => import("./pages/director/DirectorRoles"));
+const MatchedTalent = lazy(() => import("./pages/director/MatchedTalent"));
+const Collaborators = lazy(() => import("./pages/director/Collaborators"));
+const DirectorBilling = lazy(() => import("./pages/director/DirectorBilling"));
 
 // Admin Dashboard
 const AdminLayout = lazy(() => import("./components/dashboard/AdminLayout").then(m => ({ default: m.AdminLayout })));
@@ -131,6 +137,7 @@ const App = () => (
               <Route path="/verification-pending" element={<VerificationPending />} />
               <Route path="/news" element={<News />} />
               <Route path="/news/:id" element={<NewsArticle />} />
+              <Route path="/whats-new" element={<WhatsNew />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/cookies" element={<Cookies />} />
@@ -186,6 +193,11 @@ const App = () => (
                 <Route path="create" element={<CreateCasting />} />
                 <Route path="submissions" element={<DirectorSubmissions />} />
                 <Route path="submissions/:id" element={<DirectorSubmissions />} />
+                <Route path="applicants" element={<ApplicantsManagement />} />
+                <Route path="roles" element={<DirectorRoles />} />
+                <Route path="matched" element={<MatchedTalent />} />
+                <Route path="collaborators" element={<Collaborators />} />
+                <Route path="billing" element={<DirectorBilling />} />
                 <Route path="messages" element={<DirectorMessages />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="livestreams" element={<LivestreamsList />} />

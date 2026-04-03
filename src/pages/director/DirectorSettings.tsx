@@ -214,9 +214,9 @@ export default function DirectorSettings() {
 
         <TabsContent value="basic" className="mt-6">
           <Card>
-            <CardHeader>
+            <CardHeader ShadcnTab="basic">
               <CardTitle>Basic Details</CardTitle>
-              <p className="text-sm text-muted-foreground">Update your personal and contact information</p>
+              <p className="text-sm text-muted-foreground">Update your personal and identity information</p>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Avatar Upload */}
@@ -257,21 +257,23 @@ export default function DirectorSettings() {
               {/* Form Fields */}
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Full Name</label>
+                  <label className="text-sm font-medium mb-1.5 block">Full Name *</label>
                   <Input 
                     name="fullName"
                     value={profileData?.fullName || ""} 
                     onChange={handleInputChange}
                     placeholder="Enter your full name"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Job Title</label>
+                  <label className="text-sm font-medium mb-1.5 block">Display Name *</label>
                   <Input 
-                    name="jobTitle"
-                    value={profileData?.jobTitle || ""} 
+                    name="displayName"
+                    value={profileData?.displayName || ""} 
                     onChange={handleInputChange}
-                    placeholder="e.g. Senior Casting Director"
+                    placeholder="Public display name"
+                    required
                   />
                 </div>
               </div>
@@ -298,14 +300,35 @@ export default function DirectorSettings() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Location</label>
-                <Input 
-                  name="location"
-                  value={profileData?.location || ""} 
-                  onChange={handleInputChange}
-                  placeholder="City, Country"
-                />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">City *</label>
+                  <Input 
+                    name="city"
+                    value={profileData?.city || ""} 
+                    onChange={handleInputChange}
+                    placeholder="Enter city"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Country *</label>
+                  <Select 
+                    value={profileData?.country || ""} 
+                    onValueChange={(v) => handleSelectChange("country", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="UK">United Kingdom</SelectItem>
+                      <SelectItem value="USA">USA</SelectItem>
+                      <SelectItem value="Canada">Canada</SelectItem>
+                      <SelectItem value="Australia">Australia</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -319,26 +342,107 @@ export default function DirectorSettings() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Organisation Type</label>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium mb-1.5 block">Primary Account Type *</label>
                   <Select 
-                    value={profileData?.organisationType || ""} 
-                    onValueChange={(v) => handleSelectChange("organisationType", v)}
+                    value={profileData?.primary_account_type || profileData?.organisationType || ""} 
+                    onValueChange={(v) => handleSelectChange("primary_account_type", v)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select organization type" />
+                      <SelectValue placeholder="Select primary type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="creative-agency">Creative / Marketing Agency</SelectItem>
-                      <SelectItem value="casting">Casting Company</SelectItem>
-                      <SelectItem value="production">Production Company</SelectItem>
-                      <SelectItem value="theatre">Theatre</SelectItem>
-                      <SelectItem value="brand">Brand / Company</SelectItem>
+                      <SelectItem value="casting_director">Casting Director</SelectItem>
+                      <SelectItem value="casting_agency">Casting Agency</SelectItem>
+                      <SelectItem value="production_company">Production Company</SelectItem>
+                      <SelectItem value="talent_agency">Talent Agency</SelectItem>
+                      <SelectItem value="independent_hirer">Independent Hirer</SelectItem>
                       <SelectItem value="others">Others</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium mb-1.5 block">Additional Roles</label>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {["Casting Director", "Agent", "Producer", "Director", "Manager"].map(type => (
+                      <Badge 
+                        key={type} 
+                        variant={(profileData?.additional_account_types || []).includes(type) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          const current = profileData?.additional_account_types || [];
+                          const next = current.includes(type) ? current.filter((t: string) => t !== type) : [...current, type];
+                          handleSelectChange("additional_account_types", next);
+                        }}
+                      >
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium mb-1.5 block">Company / Agency Name</label>
+                  <Input 
+                    name="company_name"
+                    value={profileData?.company_name || ""} 
+                    onChange={handleInputChange}
+                    placeholder="Enter company name"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium mb-1.5 block">Professional Title *</label>
+                  <Input 
+                    name="professional_title"
+                    value={profileData?.professional_title || profileData?.jobTitle || ""} 
+                    onChange={handleInputChange}
+                    placeholder="e.g. Senior Casting Director"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium mb-1.5 block">Experience Level *</label>
+                  <Select 
+                    value={profileData?.experience_level || ""} 
+                    onValueChange={(v) => handleSelectChange("experience_level", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="junior">Junior</SelectItem>
+                      <SelectItem value="mid">Mid-Level</SelectItem>
+                      <SelectItem value="senior">Senior</SelectItem>
+                      <SelectItem value="executive">Executive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium mb-1.5 block">Years of Experience *</label>
+                  <Select 
+                    value={profileData?.years_of_experience || ""} 
+                    onValueChange={(v) => handleSelectChange("years_of_experience", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select years" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0-2">0-2 years</SelectItem>
+                      <SelectItem value="3-5">3-5 years</SelectItem>
+                      <SelectItem value="6-10">6-10 years</SelectItem>
+                      <SelectItem value="10+">10+ years</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <label className="text-sm font-medium mb-1.5 block">Website</label>
                   <div className="relative">
                     <Globe className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -354,75 +458,32 @@ export default function DirectorSettings() {
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Professional Links</label>
-                <div className="space-y-2">
-                  {(profileData?.professionalLinks || []).map((link: string, i: number) => (
-                    <div key={i} className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Link2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          value={link} 
-                          className="pl-10"
-                          readOnly
-                        />
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => {
-                        const newLinks = profileData.professionalLinks.filter((_, idx: number) => idx !== i);
-                        setProfileData((prev: any) => ({ ...prev, professionalLinks: newLinks }));
-                      }}>
-                        <X className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Link2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="new-link"
-                        className="pl-10"
-                        placeholder="Add link (LinkedIn, Website, etc.)"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            const val = (e.target as HTMLInputElement).value;
-                            if (val) {
-                              setProfileData((prev: any) => ({
-                                ...prev,
-                                professionalLinks: [...(prev.professionalLinks || []), val]
-                              }));
-                              (e.target as HTMLInputElement).value = "";
-                            }
-                          }
-                        }}
-                      />
-                    </div>
-                    <Button variant="outline" size="icon" onClick={() => {
-                      const input = document.getElementById("new-link") as HTMLInputElement;
-                      if (input.value) {
-                        setProfileData((prev: any) => ({
-                          ...prev,
-                          professionalLinks: [...(prev.professionalLinks || []), input.value]
-                        }));
-                        input.value = "";
-                      }
-                    }}>
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Short Bio (Public Profile) <span className="text-muted-foreground font-normal">({profileData?.bio?.length || 0}/200)</span>
+                </label>
+                <Textarea
+                  name="bio"
+                  rows={2}
+                  maxLength={200}
+                  value={profileData?.bio || ""}
+                  onChange={handleInputChange}
+                  placeholder="A short punchy bio for your profile card..."
+                />
               </div>
 
               <div>
                 <label className="text-sm font-medium mb-1.5 block">
-                  About Me / Company <span className="text-muted-foreground font-normal">({profileData?.bio?.length || 0}/500)</span>
+                  Full About Description <span className="text-muted-foreground font-normal">({profileData?.full_bio?.length || 0}/2000)</span>
                 </label>
                 <Textarea
-                  name="bio"
-                  rows={4}
-                  value={profileData?.bio || ""}
+                  name="full_bio"
+                  rows={6}
+                  value={profileData?.full_bio || ""}
                   onChange={handleInputChange}
-                  placeholder="Describe your professional background and the types of projects you work on..."
+                  placeholder="Detailed professional background, notable projects, and approach to casting..."
                 />
               </div>
+
             </CardContent>
           </Card>
         </TabsContent>
