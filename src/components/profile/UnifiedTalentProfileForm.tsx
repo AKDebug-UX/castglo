@@ -1,30 +1,116 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, Save } from "lucide-react";
 import {
   UNIFIED_TALENT_PROFILE_FIELD_SPEC,
   UnifiedFieldSpec,
   shouldShowField,
 } from "@/lib/unifiedTalentProfile/fieldSpec";
-import { getReferenceOptions } from "@/lib/unifiedTalentProfile/referenceTables";
+import { getReferenceOptions, COUNTRIES } from "@/lib/unifiedTalentProfile/referenceTables";
 
 interface UnifiedTalentProfileFormProps {
   rootData: any;
   onChange: (nextRootData: any) => void;
+  onSave?: (skipValidation?: boolean) => void;
+  isSaving?: boolean;
   activeTab?: string;
   showTabs?: boolean;
+}
+
+const countryToTimeZoneHint: Record<string, string[]> = {
+  "Nigeria": ["Africa/Lagos"],
+  "United Kingdom": ["Europe/London", "GMT"],
+  "United States": ["America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Anchorage", "Pacific/Honolulu"],
+  "Canada": ["America/Toronto", "America/Vancouver", "America/Edmonton", "America/Winnipeg", "America/Halifax", "America/St_Johns"],
+  "South Africa": ["Africa/Johannesburg"],
+  "Ghana": ["Africa/Accra"],
+  "Kenya": ["Africa/Nairobi"],
+  "Uganda": ["Africa/Kampala"],
+  "Rwanda": ["Africa/Kigali"],
+  "Tanzania": ["Africa/Dar_es_Salaam"],
+  "Ethiopia": ["Africa/Addis_Ababa"],
+  "Egypt": ["Africa/Cairo"],
+  "Morocco": ["Africa/Casablanca"],
+  "Algeria": ["Africa/Algiers"],
+  "Tunisia": ["Africa/Tunis"],
+  "Cameroon": ["Africa/Douala"],
+  "Senegal": ["Africa/Dakar"],
+  "Ivory Coast": ["Africa/Abidjan"],
+  "France": ["Europe/Paris"],
+  "Germany": ["Europe/Berlin"],
+  "Netherlands": ["Europe/Amsterdam"],
+  "Belgium": ["Europe/Brussels"],
+  "Spain": ["Europe/Madrid"],
+  "Portugal": ["Europe/Lisbon"],
+  "Italy": ["Europe/Rome"],
+  "Sweden": ["Europe/Stockholm"],
+  "Norway": ["Europe/Oslo"],
+  "Denmark": ["Europe/Copenhagen"],
+  "Finland": ["Europe/Helsinki"],
+  "Poland": ["Europe/Warsaw"],
+  "Romania": ["Europe/Bucharest"],
+  "Ukraine": ["Europe/Kiev"],
+  "Turkey": ["Europe/Istanbul"],
+  "Greece": ["Europe/Athens"],
+  "Ireland": ["Europe/Dublin"],
+  "Scotland": ["Europe/London"], // Close enough
+  "Wales": ["Europe/London"], // Close enough
+  "India": ["Asia/Kolkata"],
+  "Pakistan": ["Asia/Karachi"],
+  "Bangladesh": ["Asia/Dhaka"],
+  "Sri Lanka": ["Asia/Colombo"],
+  "Nepal": ["Asia/Kathmandu"],
+  "China": ["Asia/Shanghai", "Asia/Chongqing", "Asia/Harbin", "Asia/Urumqi"],
+  "Japan": ["Asia/Tokyo"],
+  "South Korea": ["Asia/Seoul"],
+  "Indonesia": ["Asia/Jakarta", "Asia/Makassar", "Asia/Jayapura"],
+  "Malaysia": ["Asia/Kuala_Lumpur"],
+  "Singapore": ["Asia/Singapore"],
+  "Philippines": ["Asia/Manila"],
+  "Thailand": ["Asia/Bangkok"],
+  "Vietnam": ["Asia/Ho_Chi_Minh"],
+  "Australia": ["Australia/Sydney", "Australia/Melbourne", "Australia/Brisbane", "Australia/Perth", "Australia/Adelaide", "Australia/Darwin", "Australia/Hobart"],
+  "New Zealand": ["Pacific/Auckland"],
+  "Brazil": ["America/Sao_Paulo", "America/Manaus", "America/Belem", "America/Fortaleza"],
+  "Mexico": ["America/Mexico_City", "America/Monterrey", "America/Tijuana"],
+  "Argentina": ["America/Argentina/Buenos_Aires"],
+  "Jamaica": ["America/Jamaica"],
+  "Trinidad and Tobago": ["America/Port_of_Spain"],
+  "United Arab Emirates": ["Asia/Dubai"],
+  "Saudi Arabia": ["Asia/Riyadh"],
+  "Qatar": ["Asia/Qatar"],
+  "Israel": ["Asia/Jerusalem"],
+  "Russia": ["Europe/Moscow", "Asia/Yekaterinburg", "Asia/Novosibirsk", "Asia/Vladivostok"],
+};
+
+function detectCountry() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    for (const [country, tzs] of Object.entries(countryToTimeZoneHint)) {
+      if (tzs.includes(tz)) return country;
+    }
+    
+    // Fallback to language
+    const lang = navigator.language.split('-')[1];
+    if (lang === 'NG') return "Nigeria";
+    if (lang === 'GB') return "United Kingdom";
+    if (lang === 'US') return "United States";
+    // ... add more common fallbacks if needed
+  } catch (e) {}
+  return null;
 }
 
 const sectionOrder = [
   "Basic Profile",
   "Account / Contact",
   "Contact",
-  "Account Setup",
   "Talent Type",
   "Professional Overview",
   "Representation",
@@ -130,20 +216,39 @@ function MultiSelectChecklist({
 export function UnifiedTalentProfileForm({ 
   rootData, 
   onChange, 
+  onSave,
+  isSaving = false,
   activeTab: externalActiveTab,
   showTabs = true 
 }: UnifiedTalentProfileFormProps) {
   const [internalActiveTab, setInternalActiveTab] = useState("general");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const activeTab = externalActiveTab || internalActiveTab;
 
   const unified = rootData?.unifiedTalentProfile || {};
   const values = { ...rootData, ...unified };
 
+  useEffect(() => {
+    // Auto-detect and set country if not present
+    if (!values.current_country) {
+      const detected = detectCountry();
+      if (detected) {
+        onChange({
+          ...rootData,
+          unifiedTalentProfile: {
+            ...unified,
+            current_country: detected
+          }
+        });
+      }
+    }
+  }, []);
+
   const tabGroups = useMemo(() => [
     {
       id: "general",
       label: "General",
-      sections: ["Basic Profile", "Account / Contact", "Contact", "Account Setup", "Social", "Guardian Consent"]
+      sections: ["Basic Profile", "Account / Contact", "Contact", "Social", "Guardian Consent"]
     },
     {
       id: "professional",
@@ -212,6 +317,15 @@ export function UnifiedTalentProfileForm({
   }, [visibleFields, tabGroups]);
 
   const setFieldValue = (fieldId: string, value: any) => {
+    // Clear error for this field when changed
+    if (errors[fieldId]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[fieldId];
+        return next;
+      });
+    }
+
     onChange({
       ...rootData,
       unifiedTalentProfile: {
@@ -220,6 +334,44 @@ export function UnifiedTalentProfileForm({
       },
       [fieldId]: value,
     });
+  };
+
+  const validateTab = (tabId: string) => {
+    const tabSections = sectionsByTab[tabId] || [];
+    const newErrors: Record<string, string> = {};
+
+    tabSections.forEach(({ fields }) => {
+      fields.forEach((field) => {
+        if (field.required) {
+          const value = values[field.id];
+          const isEmpty = 
+            value === null || 
+            value === undefined || 
+            value === "" || 
+            (Array.isArray(value) && value.length === 0);
+          
+          if (isEmpty) {
+            newErrors[field.id] = `${field.label} is required.`;
+          }
+        }
+      });
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleTabSave = () => {
+    if (validateTab(activeTab)) {
+      if (onSave) onSave(true);
+    } else {
+      // Scroll to the first error
+      const firstErrorId = Object.keys(errors)[0];
+      if (firstErrorId) {
+        const element = document.getElementById(`field-${firstErrorId}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
   };
 
   const getOptions = (field: UnifiedFieldSpec): string[] => {
@@ -231,121 +383,140 @@ export function UnifiedTalentProfileForm({
   const renderField = (field: UnifiedFieldSpec) => {
     const value = values[field.id];
     const options = getOptions(field);
+    const hasError = !!errors[field.id];
 
-    switch (field.type) {
-      case "boolean":
-      case "checkbox":
-        return (
-          <div className="flex items-center gap-2 rounded-md border p-3">
-            <Checkbox checked={!!value} onCheckedChange={(checked) => setFieldValue(field.id, !!checked)} />
-            <span className="text-sm">{field.label}</span>
-          </div>
-        );
+    const fieldContent = (() => {
+      switch (field.type) {
+        case "boolean":
+        case "checkbox":
+          return (
+            <div className={`flex items-center gap-2 rounded-md border p-3 ${hasError ? 'border-destructive bg-destructive/5' : ''}`}>
+              <Checkbox checked={!!value} onCheckedChange={(checked) => setFieldValue(field.id, !!checked)} />
+              <span className="text-sm">{field.label}</span>
+            </div>
+          );
 
-      case "select":
-        return (
-          <Select value={value || ""} onValueChange={(next) => setFieldValue(field.id, next)}>
-            <SelectTrigger>
-              <SelectValue placeholder={`Select ${field.label}`} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        );
+        case "select":
+          return (
+            <Select value={value || ""} onValueChange={(next) => setFieldValue(field.id, next)}>
+              <SelectTrigger className={hasError ? 'border-destructive' : ''}>
+                <SelectValue placeholder={`Select ${field.label}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
 
-      case "multi-select":
-        return (
-          <MultiSelectChecklist
-            options={options}
-            selected={normalizeArray(value)}
-            onChange={(next) => setFieldValue(field.id, next)}
-          />
-        );
+        case "multi-select":
+          return (
+            <div className={hasError ? 'border-destructive' : ''}>
+              <MultiSelectChecklist
+                options={options}
+                selected={normalizeArray(value)}
+                onChange={(next) => setFieldValue(field.id, next)}
+              />
+            </div>
+          );
 
-      case "textarea":
-      case "url-list":
-      case "multi-file-or-url":
-        return (
-          <Textarea
-            rows={4}
-            value={toDisplayValue(value)}
-            onChange={(e) => {
-              if (field.type === "url-list" || field.type === "multi-file-or-url") {
-                setFieldValue(field.id, parseFreeList(e.target.value));
-                return;
-              }
-              setFieldValue(field.id, e.target.value);
-            }}
-            placeholder={field.type === "url-list" ? "One URL per line" : `Enter ${field.label}`}
-          />
-        );
-
-      case "file":
-        return (
-          <Input
-            type="file"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              setFieldValue(field.id, `file:${file.name}`);
-            }}
-          />
-        );
-
-      case "multi-file":
-        return (
-          <Input
-            type="file"
-            multiple
-            onChange={(e) => {
-              const names = Array.from(e.target.files || []).map((file) => file.name);
-              setFieldValue(field.id, names);
-            }}
-          />
-        );
-
-      case "file-or-url":
-        return (
-          <div className="space-y-2">
-            <Input
-              value={typeof value === "string" ? value : ""}
-              onChange={(e) => setFieldValue(field.id, e.target.value)}
-              placeholder="Paste URL"
+        case "textarea":
+        case "url-list":
+        case "multi-file-or-url":
+          return (
+            <Textarea
+              rows={4}
+              value={toDisplayValue(value)}
+              className={hasError ? 'border-destructive' : ''}
+              onChange={(e) => {
+                if (field.type === "url-list" || field.type === "multi-file-or-url") {
+                  setFieldValue(field.id, parseFreeList(e.target.value));
+                  return;
+                }
+                setFieldValue(field.id, e.target.value);
+              }}
+              placeholder={field.type === "url-list" ? "One URL per line" : `Enter ${field.label}`}
             />
+          );
+
+        case "file":
+          return (
             <Input
               type="file"
+              className={hasError ? 'border-destructive' : ''}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 setFieldValue(field.id, `file:${file.name}`);
               }}
             />
-          </div>
-        );
+          );
 
-      case "date":
-        return <Input type="date" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+        case "multi-file":
+          return (
+            <Input
+              type="file"
+              multiple
+              className={hasError ? 'border-destructive' : ''}
+              onChange={(e) => {
+                const names = Array.from(e.target.files || []).map((file) => file.name);
+                setFieldValue(field.id, names);
+              }}
+            />
+          );
 
-      case "email":
-        return <Input type="email" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+        case "file-or-url":
+          return (
+            <div className="space-y-2">
+              <Input
+                value={typeof value === "string" ? value : ""}
+                className={hasError ? 'border-destructive' : ''}
+                onChange={(e) => setFieldValue(field.id, e.target.value)}
+                placeholder="Paste URL"
+              />
+              <Input
+                type="file"
+                className={hasError ? 'border-destructive' : ''}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setFieldValue(field.id, `file:${file.name}`);
+                }}
+              />
+            </div>
+          );
 
-      case "phone":
-        return <Input type="tel" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+        case "date":
+          return <Input type="date" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
 
-      case "number":
-        return <Input type="number" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+        case "email":
+          return <Input type="email" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
 
-      case "url":
-        return <Input type="url" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+        case "phone":
+          return <Input type="tel" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
 
-      default:
-        return <Input value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
-    }
+        case "number":
+          return <Input type="number" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+
+        case "url":
+          return <Input type="url" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+
+        default:
+          return <Input value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+      }
+    })();
+
+    return (
+      <div id={`field-${field.id}`} className="space-y-1">
+        {fieldContent}
+        {hasError && (
+          <p className="text-[10px] font-medium text-destructive">{errors[field.id]}</p>
+        )}
+      </div>
+    );
   };
 
   const renderTabContent = (tabId: string) => {
@@ -374,6 +545,28 @@ export function UnifiedTalentProfileForm({
             </CardContent>
           </Card>
         ))}
+
+        {onSave && (
+          <div className="flex justify-end pt-4">
+            <Button 
+              onClick={handleTabSave} 
+              disabled={isSaving}
+              className="w-full sm:w-auto"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving Profile...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Profile
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
     );
   };

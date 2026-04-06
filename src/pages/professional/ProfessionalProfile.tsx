@@ -114,7 +114,7 @@ export default function ProfessionalProfile() {
     setProfileData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (skipValidation: boolean = false) => {
     setIsSaving(true);
     try {
       const unifiedPayload = {
@@ -122,7 +122,7 @@ export default function ProfessionalProfile() {
         ...Object.fromEntries(Object.entries(profileData || {}).filter(([key]) => UNIFIED_FIELD_IDS.has(key))),
       };
 
-      const shouldValidateUnified = Object.keys(unifiedPayload).length > 0;
+      const shouldValidateUnified = Object.keys(unifiedPayload).length > 0 && !skipValidation;
       if (shouldValidateUnified) {
         const validation = validateUnifiedTalentProfile(unifiedPayload);
         if (!validation.success) {
@@ -319,6 +319,8 @@ export default function ProfessionalProfile() {
           <UnifiedTalentProfileForm
             rootData={profileData}
             onChange={(nextRootData) => setProfileData(nextRootData)}
+            onSave={handleSave}
+            isSaving={isSaving}
             activeTab="general"
             showTabs={false}
           />
@@ -328,6 +330,8 @@ export default function ProfessionalProfile() {
           <UnifiedTalentProfileForm
             rootData={profileData}
             onChange={(nextRootData) => setProfileData(nextRootData)}
+            onSave={handleSave}
+            isSaving={isSaving}
             activeTab="professional"
             showTabs={false}
           />
@@ -337,6 +341,8 @@ export default function ProfessionalProfile() {
           <UnifiedTalentProfileForm
             rootData={profileData}
             onChange={(nextRootData) => setProfileData(nextRootData)}
+            onSave={handleSave}
+            isSaving={isSaving}
             activeTab="business"
             showTabs={false}
           />
@@ -346,6 +352,8 @@ export default function ProfessionalProfile() {
           <UnifiedTalentProfileForm
             rootData={profileData}
             onChange={(nextRootData) => setProfileData(nextRootData)}
+            onSave={handleSave}
+            isSaving={isSaving}
             activeTab="specialized"
             showTabs={false}
           />
@@ -410,6 +418,8 @@ export default function ProfessionalProfile() {
           <UnifiedTalentProfileForm
             rootData={profileData}
             onChange={(nextRootData) => setProfileData(nextRootData)}
+            onSave={handleSave}
+            isSaving={isSaving}
             activeTab="media"
             showTabs={false}
           />
