@@ -229,18 +229,25 @@ export function UnifiedTalentProfileForm({
   const values = { ...rootData, ...unified };
 
   useEffect(() => {
-    // Auto-detect and set country if not present
+    // Auto-detect and set country if not present, and default booleans to false
+    const updates: Record<string, any> = {};
+    
     if (!values.current_country) {
       const detected = detectCountry();
-      if (detected) {
-        onChange({
-          ...rootData,
-          unifiedTalentProfile: {
-            ...unified,
-            current_country: detected
-          }
-        });
-      }
+      if (detected) updates.current_country = detected;
+    }
+
+    if (values.right_to_work === undefined) updates.right_to_work = false;
+    if (values.valid_passport === undefined) updates.valid_passport = false;
+
+    if (Object.keys(updates).length > 0) {
+      onChange({
+        ...rootData,
+        unifiedTalentProfile: {
+          ...unified,
+          ...updates
+        }
+      });
     }
   }, []);
 
