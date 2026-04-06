@@ -30,7 +30,18 @@ export type TalentType =
   | "Content Creator"
   | "Comedian"
   | "Stunt Performer"
-  | "Other";
+  | "Other"
+  | "Talent Agent"
+  | "Talent Manager"
+  | "Casting Professional"
+  | "Photographer"
+  | "Videographer"
+  | "Stylist"
+  | "Makeup Artist"
+  | "Acting Coach"
+  | "Voice Coach"
+  | "Producer"
+  | "Director";
 
 export interface VisibilityRule {
   showWhenField?: string;
@@ -72,6 +83,17 @@ export const TALENT_TYPES: TalentType[] = [
   "Content Creator",
   "Comedian",
   "Stunt Performer",
+  "Talent Agent",
+  "Talent Manager",
+  "Casting Professional",
+  "Photographer",
+  "Videographer",
+  "Stylist",
+  "Makeup Artist",
+  "Acting Coach",
+  "Voice Coach",
+  "Producer",
+  "Director",
   "Other",
 ];
 
@@ -80,6 +102,7 @@ export const CORE_PROFILE_FIELDS: UnifiedFieldSpec[] = [
   { id: "display_name", label: "Display Name / Stage Name", section: "Basic Profile", type: "text", required: true, searchable: true, validation: "2-100 chars" },
   { id: "email", label: "Email Address", section: "Account / Contact", type: "email", required: true, searchable: false, validation: "Valid email + unique" },
   { id: "phone_number", label: "Phone Number", section: "Contact", type: "phone", required: true, searchable: false, validation: "Intl format" },
+  { id: "address", label: "Address", section: "Contact", type: "text", required: false, searchable: false, validation: "Max 200 chars" },
   { id: "password", label: "Password", section: "Account Setup", type: "password", required: true, searchable: false, validation: "Min 8 chars, strong password" },
   { id: "date_of_birth", label: "Date of Birth", section: "Basic Profile", type: "date", required: true, searchable: false, validation: "YYYY-MM-DD, past date" },
   { id: "age_group", label: "Age Group", section: "Basic Profile", type: "select", required: true, searchable: true, options: ["Under 13", "13-15", "16-17", "18-24", "25-34", "35-44", "45-54", "55+"], validation: "Auto-derived optional" },
@@ -124,7 +147,7 @@ export const REPRESENTATION_FIELDS: UnifiedFieldSpec[] = [
   { id: "agency_contact_details", label: "Agency / Manager Contact Details", section: "Representation", type: "textarea", required: false, searchable: false, validation: "Max 500 chars", visibility: { showWhenField: "representation_status", notEquals: "Self-represented" } },
   { id: "union_membership", label: "Union / Professional Membership", section: "Representation", type: "text", required: false, searchable: true, validation: "Max 100 chars" },
   { id: "preferred_contact_method", label: "Preferred Contact Method", section: "Contact", type: "select", required: true, searchable: false, options: ["Castglo", "Email", "Phone", "Agent/Manager"] },
-  { id: "expected_rate_range", label: "Expected Rate / Fee Range", section: "Booking Preferences", type: "select", required: false, searchable: true, options: ["Open to discussion", "£50-£100", "£100-£250", "£250-£500", "£500+", "Other"] },
+  { id: "expected_rate_range", label: "Expected Rate / Fee Range", section: "Booking Preferences", type: "select", required: false, searchable: true, options: ["Open to discussion", "ï¿½50-ï¿½100", "ï¿½100-ï¿½250", "ï¿½250-ï¿½500", "ï¿½500+", "Other"] },
   { id: "expected_rate_other", label: "Custom Rate", section: "Booking Preferences", type: "text", required: false, searchable: true, validation: "Max 100 chars", visibility: { showWhenField: "expected_rate_range", equals: "Other" } },
   { id: "open_to_unpaid", label: "Open to Portfolio-Building / Unpaid Opportunities", section: "Booking Preferences", type: "boolean", required: false, searchable: true },
 ];
@@ -336,6 +359,68 @@ export const DYNAMIC_TALENT_FIELDS: UnifiedFieldSpec[] = [
   ...STUNT_FIELDS,
 ];
 
+export const PHOTOGRAPHER_FIELDS = byTalentType("Photographer", [
+  { id: "equipment_summary", label: "Primary Equipment", section: "Photography Specialisms", type: "text", required: false, searchable: true },
+  { id: "editing_software", label: "Editing Software", section: "Photography Specialisms", type: "text", required: false, searchable: true },
+  { id: "lighting_style", label: "Lighting Style", section: "Photography Specialisms", type: "text", required: false, searchable: true },
+]);
+
+export const MUA_STYLIST_FIELDS = [
+  ...byTalentType("Makeup Artist", [
+    { id: "brands_used", label: "Brands Used", section: "MUA & Hair Specialisms", type: "text", required: false, searchable: true },
+    { id: "sfx_experience", label: "SFX Experience", section: "MUA & Hair Specialisms", type: "boolean", required: false, searchable: true },
+    { id: "group_booking_available", label: "Group Bookings Available", section: "MUA & Hair Specialisms", type: "boolean", required: false, searchable: true },
+  ]),
+  ...byTalentType("Stylist", [
+    { id: "brands_used", label: "Brands Used", section: "MUA & Hair Specialisms", type: "text", required: false, searchable: true },
+    { id: "sfx_experience", label: "SFX Experience", section: "MUA & Hair Specialisms", type: "boolean", required: false, searchable: true },
+    { id: "group_booking_available", label: "Group Bookings Available", section: "MUA & Hair Specialisms", type: "boolean", required: false, searchable: true },
+  ]),
+];
+
+export const COACH_FIELDS = [
+  ...byTalentType("Acting Coach", [
+    { id: "delivery_mode", label: "Delivery Mode", section: "Coaching Specialisms", type: "select", required: false, searchable: true, options: ["Online Only", "In-Person Only", "Hybrid"] },
+    { id: "coaching_specialisms", label: "Specialisms", section: "Coaching Specialisms", type: "text", required: false, searchable: true },
+  ]),
+  ...byTalentType("Voice Coach", [
+    { id: "delivery_mode", label: "Delivery Mode", section: "Coaching Specialisms", type: "select", required: false, searchable: true, options: ["Online Only", "In-Person Only", "Hybrid"] },
+    { id: "coaching_specialisms", label: "Specialisms", section: "Coaching Specialisms", type: "text", required: false, searchable: true },
+  ]),
+];
+
+export const VIDEO_EDITOR_FIELDS = [
+  ...byTalentType("Videographer", [
+    { id: "editing_specialisms", label: "Editing Specialisms", section: "Editing Specialisms", type: "text", required: false, searchable: true },
+    { id: "transfer_method", label: "File Transfer Method", section: "Editing Specialisms", type: "text", required: false, searchable: true },
+  ]),
+  ...byTalentType("Director", [
+    { id: "editing_specialisms", label: "Editing Specialisms", section: "Editing Specialisms", type: "text", required: false, searchable: true },
+    { id: "transfer_method", label: "File Transfer Method", section: "Editing Specialisms", type: "text", required: false, searchable: true },
+  ]),
+];
+
+export const PROFESSIONAL_CORE_FIELDS: UnifiedFieldSpec[] = [
+  { id: "business_name", label: "Business / Studio Name", section: "Professional Identity", type: "text", required: false, searchable: true },
+  { id: "professional_title", label: "Professional Title", section: "Professional Identity", type: "text", required: false, searchable: true },
+  { id: "experience_level", label: "Experience Level", section: "Professional Overview", type: "select", required: false, searchable: true, options: ["Beginner (0-2 years)", "Intermediate (2-5 years)", "Advanced (5-10 years)", "Expert (10+ years)"] },
+  { id: "experience_years", label: "Years of Experience", section: "Professional Overview", type: "number", required: false, searchable: true },
+  { id: "notable_clients", label: "Notable Clients", section: "Professional Overview", type: "textarea", required: false, searchable: true },
+  { id: "notable_projects", label: "Notable Projects", section: "Professional Overview", type: "textarea", required: false, searchable: true },
+  { id: "awards_recognition", label: "Awards & Recognition", section: "Professional Overview", type: "textarea", required: false, searchable: true },
+  { id: "studio_access", label: "Studio Access Available", section: "Business & Facilities", type: "boolean", required: false, searchable: true },
+  { id: "studio_details", label: "Studio Details", section: "Business & Facilities", type: "textarea", required: false, searchable: false, visibility: { showWhenField: "studio_access", equals: true } },
+  { id: "insurance_available", label: "Professional Insurance", section: "Business & Facilities", type: "boolean", required: false, searchable: true },
+  { id: "nda_friendly", label: "NDA Friendly", section: "Business & Facilities", type: "boolean", required: false, searchable: true },
+  { id: "contract_required", label: "Contract Required", section: "Business & Facilities", type: "boolean", required: false, searchable: true },
+  { id: "deposit_percent", label: "Deposit Required (%)", section: "Business Terms", type: "number", required: false, searchable: false },
+  { id: "payment_methods", label: "Accepted Payment Methods", section: "Business Terms", type: "text", required: false, searchable: false },
+  { id: "cancellation_policy", label: "Cancellation Policy", section: "Business Terms", type: "textarea", required: false, searchable: false },
+  { id: "refund_policy", label: "Refund Policy", section: "Business Terms", type: "textarea", required: false, searchable: false },
+  { id: "instagram_url", label: "Instagram URL", section: "Social", type: "url", required: false, searchable: false },
+  { id: "linkedin_url", label: "LinkedIn URL", section: "Social", type: "url", required: false, searchable: false },
+];
+
 export const UNIFIED_TALENT_PROFILE_FIELD_SPEC: UnifiedFieldSpec[] = [
   ...CORE_PROFILE_FIELDS,
   ...TALENT_TYPE_SELECTION_FIELDS,
@@ -344,6 +429,11 @@ export const UNIFIED_TALENT_PROFILE_FIELD_SPEC: UnifiedFieldSpec[] = [
   ...AVAILABILITY_FIELDS,
   ...DYNAMIC_TALENT_FIELDS,
   ...GUARDIAN_FIELDS,
+  ...PHOTOGRAPHER_FIELDS,
+  ...MUA_STYLIST_FIELDS,
+  ...COACH_FIELDS,
+  ...VIDEO_EDITOR_FIELDS,
+  ...PROFESSIONAL_CORE_FIELDS,
 ];
 
 export const UNIFIED_FIELD_IDS = new Set(UNIFIED_TALENT_PROFILE_FIELD_SPEC.map((field) => field.id));

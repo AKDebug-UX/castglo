@@ -14,6 +14,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getAvatarUrl, getInitials } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { UNIFIED_FIELD_IDS, validateUnifiedTalentProfile } from "@/lib/unifiedTalentProfile";
+import { UnifiedTalentProfileForm } from "@/components/profile/UnifiedTalentProfileForm";
 
 export default function Profile() {
   const { refreshUser } = useAuth();
@@ -67,6 +69,24 @@ export default function Profile() {
           combinedData = { ...combinedData, ...profileRes.data.data };
         }
 
+        // Map legacy fields to unified talent profile for pre-filling
+        const unified = combinedData.unifiedTalentProfile || {};
+        if (!unified.full_name && combinedData.fullName) unified.full_name = combinedData.fullName;
+        if (!unified.display_name && combinedData.stageName) unified.display_name = combinedData.stageName;
+        if (!unified.phone_number && (combinedData.phone || combinedData.phoneNumber)) unified.phone_number = combinedData.phone || combinedData.phoneNumber;
+        if (!unified.address && combinedData.address) unified.address = combinedData.address;
+        if (!unified.nationality && combinedData.nationality) unified.nationality = combinedData.nationality;
+        if (!unified.gender && combinedData.gender) unified.gender = combinedData.gender;
+        if (!unified.ethnicity && combinedData.ethnicity) unified.ethnicity = combinedData.ethnicity;
+        if (!unified.agency_name && combinedData.agencyName) unified.agency_name = combinedData.agencyName;
+        if (!unified.union_status && combinedData.unionStatus) unified.union_status = combinedData.unionStatus;
+        if (unified.right_to_work === undefined && combinedData.rightToWork !== undefined) unified.right_to_work = combinedData.rightToWork;
+        if (unified.valid_passport === undefined && combinedData.validPassport !== undefined) unified.valid_passport = combinedData.validPassport;
+        if (unified.willing_to_travel === undefined && combinedData.willingnessToTravel !== undefined) unified.willing_to_travel = combinedData.willingnessToTravel;
+        if (unified.remote_work_open === undefined && combinedData.openToRemote !== undefined) unified.remote_work_open = combinedData.openToRemote;
+        
+        combinedData.unifiedTalentProfile = unified;
+
         setProfileData(combinedData);
         
         if (historyRes.data?.success) {
@@ -97,6 +117,21 @@ export default function Profile() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const unifiedPayload = {
+        ...(profileData?.unifiedTalentProfile || {}),
+        ...Object.fromEntries(Object.entries(profileData || {}).filter(([key]) => UNIFIED_FIELD_IDS.has(key))),
+      };
+
+      const shouldValidateUnified = Object.keys(unifiedPayload).length > 0;
+      if (shouldValidateUnified) {
+        const validation = validateUnifiedTalentProfile(unifiedPayload);
+        if (!validation.success) {
+          const message = validation.error.issues[0]?.message || "Please fix unified profile validation errors.";
+          toast.error(message);
+          return;
+        }
+      }
+
       // 1. Upload new avatar if selected
       if (pendingProfilePhoto) {
         const formData = new FormData();
@@ -117,28 +152,28 @@ export default function Profile() {
 
       // Update User profile (PATCH /user/profile)
       const userUpdate = userAPI.updateProfile({
-        fullName: profileData.fullName,
+        fullName: unifiedPayload.full_name || profileData.fullName,
         bio: profileData.bio,
-        location: profileData.location,
-        phoneNumber: profileData.phone,
-        address: profileData.address,
-        stageName: profileData.stageName,
+        location: unifiedPayload.current_city ? `${unifiedPayload.current_city}${unifiedPayload.current_country ? ', ' + unifiedPayload.current_country : ''}` : profileData.location,
+        phoneNumber: unifiedPayload.phone_number || profileData.phone,
+        address: unifiedPayload.address || profileData.address,
+        stageName: unifiedPayload.display_name || profileData.stageName,
         organisationType: profileData.organisationType,
         jobTitle: profileData.jobTitle,
         website: profileData.website,
         professionalLinks: profileData.professionalLinks,
         notificationSettings: profileData.notificationSettings,
         // Sync demographic fields
-        gender: profileData.gender,
-        ethnicity: profileData.ethnicity,
+        gender: unifiedPayload.gender || profileData.gender,
+        ethnicity: unifiedPayload.ethnicity || profileData.ethnicity,
         languages: profileData.languages,
         playingAge: profileData.playingAge,
         // New Spec Fields
-        nationality: profileData.nationality,
-        rightToWork: profileData.rightToWork,
-        validPassport: profileData.validPassport,
-        willingnessToTravel: profileData.willingnessToTravel,
-        openToRemote: profileData.openToRemote,
+        nationality: unifiedPayload.nationality || profileData.nationality,
+        rightToWork: unifiedPayload.right_to_work !== undefined ? unifiedPayload.right_to_work : profileData.rightToWork,
+        validPassport: unifiedPayload.valid_passport !== undefined ? unifiedPayload.valid_passport : profileData.validPassport,
+        willingnessToTravel: unifiedPayload.willing_to_travel || profileData.willingnessToTravel,
+        openToRemote: unifiedPayload.remote_work_open !== undefined ? unifiedPayload.remote_work_open : profileData.openToRemote,
         instagramUrl: profileData.instagramUrl,
         tiktokUrl: profileData.tiktokUrl,
         youtubeUrl: profileData.youtubeUrl,
@@ -147,7 +182,12 @@ export default function Profile() {
         expectedRate: profileData.expectedRate,
         openToUnpaid: profileData.openToUnpaid,
         careerGoals: profileData.careerGoals,
-        specialties: profileData.specialties
+        specialties: profileData.specialties,
+        fluentLanguages: unifiedPayload.fluent_languages || profileData.fluentLanguages,
+        performanceLanguages: unifiedPayload.performance_languages || profileData.performanceLanguages,
+        languagesForVoiceWork: unifiedPayload.languages_for_voice_work || profileData.languagesForVoiceWork,
+        languagesForPresentation: unifiedPayload.languages_for_presentation || profileData.languagesForPresentation,
+        unifiedTalentProfile: unifiedPayload
       });
 
       // Update Talent/Profile data (PATCH /profiles/me)
@@ -159,14 +199,19 @@ export default function Profile() {
         physicalAttributes: profileData?.physicalAttributes || profileData?.talent?.physicalAttributes,
         experience: profileData.experience,
         // Demographic fields for talent profile
-        gender: profileData.gender,
-        ethnicity: profileData.ethnicity,
+        gender: unifiedPayload.gender || profileData.gender,
+        ethnicity: unifiedPayload.ethnicity || profileData.ethnicity,
         languages: profileData.languages,
         playingAge: profileData.playingAge,
         // Spec Fields
         unionStatus: profileData.unionStatus,
         agencyName: profileData.agencyName,
-        specialties: profileData.specialties
+        specialties: profileData.specialties,
+        fluentLanguages: unifiedPayload.fluent_languages || profileData.fluentLanguages,
+        performanceLanguages: unifiedPayload.performance_languages || profileData.performanceLanguages,
+        languagesForVoiceWork: unifiedPayload.languages_for_voice_work || profileData.languagesForVoiceWork,
+        languagesForPresentation: unifiedPayload.languages_for_presentation || profileData.languagesForPresentation,
+        unifiedTalentProfile: unifiedPayload
       });
 
       await Promise.all([userUpdate, profileUpdate]);
@@ -323,43 +368,44 @@ export default function Profile() {
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="overflow-x-auto pb-2">
-          <TabsList className="h-auto p-1 gap-1 inline-flex">
-            <TabsTrigger value="basic" className="py-2 px-4">Basic</TabsTrigger>
-            <TabsTrigger value="details" className="py-2 px-4">Professional</TabsTrigger>
-            <TabsTrigger value="physical" className="py-2 px-4">Physical</TabsTrigger>
-            <TabsTrigger value="specialized" className="py-2 px-4">Specialized</TabsTrigger>
-            <TabsTrigger value="skills" className="py-2 px-4">Skills</TabsTrigger>
-            <TabsTrigger value="education" className="py-2 px-4">Education</TabsTrigger>
-            <TabsTrigger value="equipment" className="py-2 px-4">Equipment</TabsTrigger>
-            <TabsTrigger value="portfolio" className="py-2 px-4">Portfolio</TabsTrigger>
-            <TabsTrigger value="subscription" className="py-2 px-4">Subscription</TabsTrigger>
-            <TabsTrigger value="verification" className="py-2 px-4">Verification</TabsTrigger>
-            <TabsTrigger value="payments" className="py-2 px-4">Payments</TabsTrigger>
-            <TabsTrigger value="notifications" className="py-2 px-4">Notifications</TabsTrigger>
-            <TabsTrigger value="security" className="py-2 px-4">Security</TabsTrigger>
-          </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="relative">
+        <div className="sticky top-0 z-20 bg-[#F1FBFB]/95 backdrop-blur supports-[backdrop-filter]:bg-[#F1FBFB]/60 py-4 -mx-1 px-1">
+          <div className="overflow-x-auto pb-1 scrollbar-hide">
+            <TabsList className="h-auto p-1 gap-1 inline-flex bg-white/50 border shadow-sm rounded-xl">
+              <TabsTrigger value="basic" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Basic</TabsTrigger>
+              <TabsTrigger value="details" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Professional</TabsTrigger>
+              <TabsTrigger value="physical" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Physical</TabsTrigger>
+              <TabsTrigger value="specialized" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Specialized</TabsTrigger>
+              <TabsTrigger value="skills" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Skills</TabsTrigger>
+              <TabsTrigger value="education" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Education</TabsTrigger>
+              <TabsTrigger value="equipment" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Equipment</TabsTrigger>
+              <TabsTrigger value="portfolio" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Portfolio</TabsTrigger>
+              <TabsTrigger value="subscription" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Subscription</TabsTrigger>
+              <TabsTrigger value="verification" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Verification</TabsTrigger>
+              <TabsTrigger value="payments" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Payments</TabsTrigger>
+              <TabsTrigger value="notifications" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Notifications</TabsTrigger>
+              <TabsTrigger value="security" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all duration-200">Security</TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
-        <TabsContent value="basic" className="mt-6">
+        <TabsContent value="basic" className="mt-2 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
-              <CardTitle>Basic Details</CardTitle>
-              <p className="text-sm text-muted-foreground">Update your personal and contact information</p>
+              <CardTitle>Profile Picture</CardTitle>
+              <p className="text-sm text-muted-foreground">This photo will be visible to casting directors and professionals</p>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Avatar Upload */}
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <Avatar className="h-20 w-20">
+              <div className="flex items-center gap-6">
+                <div className="relative group">
+                  <Avatar className="h-24 w-24 border-2 border-primary/20 transition-all duration-300 group-hover:border-primary/50">
                     <AvatarImage src={pendingProfilePhoto?.preview || profileData?.profilePicture || profileData?.talent?.headshots?.[0]?.url || getAvatarUrl(profileData?.fullName)} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-2xl">
                       {getInitials(profileData?.fullName)}
                     </AvatarFallback>
                   </Avatar>
-                  <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-secondary flex items-center justify-center cursor-pointer shadow-sm hover:bg-secondary/80">
-                    <Camera className="h-3.5 w-3.5" />
+                  <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary/90 transition-colors">
+                    <Camera className="h-4 w-4" />
                     <input 
                       id="avatar-upload" 
                       type="file" 
@@ -370,150 +416,38 @@ export default function Profile() {
                     />
                   </label>
                 </div>
-                <div className="space-y-1">
-                  <Button variant="outline" size="sm" asChild disabled={isSaving}>
-                    <label htmlFor="avatar-upload" className="cursor-pointer">
-                      <Upload className="w-4 h-4 mr-2" />
-                      Select New Photo
-                    </label>
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" asChild disabled={isSaving}>
+                      <label htmlFor="avatar-upload" className="cursor-pointer">
+                        <Upload className="w-4 h-4 mr-2" />
+                        Change Photo
+                      </label>
+                    </Button>
+                    {pendingProfilePhoto && (
+                      <Button variant="ghost" size="sm" onClick={() => setPendingProfilePhoto(null)} className="text-destructive">
+                        Reset
+                      </Button>
+                    )}
+                  </div>
                   {pendingProfilePhoto && (
-                    <p className="text-xs text-[#009698] font-bold mt-1">Preview mode - Save changes to upload</p>
+                    <p className="text-xs text-[#009698] font-bold animate-pulse">Preview mode - Save changes to upload</p>
                   )}
-                  <p className="text-[10px] text-muted-foreground">JPG, GIF or PNG. Max size of 800K</p>
-                </div>
-              </div>
-
-              {/* Form Fields */}
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Full Name</label>
-                  <Input 
-                    name="fullName"
-                    value={profileData?.fullName || ""} 
-                    onChange={handleInputChange}
-                    placeholder="Enter your full name"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Stage Name</label>
-                  <Input 
-                    name="stageName"
-                    value={profileData?.stageName || ""} 
-                    onChange={handleInputChange}
-                    placeholder="Enter your stage name (optional)"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Email</label>
-                  <Input 
-                    name="email"
-                    type="email" 
-                    value={profileData?.email || ""} 
-                    disabled 
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Telephone Number</label>
-                  <Input 
-                    name="phone"
-                    type="tel" 
-                    value={profileData?.phone || ""} 
-                    onChange={handleInputChange}
-                    placeholder="+1 (555) 000-0000"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Address</label>
-                <Textarea
-                  name="address"
-                  rows={2}
-                  value={profileData?.address || ""}
-                  onChange={handleInputChange}
-                  placeholder="Enter your full address"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Location</label>
-                <Input 
-                  name="location"
-                  value={profileData?.location || ""} 
-                  onChange={handleInputChange}
-                  placeholder="City, Country"
-                />
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Nationality</label>
-                  <Input 
-                    name="nationality"
-                    value={profileData?.nationality || ""} 
-                    onChange={handleInputChange}
-                    placeholder="Enter your nationality"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Willingness to Travel</label>
-                  <Select 
-                    value={profileData?.willingnessToTravel || ""} 
-                    onValueChange={(v) => handleSelectChange("willingnessToTravel", v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select preference" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="yes">Yes</SelectItem>
-                      <SelectItem value="no">No</SelectItem>
-                      <SelectItem value="negotiable">Negotiable</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50">
-                  <div>
-                    <p className="font-semibold text-sm">Right to Work in Residence Country</p>
-                    <p className="text-xs text-muted-foreground">Do you have legal permission to work?</p>
-                  </div>
-                  <Switch 
-                    checked={profileData?.rightToWork || false} 
-                    onCheckedChange={(v) => setProfileData(prev => ({...prev, rightToWork: v}))}
-                  />
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50">
-                  <div>
-                    <p className="font-semibold text-sm">Valid Passport</p>
-                    <p className="text-xs text-muted-foreground">Do you have a passport valid for at least 6 months?</p>
-                  </div>
-                  <Switch 
-                    checked={profileData?.validPassport || false} 
-                    onCheckedChange={(v) => setProfileData(prev => ({...prev, validPassport: v}))}
-                  />
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50">
-                  <div>
-                    <p className="font-semibold text-sm">Open to Remote Work</p>
-                    <p className="text-xs text-muted-foreground">Are you available for remote casting and jobs?</p>
-                  </div>
-                  <Switch 
-                    checked={profileData?.openToRemote || false} 
-                    onCheckedChange={(v) => setProfileData(prev => ({...prev, openToRemote: v}))}
-                  />
+                  <p className="text-[10px] text-muted-foreground">JPG, GIF or PNG. Max size of 800K. Recommendation: Square aspect ratio.</p>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          <UnifiedTalentProfileForm
+            rootData={profileData}
+            onChange={(nextRootData) => setProfileData(nextRootData)}
+            activeTab="general"
+            showTabs={false}
+          />
         </TabsContent>
 
-        <TabsContent value="details" className="mt-6">
+        <TabsContent value="details" className="mt-2 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
               <CardTitle>Professional Details</CardTitle>
@@ -743,9 +677,15 @@ export default function Profile() {
               </div>
             </CardContent>
           </Card>
+          <UnifiedTalentProfileForm
+            rootData={profileData}
+            onChange={(nextRootData) => setProfileData(nextRootData)}
+            activeTab="professional"
+            showTabs={false}
+          />
         </TabsContent>
 
-        <TabsContent value="physical" className="mt-6">
+        <TabsContent value="physical" className="mt-2 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
               <CardTitle>Physical Attributes & Demographics</CardTitle>
@@ -993,131 +933,24 @@ export default function Profile() {
               </div>
             </CardContent>
           </Card>
+          <UnifiedTalentProfileForm
+            rootData={profileData}
+            onChange={(nextRootData) => setProfileData(nextRootData)}
+            activeTab="attributes"
+            showTabs={false}
+          />
         </TabsContent>
 
-        <TabsContent value="specialized" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Specialized Talent Fields</CardTitle>
-              <p className="text-sm text-muted-foreground">Provide specific details based on your reported talent types.</p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="p-4 border rounded-lg bg-blue-50/50 mb-4">
-                <p className="text-sm text-blue-800">
-                  These fields dynamically populate based on your Professional Roles (in the Professional tab).
-                </p>
-              </div>
-
-              {(profileData?.professionalRoles || []).join(" ").toLowerCase().includes("actor") && (
-                <div className="space-y-4 pt-4 border-t">
-                  <h3 className="font-bold text-lg text-primary">Actor Specifics</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Training (e.g. Drama School)</label>
-                      <Input 
-                        value={profileData?.specialties?.actor?.training || ""} 
-                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, actor: {...prev.specialties?.actor, training: e.target.value}}}))}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Techniques (e.g. Meisner)</label>
-                      <Input 
-                        value={profileData?.specialties?.actor?.techniques || ""} 
-                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, actor: {...prev.specialties?.actor, techniques: e.target.value}}}))}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Accents</label>
-                      <Input 
-                        value={profileData?.specialties?.actor?.accents || ""} 
-                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, actor: {...prev.specialties?.actor, accents: e.target.value}}}))}
-                        placeholder="British, Southern US, etc."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Monologue Link</label>
-                      <Input 
-                        value={profileData?.specialties?.actor?.monologueLink || ""} 
-                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, actor: {...prev.specialties?.actor, monologueLink: e.target.value}}}))}
-                        placeholder="YouTube/Vimeo link"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {(profileData?.professionalRoles || []).join(" ").toLowerCase().includes("model") && (
-                <div className="space-y-4 pt-4 border-t">
-                  <h3 className="font-bold text-lg text-primary">Model Specifics</h3>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Categories</label>
-                      <Input 
-                        value={profileData?.specialties?.model?.categories || ""} 
-                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, model: {...prev.specialties?.model, categories: e.target.value}}}))}
-                        placeholder="Runway, Editorial, Parts"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Measurements (Chest/Waist/Hips)</label>
-                      <Input 
-                        value={profileData?.specialties?.model?.measurements || ""} 
-                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, model: {...prev.specialties?.model, measurements: e.target.value}}}))}
-                        placeholder="e.g. 34-24-34"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Dress/Shoe Size</label>
-                      <Input 
-                        value={profileData?.specialties?.model?.shoeSize || ""} 
-                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, model: {...prev.specialties?.model, shoeSize: e.target.value}}}))}
-                        placeholder="e.g. Size 4 / Size 8 (US)"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {((profileData?.professionalRoles || []).join(" ").toLowerCase().includes("singer") || (profileData?.professionalRoles || []).join(" ").toLowerCase().includes("musician")) && (
-                <div className="space-y-4 pt-4 border-t">
-                  <h3 className="font-bold text-lg text-primary">Singer / Musician Specifics</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Voice Type / Instruments</label>
-                      <Input 
-                        value={profileData?.specialties?.singer?.voiceType || ""} 
-                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, singer: {...prev.specialties?.singer, voiceType: e.target.value}}}))}
-                        placeholder="Soprano, Bass, Guitar, etc."
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium mb-1.5 block">Genres</label>
-                      <Input 
-                        value={profileData?.specialties?.singer?.genres || ""} 
-                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, singer: {...prev.specialties?.singer, genres: e.target.value}}}))}
-                        placeholder="Jazz, Pop, Afrobeats"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-sm font-medium mb-1.5 block">Audio / Vocal Reel Link</label>
-                      <Input 
-                        value={profileData?.specialties?.singer?.reelLink || ""} 
-                        onChange={(e) => setProfileData(prev => ({...prev, specialties: {...prev.specialties, singer: {...prev.specialties?.singer, reelLink: e.target.value}}}))}
-                        placeholder="SoundCloud / Spotify link"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {!(profileData?.professionalRoles || []).some((role: string) => ["actor", "model", "singer", "musician"].some(t => role.toLowerCase().includes(t))) && (
-                <p className="text-sm text-muted-foreground">Add "Actor", "Model", or "Singer" to your Professional Roles to see specific fields here.</p>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="specialized" className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <UnifiedTalentProfileForm
+            rootData={profileData}
+            onChange={(nextRootData) => setProfileData(nextRootData)}
+            activeTab="specialized"
+            showTabs={false}
+          />
         </TabsContent>
 
-        <TabsContent value="skills" className="mt-6">
+        <TabsContent value="skills" className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
               <CardTitle>Skills & Attributes</CardTitle>
@@ -1176,7 +1009,7 @@ export default function Profile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="education" className="mt-6">
+        <TabsContent value="education" className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
               <CardTitle>Education & Training</CardTitle>
@@ -1264,7 +1097,7 @@ export default function Profile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="equipment" className="mt-6">
+        <TabsContent value="equipment" className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
               <CardTitle>Equipment & Gear</CardTitle>
@@ -1324,7 +1157,7 @@ export default function Profile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="portfolio" className="mt-6">
+        <TabsContent value="portfolio" className="mt-2 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
               <CardTitle>Portfolio & Media</CardTitle>
@@ -1395,9 +1228,15 @@ export default function Profile() {
               )}
             </CardContent>
           </Card>
+          <UnifiedTalentProfileForm
+            rootData={profileData}
+            onChange={(nextRootData) => setProfileData(nextRootData)}
+            activeTab="media"
+            showTabs={false}
+          />
         </TabsContent>
 
-        <TabsContent value="subscription" className="mt-6">
+        <TabsContent value="subscription" className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
               <CardTitle>Subscription Information</CardTitle>
@@ -1449,7 +1288,7 @@ export default function Profile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="verification" className="mt-6">
+        <TabsContent value="verification" className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -1549,7 +1388,7 @@ export default function Profile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="payments" className="mt-6">
+        <TabsContent value="payments" className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1622,7 +1461,7 @@ export default function Profile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications" className="mt-6">
+        <TabsContent value="notifications" className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1708,7 +1547,7 @@ export default function Profile() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="security" className="mt-6">
+        <TabsContent value="security" className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -1836,3 +1675,16 @@ export default function Profile() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -14,11 +14,21 @@ import {
   Globe, Instagram, Linkedin, Loader2, 
   MapPin, Plus, Upload, X, Shield, 
   Plane, Monitor, Info, ArrowLeft,
-  Image as ImageIcon
+  Image as ImageIcon,
+  User,
+  ShieldCheck,
+  FileCheck,
+  History,
+  CreditCard,
+  Bell,
+  KeyRound,
+  Smartphone,
+  Mail,
+  UserMinus
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { authAPI, profileAPI, userAPI } from "@/lib/api";
+import { authAPI, profileAPI, userAPI, blockchainAPI, subscriptionAPI } from "@/lib/api";
 import { getAvatarUrl, getInitials } from "@/lib/utils";
 import {
   Tooltip,
@@ -26,10 +36,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ProfessionalSpecializedFields } from "@/components/professional/ProfessionalSpecializedFields";
-
+import { UnifiedTalentProfileForm } from "@/components/profile/UnifiedTalentProfileForm";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { UNIFIED_FIELD_IDS } from "@/lib/unifiedTalentProfile/fieldSpec";
+import { validateUnifiedTalentProfile } from "@/lib/unifiedTalentProfile/validation";
 
 const professionalCategories = [
   "Talent Agent",
@@ -71,6 +84,20 @@ export default function ProfessionalProfile() {
         if (profileRes.data?.success) {
           combinedData = { ...combinedData, ...profileRes.data.data };
         }
+
+        // Map legacy fields to unified talent profile for pre-filling
+        const unified = combinedData.unifiedTalentProfile || {};
+        if (!unified.full_name && combinedData.fullName) unified.full_name = combinedData.fullName;
+        if (!unified.display_name && combinedData.stageName) unified.display_name = combinedData.stageName;
+        if (!unified.phone_number && (combinedData.phone || combinedData.phoneNumber)) unified.phone_number = combinedData.phone || combinedData.phoneNumber;
+        if (!unified.address && combinedData.address) unified.address = combinedData.address;
+        if (!unified.location && combinedData.location) unified.location = combinedData.location;
+        if (!unified.city && combinedData.city) unified.city = combinedData.city;
+        if (!unified.country && combinedData.country) unified.country = combinedData.country;
+        if (unified.willing_to_travel === undefined && combinedData.willing_to_travel !== undefined) unified.willing_to_travel = combinedData.willing_to_travel;
+        if (unified.remote_services_available === undefined && combinedData.remote_services_available !== undefined) unified.remote_services_available = combinedData.remote_services_available;
+        
+        combinedData.unifiedTalentProfile = unified;
 
         setProfileData(combinedData);
       } catch (error) {
