@@ -148,7 +148,12 @@ export function UnifiedTalentProfileForm({
     {
       id: "professional",
       label: "Professional",
-      sections: ["Talent Type", "Professional Overview", "Representation", "Booking Preferences", "Availability"]
+      sections: ["Talent Type", "Professional Overview", "Professional Identity", "Representation", "Booking Preferences", "Availability"]
+    },
+    {
+      id: "business",
+      label: "Business",
+      sections: ["Business & Facilities", "Business Terms"]
     },
     {
       id: "attributes",
@@ -164,8 +169,8 @@ export function UnifiedTalentProfileForm({
       id: "specialized",
       label: "Specialized",
       sections: sectionOrder.filter(s => 
-        s.includes("Profile") || s.includes("Media") || s.includes("Measurements") || s.includes("Preferences")
-      ).filter(s => s !== "Basic Profile" && s !== "Media")
+        s.includes("Profile") || s.includes("Media") || s.includes("Measurements") || s.includes("Preferences") || s.includes("Specialisms")
+      ).filter(s => s !== "Basic Profile" && s !== "Media" && s !== "Professional Identity")
     }
   ], []);
 

@@ -117,6 +117,21 @@ export default function ProfessionalProfile() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const unifiedPayload = {
+        ...(profileData?.unifiedTalentProfile || {}),
+        ...Object.fromEntries(Object.entries(profileData || {}).filter(([key]) => UNIFIED_FIELD_IDS.has(key))),
+      };
+
+      const shouldValidateUnified = Object.keys(unifiedPayload).length > 0;
+      if (shouldValidateUnified) {
+        const validation = validateUnifiedTalentProfile(unifiedPayload);
+        if (!validation.success) {
+          const message = validation.error.issues[0]?.message || "Please fix unified profile validation errors.";
+          toast.error(message);
+          return;
+        }
+      }
+
       // 1. Upload new avatar if selected
       if (pendingProfilePhoto) {
         const formData = new FormData();
@@ -135,50 +150,40 @@ export default function ProfessionalProfile() {
         setPendingPortfolioPhotos([]);
       }
 
-      // 3. Split the data into profile and user updates based on the API expectations
-      const profilePayload = {
-        bio: profileData?.bio,
+      // 3. Update data using the same unified approach as Talent Profile
+      const profileUpdate = profileAPI.updateMe({
+        bio: unifiedPayload.full_bio || profileData?.bio,
         skills: profileData?.skills || [],
+        location: unifiedPayload.location || profileData?.location,
+        stageName: unifiedPayload.display_name || profileData?.stageName || profileData?.fullName,
         professionalRoles: profileData?.professionalRoles || [],
-        location: profileData?.location,
-        stageName: profileData?.stageName || profileData?.fullName,
-        // Added industry professional fields
-        // Professional Identity
-        display_name: profileData?.display_name || "",
-        business_name: profileData?.business_name || "",
-        professional_title: profileData?.professional_title || "",
-        // Bio Split
-        short_bio: profileData?.short_bio || "",
-        full_bio: profileData?.full_bio || profileData?.bio || "",
-        // Location & Travel
-        location: profileData?.location || "",
-        city: profileData?.city || "",
-        country: profileData?.country || "",
-        willing_to_travel: !!profileData?.willing_to_travel,
-        remote_services_available: !!profileData?.remote_services_available,
-        // Experience
-        experience_level: profileData?.experience_level || "beginner",
-        experienceYears: profileData?.experienceYears || "",
-        professionalCategory: profileData?.professionalCategory || "",
+        // industry professional fields
+        display_name: unifiedPayload.display_name,
+        business_name: unifiedPayload.business_name,
+        professional_title: unifiedPayload.professional_title,
+        experience_level: unifiedPayload.experience_level,
+        experienceYears: unifiedPayload.experience_years,
+        professionalCategory: unifiedPayload.primary_talent_type,
         specialties: profileData?.specialties || [],
-        // Existing
-        skills: profileData?.skills || [],
-        website: profileData?.website || "",
-        instagram: profileData?.instagram || "",
-        linkedin: profileData?.linkedin || "",
-      };
+        website: unifiedPayload.website || profileData?.website,
+        instagram: unifiedPayload.instagram_url || profileData?.instagram,
+        linkedin: unifiedPayload.linkedin_url || profileData?.linkedin,
+        unifiedTalentProfile: unifiedPayload
+      });
 
-      const userPayload = {
-        fullName: profileData?.fullName,
-        location: profileData?.location,
-        bio: profileData?.bio,
-        // Sync these to user if needed
-        companyName: profileData?.companyName,
-      };
+      const userUpdate = userAPI.updateProfile({
+        fullName: unifiedPayload.full_name || profileData?.fullName,
+        location: unifiedPayload.location || profileData?.location,
+        bio: unifiedPayload.short_bio || profileData?.bio,
+        companyName: unifiedPayload.business_name || profileData?.companyName,
+        phoneNumber: unifiedPayload.phone_number || profileData?.phone || profileData?.phoneNumber,
+        address: unifiedPayload.address || profileData?.address,
+        unifiedTalentProfile: unifiedPayload
+      });
 
       const [profileResponse, userResponse] = await Promise.all([
-        profileAPI.updateMe(profilePayload),
-        userAPI.updateProfile(userPayload)
+        profileUpdate,
+        userUpdate
       ]);
 
       if (profileResponse.data.success || userResponse.data.success) {
@@ -264,7 +269,6 @@ export default function ProfessionalProfile() {
         </Button>
       </div>
 
-      {/* 1. Identity & Visuals */}
       <Card className="overflow-hidden">
         <div className="h-32 bg-gradient-to-r from-[#009698]/20 to-[#009698]/5 relative">
           {profileData?.cover_image ? (
@@ -292,433 +296,133 @@ export default function ProfessionalProfile() {
             </div>
             <div className="pb-2">
               <h2 className="text-lg font-bold">{profileData?.fullName || "Professional Name"}</h2>
-              <p className="text-sm text-muted-foreground">{profileData?.professional_title || "Freelancer"}</p>
-            </div>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                Brand / Display Name
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger><Info className="w-3 h-3" /></TooltipTrigger>
-                    <TooltipContent><p>This is the name people will see publicly (e.g. "Focus Studio")</p></TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Label>
-              <Input 
-                name="display_name"
-                value={profileData?.display_name || ""} 
-                onChange={handleInputChange}
-                placeholder="Business or Stage Name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Professional Title</Label>
-              <Input 
-                name="professional_title"
-                value={profileData?.professional_title || ""} 
-                onChange={handleInputChange}
-                placeholder="e.g. Senior Fashion Photographer"
-              />
+              <p className="text-sm text-muted-foreground">{profileData?.professional_title || "Industry Professional"}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* 2. Professional Credentials */}
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-lg">Professional Credentials</CardTitle></CardHeader>
-        <CardContent className="space-y-5">
-           <div className="grid gap-5 md:grid-cols-2">
-             <div className="space-y-2">
-               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Main Category</Label>
-               <Select 
-                 value={profileData?.professionalCategory || ""} 
-                 onValueChange={(v) => setProfileData(p => ({ ...p, professionalCategory: v }))}
-               >
-                 <SelectTrigger className="h-11">
-                   <SelectValue placeholder="Select Category" />
-                 </SelectTrigger>
-                 <SelectContent>
-                   {professionalCategories.map(cat => (
-                     <SelectItem key={cat} value={cat.toLowerCase().replace(/\s+/g, '_')}>{cat}</SelectItem>
-                   ))}
-                 </SelectContent>
-               </Select>
-             </div>
-             <div className="space-y-2">
-               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Experience Level</Label>
-               <Select 
-                 value={profileData?.experience_level || "beginner"} 
-                 onValueChange={(v) => setProfileData(p => ({ ...p, experience_level: v }))}
-               >
-                 <SelectTrigger className="h-11">
-                   <SelectValue />
-                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="beginner">Beginner (0-2 years)</SelectItem>
-                   <SelectItem value="intermediate">Intermediate (2-5 years)</SelectItem>
-                   <SelectItem value="advanced">Advanced (5-10 years)</SelectItem>
-                   <SelectItem value="expert">Expert (10+ years)</SelectItem>
-                 </SelectContent>
-               </Select>
-             </div>
-           </div>
-
-           <div className="grid gap-5 md:grid-cols-2 text-sm">
-             <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
-               <div className="flex items-center gap-3">
-                 <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600"><Plane className="w-4 h-4" /></div>
-                 <div>
-                   <p className="font-bold">Willing to Travel</p>
-                   <p className="text-[10px] text-muted-foreground">Available for work outside city</p>
-                 </div>
-               </div>
-               <Switch 
-                 checked={!!profileData?.willing_to_travel}
-                 onCheckedChange={(v) => setProfileData(p => ({ ...p, willing_to_travel: v }))}
-               />
-             </div>
-
-             <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
-               <div className="flex items-center gap-3">
-                 <div className="h-8 w-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600"><Monitor className="w-4 h-4" /></div>
-                 <div>
-                   <p className="font-bold">Remote Services</p>
-                   <p className="text-[10px] text-muted-foreground">Work remotely via digital tools</p>
-                 </div>
-               </div>
-               <Switch 
-                 checked={!!profileData?.remote_services_available}
-                 onCheckedChange={(v) => setProfileData(p => ({ ...p, remote_services_available: v }))}
-               />
-             </div>
-           </div>
-        </CardContent>
-      </Card>
-
-      {/* 3. Bio & Description */}
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-lg">About & Bio</CardTitle></CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex justify-between">
-              Short Bio (Elevator Pitch)
-              <span className={profileData?.short_bio?.length > 300 ? "text-destructive" : "text-muted-foreground"}>
-                {profileData?.short_bio?.length || 0}/300
-              </span>
-            </Label>
-            <Textarea 
-              name="short_bio"
-              rows={2}
-              value={profileData?.short_bio || ""}
-              onChange={handleInputChange}
-              placeholder="Give a 1-2 sentence overview of your professional brand..."
-              className="resize-none"
-            />
+      <Tabs defaultValue="general" className="w-full">
+        <div className="sticky top-0 z-20 bg-[#F1FBFB]/95 backdrop-blur supports-[backdrop-filter]:bg-[#F1FBFB]/60 py-4 -mx-1 px-1">
+          <div className="overflow-x-auto pb-1 scrollbar-hide">
+            <TabsList className="h-auto p-1 gap-1 inline-flex bg-white/50 border shadow-sm rounded-xl">
+              <TabsTrigger value="general" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all">General</TabsTrigger>
+              <TabsTrigger value="professional" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all">Professional</TabsTrigger>
+              <TabsTrigger value="business" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all">Business</TabsTrigger>
+              <TabsTrigger value="specialized" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all">Specialisms</TabsTrigger>
+              <TabsTrigger value="portfolio" className="py-2 px-4 rounded-lg data-[state=active]:bg-[#009698] data-[state=active]:text-white transition-all">Portfolio</TabsTrigger>
+            </TabsList>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex justify-between">
-              Detailed Professional Bio
-              <span className={profileData?.full_bio?.length > 3000 ? "text-destructive" : "text-muted-foreground"}>
-                {profileData?.full_bio?.length || 0}/3000
-              </span>
-            </Label>
-            <Textarea 
-              name="full_bio"
-              rows={6}
-              value={profileData?.full_bio || ""}
-              onChange={handleInputChange}
-              placeholder="Describe your career, notable projects, philosophy, and expertise in detail..."
-            />
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="general" className="mt-2 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <UnifiedTalentProfileForm
+            rootData={profileData}
+            onChange={(nextRootData) => setProfileData(nextRootData)}
+            activeTab="general"
+            showTabs={false}
+          />
+        </TabsContent>
 
-      {/* 3.5 Specialized Industry Fields */}
-      <ProfessionalSpecializedFields 
-        category={profileData?.professionalCategory || ""}
-        data={profileData}
-        onChange={(name, value) => setProfileData(p => ({ ...p, [name]: value }))}
-      />
+        <TabsContent value="professional" className="mt-2 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <UnifiedTalentProfileForm
+            rootData={profileData}
+            onChange={(nextRootData) => setProfileData(nextRootData)}
+            activeTab="professional"
+            showTabs={false}
+          />
+        </TabsContent>
 
-      {/* 4. Portfolio Samples & Credits */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Portfolio & Credibility</CardTitle>
-          <p className="text-xs text-muted-foreground">Showcase your visual work and professional track record</p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-3 gap-3">
-            {profileData?.headshots?.map((shot) => (
-              <div key={shot._id} className="relative aspect-square rounded-xl overflow-hidden border group bg-muted/30">
-                <img src={shot.url} className="w-full h-full object-cover" />
-                <Button 
-                  variant="destructive" 
-                  size="icon" 
-                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={async () => {
-                    try {
-                      await profileAPI.deleteHeadshot(shot._id);
-                      setProfileData((prev) => ({
-                        ...prev,
-                        headshots: prev.headshots.filter((s) => s._id !== shot._id)
-                      }));
-                      toast.success("Image removed");
-                    } catch (e) { toast.error("Delete failed"); }
-                  }}
-                >
-                  <X className="w-3 h-3" />
-                </Button>
+        <TabsContent value="business" className="mt-2 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <UnifiedTalentProfileForm
+            rootData={profileData}
+            onChange={(nextRootData) => setProfileData(nextRootData)}
+            activeTab="business"
+            showTabs={false}
+          />
+        </TabsContent>
+
+        <TabsContent value="specialized" className="mt-2 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <UnifiedTalentProfileForm
+            rootData={profileData}
+            onChange={(nextRootData) => setProfileData(nextRootData)}
+            activeTab="specialized"
+            showTabs={false}
+          />
+        </TabsContent>
+
+        <TabsContent value="portfolio" className="mt-2 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Portfolio Gallery</CardTitle>
+              <p className="text-xs text-muted-foreground">Upload visual samples of your professional work</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {profileData?.headshots?.map((shot) => (
+                  <div key={shot._id} className="relative aspect-square rounded-xl overflow-hidden border group bg-muted/30">
+                    <img src={shot.url} className="w-full h-full object-cover" />
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={async () => {
+                        try {
+                          await profileAPI.deleteHeadshot(shot._id);
+                          setProfileData((prev) => ({
+                            ...prev,
+                            headshots: (prev.headshots || []).filter((s) => s._id !== shot._id)
+                          }));
+                          toast.success("Image removed");
+                        } catch (e) { toast.error("Delete failed"); }
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+                
+                {pendingPortfolioPhotos.map((photo, index) => (
+                  <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-primary/30 group animate-in zoom-in-95 duration-200">
+                    <img src={photo.preview} className="w-full h-full object-cover opacity-80" />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                      <Badge className="bg-primary hover:bg-primary">Pending</Badge>
+                    </div>
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      className="absolute top-1 right-1 h-6 w-6"
+                      onClick={() => removePendingPortfolioPhoto(index)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+
+                <label className="aspect-square rounded-xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
+                  <Upload className="w-5 h-5 text-muted-foreground mb-1" />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Add Media</span>
+                  <input type="file" multiple className="hidden" accept="image/*" onChange={handlePortfolioSelect} />
+                </label>
               </div>
-            ))}
-            
-            {/* Pending Portfolio Photos */}
-            {pendingPortfolioPhotos.map((photo, index) => (
-              <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-primary/30 group animate-in zoom-in-95 duration-200">
-                <img src={photo.preview} className="w-full h-full object-cover opacity-80" />
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                  <Badge className="bg-primary hover:bg-primary">Pending</Badge>
-                </div>
-                <Button 
-                  variant="destructive" 
-                  size="icon" 
-                  className="absolute top-1 right-1 h-6 w-6"
-                  onClick={() => removePendingPortfolioPhoto(index)}
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            ))}
+            </CardContent>
+          </Card>
+          <UnifiedTalentProfileForm
+            rootData={profileData}
+            onChange={(nextRootData) => setProfileData(nextRootData)}
+            activeTab="media"
+            showTabs={false}
+          />
+        </TabsContent>
+      </Tabs>
 
-            <label className="aspect-square rounded-xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
-              <Upload className="w-5 h-5 text-muted-foreground mb-1" />
-              <span className="text-[10px] font-bold text-muted-foreground uppercase">Add Media</span>
-              <input type="file" multiple className="hidden" accept="image/*" onChange={handlePortfolioSelect} />
-            </label>
-          </div>
-
-          <Separator />
-
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notable Clients</Label>
-              <Textarea 
-                name="notable_clients"
-                rows={2}
-                value={profileData?.notable_clients || ""}
-                onChange={handleInputChange}
-                placeholder="e.g. Vogue, Netflix, Nike..."
-                className="resize-none"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Notable Projects</Label>
-              <Textarea 
-                name="notable_projects"
-                rows={2}
-                value={profileData?.notable_projects || ""}
-                onChange={handleInputChange}
-                placeholder="e.g. Summer Campaign 2025, 'The Crown' S5..."
-                className="resize-none"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Awards & Recognition</Label>
-            <Input 
-              name="awards_recognition"
-              value={profileData?.awards_recognition || ""}
-              onChange={handleInputChange}
-              placeholder="e.g. British Photography Award 2024"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 5. Business Operations */}
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-lg">Business & Facilities</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-             <div className="flex items-center space-x-3 p-3 rounded-xl border bg-muted/10">
-               <Checkbox 
-                 id="studio" 
-                 checked={!!profileData?.studio_access}
-                 onCheckedChange={(v) => setProfileData(p => ({ ...p, studio_access: !!v }))}
-               />
-               <label htmlFor="studio" className="text-xs font-bold leading-none cursor-pointer">Studio Access</label>
-             </div>
-
-             <div className="flex items-center space-x-3 p-3 rounded-xl border bg-muted/10">
-               <Checkbox 
-                 id="insurance" 
-                 checked={!!profileData?.insurance_available}
-                 onCheckedChange={(v) => setProfileData(p => ({ ...p, insurance_available: !!v }))}
-               />
-               <label htmlFor="insurance" className="text-xs font-bold leading-none cursor-pointer">Insured</label>
-             </div>
-
-             <div className="flex items-center space-x-3 p-3 rounded-xl border bg-muted/10">
-               <Checkbox 
-                 id="nda" 
-                 checked={!!profileData?.nda_friendly}
-                 onCheckedChange={(v) => setProfileData(p => ({ ...p, nda_friendly: !!v }))}
-               />
-               <label htmlFor="nda" className="text-xs font-bold leading-none cursor-pointer">NDA Friendly</label>
-             </div>
-
-             <div className="flex items-center space-x-3 p-3 rounded-xl border bg-muted/10">
-               <Checkbox 
-                 id="contract" 
-                 checked={!!profileData?.contract_required}
-                 onCheckedChange={(v) => setProfileData(p => ({ ...p, contract_required: !!v }))}
-               />
-               <label htmlFor="contract" className="text-xs font-bold leading-none cursor-pointer">Contract Req.</label>
-             </div>
-           </div>
-
-           {(profileData?.studio_access) && (
-             <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
-               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground focus-within:text-primary transition-colors">Studio Details</Label>
-               <Input 
-                 name="studio_details"
-                 value={profileData?.studio_details || ""}
-                 onChange={handleInputChange}
-                 placeholder="e.g. 500sqft daylight studio in East London"
-               />
-             </div>
-           )}
-        </CardContent>
-      </Card>
-
-      {/* 5.5 Business Terms & Policies */}
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-lg">Business Terms & Policies</CardTitle></CardHeader>
-        <CardContent className="space-y-6">
-           <div className="grid gap-5 md:grid-cols-2">
-             <div className="space-y-2">
-               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Deposit Required (%)</Label>
-               <Input 
-                 type="number"
-                 name="deposit_percent"
-                 value={profileData?.deposit_percent || ""}
-                 onChange={handleInputChange}
-                 placeholder="e.g. 50"
-               />
-             </div>
-             <div className="space-y-2">
-               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Accepted Payment Methods</Label>
-               <Input 
-                 name="payment_methods"
-                 value={profileData?.payment_methods || ""}
-                 onChange={handleInputChange}
-                 placeholder="e.g. Bank Transfer, PayPal, Stripe"
-               />
-             </div>
-           </div>
-
-           <div className="grid gap-5 md:grid-cols-2">
-             <div className="space-y-2">
-               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Cancellation Policy</Label>
-               <Textarea 
-                 name="cancellation_policy"
-                 rows={2}
-                 value={profileData?.cancellation_policy || ""}
-                 onChange={handleInputChange}
-                 placeholder="e.g. 48 hours notice required..."
-                 className="resize-none"
-               />
-             </div>
-             <div className="space-y-2">
-               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Refund Policy</Label>
-               <Textarea 
-                 name="refund_policy"
-                 rows={2}
-                 value={profileData?.refund_policy || ""}
-                 onChange={handleInputChange}
-                 placeholder="e.g. Full refund if cancelled 7 days before..."
-                 className="resize-none"
-               />
-             </div>
-           </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Online Presence</CardTitle>
-          <p className="text-sm text-muted-foreground">Links to your professional website and social profiles</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <Globe className="w-3 h-3" /> Website / Portfolio URL
-            </Label>
-            <Input 
-              name="website"
-              value={profileData?.website || ""} 
-              onChange={handleInputChange}
-              placeholder="https://www.yourportfolio.com"
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Instagram className="w-3 h-3" /> Instagram
-              </Label>
-              <Input 
-                name="instagram"
-                value={profileData?.instagram || ""} 
-                onChange={handleInputChange}
-                placeholder="@username"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Linkedin className="w-3 h-3" /> LinkedIn
-              </Label>
-              <Input 
-                name="linkedin"
-                value={profileData?.linkedin || ""} 
-                onChange={handleInputChange}
-                placeholder="linkedin.com/in/username"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 7. Skills & Expertise */}
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-lg">Skills & Expertise</CardTitle></CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Detailed Skills (comma separated)</Label>
-            <Textarea 
-              name="skills"
-              rows={3}
-              value={profileData?.skills?.join(", ") || ""}
-              onChange={(e) => {
-                const skills = e.target.value.split(",").map(s => s.trim());
-                setProfileData((prev) => ({ ...prev, skills }));
-              }}
-              placeholder="e.g. Portraiture, Retouching, Lighting Design, SFX Makeup..."
-            />
-          </div>
-        </CardContent>
-      </Card>
-      <div className="flex gap-3 justify-end">
+      <div className="flex gap-3 justify-end pt-6">
         <Button variant="outline" size="lg" asChild>
           <Link to="/professional">Cancel</Link>
         </Button>
-        <Button size="lg" onClick={handleSave} disabled={isSaving}>
+        <Button size="lg" onClick={handleSave} disabled={isSaving} className="bg-[#009698] hover:bg-[#009698]/90 min-w-[140px]">
           {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          Save Profile
+          Save Changes
         </Button>
       </div>
     </div>
