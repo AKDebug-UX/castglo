@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `https://castglo-qupm.onrender.com/api/v1`
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `https://castglo-server-ml3ku.ondigitalocean.app/api/v1`
 
 export const API_ENDPOINTS = {
   // ... (keeping existing API_ENDPOINTS as reference but wrapping in the same structure)
