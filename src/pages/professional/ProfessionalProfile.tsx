@@ -13,8 +13,13 @@ import {
   Briefcase, Building2, Award, Camera, 
   Globe, Instagram, Linkedin, Loader2, 
   MapPin, Plus, Upload, X, Shield, 
-  Plane, Monitor, Info, ArrowLeft
+  Plane, Monitor, Info, ArrowLeft,
+  Image as ImageIcon
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { authAPI, profileAPI, userAPI } from "@/lib/api";
+import { getAvatarUrl, getInitials } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -22,6 +27,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ProfessionalSpecializedFields } from "@/components/professional/ProfessionalSpecializedFields";
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 const professionalCategories = [
   "Talent Agent",
@@ -37,9 +45,6 @@ const professionalCategories = [
   "Director",
   "Other"
 ];
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 
 export default function ProfessionalProfile() {
   const { refreshUser } = useAuth();
