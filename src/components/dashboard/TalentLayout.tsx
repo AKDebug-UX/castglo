@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { DashboardSidebar } from "./DashboardSidebar";
-import { DashboardHeader } from "./DashboardHeader";
+import { DashboardSidebar } from "./TalentSidebar";
+import { DashboardHeader } from "./Header";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 export function DashboardLayout() {

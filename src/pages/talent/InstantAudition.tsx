@@ -87,7 +87,7 @@ export default function InstantAudition() {
         if (streamId) {
           navigate(`/livestream/${streamId}`);
         } else {
-          navigate(user?.role === "talent" ? "/dashboard/livestreams" : "/director/livestreams");
+          navigate(user?.role === "talent" ? "/talent/livestreams" : "/director/livestreams");
         }
       }
     } catch (error) {
@@ -100,7 +100,7 @@ export default function InstantAudition() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       <Link 
-        to={user?.role === "talent" ? "/dashboard/livestreams" : "/director/livestreams"}
+        to={user?.role === "talent" ? "/talent/livestreams" : "/director/livestreams"}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -264,7 +264,7 @@ export default function InstantAudition() {
           {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           Create Virtual Audition
         </Button>
-        <Button variant="outline" size="lg" onClick={() => navigate("/dashboard")}>Cancel</Button>
+        <Button variant="outline" size="lg" onClick={() => navigate("/talent")}>Cancel</Button>
       </div>
 
       {/* Tips */}

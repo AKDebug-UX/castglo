@@ -58,7 +58,7 @@ export default function SignIn() {
       // Route based on user role returned from API
       if (result.role) {
         const roleRoutes: Record<string, string> = {
-          talent: "/dashboard",
+          talent: "/talent",
           casting_director: "/director",
           industry_professional: "/professional",
           admin: "/admin",

@@ -1,7 +1,7 @@
 import { useState } from "react";
  import { Outlet } from "react-router-dom";
  import { AdminSidebar } from "./AdminSidebar";
- import { DashboardHeader } from "./DashboardHeader";
+ import { DashboardHeader } from "./Header";
  import { Sheet, SheetContent } from "@/components/ui/sheet";
  
  export function AdminLayout() {

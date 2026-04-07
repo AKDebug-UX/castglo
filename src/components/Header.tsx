@@ -18,7 +18,7 @@ export function Header() {
         return "/professional";
       case "talent":
       default:
-        return "/dashboard";
+        return "/talent";
     }
   };
 

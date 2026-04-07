@@ -101,7 +101,7 @@ export default function LivestreamsList() {
           <h3 className="font-bold text-muted-foreground">{emptyTitle}</h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">{emptyDesc}</p>
           <Button variant="outline" className="mt-6" asChild>
-            <Link to={user?.role === "talent" ? "/dashboard/audition" : "/director/audition"}>
+            <Link to={user?.role === "talent" ? "/talent/audition" : "/director/audition"}>
               <Plus className="w-4 h-4 mr-2" />
               New Session
             </Link>
@@ -120,7 +120,7 @@ export default function LivestreamsList() {
         </div>
         {user?.role !== "admin" && (
           <Button asChild>
-            <Link to={user?.role === "talent" ? "/dashboard/audition" : "/director/audition"}>
+            <Link to={user?.role === "talent" ? "/talent/audition" : "/director/audition"}>
               <Plus className="w-4 h-4 mr-2" />
               New Audition
             </Link>

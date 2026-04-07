@@ -12,13 +12,13 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { title: "Dashboard", href: "/dashboard", Icon: LayoutDashboard },
-  { title: "Profile", href: "/dashboard/profile", Icon: User },
-  { title: "Browse Casting Calls", href: "/dashboard/browse-cast", Icon: Search },
-  { title: "My Submissions", href: "/dashboard/submissions", Icon: FileText },
-  { title: "Messages", href: "/dashboard/messages", Icon: MessageSquare },
-  { title: "Notifications", href: "/dashboard/notifications", Icon: Bell },
-  { title: "Livestreams", href: "/dashboard/livestreams", Icon: Video },
+  { title: "Dashboard", href: "/talent", Icon: LayoutDashboard },
+  { title: "Profile", href: "/talent/profile", Icon: User },
+  { title: "Browse Casting Calls", href: "/talent/browse-cast", Icon: Search },
+  { title: "My Submissions", href: "/talent/submissions", Icon: FileText },
+  { title: "Messages", href: "/talent/messages", Icon: MessageSquare },
+  { title: "Notifications", href: "/talent/notifications", Icon: Bell },
+  { title: "Livestreams", href: "/talent/livestreams", Icon: Video },
 ];
 
 interface DashboardSidebarProps {
@@ -37,7 +37,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
           const isActive = location.pathname === item.href || 
-            (item.href !== "/dashboard" && location.pathname.startsWith(item.href));
+            (item.href !== "/talent" && location.pathname.startsWith(item.href));
           
           return (
             <Link

@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Save } from "lucide-react";
 import {
@@ -541,9 +540,9 @@ export function UnifiedTalentProfileForm({
               {fields.map((field) => (
                 <div key={field.id} className="space-y-2">
                   {field.type !== "boolean" && field.type !== "checkbox" && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <label className="text-sm font-semibold text-foreground/80">{field.label}</label>
-                      {field.required && <Badge variant="outline" className="text-[10px] h-4">Required</Badge>}
+                      {field.required && <span className="text-destructive font-bold">*</span>}
                     </div>
                   )}
                   {renderField(field)}

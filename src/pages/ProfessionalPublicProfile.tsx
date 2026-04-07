@@ -4,12 +4,14 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Loader2, MapPin, Star, Briefcase, Mail, ShieldCheck, 
   Globe, Instagram, Linkedin, Building2, Calendar, 
   CheckCircle2, Award, Zap, Plane, Monitor, Shield,
-  FileText, Clock, Info, CheckSquare, Target, FolderOpen, DollarSign
+  FileText, Clock, Info, CheckSquare, Target, FolderOpen, DollarSign,
+  User, ListChecks, LayoutGrid, Banknote, MessageCircle, MessageSquare
 } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";

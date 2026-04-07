@@ -31,7 +31,7 @@ The following credentials can be used to test the platform's role-specific featu
 
 ### 2.3 Dashboard Systems
 - **Admin Dashboard ([Admin](https://castglo.vercel.app/admin))**: Real-time platform analytics, user verification controls, and action logs.
-- **Talent Dashboard ([Talent](https://castglo.vercel.app/dashboard))**: Complete profile editing, headshot/showreel uploads, job browsing, and audition submission tracking.
+- **Talent Dashboard ([Talent](https://castglo.vercel.app/talent))**: Complete profile editing, headshot/showreel uploads, job browsing, and audition submission tracking.
 - **Director Dashboard ([Director](https://castglo.vercel.app/director))**: Project creation, submission review, and applicant communication.
 - **Professional Dashboard ([Professional](https://castglo.vercel.app/professional))**: Service management and industry-specific discovery tools.
 

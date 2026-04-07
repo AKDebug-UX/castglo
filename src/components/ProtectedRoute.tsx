@@ -42,7 +42,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     // Redirect to appropriate dashboard based on role
     const roleRoutes: Record<UserRole, string> = {
       admin: "/admin",
-      talent: "/dashboard",
+      talent: "/talent",
       casting_director: "/director",
       industry_professional: "/professional"
     };

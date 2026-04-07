@@ -295,7 +295,7 @@ export function HeroSection() {
                     <div className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
                     Live Auditions
                   </h2>
-                  <Link to="/dashboard/livestreams" className="text-xs text-primary font-bold hover:underline">
+                  <Link to="/talent/livestreams" className="text-xs text-primary font-bold hover:underline">
                     View All
                   </Link>
                 </div>
@@ -316,7 +316,7 @@ export function HeroSection() {
                           </div>
                         </div>
                         <Button size="sm" variant="destructive" className="h-8 rounded-lg text-[10px] font-bold px-4" asChild>
-                          <Link to={`/dashboard/livestream/${stream._id}`}>
+                          <Link to={`/talent/livestream/${stream._id}`}>
                             {(typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId) === user?.id ? "Start" : "Join"}
                           </Link>
                         </Button>

@@ -213,7 +213,7 @@ export default function BrowseCast() {
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
                   <Badge variant="outline" className="bg-[#E9B3D3]/20 text-[#D98EB3] border-none font-semibold px-3 py-1">{casting.type || casting.category || "Film"}</Badge>
                   <Button size="sm" className="bg-[#009698] hover:bg-[#009698]/90 text-white rounded-lg h-9 px-4 font-medium flex items-center gap-1.5" asChild>
-                    <Link to={`/dashboard/browse-cast/${casting._id || casting.id}`}>
+                    <Link to={`/talent/browse-cast/${casting._id || casting.id}`}>
                       View Details
                       <ArrowUpRight className="w-4 h-4" />
                     </Link>
@@ -274,7 +274,7 @@ export default function BrowseCast() {
                   </div>
                   <div className="flex items-center pr-2">
                     <Button className="bg-[#009698] hover:bg-[#009698]/90 text-white rounded-lg h-10 px-6 font-medium shadow-sm" asChild>
-                      <Link to={`/dashboard/browse-cast/${casting._id || casting.id}`}>
+                      <Link to={`/talent/browse-cast/${casting._id || casting.id}`}>
                         View Details
                       </Link>
                     </Button>

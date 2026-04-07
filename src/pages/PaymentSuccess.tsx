@@ -98,13 +98,13 @@ export default function PaymentSuccess() {
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button size="lg" className="rounded-2xl h-14 px-8 text-lg font-bold group" asChild>
-                      <Link to="/dashboard">
+                      <Link to="/talent">
                         Go to Dashboard
                         <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Link>
                     </Button>
                     <Button variant="outline" size="lg" className="rounded-2xl h-14 px-8 text-lg font-bold border-2" asChild>
-                      <Link to="/dashboard/profile?tab=subscription">
+                      <Link to="/talent/profile?tab=subscription">
                         Manage Subscription
                       </Link>
                     </Button>

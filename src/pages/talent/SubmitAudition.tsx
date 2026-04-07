@@ -55,7 +55,7 @@ export default function SubmitAudition() {
       const response = await applicationAPI.create(formData);
       if (response.data.success) {
         toast.success("Audition submitted successfully!");
-        navigate("/dashboard/submissions");
+        navigate("/talent/submissions");
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to submit audition");
@@ -83,7 +83,7 @@ export default function SubmitAudition() {
       <div className="text-center py-12">
         <p className="text-muted-foreground">Casting call not found.</p>
         <Button variant="link" asChild>
-          <Link to="/dashboard/browse-cast">Back to browse</Link>
+          <Link to="/talent/browse-cast">Back to browse</Link>
         </Button>
       </div>
     );
@@ -92,7 +92,7 @@ export default function SubmitAudition() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       <Link 
-        to={`/dashboard/browse-cast/${id}`}
+        to={`/talent/browse-cast/${id}`}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />

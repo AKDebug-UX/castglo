@@ -41,19 +41,19 @@ const ProfessionalPublicProfile = lazy(() => import("./pages/ProfessionalPublicP
 const WhatsNew = lazy(() => import("./pages/WhatsNew"));
 
 // Talent Dashboard
-const DashboardLayout = lazy(() => import("./components/dashboard/DashboardLayout").then(m => ({ default: m.DashboardLayout })));
-const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
-const Profile = lazy(() => import("./pages/dashboard/Profile"));
-const BrowseCast = lazy(() => import("./pages/dashboard/BrowseCast"));
-const CastingDetail = lazy(() => import("./pages/dashboard/CastingDetail"));
-const SubmitAudition = lazy(() => import("./pages/dashboard/SubmitAudition"));
-const Submissions = lazy(() => import("./pages/dashboard/Submissions"));
-const Messages = lazy(() => import("./pages/dashboard/Messages"));
-const Notifications = lazy(() => import("./pages/dashboard/Notifications"));
-const InstantAudition = lazy(() => import("./pages/dashboard/InstantAudition"));
-const Livestream = lazy(() => import("./pages/dashboard/Livestream"));
-const LivestreamsList = lazy(() => import("./pages/dashboard/LivestreamsList"));
-const VerificationProcess = lazy(() => import("./pages/dashboard/VerificationProcess"));
+const DashboardLayout = lazy(() => import("./components/dashboard/TalentLayout").then(m => ({ default: m.DashboardLayout })));
+const Dashboard = lazy(() => import("./pages/talent/Dashboard"));
+const Profile = lazy(() => import("./pages/talent/Profile"));
+const BrowseCast = lazy(() => import("./pages/talent/BrowseCast"));
+const CastingDetail = lazy(() => import("./pages/talent/CastingDetail"));
+const SubmitAudition = lazy(() => import("./pages/talent/SubmitAudition"));
+const Submissions = lazy(() => import("./pages/talent/Submissions"));
+const Messages = lazy(() => import("./pages/talent/Messages"));
+const Notifications = lazy(() => import("./pages/talent/Notifications"));
+const InstantAudition = lazy(() => import("./pages/talent/InstantAudition"));
+const Livestream = lazy(() => import("./pages/talent/Livestream"));
+const LivestreamsList = lazy(() => import("./pages/talent/LivestreamsList"));
+const VerificationProcess = lazy(() => import("./pages/talent/VerificationProcess"));
 
 // Director Dashboard
 const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DirectorLayout })));
@@ -156,7 +156,7 @@ const App = () => (
               <Route path="/payment/cancel" element={<PaymentCancel />} />
               {/* Talent Dashboard Routes */}
               <Route
-                path="/dashboard"
+                path="/talent"
                 element={
                   <ProtectedRoute allowedRoles={["talent"]}>
                     <DashboardLayout />

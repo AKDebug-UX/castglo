@@ -64,7 +64,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         return "/professional/notifications";
       case "talent":
       default:
-        return "/dashboard/notifications";
+        return "/talent/notifications";
     }
   };
 
@@ -79,7 +79,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         return "/professional/profile";
       case "talent":
       default:
-        return "/dashboard/profile";
+        return "/talent/profile";
     }
   };
  
