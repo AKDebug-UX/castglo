@@ -11,7 +11,7 @@ import {
   Instagram, Youtube, Globe, User, Languages as LangIcon, 
   Ruler, Weight, Eye as EyeIcon, Palette, BriefcaseIcon, 
   BadgeCheck, ListChecks, LayoutGrid, Banknote, MessageCircle, 
-  MessageSquare, ImageIcon, Calendar, Plane, Monitor, Shield,
+  MessageSquare, Image as ImageIcon, Calendar, Plane, Monitor, Shield,
   CheckCircle2, DollarSign, Target, FolderOpen, Clock, CheckSquare,
   VenetianMask, Music, Accessibility, Camera, Info, ExternalLink
 } from "lucide-react";

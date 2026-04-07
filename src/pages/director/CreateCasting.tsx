@@ -34,24 +34,29 @@ const ROLE_SKILLS = [
 const HAIR_COLORS = ["Black", "Brown", "Blonde", "Red", "Grey", "White", "Bald", "Other"];
 const EYE_COLORS = ["Blue", "Brown", "Green", "Hazel", "Grey", "Other"];
 
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Clapperboard, HelpCircle, Rocket, X, Loader2, Trash2, Plus, Video } from "lucide-react";
+import { ArrowRight, ArrowLeft, ChevronRight, HelpCircle, Rocket, X, Loader2, Trash2, Plus, Video, Image as ImageIcon, Zap, Star, FastForward } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function CreateCasting() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = !!id;
+  const totalSteps = 3;
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ── Form State ─────────────────────────────────────────────────────────────
@@ -87,7 +92,6 @@ export default function CreateCasting() {
     instantPosting: false,
     featuredPosting: false,
     urgentHiringBadge: false,
-    status: "open",
   });
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -97,7 +101,7 @@ export default function CreateCasting() {
       const fetchCasting = async () => {
         setIsLoading(true);
         try {
-          const response = await castingCallAPI.getOne(id);
+          const response = await castingCallAPI.getOne(id as string);
           if (response.data.success) {
             const data = response.data.data;
             setFormData(prev => ({

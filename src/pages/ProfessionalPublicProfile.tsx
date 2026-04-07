@@ -11,7 +11,7 @@ import {
   Globe, Instagram, Linkedin, Building2, Calendar, 
   CheckCircle2, Award, Zap, Plane, Monitor, Shield,
   FileText, Clock, Info, CheckSquare, Target, FolderOpen, DollarSign,
-  User, ListChecks, LayoutGrid, Banknote, MessageCircle, MessageSquare, ImageIcon
+  User, ListChecks, LayoutGrid, Banknote, MessageCircle, MessageSquare, Image as ImageIcon
 } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
