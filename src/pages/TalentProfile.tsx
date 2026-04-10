@@ -170,26 +170,29 @@ export default function TalentProfile() {
                       <TabsTrigger value="overview" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <LayoutGrid className="w-4 h-4" /> Overview
                       </TabsTrigger>
-                      <TabsTrigger value="services" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
-                        <ListChecks className="w-4 h-4" /> Services
+                      <TabsTrigger value="headshots" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <ImageIcon className="w-4 h-4" /> Headshots
                       </TabsTrigger>
-                      <TabsTrigger value="portfolio" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
-                        <ImageIcon className="w-4 h-4" /> Portfolio
+                      <TabsTrigger value="showreel" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <Youtube className="w-4 h-4" /> Showreel
                       </TabsTrigger>
-                      <TabsTrigger value="pricing" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
-                        <Banknote className="w-4 h-4" /> Pricing
+                      <TabsTrigger value="short_bio" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <User className="w-4 h-4" /> Short Bio
                       </TabsTrigger>
-                      <TabsTrigger value="reviews" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
-                        <Star className="w-4 h-4" /> Reviews
+                      <TabsTrigger value="cv_credits" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <FolderOpen className="w-4 h-4" /> CV / Credits
+                      </TabsTrigger>
+                      <TabsTrigger value="skills" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <CheckSquare className="w-4 h-4" /> Skills
+                      </TabsTrigger>
+                      <TabsTrigger value="accents_languages" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <LangIcon className="w-4 h-4" /> Accents & Languages
                       </TabsTrigger>
                       <TabsTrigger value="availability" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <Calendar className="w-4 h-4" /> Availability
                       </TabsTrigger>
-                      <TabsTrigger value="about" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
-                        <User className="w-4 h-4" /> About
-                      </TabsTrigger>
-                      <TabsTrigger value="contact" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
-                        <MessageSquare className="w-4 h-4" /> Contact
+                      <TabsTrigger value="representation" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <Shield className="w-4 h-4" /> Representation
                       </TabsTrigger>
                     </TabsList>
                   </div>
@@ -271,6 +274,165 @@ export default function TalentProfile() {
                            </Card>
                         </div>
                       )}
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="headshots" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="rounded-2xl p-8 border shadow-card bg-card">
+                      <div className="flex items-center justify-between mb-8">
+                        <h2 className="font-bold text-2xl">Headshots</h2>
+                        <span className="text-xs text-muted-foreground font-medium">{talent.talent?.headshots?.length || 0} Images</span>
+                      </div>
+
+                      {talent.talent?.headshots && talent.talent?.headshots.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                          {talent.talent.headshots.map((shot: any) => (
+                            <div key={shot._id} className="aspect-square rounded-2xl overflow-hidden border bg-muted shadow-sm group relative cursor-zoom-in">
+                              <img
+                                src={shot.url}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                                alt="Headshot"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <Button size="sm" variant="secondary" className="h-8 rounded-full text-xs">
+                                  View
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-16 text-center bg-muted/10 rounded-2xl border-2 border-dashed">
+                          <ImageIcon className="w-10 h-10 text-muted-foreground/30 mx-auto mb-4" />
+                          <p className="text-sm text-muted-foreground">No headshots uploaded yet.</p>
+                        </div>
+                      )}
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="showreel" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="rounded-2xl p-8 border shadow-card bg-card">
+                      <h2 className="font-bold text-2xl mb-6">Showreel</h2>
+                      {talent.unifiedTalentProfile?.intro_video ? (
+                        <div className="aspect-video rounded-2xl overflow-hidden bg-black">
+                          <video src={talent.unifiedTalentProfile.intro_video} controls className="w-full h-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="py-16 text-center bg-muted/10 rounded-2xl border-2 border-dashed">
+                          <Youtube className="w-10 h-10 text-muted-foreground/30 mx-auto mb-4" />
+                          <p className="text-sm text-muted-foreground">No showreel uploaded yet.</p>
+                        </div>
+                      )}
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="short_bio" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="rounded-2xl p-8 border shadow-card bg-card">
+                      <h2 className="font-bold text-2xl mb-6">Short Bio</h2>
+                      <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                        {talent.unifiedTalentProfile?.short_bio || talent.bio || "No biography provided."}
+                      </p>
+                      {talent.unifiedTalentProfile?.career_goals && (
+                        <div className="mt-8 rounded-2xl border bg-muted/20 p-6">
+                          <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                            <Target className="w-4 h-4 text-primary" />
+                            Career Goals
+                          </h3>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{talent.unifiedTalentProfile.career_goals}</p>
+                        </div>
+                      )}
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="cv_credits" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="rounded-2xl p-8 border shadow-card bg-card">
+                      <h2 className="font-bold text-2xl mb-6">CV / Credits</h2>
+                      {talent.unifiedTalentProfile?.cv_resume ? (
+                        <Button asChild className="bg-[#009698] hover:bg-[#009698]/90">
+                          <a href={talent.unifiedTalentProfile.cv_resume} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            View CV / Resume
+                          </a>
+                        </Button>
+                      ) : (
+                        <div className="py-16 text-center bg-muted/10 rounded-2xl border-2 border-dashed">
+                          <FolderOpen className="w-10 h-10 text-muted-foreground/30 mx-auto mb-4" />
+                          <p className="text-sm text-muted-foreground">No CV uploaded yet.</p>
+                        </div>
+                      )}
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="skills" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="rounded-2xl p-8 border shadow-card bg-card">
+                      <h2 className="font-bold text-2xl mb-6">Skills</h2>
+                      <div className="flex flex-wrap gap-2">
+                        {(talent.skills || talent.unifiedTalentProfile?.skills || []).length > 0 ? (
+                          (talent.skills || talent.unifiedTalentProfile?.skills || []).map((skill: string) => (
+                            <Badge key={skill} variant="secondary" className="bg-white border text-xs px-3 py-1">
+                              {skill}
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No skills listed.</p>
+                        )}
+                      </div>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="accents_languages" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="rounded-2xl p-8 border shadow-card bg-card">
+                      <h2 className="font-bold text-2xl mb-6">Accents & Languages</h2>
+                      <div className="grid gap-6 md:grid-cols-2">
+                        <div className="rounded-2xl border bg-muted/20 p-6">
+                          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                            <LangIcon className="w-4 h-4" />
+                            Languages Spoken
+                          </h3>
+                          <p className="text-sm font-semibold">
+                            {talent.unifiedTalentProfile?.languages_spoken || "Not specified"}
+                          </p>
+                          {talent.unifiedTalentProfile?.fluent_languages && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Fluent: {talent.unifiedTalentProfile.fluent_languages}
+                            </p>
+                          )}
+                        </div>
+                        <div className="rounded-2xl border bg-muted/20 p-6">
+                          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                            <Music className="w-4 h-4" />
+                            Natural Accent
+                          </h3>
+                          <p className="text-sm font-semibold">
+                            {talent.unifiedTalentProfile?.natural_accent || "Not specified"}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="representation" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="rounded-2xl p-8 border shadow-card bg-card">
+                      <h2 className="font-bold text-2xl mb-6">Representation</h2>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="rounded-2xl border bg-muted/20 p-6">
+                          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Status</h3>
+                          <p className="text-sm font-semibold capitalize">
+                            {talent.unifiedTalentProfile?.representation_status || (talent.agencyName ? "represented" : "self-represented")}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl border bg-muted/20 p-6">
+                          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Agency / Manager</h3>
+                          <p className="text-sm font-semibold">{talent.unifiedTalentProfile?.agency_name || talent.agencyName || "Not listed"}</p>
+                          {talent.unifiedTalentProfile?.agency_contact && (
+                            <p className="text-xs text-muted-foreground mt-2">{talent.unifiedTalentProfile.agency_contact}</p>
+                          )}
+                        </div>
+                        <div className="rounded-2xl border bg-muted/20 p-6 md:col-span-2">
+                          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Union / Membership</h3>
+                          <p className="text-sm font-semibold">{talent.unifiedTalentProfile?.union_membership || talent.unionStatus || "Not specified"}</p>
+                        </div>
+                      </div>
                     </Card>
                   </TabsContent>
 

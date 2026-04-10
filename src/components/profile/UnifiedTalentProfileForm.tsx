@@ -220,12 +220,29 @@ export function UnifiedTalentProfileForm({
   activeTab: externalActiveTab,
   showTabs = true 
 }: UnifiedTalentProfileFormProps) {
-  const [internalActiveTab, setInternalActiveTab] = useState("general");
+  const [internalActiveTab, setInternalActiveTab] = useState("basic");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const activeTab = externalActiveTab || internalActiveTab;
 
   const unified = rootData?.unifiedTalentProfile || {};
   const values = { ...rootData, ...unified };
+
+  const deriveAgeGroupFromDob = (dob: string | undefined): string | null => {
+    if (!dob) return null;
+    const date = new Date(dob);
+    if (Number.isNaN(date.getTime())) return null;
+    const now = new Date();
+    if (date > now) return null;
+    const age = now.getFullYear() - date.getFullYear() - (now < new Date(now.getFullYear(), date.getMonth(), date.getDate()) ? 1 : 0);
+    if (age < 13) return "Under 13";
+    if (age <= 15) return "13-15";
+    if (age <= 17) return "16-17";
+    if (age <= 24) return "18-24";
+    if (age <= 34) return "25-34";
+    if (age <= 44) return "35-44";
+    if (age <= 54) return "45-54";
+    return "55+";
+  };
 
   useEffect(() => {
     // Auto-detect and set country if not present, and default booleans to false
@@ -238,6 +255,11 @@ export function UnifiedTalentProfileForm({
 
     if (values.right_to_work === undefined) updates.right_to_work = false;
     if (values.valid_passport === undefined) updates.valid_passport = false;
+
+    const derivedAgeGroup = deriveAgeGroupFromDob(values.date_of_birth);
+    if (derivedAgeGroup && values.age_group !== derivedAgeGroup) {
+      updates.age_group = derivedAgeGroup;
+    }
 
     if (Object.keys(updates).length > 0) {
       onChange({
@@ -252,36 +274,24 @@ export function UnifiedTalentProfileForm({
 
   const tabGroups = useMemo(() => [
     {
-      id: "general",
-      label: "General",
-      sections: ["Basic Profile", "Account / Contact", "Contact", "Social", "Guardian Consent"]
+      id: "basic",
+      label: "Basic Profile",
+      sections: ["Basic Profile", "About You", "Availability", "Contact", "Account / Contact", "Guardian Consent"]
     },
     {
       id: "professional",
       label: "Professional",
-      sections: ["Talent Type", "Professional Overview", "Professional Identity", "Representation", "Booking Preferences", "Availability"]
+      sections: ["Talent Type", "Professional Overview", "Representation", "Booking Preferences"]
     },
     {
-      id: "business",
-      label: "Business",
-      sections: ["Business & Facilities", "Business Terms"]
+      id: "appearance",
+      label: "Appearance",
+      sections: ["Appearance"]
     },
     {
-      id: "attributes",
-      label: "Attributes & Bio",
-      sections: ["Appearance", "About You"]
-    },
-    {
-      id: "media",
-      label: "Media",
-      sections: ["Media"]
-    },
-    {
-      id: "specialized",
-      label: "Specialized",
-      sections: sectionOrder.filter(s => 
-        s.includes("Profile") || s.includes("Media") || s.includes("Measurements") || s.includes("Preferences") || s.includes("Specialisms")
-      ).filter(s => s !== "Basic Profile" && s !== "Media" && s !== "Professional Identity")
+      id: "portfolio",
+      label: "Portfolio",
+      sections: ["Media", "Social"]
     }
   ], []);
 
@@ -499,7 +509,15 @@ export function UnifiedTalentProfileForm({
           return <Input type="date" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
 
         case "email":
-          return <Input type="email" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+          return (
+            <Input
+              type="email"
+              value={value || ""}
+              className={hasError ? 'border-destructive' : ''}
+              disabled={field.id === "email"}
+              onChange={(e) => setFieldValue(field.id, e.target.value)}
+            />
+          );
 
         case "phone":
           return <Input type="tel" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;

@@ -54,6 +54,7 @@ const InstantAudition = lazy(() => import("./pages/talent/InstantAudition"));
 const Livestream = lazy(() => import("./pages/talent/Livestream"));
 const LivestreamsList = lazy(() => import("./pages/talent/LivestreamsList"));
 const VerificationProcess = lazy(() => import("./pages/talent/VerificationProcess"));
+const AccountSettings = lazy(() => import("./pages/talent/AccountSettings"));
 
 // Director Dashboard
 const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DirectorLayout })));
@@ -165,6 +166,7 @@ const App = () => (
               >
                 <Route index element={<Dashboard />} />
                 <Route path="profile" element={<Profile />} />
+                <Route path="account-settings" element={<AccountSettings />} />
                 <Route path="browse-cast" element={<BrowseCast />} />
                 <Route path="browse-cast/:id" element={<CastingDetail />} />
                 <Route path="browse-cast/:id/submit" element={<SubmitAudition />} />
