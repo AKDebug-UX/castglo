@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -650,25 +651,23 @@ export function UnifiedTalentProfileForm({
         onValueChange={setInternalActiveTab}
         className="w-full"
       >
-        <div className="sticky top-0 z-10 bg-[#F1FBFB]/80 backdrop-blur-md pb-4 pt-1">
-          <TabsList className="h-14 w-full justify-start overflow-x-auto bg-white border shadow-sm gap-2 p-1.5 rounded-2xl scrollbar-hide">
-            {tabGroups.map(tab => {
-              const hasFields = sectionsByTab[tab.id]?.length > 0;
-              if (!hasFields) return null;
-              const Icon = tabIcons[tab.id] || Sparkles;
-              return (
-                <TabsTrigger 
-                  key={tab.id} 
-                  value={tab.id} 
-                  className="flex items-center gap-2 px-6 h-full rounded-xl transition-all duration-300 data-[state=active]:bg-[#009698] data-[state=active]:text-white data-[state=active]:shadow-lg"
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="font-bold text-sm whitespace-nowrap">{tab.label}</span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </div>
+        <TabsList className="sticky top-0 z-10 h-14 w-full justify-start overflow-x-auto bg-white/80 backdrop-blur-md border shadow-sm gap-2 p-1.5 rounded-2xl scrollbar-hide mb-6">
+          {tabGroups.map(tab => {
+            const hasFields = sectionsByTab[tab.id]?.length > 0;
+            if (!hasFields) return null;
+            const Icon = tabIcons[tab.id] || Sparkles;
+            return (
+              <TabsTrigger 
+                key={tab.id} 
+                value={tab.id} 
+                className="flex items-center gap-2 px-6 h-full rounded-xl transition-all duration-300 data-[state=active]:bg-[#009698] data-[state=active]:text-white data-[state=active]:shadow-lg"
+              >
+                <Icon className="w-4 h-4" />
+                <span className="font-bold text-sm whitespace-nowrap">{tab.label}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
         <div className="mt-6">
           {tabGroups.map(tab => (
