@@ -295,17 +295,6 @@ export function UnifiedTalentProfileForm({
       ]
     },
     {
-      id: "specialisms",
-      label: "Specialisms",
-      sections: [
-        "Actor Profile", "Model Profile", "Model Measurements", "Model Preferences",
-        "Singer Profile", "Dancer Profile", "Voice Artist Profile", "Presenter Profile",
-        "Extra Profile", "Musician Profile", "Creator Profile", "Comedian Profile",
-        "Stunt Profile", "Professional Identity", "Business & Facilities", "Business Terms",
-        "Photography Specialisms", "MUA & Hair Specialisms", "Coaching Specialisms", "Editing Specialisms"
-      ]
-    },
-    {
       id: "appearance",
       label: "Appearance",
       sections: ["Appearance"]
@@ -313,7 +302,13 @@ export function UnifiedTalentProfileForm({
     {
       id: "portfolio",
       label: "Portfolio",
-      sections: ["Media", "Social"]
+      sections: [
+        "Actor Profile", "Model Profile", "Model Measurements", "Model Preferences",
+        "Singer Profile", "Dancer Profile", "Voice Artist Profile", "Presenter Profile",
+        "Extra Profile", "Musician Profile", "Creator Profile", "Comedian Profile",
+        "Stunt Profile",
+        "Media", "Social"
+      ]
     }
   ], []);
 

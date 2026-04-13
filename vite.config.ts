@@ -22,23 +22,14 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
-            }
-            if (id.includes('@tanstack')) {
-              return 'vendor-tanstack';
-            }
             if (id.includes('agora-rtc-sdk-ng')) {
               return 'vendor-agora';
             }
             if (id.includes('recharts')) {
               return 'vendor-recharts';
             }
-            if (id.includes('axios') || id.includes('socket.io-client')) {
-              return 'vendor-network';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'vendor-radix';
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
             }
             return 'vendor';
           }
