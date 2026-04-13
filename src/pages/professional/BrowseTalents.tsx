@@ -126,7 +126,7 @@ export default function BrowseTalents() {
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                   <Avatar className="w-12 h-12">
-                    <AvatarImage src={talent.talent.headshots[0].url} />
+                    <AvatarImage src={talent.talent?.headshots?.[0]?.url} />
                     <AvatarFallback className="bg-primary/10 text-primary text-lg">
                       {talent.userId?.fullName?.[0] || 'T'}
                     </AvatarFallback>

@@ -287,7 +287,7 @@ export default function BrowseTalent() {
                     <CardContent className="p-0">
                       <div className="relative aspect-square overflow-hidden bg-slate-100">
                         <img 
-                          src={talent.talent.headshots[0].url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
+                          src={talent.talent?.headshots?.[0]?.url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
                           className="w-full h-full object-cover transition-transform group-hover:scale-105"
                           alt={talent.userId?.fullName}
                         />
@@ -353,7 +353,7 @@ export default function BrowseTalent() {
                     <CardContent className="p-0">
                       <div className="relative aspect-square overflow-hidden bg-slate-50">
                         <img 
-                          src={talent.talent.headshots[0].url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
+                          src={talent.talent?.headshots?.[0]?.url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
                           className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
                           alt={talent.userId?.fullName}
                         />

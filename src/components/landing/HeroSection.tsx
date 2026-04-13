@@ -378,8 +378,8 @@ export function HeroSection() {
                     <div key={`${talent._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                       <div className="relative h-48">
                         <img 
-                          src={talent.talent.headshots[0].url || talentMichael} 
-                          alt={talent.fullName}
+                          src={talent.talent?.headshots?.[0]?.url || talentMichael} 
+                          alt={talent.userId?.fullName || talent.fullName || "Talent Profile"}
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">

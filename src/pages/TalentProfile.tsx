@@ -76,7 +76,7 @@ export default function TalentProfile() {
               <div className="space-y-6">
                 <div className="rounded-2xl bg-card overflow-hidden shadow-card">
                   <img 
-                    src={talent.talent.headshots[0].url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
+                    src={talent.talent?.headshots?.[0]?.url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
                     alt={talent.userId?.fullName} 
                     className="w-full aspect-square object-cover" 
                   />
@@ -286,7 +286,7 @@ export default function TalentProfile() {
 
                       {talent.talent?.headshots && talent.talent?.headshots.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                          {talent.talent.headshots.map((shot: any) => (
+                          {talent.talent?.headshots?.map((shot: any) => (
                             <div key={shot._id} className="aspect-square rounded-2xl overflow-hidden border bg-muted shadow-sm group relative cursor-zoom-in">
                               <img
                                 src={shot.url}
@@ -473,7 +473,7 @@ export default function TalentProfile() {
                       
                       {talent.talent?.headshots && talent.talent?.headshots.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                          {talent.talent.headshots.map((shot: any) => (
+                          {talent.talent?.headshots?.map((shot: any) => (
                             <div key={shot._id} className="aspect-square rounded-2xl overflow-hidden border bg-muted shadow-sm group relative cursor-zoom-in">
                               <img src={shot.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt="Portfolio" />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
