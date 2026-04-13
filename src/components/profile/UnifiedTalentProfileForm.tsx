@@ -6,7 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Save } from "lucide-react";
+import { 
+  Loader2, Save, User, Briefcase, Sparkles, 
+  Camera, Eye, Layers, Share2 
+} from "lucide-react";
+import { PhoneInput } from "@/components/ui/phone-input";
 import {
   UNIFIED_TALENT_PROFILE_FIELD_SPEC,
   UnifiedFieldSpec,
@@ -281,7 +285,13 @@ export function UnifiedTalentProfileForm({
     {
       id: "professional",
       label: "Professional",
-      sections: ["Talent Type", "Professional Overview", "Representation", "Booking Preferences"]
+      sections: [
+        "Talent Type", 
+        "Actor Media", "Model Media", "Singer Media", "Dancer Media",
+        "Voice Artist Media", "Presenter Media", "Musician Media", "Creator Media",
+        "Comedian Media", "Stunt Media",
+        "Professional Overview", "Representation", "Booking Preferences"
+      ]
     },
     {
       id: "specialisms",
@@ -302,11 +312,7 @@ export function UnifiedTalentProfileForm({
     {
       id: "portfolio",
       label: "Portfolio",
-      sections: [
-        "Media", "Social", "Actor Media", "Model Media", "Singer Media", "Dancer Media",
-        "Voice Artist Media", "Presenter Media", "Musician Media", "Creator Media",
-        "Comedian Media", "Stunt Media"
-      ]
+      sections: ["Media", "Social"]
     }
   ], []);
 
@@ -346,13 +352,22 @@ export function UnifiedTalentProfileForm({
       });
     }
 
+    let nextUnified = { ...unified, [fieldId]: value };
+    let nextRoot = { ...rootData, [fieldId]: value };
+
+    // Special logic: ensure primary and additional talent types are mutually exclusive
+    if (fieldId === "primary_talent_type") {
+      const currentAdditional = normalizeArray(values.additional_talent_types);
+      if (currentAdditional.includes(value)) {
+        const nextAdditional = currentAdditional.filter(t => t !== value);
+        nextUnified.additional_talent_types = nextAdditional;
+        nextRoot.additional_talent_types = nextAdditional;
+      }
+    }
+
     onChange({
-      ...rootData,
-      unifiedTalentProfile: {
-        ...unified,
-        [fieldId]: value,
-      },
-      [fieldId]: value,
+      ...nextRoot,
+      unifiedTalentProfile: nextUnified,
     });
   };
 
@@ -402,8 +417,13 @@ export function UnifiedTalentProfileForm({
 
   const renderField = (field: UnifiedFieldSpec) => {
     const value = values[field.id];
-    const options = getOptions(field);
+    let options = getOptions(field);
     const hasError = !!errors[field.id];
+
+    // Filter out primary from additional selection
+    if (field.id === "additional_talent_types" && values.primary_talent_type) {
+      options = options.filter(opt => opt !== values.primary_talent_type);
+    }
 
     const fieldContent = (() => {
       switch (field.type) {
@@ -524,7 +544,13 @@ export function UnifiedTalentProfileForm({
           );
 
         case "phone":
-          return <Input type="tel" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+          return (
+            <PhoneInput
+              value={value || ""}
+              onChange={(next) => setFieldValue(field.id, next)}
+              className={hasError ? 'border-destructive' : ''}
+            />
+          );
 
         case "number":
           return <Input type="number" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
@@ -552,44 +578,50 @@ export function UnifiedTalentProfileForm({
     if (sections.length === 0) return null;
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-10">
         {sections.map(({ section, fields }) => (
-          <Card key={section}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{section}</CardTitle>
+          <Card key={section} className="border-none shadow-none bg-transparent">
+            <CardHeader className="px-0 pb-4 border-b mb-6">
+              <CardTitle className="text-xl font-bold tracking-tight text-[#006b6d]">{section}</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Specific details for your profile in this category.</p>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {fields.map((field) => (
-                <div key={field.id} className="space-y-2">
-                  {field.type !== "boolean" && field.type !== "checkbox" && (
-                    <div className="flex items-center gap-1">
-                      <label className="text-sm font-semibold text-foreground/80">{field.label}</label>
-                      {field.required && <span className="text-destructive font-bold">*</span>}
+            <CardContent className="px-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                {fields.map((field) => (
+                  <div key={field.id} className="space-y-2">
+                    {field.type !== "boolean" && field.type !== "checkbox" && (
+                      <div className="flex items-center gap-1">
+                        <label className="text-sm font-semibold text-foreground/70">{field.label}</label>
+                        {field.required && <span className="text-destructive font-bold">*</span>}
+                      </div>
+                    )}
+                    <div className="transition-all duration-200 focus-within:ring-2 focus-within:ring-[#009698]/20 focus-within:ring-offset-2 rounded-md">
+                      {renderField(field)}
                     </div>
-                  )}
-                  {renderField(field)}
-                </div>
-              ))}
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         ))}
 
         {onSave && (
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end pt-8 border-t">
             <Button 
+              size="lg"
               onClick={handleTabSave} 
               disabled={isSaving}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto bg-[#009698] hover:bg-[#009698]/90 font-bold px-8"
             >
               {isSaving ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving Profile...
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Updating...
                 </>
               ) : (
                 <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Profile
+                  <Save className="mr-2 h-5 w-5" />
+                  Save Section
                 </>
               )}
             </Button>
@@ -599,46 +631,56 @@ export function UnifiedTalentProfileForm({
     );
   };
 
+  const tabIcons: Record<string, any> = {
+    basic: User,
+    professional: Briefcase,
+    specialisms: Sparkles,
+    appearance: Eye,
+    portfolio: Share2
+  };
+
   if (!showTabs) {
     return renderTabContent(activeTab);
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Unified Talent Profile</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Complete your profile across all categories. Dynamic fields appear based on your talent type.
-          </p>
-        </CardHeader>
-      </Card>
-
+    <div className="space-y-8">
       <Tabs 
         value={activeTab} 
         onValueChange={setInternalActiveTab}
         className="w-full"
       >
-        <div className="bg-card rounded-lg border p-1 mb-6">
-          <TabsList className="w-full justify-start overflow-x-auto bg-transparent border-none gap-2 p-1">
+        <div className="sticky top-0 z-10 bg-[#F1FBFB]/80 backdrop-blur-md pb-4 pt-1">
+          <TabsList className="h-14 w-full justify-start overflow-x-auto bg-white border shadow-sm gap-2 p-1.5 rounded-2xl scrollbar-hide">
             {tabGroups.map(tab => {
               const hasFields = sectionsByTab[tab.id]?.length > 0;
               if (!hasFields) return null;
+              const Icon = tabIcons[tab.id] || Sparkles;
               return (
-                <TabsTrigger key={tab.id} value={tab.id} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  {tab.label}
+                <TabsTrigger 
+                  key={tab.id} 
+                  value={tab.id} 
+                  className="flex items-center gap-2 px-6 h-full rounded-xl transition-all duration-300 data-[state=active]:bg-[#009698] data-[state=active]:text-white data-[state=active]:shadow-lg"
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="font-bold text-sm whitespace-nowrap">{tab.label}</span>
                 </TabsTrigger>
               );
             })}
           </TabsList>
         </div>
 
-        {tabGroups.map(tab => (
-          <TabsContent key={tab.id} value={tab.id} className="space-y-6 mt-0">
-            {renderTabContent(tab.id)}
-          </TabsContent>
-        ))}
-
+        <div className="mt-6">
+          {tabGroups.map(tab => (
+            <TabsContent key={tab.id} value={tab.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <Card className="rounded-[2rem] border shadow-card overflow-hidden">
+                <CardContent className="p-8 md:p-12">
+                  {renderTabContent(tab.id)}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
+        </div>
       </Tabs>
     </div>
   );

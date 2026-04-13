@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { PhoneInput } from "@/components/ui/phone-input";
 import {
   castingDirectorSectionTabMap,
   CastingDirectorFieldSpec,
@@ -153,7 +154,12 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
       case "email":
         return <Input type="email" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
       case "phone":
-        return <Input type="tel" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+        return (
+          <PhoneInput
+            value={value || ""}
+            onChange={(next) => setFieldValue(field.id, next)}
+          />
+        );
       case "file":
         return <Input type="file" onChange={(e) => setFieldValue(field.id, e.target.files?.[0] ? `file:${e.target.files[0].name}` : "")} />;
       default:

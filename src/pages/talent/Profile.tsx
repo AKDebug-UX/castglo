@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Loader2, ShieldCheck, Upload, X } from "lucide-react";
+import { Camera, Loader2, ShieldCheck, Upload, X, Image as ImageIcon, Youtube, Monitor } from "lucide-react";
 import { authAPI, profileAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -185,6 +185,17 @@ export default function Profile() {
     }
   };
 
+  const completionPercentage = useMemo(() => {
+    const unified = profileData?.unifiedTalentProfile || {};
+    const coreFields = [
+      'full_name', 'email', 'phone_number', 'date_of_birth', 'age_group', 
+      'gender', 'nationality', 'current_city', 'current_country', 
+      'short_bio', 'primary_talent_type', 'profile_photo'
+    ];
+    const filled = coreFields.filter(f => unified[f] || profileData?.[f]).length;
+    return Math.round((filled / coreFields.length) * 100);
+  }, [profileData]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
@@ -194,170 +205,246 @@ export default function Profile() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-3">
-            Profile Setup
-            {profileData?.isVerified && (
-              <Badge className="bg-success text-success-foreground">
-                <ShieldCheck className="w-4 h-4 mr-2" />
-                Verified
-              </Badge>
-            )}
-            {isMinor && (
-              <Badge variant="secondary">
-                <ShieldCheck className="w-4 h-4 mr-2" />
-                Minor / Guardian Required
-              </Badge>
-            )}
-          </h1>
-          <p className="text-muted-foreground">Complete your profile to appear in casting searches and get booked faster</p>
-        </div>
-        <Button onClick={() => handleSave(false)} disabled={isSaving}>
-          {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          Save Profile
-        </Button>
-      </div>
+    <div className="space-y-8 animate-fade-in pb-20">
+      {/* Premium Hero Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#009698] to-[#006b6d] p-8 text-white shadow-xl">
+        <div className="absolute top-0 right-0 -m-12 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute bottom-0 left-0 -m-12 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
+        
+        <div className="relative flex flex-col md:flex-row items-center gap-8">
+          <div className="relative group">
+            <Avatar className="h-32 w-32 border-4 border-white/20 shadow-2xl transition-transform duration-500 group-hover:scale-105">
+              <AvatarImage
+                src={
+                  pendingProfilePhoto?.preview ||
+                  profileData?.profilePicture ||
+                  profileData?.talent?.headshots?.[0]?.url ||
+                  getAvatarUrl(profileData?.fullName)
+                }
+                className="object-cover"
+              />
+              <AvatarFallback className="bg-white/20 text-white font-bold text-3xl backdrop-blur-md">
+                {getInitials(profileData?.fullName)}
+              </AvatarFallback>
+            </Avatar>
+            <label
+              htmlFor="profile-photo-upload"
+              className="absolute bottom-1 right-1 h-10 w-10 rounded-full bg-white text-[#009698] flex items-center justify-center cursor-pointer shadow-lg hover:bg-gray-100 transition-all duration-300 hover:scale-110"
+            >
+              <Camera className="h-5 h-5" />
+              <input
+                id="profile-photo-upload"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleProfilePhotoSelect}
+                disabled={isSaving}
+              />
+            </label>
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Photo</CardTitle>
-          <p className="text-sm text-muted-foreground">Use a clean headshot. This is what casting teams see first.</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-6">
-            <div className="relative group">
-              <Avatar className="h-24 w-24 border">
-                <AvatarImage
-                  src={
-                    pendingProfilePhoto?.preview ||
-                    profileData?.profilePicture ||
-                    profileData?.talent?.headshots?.[0]?.url ||
-                    getAvatarUrl(profileData?.fullName)
-                  }
-                />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold text-2xl">
-                  {getInitials(profileData?.fullName)}
-                </AvatarFallback>
-              </Avatar>
-              <label
-                htmlFor="profile-photo-upload"
-                className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary/90 transition-colors"
-              >
-                <Camera className="h-4 w-4" />
-                <input
-                  id="profile-photo-upload"
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleProfilePhotoSelect}
-                  disabled={isSaving}
-                />
-              </label>
-            </div>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" asChild disabled={isSaving}>
-                  <label htmlFor="profile-photo-upload" className="cursor-pointer">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Select Photo
-                  </label>
-                </Button>
-                {pendingProfilePhoto && (
-                  <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setPendingProfilePhoto(null)}>
-                    Reset
-                  </Button>
+          <div className="flex-1 text-center md:text-left space-y-4">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                <h1 className="text-3xl font-bold tracking-tight">{profileData?.fullName || "Your Profile"}</h1>
+                {profileData?.isVerified && (
+                  <Badge className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-md px-3 py-1">
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    Verified
+                  </Badge>
+                )}
+                {isMinor && (
+                  <Badge className="bg-orange-400/20 text-orange-100 border-none backdrop-blur-md">
+                    Guardian Required
+                  </Badge>
                 )}
               </div>
-              {pendingProfilePhoto && <p className="text-xs text-primary font-semibold">Preview mode — Save Profile to upload.</p>}
+              <p className="text-[#e0f1f1] text-lg opacity-90">{profileData?.stageName || "Complete your profile to stand out"}</p>
+            </div>
+
+            <div className="space-y-2 max-w-md mx-auto md:mx-0">
+              <div className="flex justify-between text-sm font-medium">
+                <span>Profile Completion</span>
+                <span>{completionPercentage}%</span>
+              </div>
+              <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-white transition-all duration-1000 ease-out" 
+                  style={{ width: `${completionPercentage}%` }} 
+                />
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="flex flex-col gap-3 min-w-[160px]">
+            <Button 
+              size="lg"
+              className="w-full bg-white text-[#009698] hover:bg-gray-100 font-bold shadow-lg transition-all duration-300 hover:-translate-y-1" 
+              onClick={() => handleSave(false)} 
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Upload className="w-5 h-5 mr-2" />
+              )}
+              Save Changes
+            </Button>
+            <p className="text-[10px] text-center text-white/60">Last saved: {new Date().toLocaleTimeString()}</p>
+          </div>
+        </div>
+      </div>
 
       <UnifiedTalentProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} showTabs />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Portfolio Uploads</CardTitle>
-          <p className="text-sm text-muted-foreground">Upload additional photos and an introduction video.</p>
+      <Card className="rounded-[2rem] border shadow-card overflow-hidden bg-white/50 backdrop-blur-sm">
+        <CardHeader className="p-8 md:p-12 pb-4">
+          <CardTitle className="text-2xl font-bold flex items-center gap-3">
+            <ImageIcon className="w-6 h-6 text-[#009698]" />
+            Portfolio & Media
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">High-quality media increases your chances of being shortlisted by 70%.</p>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-3">
+        <CardContent className="p-8 md:p-12 pt-0 space-y-10">
+          <div className="space-y-6">
             <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold">Additional Photos</p>
-                <p className="text-xs text-muted-foreground">Upload more headshots or portfolio images.</p>
+              <div className="space-y-1">
+                <p className="font-bold text-lg">Additional Photos</p>
+                <p className="text-xs text-muted-foreground">Add up to 10 more high-resolution shots.</p>
               </div>
               <label className="cursor-pointer">
                 <input type="file" multiple accept="image/*" className="hidden" onChange={handlePortfolioSelect} disabled={isSaving} />
-                <Button variant="outline" size="sm" asChild disabled={isSaving}>
+                <Button variant="outline" size="lg" className="rounded-xl border-[#009698] text-[#009698] hover:bg-[#009698]/5 font-bold" asChild disabled={isSaving}>
                   <span>
                     <Upload className="w-4 h-4 mr-2" />
-                    Add Photos
+                    Upload Photos
                   </span>
                 </Button>
               </label>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {(profileData?.talent?.headshots || []).map((shot: any) => (
-                <div key={shot._id} className="relative aspect-square rounded-lg overflow-hidden border group">
-                  <img src={shot.url} className="w-full h-full object-cover" />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={async () => {
-                      try {
-                        await profileAPI.deleteHeadshot(shot._id);
-                        setProfileData((prev: any) => ({
-                          ...prev,
-                          talent: { ...(prev?.talent || {}), headshots: (prev?.talent?.headshots || []).filter((s: any) => s._id !== shot._id) },
-                        }));
-                        toast.success("Image removed");
-                      } catch {
-                        toast.error("Failed to delete image");
-                      }
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                <div key={shot._id} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-gray-100 group transition-all duration-300 hover:border-[#009698]/50 shadow-sm">
+                  <img src={shot.url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="h-10 w-10 rounded-full shadow-xl transform scale-0 group-hover:scale-100 transition-transform duration-300"
+                      onClick={async () => {
+                        try {
+                          await profileAPI.deleteHeadshot(shot._id);
+                          setProfileData((prev: any) => ({
+                            ...prev,
+                            talent: { ...(prev?.talent || {}), headshots: (prev?.talent?.headshots || []).filter((s: any) => s._id !== shot._id) },
+                          }));
+                          toast.success("Image removed");
+                        } catch {
+                          toast.error("Failed to delete image");
+                        }
+                      }}
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
                 </div>
               ))}
 
               {pendingPortfolioPhotos.map((photo, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-primary/40">
-                  <img src={photo.preview} className="w-full h-full object-cover opacity-80" />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-1 right-1 h-7 w-7"
-                    onClick={() => removePendingPortfolioPhoto(index)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                <div key={index} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-[#009698]/40 bg-[#009698]/5 animate-pulse">
+                  <img src={photo.preview} className="w-full h-full object-cover opacity-60" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-white text-destructive shadow-lg"
+                      onClick={() => removePendingPortfolioPhoto(index)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center">
+                    <Badge variant="secondary" className="text-[8px] bg-white/80">PENDING</Badge>
+                  </div>
                 </div>
               ))}
+
+              {(profileData?.talent?.headshots || []).length + pendingPortfolioPhotos.length < 10 && (
+                <label className="aspect-square rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors group">
+                  <input type="file" multiple accept="image/*" className="hidden" onChange={handlePortfolioSelect} disabled={isSaving} />
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-[#009698]/10 group-hover:text-[#009698] transition-colors">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-bold text-muted-foreground group-hover:text-[#009698]">Add New</span>
+                </label>
+              )}
             </div>
           </div>
 
-          <div className="space-y-3">
-            <p className="text-sm font-semibold">Introduction Video</p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Input type="file" accept="video/*" onChange={handleIntroVideoSelect} disabled={isSaving} />
-              <Button
-                type="button"
-                onClick={() => handleSave(true)}
-                disabled={isSaving || !pendingIntroVideo}
-                className="sm:w-48"
-              >
-                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Upload Video
-              </Button>
+          <div className="pt-10 border-t space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <p className="font-bold text-lg">Introduction Video</p>
+                <p className="text-xs text-muted-foreground">Upload a 30-60s video introducing yourself.</p>
+              </div>
+              <div className="flex w-full sm:w-auto gap-3">
+                <Input type="file" accept="video/*" className="hidden" id="video-upload" onChange={handleIntroVideoSelect} disabled={isSaving} />
+                <Button variant="outline" asChild className="flex-1 sm:flex-none rounded-xl border-[#009698] text-[#009698] hover:bg-[#009698]/5 font-bold">
+                  <label htmlFor="video-upload" className="cursor-pointer">
+                    <Monitor className="w-4 h-4 mr-2" />
+                    Select Video
+                  </label>
+                </Button>
+                <Button
+                  onClick={() => handleSave(true)}
+                  disabled={isSaving || !pendingIntroVideo}
+                  className="flex-1 sm:flex-none bg-[#009698] hover:bg-[#009698]/90 font-bold px-6 rounded-xl shadow-lg shadow-[#009698]/20"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Upload Video"
+                  )}
+                </Button>
+              </div>
             </div>
-            {pendingIntroVideo && <p className="text-xs text-primary font-semibold">Selected: {pendingIntroVideo.name}</p>}
+
+            {pendingIntroVideo ? (
+              <div className="rounded-2xl border-2 border-[#009698]/30 bg-[#009698]/5 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#009698] shadow-sm">
+                      <Youtube className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold truncate max-w-[200px]">{pendingIntroVideo.name}</p>
+                      <p className="text-xs text-[#009698] font-medium">Ready for upload • {(pendingIntroVideo.size / (1024 * 1024)).toFixed(2)} MB</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" className="text-destructive rounded-full" onClick={() => setPendingIntroVideo(null)}>
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+            ) : profileData?.unifiedTalentProfile?.intro_video ? (
+               <div className="rounded-2xl overflow-hidden border bg-black shadow-xl group">
+                  <video src={profileData.unifiedTalentProfile.intro_video} controls className="w-full aspect-video object-contain" />
+                  <div className="bg-white/95 p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mt-0.5">Live Portfolio Video</span>
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-primary">Replace</Button>
+                  </div>
+               </div>
+            ) : (
+              <div className="rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center bg-gray-50/50">
+                <Youtube className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                <p className="text-sm font-medium text-muted-foreground">Showcase your personality and communication skills.</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">MP4 or MOV formats supported (Max 100MB)</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

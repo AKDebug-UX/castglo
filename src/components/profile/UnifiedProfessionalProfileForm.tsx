@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { Loader2, Save } from "lucide-react";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -165,7 +167,12 @@ export function UnifiedProfessionalProfileForm({
       case "email":
         return <Input type="email" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
       case "phone":
-        return <Input type="tel" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+        return (
+          <PhoneInput
+            value={value || ""}
+            onChange={(next) => setFieldValue(field.id, next)}
+          />
+        );
       case "url":
         return <Input type="url" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
       case "file":
