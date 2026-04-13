@@ -20,12 +20,12 @@ import { useMemo, useState } from "react";
 const mainNavItems = [
   { title: "Dashboard", href: "/talent", Icon: LayoutDashboard },
   { title: "Profile", href: "/talent/profile", Icon: User },
-  { title: "Create Auditions", href: "/talent/audition", Icon: Video },
+  { title: "Create Auditions", href: "/talent/create-audition", Icon: Video },
   { title: "Browse Casting Calls", href: "/talent/browse-cast", Icon: Search },
   { title: "My Submissions", href: "/talent/submissions", Icon: FileText },
   { title: "Messages", href: "/talent/messages", Icon: MessageSquare },
   { title: "Notifications", href: "/talent/notifications", Icon: Bell },
-  { title: "Livestreams", href: "/talent/livestreams", Icon: Video },
+  { title: "Audition", href: "/talent/audition", Icon: Video },
 ];
 
 interface DashboardSidebarProps {

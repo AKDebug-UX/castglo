@@ -173,8 +173,8 @@ const App = () => (
                 <Route path="submissions" element={<Submissions />} />
                 <Route path="messages" element={<Messages />} />
                 <Route path="notifications" element={<Notifications />} />
-                <Route path="livestreams" element={<LivestreamsList />} />
-                <Route path="audition" element={<InstantAudition />} />
+                <Route path="audition" element={<LivestreamsList />} />
+                <Route path="create-audition" element={<InstantAudition />} />
                 <Route path="livestream/:id" element={<Livestream />} />
                 <Route path="verification-process" element={<VerificationProcess />} />
               </Route>

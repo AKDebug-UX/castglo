@@ -284,6 +284,17 @@ export function UnifiedTalentProfileForm({
       sections: ["Talent Type", "Professional Overview", "Representation", "Booking Preferences"]
     },
     {
+      id: "specialisms",
+      label: "Specialisms",
+      sections: [
+        "Actor Profile", "Model Profile", "Model Measurements", "Model Preferences",
+        "Singer Profile", "Dancer Profile", "Voice Artist Profile", "Presenter Profile",
+        "Extra Profile", "Musician Profile", "Creator Profile", "Comedian Profile",
+        "Stunt Profile", "Professional Identity", "Business & Facilities", "Business Terms",
+        "Photography Specialisms", "MUA & Hair Specialisms", "Coaching Specialisms", "Editing Specialisms"
+      ]
+    },
+    {
       id: "appearance",
       label: "Appearance",
       sections: ["Appearance"]
@@ -291,7 +302,11 @@ export function UnifiedTalentProfileForm({
     {
       id: "portfolio",
       label: "Portfolio",
-      sections: ["Media", "Social"]
+      sections: [
+        "Media", "Social", "Actor Media", "Model Media", "Singer Media", "Dancer Media",
+        "Voice Artist Media", "Presenter Media", "Musician Media", "Creator Media",
+        "Comedian Media", "Stunt Media"
+      ]
     }
   ], []);
 
@@ -317,17 +332,6 @@ export function UnifiedTalentProfileForm({
         }))
         .filter(s => s.fields.length > 0);
     });
-
-    // Catch any sections not in tabGroups
-    const groupedSections = new Set(tabGroups.flatMap(t => t.sections));
-    const otherSections = Object.keys(bucket).filter(s => !groupedSections.has(s));
-    
-    if (otherSections.length > 0) {
-      result["other"] = otherSections.map(sectionName => ({
-        section: sectionName,
-        fields: bucket[sectionName]
-      }));
-    }
 
     return result;
   }, [visibleFields, tabGroups]);
@@ -626,11 +630,6 @@ export function UnifiedTalentProfileForm({
                 </TabsTrigger>
               );
             })}
-            {sectionsByTab["other"]?.length > 0 && (
-              <TabsTrigger value="other" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                Other
-              </TabsTrigger>
-            )}
           </TabsList>
         </div>
 
@@ -640,11 +639,6 @@ export function UnifiedTalentProfileForm({
           </TabsContent>
         ))}
 
-        {sectionsByTab["other"] && (
-          <TabsContent value="other" className="space-y-6 mt-0">
-            {renderTabContent("other")}
-          </TabsContent>
-        )}
       </Tabs>
     </div>
   );
