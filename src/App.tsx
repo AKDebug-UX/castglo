@@ -81,6 +81,7 @@ const FreeTierManagement = lazy(() => import("./pages/admin/FreeTierManagement")
 const AdminBookings = lazy(() => import("./pages/admin/AdminBookings"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const VerificationManagement = lazy(() => import("./pages/admin/VerificationManagement"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 
 // Professional Dashboard
 const ProfessionalLayout = lazy(() => import("./components/dashboard/ProfessionalLayout").then(m => ({ default: m.ProfessionalLayout })));
@@ -90,6 +91,7 @@ const ProfessionalServices = lazy(() => import("./pages/professional/Professiona
 const BrowseTalents = lazy(() => import("./pages/professional/BrowseTalents"));
 const ProfessionalBookings = lazy(() => import("./pages/professional/ProfessionalBookings"));
 const ProfessionalMessages = lazy(() => import("./pages/professional/ProfessionalMessages"));
+const ProfessionalSettings = lazy(() => import("./pages/professional/ProfessionalSettings"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const CommunityGuidelines = lazy(() => import('./pages/CommunityGuidelines'));
@@ -223,6 +225,7 @@ const App = () => (
                 <Route path="bookings" element={<ProfessionalBookings />} />
                 <Route path="messages" element={<ProfessionalMessages />} />
                 <Route path="notifications" element={<Notifications />} />
+                <Route path="settings" element={<ProfessionalSettings />} />
               </Route>
 
               {/* Admin Dashboard Routes */}
@@ -243,6 +246,7 @@ const App = () => (
                 <Route path="bookings" element={<AdminBookings />} />
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="verification" element={<VerificationManagement />} />
+                <Route path="settings" element={<AdminSettings />} />
               </Route>
 
               {/* Catch-all */}

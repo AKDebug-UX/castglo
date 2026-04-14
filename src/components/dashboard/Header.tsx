@@ -72,14 +72,14 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     if (!user) return "/";
     switch (user.role) {
       case "admin":
-        return "/admin";
+        return "/admin/settings";
       case "casting_director":
         return "/director/settings";
       case "industry_professional":
-        return "/professional/profile";
+        return "/professional/settings";
       case "talent":
       default:
-        return "/talent/profile";
+        return "/talent/account-settings";
     }
   };
  

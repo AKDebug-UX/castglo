@@ -154,8 +154,11 @@ export default function Profile() {
             }));
           }
           setPendingIntroVideo(null);
-        } catch (e) {
-          toast.error("Failed to upload introduction video");
+        } catch (e: any) {
+          console.error("Video upload error:", e);
+          toast.error(e?.response?.data?.message || "Failed to upload introduction video");
+          setIsSaving(false);
+          return;
         }
       }
 

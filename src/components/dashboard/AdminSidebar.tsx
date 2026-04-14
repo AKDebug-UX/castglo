@@ -10,6 +10,7 @@
    Calendar,
    Bell,
    Clock,
+   Settings,
  } from "lucide-react";
  
  const navItems = [
@@ -21,6 +22,7 @@
    { Icon: FileVideo, label: "Submissions", href: "/admin/submissions" },
    { Icon: Calendar, label: "Bookings", href: "/admin/bookings" },
    { Icon: Bell, label: "Notifications", href: "/admin/notifications" },
+   { Icon: Settings, label: "Settings", href: "/admin/settings" },
  ];
  
  interface AdminSidebarProps {
