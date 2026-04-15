@@ -21,6 +21,9 @@ export const API_ENDPOINTS = {
     GRANT_TRIAL: (userId: string) => `/admin/users/${userId}/grant-trial`,
   },
   VERIFICATIONS: {
+    SUBMIT: '/blockchain/verify',
+    HISTORY: '/blockchain/history',
+    VALIDATE: (hash: string) => `/blockchain/validate/${hash}`,
     GET_ALL: '/admin/verifications',
     UPDATE_STATUS: (id: string) => `/admin/verifications/${id}/status`,
     STATS: '/admin/verifications/stats',
@@ -66,11 +69,6 @@ export const API_ENDPOINTS = {
     ME: '/auth/me',
     RESEND_VERIFICATION: '/auth/resend-verification-email',
     LOGOUT: '/auth/logout',
-  },
-  BLOCKCHAIN: {
-    VERIFY: '/blockchain/verify',
-    HISTORY: '/blockchain/history',
-    VALIDATE: (hash: string) => `/blockchain/validate/${hash}`,
   },
   LIVESTREAM: {
     CREATE: '/livestream',
@@ -225,13 +223,13 @@ export const authAPI = {
   logout: () => api.post(API_ENDPOINTS.AUTH.LOGOUT),
 };
 
-// --- BLOCKCHAIN ENDPOINTS ---
-export const blockchainAPI = {
-  verify: (formData: FormData) => api.post(API_ENDPOINTS.BLOCKCHAIN.VERIFY, formData, {
+// --- VERIFICATION ENDPOINTS ---
+export const verificationAPI = {
+  submit: (formData: FormData) => api.post(API_ENDPOINTS.VERIFICATIONS.SUBMIT, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  getHistory: (params) => api.get(API_ENDPOINTS.BLOCKCHAIN.HISTORY, { params }),
-  validate: (hash: string) => api.get(API_ENDPOINTS.BLOCKCHAIN.VALIDATE(hash)),
+  getHistory: (params) => api.get(API_ENDPOINTS.VERIFICATIONS.HISTORY, { params }),
+  validate: (hash: string) => api.get(API_ENDPOINTS.VERIFICATIONS.VALIDATE(hash)),
 };
 
 // --- LIVESTREAM ENDPOINTS ---

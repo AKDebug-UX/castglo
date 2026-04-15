@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Search, 
@@ -15,7 +15,7 @@ import {
   Loader2, 
   Users, 
   Flame,
-  ZoomIn,
+
   Mail,
   MessageCircle,
   Heart,
@@ -238,12 +238,7 @@ export default function BrowseTalent() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div className="flex flex-wrap items-center gap-4 text-sm font-bold text-slate-800">
               <span>10,000 {currentDetails.label} <span className="text-muted-foreground font-normal">across</span> All Locations</span>
-              <div className="flex items-center gap-2 ml-2">
-                <Switch className="data-[state=checked]:bg-[#5849D7]" />
-                <span className="font-medium text-slate-600 flex items-center gap-1">
-                  Autoplay on zoom <ZoomIn className="w-4 h-4" />
-                </span>
-              </div>
+
             </div>
 
             <div className="flex items-center gap-3">

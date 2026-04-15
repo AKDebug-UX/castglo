@@ -22,6 +22,7 @@ export default function Profile() {
   const [pendingProfilePhoto, setPendingProfilePhoto] = useState<{ file: File; preview: string } | null>(null);
   const [pendingPortfolioPhotos, setPendingPortfolioPhotos] = useState<{ file: File; preview: string }[]>([]);
   const [pendingIntroVideo, setPendingIntroVideo] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState("basic");
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -299,9 +300,10 @@ export default function Profile() {
         </div>
       </div>
 
-      <UnifiedTalentProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} showTabs />
+      <UnifiedTalentProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} showTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <Card className="rounded-[2rem] border shadow-card overflow-hidden bg-white/50 backdrop-blur-sm">
+      {activeTab === "portfolio" && (
+        <Card className="rounded-[2rem] border shadow-card overflow-hidden bg-white/50 backdrop-blur-sm">
         <CardHeader className="p-8 md:p-12 pb-4">
           <CardTitle className="text-2xl font-bold flex items-center gap-3">
             <ImageIcon className="w-6 h-6 text-[#009698]" />
@@ -316,15 +318,6 @@ export default function Profile() {
                 <p className="font-bold text-lg">Additional Photos</p>
                 <p className="text-xs text-muted-foreground">Add up to 10 more high-resolution shots.</p>
               </div>
-              <label className="cursor-pointer">
-                <input type="file" multiple accept="image/*" className="hidden" onChange={handlePortfolioSelect} disabled={isSaving} />
-                <Button variant="outline" size="lg" className="rounded-xl border-[#009698] text-[#009698] hover:bg-[#009698]/5 font-bold" asChild disabled={isSaving}>
-                  <span>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Photos
-                  </span>
-                </Button>
-              </label>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -452,6 +445,7 @@ export default function Profile() {
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, ShieldCheck, Upload, CreditCard, Bell, KeyRound, UserMinus, History } from "lucide-react";
-import { authAPI, blockchainAPI, profileAPI, subscriptionAPI, userAPI } from "@/lib/api";
+import { authAPI, profileAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 type SettingsTab =
@@ -19,8 +19,7 @@ type SettingsTab =
   | "payments"
   | "payment-history"
   | "plans"
-  | "notifications"
-  | "verification";
+  | "notifications";
 
 export default function AccountSettings() {
   const location = useLocation();
@@ -39,7 +38,6 @@ export default function AccountSettings() {
   const [subscriptionQuota, setSubscriptionQuota] = useState<any>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
 
-  const [verificationHistory, setVerificationHistory] = useState<any[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
 
   const [passwordForm, setPasswordForm] = useState({
@@ -64,10 +62,9 @@ export default function AccountSettings() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [authRes, profileRes, historyRes, subRes, quotaRes, pmRes] = await Promise.all([
+        const [authRes, profileRes, subRes, quotaRes, pmRes] = await Promise.all([
           authAPI.getMe().catch(() => ({ data: { success: false } })),
           profileAPI.getMe().catch(() => ({ data: { success: false } })),
-          blockchainAPI.getHistory({ limit: 5 }).catch(() => ({ data: { success: false } })),
           subscriptionAPI.getStatus().catch(() => ({ data: { success: false } })),
           subscriptionAPI.getQuota().catch(() => ({ data: { success: false } })),
           subscriptionAPI.getPaymentMethods().catch(() => ({ data: { success: false } })),
@@ -80,10 +77,6 @@ export default function AccountSettings() {
 
         if (profileRes.data?.success) {
           setProfile(profileRes.data.data);
-        }
-
-        if (historyRes.data?.success) {
-          setVerificationHistory(historyRes.data.data.records || []);
         }
 
         if (subRes.data?.success) {
@@ -157,26 +150,7 @@ export default function AccountSettings() {
     }
   };
 
-  const handleBlockchainVerify = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.[0]) return;
-    const formData = new FormData();
-    formData.append("document", e.target.files[0]);
-    formData.append("documentType", "identity");
 
-    setIsVerifying(true);
-    try {
-      const response = await blockchainAPI.verify(formData);
-      if (response.data.success) {
-        toast.success("Document anchored to blockchain successfully!");
-        const historyRes = await blockchainAPI.getHistory({ limit: 5 });
-        setVerificationHistory(historyRes.data.data.records || []);
-      }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Blockchain anchoring failed");
-    } finally {
-      setIsVerifying(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -213,7 +187,6 @@ export default function AccountSettings() {
             <TabsTrigger value="payment-history" className="py-2 px-4">Payment History</TabsTrigger>
             <TabsTrigger value="plans" className="py-2 px-4">Plans</TabsTrigger>
             <TabsTrigger value="notifications" className="py-2 px-4">Notifications</TabsTrigger>
-            <TabsTrigger value="verification" className="py-2 px-4">Verification</TabsTrigger>
           </TabsList>
         </div>
 
@@ -538,56 +511,7 @@ export default function AccountSettings() {
                 </div>
               )}
 
-              <Separator />
 
-              <div className="space-y-4">
-                <h3 className="font-semibold text-sm">Blockchain Document Anchoring</h3>
-                <div className="p-6 border-2 border-dashed rounded-xl text-center space-y-4">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                    <Upload className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="font-medium">Anchor New Document</p>
-                    <p className="text-sm text-muted-foreground">Upload certificates or identity documents</p>
-                  </div>
-                  <div className="relative inline-block">
-                    <input type="file" id="blockchain-upload" className="hidden" onChange={handleBlockchainVerify} disabled={isVerifying} />
-                    <Button asChild disabled={isVerifying}>
-                      <label htmlFor="blockchain-upload" className="cursor-pointer flex items-center gap-2">
-                        {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                        Select & Anchor Document
-                      </label>
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium flex items-center gap-2">
-                    <History className="w-4 h-4" />
-                    Verification History
-                  </h4>
-                  {verificationHistory.length > 0 ? (
-                    verificationHistory.map((record) => (
-                      <div key={record._id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-green-500/10 rounded flex items-center justify-center">
-                            <ShieldCheck className="w-4 h-4 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{record.documentName || "Verification Document"}</p>
-                            <p className="text-xs text-muted-foreground">Hash: {record.documentHash?.substring(0, 16)}...</p>
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {new Date(record.createdAt).toLocaleDateString()}
-                        </Badge>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">No verification records found.</p>
-                  )}
-                </div>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

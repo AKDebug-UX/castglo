@@ -45,7 +45,6 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
       { title: "Payment History", href: "/talent/account-settings?tab=payment-history", Icon: CreditCard },
       { title: "Plans", href: "/talent/account-settings?tab=plans", Icon: BadgeCheck },
       { title: "Notification Settings", href: "/talent/account-settings?tab=notifications", Icon: Bell },
-      { title: "Verification", href: "/talent/account-settings?tab=verification", Icon: BadgeCheck },
     ],
     []
   );

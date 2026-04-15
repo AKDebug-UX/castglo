@@ -16,7 +16,8 @@ export type UnifiedFieldType =
   | "number"
   | "url-list"
   | "file-or-url"
-  | "multi-file-or-url";
+  | "multi-file-or-url"
+  | "credits-list";
 
 export type TalentType =
   | "Actor / Performer"
@@ -180,7 +181,7 @@ export const ACTOR_FIELDS = byTalentType("Actor / Performer", [
   { id: "actor_techniques", label: "Acting Techniques Studied", section: "Actor Profile", type: "multi-select", required: false, searchable: true, options: ["Method Acting", "Meisner", "Stanislavski", "Improvisation", "Classical", "Screen Acting", "Voice Training", "Movement Training", "Other"] },
   { id: "actor_accents", label: "Accents You Can Perform", section: "Actor Profile", type: "multi-select", required: false, searchable: true, optionSource: "accents" },
   { id: "actor_special_skills", label: "Special Performance Skills", section: "Actor Profile", type: "multi-select", required: false, searchable: true, options: ["Improvisation", "Stage Combat", "Self-taping", "Character Work", "Comedy", "Presenting", "Motion Capture", "Other"] },
-  { id: "actor_notable_credits", label: "Notable Credits / Productions", section: "Actor Profile", type: "textarea", required: false, searchable: false, validation: "Max 2000 chars" },
+  { id: "actor_notable_credits", label: "Notable Credits / Productions", section: "Actor Profile", type: "credits-list", required: false, searchable: false },
   { id: "actor_showreel", label: "Acting Showreel", section: "Actor Media", type: "file-or-url", required: false, searchable: false },
   { id: "actor_monologue", label: "Monologue / Self-Tape", section: "Actor Media", type: "file-or-url", required: false, searchable: false },
   { id: "actor_voice_reel", label: "Voice Reel", section: "Actor Media", type: "file-or-url", required: false, searchable: false },
@@ -216,7 +217,7 @@ export const SINGER_FIELDS = byTalentType("Singer", [
   { id: "singer_songwriting", label: "Songwriting Ability", section: "Singer Profile", type: "boolean", required: false, searchable: true },
   { id: "singer_live_experience", label: "Live Performance Experience", section: "Singer Profile", type: "boolean", required: false, searchable: true },
   { id: "singer_studio_experience", label: "Studio Recording Experience", section: "Singer Profile", type: "boolean", required: false, searchable: true },
-  { id: "singer_notable_credits", label: "Notable Performances / Credits", section: "Singer Profile", type: "textarea", required: false, searchable: false },
+  { id: "singer_notable_credits", label: "Notable Performances / Credits", section: "Singer Profile", type: "credits-list", required: false, searchable: false },
   { id: "singer_vocal_reel", label: "Vocal Reel / Audio Sample", section: "Singer Media", type: "file-or-url", required: false, searchable: false },
   { id: "singer_performance_video", label: "Performance Video", section: "Singer Media", type: "file-or-url", required: false, searchable: false },
   { id: "singer_original_music_links", label: "Original Music Links", section: "Singer Media", type: "url-list", required: false, searchable: false },
@@ -231,7 +232,7 @@ export const DANCER_FIELDS = byTalentType("Dancer", [
   { id: "dancer_teaching_experience", label: "Teaching Experience", section: "Dancer Profile", type: "boolean", required: false, searchable: true },
   { id: "dancer_live_experience", label: "Live Performance Experience", section: "Dancer Profile", type: "boolean", required: false, searchable: true },
   { id: "dancer_touring_experience", label: "Touring Experience", section: "Dancer Profile", type: "boolean", required: false, searchable: true },
-  { id: "dancer_notable_credits", label: "Notable Productions / Credits", section: "Dancer Profile", type: "textarea", required: false, searchable: false },
+  { id: "dancer_notable_credits", label: "Notable Productions / Credits", section: "Dancer Profile", type: "credits-list", required: false, searchable: false },
   { id: "dancer_reel", label: "Dance Reel", section: "Dancer Media", type: "file-or-url", required: false, searchable: false },
   { id: "dancer_clips", label: "Performance Clips", section: "Dancer Media", type: "multi-file-or-url", required: false, searchable: false },
   { id: "dancer_choreography_samples", label: "Choreography Samples", section: "Dancer Media", type: "file-or-url", required: false, searchable: false },
@@ -285,7 +286,7 @@ export const MUSICIAN_FIELDS = byTalentType("Musician", [
   { id: "musician_studio_session_experience", label: "Studio Session Experience", section: "Musician Profile", type: "boolean", required: false, searchable: true },
   { id: "musician_touring_experience", label: "Touring Experience", section: "Musician Profile", type: "boolean", required: false, searchable: true },
   { id: "musician_composition_skills", label: "Composition / Arrangement Skills", section: "Musician Profile", type: "boolean", required: false, searchable: true },
-  { id: "musician_notable_credits", label: "Notable Credits / Performances", section: "Musician Profile", type: "textarea", required: false, searchable: false },
+  { id: "musician_notable_credits", label: "Notable Credits / Performances", section: "Musician Profile", type: "credits-list", required: false, searchable: false },
   { id: "musician_reel", label: "Performance Reel", section: "Musician Media", type: "file-or-url", required: false, searchable: false },
   { id: "musician_audio_samples", label: "Audio Samples", section: "Musician Media", type: "multi-file-or-url", required: false, searchable: false },
   { id: "musician_original_links", label: "Original Composition Links", section: "Musician Media", type: "url-list", required: false, searchable: false },
@@ -311,9 +312,9 @@ export const COMEDIAN_FIELDS = byTalentType("Comedian", [
   { id: "comedian_live_experience", label: "Live Comedy Experience", section: "Comedian Profile", type: "boolean", required: false, searchable: true },
   { id: "comedian_writing_experience", label: "Writing Experience", section: "Comedian Profile", type: "boolean", required: false, searchable: true },
   { id: "comedian_improv_experience", label: "Improv Experience", section: "Comedian Profile", type: "boolean", required: false, searchable: true },
-  { id: "comedian_tv_digital_credits", label: "TV / Digital Comedy Credits", section: "Comedian Profile", type: "textarea", required: false, searchable: false },
+  { id: "comedian_tv_digital_credits", label: "TV / Digital Comedy Credits", section: "Comedian Profile", type: "credits-list", required: false, searchable: false },
   { id: "comedian_clean_sets", label: "Clean / Family-Friendly Sets Available", section: "Comedian Profile", type: "boolean", required: false, searchable: true },
-  { id: "comedian_notable_venues", label: "Notable Venues / Shows", section: "Comedian Profile", type: "textarea", required: false, searchable: false },
+  { id: "comedian_notable_venues", label: "Notable Venues / Shows", section: "Comedian Profile", type: "credits-list", required: false, searchable: false },
   { id: "comedian_reel", label: "Comedy Reel", section: "Comedian Media", type: "file-or-url", required: false, searchable: false },
   { id: "comedian_standup_clip", label: "Stand-up Clip", section: "Comedian Media", type: "file-or-url", required: false, searchable: false },
   { id: "comedian_sketch_samples", label: "Sketch Samples", section: "Comedian Media", type: "multi-file-or-url", required: false, searchable: false },
@@ -328,7 +329,7 @@ export const STUNT_FIELDS = byTalentType("Stunt Performer", [
   { id: "stunt_swimming_ability", label: "Swimming Ability", section: "Stunt Profile", type: "boolean", required: false, searchable: true },
   { id: "stunt_rigging_experience", label: "Rigging / Harness Experience", section: "Stunt Profile", type: "boolean", required: false, searchable: true },
   { id: "stunt_mocap_experience", label: "Motion Capture Experience", section: "Stunt Profile", type: "boolean", required: false, searchable: true },
-  { id: "stunt_notable_credits", label: "Notable Productions / Stunt Credits", section: "Stunt Profile", type: "textarea", required: false, searchable: false },
+  { id: "stunt_notable_credits", label: "Notable Productions / Stunt Credits", section: "Stunt Profile", type: "credits-list", required: false, searchable: false },
   { id: "stunt_reel", label: "Stunt Reel", section: "Stunt Media", type: "file-or-url", required: false, searchable: false },
   { id: "stunt_fight_clips", label: "Fight Scene Clips", section: "Stunt Media", type: "multi-file-or-url", required: false, searchable: false },
   { id: "stunt_cert_uploads", label: "Training / Certification Uploads", section: "Stunt Media", type: "multi-file", required: false, searchable: false },
@@ -402,8 +403,8 @@ export const PROFESSIONAL_CORE_FIELDS: UnifiedFieldSpec[] = [
   { id: "professional_title", label: "Professional Title", section: "Professional Identity", type: "text", required: false, searchable: true },
   { id: "prof_experience_level", label: "Experience Level", section: "Professional Overview", type: "select", required: false, searchable: true, options: ["Beginner (0-2 years)", "Intermediate (2-5 years)", "Advanced (5-10 years)", "Expert (10+ years)"] },
   { id: "prof_years_of_experience", label: "Years of Experience", section: "Professional Overview", type: "number", required: false, searchable: true },
-  { id: "notable_clients", label: "Notable Clients", section: "Professional Overview", type: "textarea", required: false, searchable: true },
-  { id: "notable_projects", label: "Notable Projects", section: "Professional Overview", type: "textarea", required: false, searchable: true },
+  { id: "notable_clients", label: "Notable Clients", section: "Professional Overview", type: "credits-list", required: false, searchable: true },
+  { id: "notable_projects", label: "Notable Projects", section: "Professional Overview", type: "credits-list", required: false, searchable: true },
   { id: "awards_recognition", label: "Awards & Recognition", section: "Professional Overview", type: "textarea", required: false, searchable: true },
   { id: "studio_access", label: "Studio Access Available", section: "Business & Facilities", type: "boolean", required: false, searchable: true },
   { id: "studio_details", label: "Studio Details", section: "Business & Facilities", type: "textarea", required: false, searchable: false, visibility: { showWhenField: "studio_access", equals: true } },

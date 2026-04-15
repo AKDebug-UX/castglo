@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, ShieldCheck, Upload } from 'lucide-react';
-import { blockchainAPI } from '@/lib/api';
+import { verificationAPI } from '@/lib/api';
 import { toast } from 'sonner';
 
 export default function VerificationProcess() {
@@ -33,10 +33,10 @@ export default function VerificationProcess() {
       formData.append('documentType', verificationType);
       formData.append('notes', notes);
 
-      const response = await blockchainAPI.verify(formData);
+      const response = await verificationAPI.submit(formData);
       
       if (response.data.success) {
-        toast.success('Verification request submitted and anchored to blockchain successfully!');
+        toast.success('Verification request submitted successfully!');
         // Reset form
         setVerificationType('');
         setDocument(null);

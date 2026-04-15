@@ -12,6 +12,7 @@ import {
   Camera, Eye, Layers, Share2 
 } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { CreditsListEditor } from "./fields/CreditsListEditor";
 import {
   UNIFIED_TALENT_PROFILE_FIELD_SPEC,
   UnifiedFieldSpec,
@@ -25,6 +26,7 @@ interface UnifiedTalentProfileFormProps {
   onSave?: (skipValidation?: boolean) => void;
   isSaving?: boolean;
   activeTab?: string;
+  onTabChange?: (tabId: string) => void;
   showTabs?: boolean;
 }
 
@@ -223,6 +225,7 @@ export function UnifiedTalentProfileForm({
   onSave,
   isSaving = false,
   activeTab: externalActiveTab,
+  onTabChange,
   showTabs = true 
 }: UnifiedTalentProfileFormProps) {
   const [internalActiveTab, setInternalActiveTab] = useState("basic");
@@ -553,6 +556,9 @@ export function UnifiedTalentProfileForm({
 
         case "url":
           return <Input type="url" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+        
+        case "credits-list":
+          return <CreditsListEditor label={field.label} value={value} onChange={(next) => setFieldValue(field.id, next)} />;
 
         default:
           return <Input value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
@@ -584,7 +590,7 @@ export function UnifiedTalentProfileForm({
             <CardContent className="px-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 {fields.map((field) => (
-                  <div key={field.id} className="space-y-2">
+                  <div key={field.id} className={`space-y-2 ${field.type === 'credits-list' ? 'md:col-span-2' : ''}`}>
                     {field.type !== "boolean" && field.type !== "checkbox" && (
                       <div className="flex items-center gap-1">
                         <label className="text-sm font-semibold text-foreground/70">{field.label}</label>
@@ -643,7 +649,10 @@ export function UnifiedTalentProfileForm({
     <div className="space-y-8">
       <Tabs 
         value={activeTab} 
-        onValueChange={setInternalActiveTab}
+        onValueChange={(value) => {
+          setInternalActiveTab(value);
+          if (onTabChange) onTabChange(value);
+        }}
         className="w-full"
       >
         <TabsList className="sticky top-0 z-10 h-14 w-full justify-start overflow-x-auto bg-white/80 backdrop-blur-md border shadow-sm gap-2 p-1.5 rounded-2xl scrollbar-hide mb-6">
