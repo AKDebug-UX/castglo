@@ -312,16 +312,57 @@ export default function Profile() {
           <p className="text-sm text-muted-foreground">High-quality media increases your chances of being shortlisted by 70%.</p>
         </CardHeader>
         <CardContent className="p-8 md:p-12 pt-0 space-y-10">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="space-y-1">
-                <p className="font-bold text-lg">Additional Photos</p>
-                <p className="text-xs text-muted-foreground">Add up to 10 more high-resolution shots.</p>
+            {/* Main Profile Photo Section */}
+            {(pendingProfilePhoto?.preview || profileData?.profilePicture) && (
+              <div className="space-y-4 pb-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="font-bold text-lg">Main Profile Photo</p>
+                    <p className="text-xs text-muted-foreground">This is your primary representative image across the platform.</p>
+                  </div>
+                  <Button variant="ghost" size="sm" asChild className="text-[#009698] hover:bg-[#009698]/5 font-bold">
+                    <label htmlFor="profile-photo-upload" className="cursor-pointer">Change Main Photo</label>
+                  </Button>
+                </div>
+                
+                <div className="relative w-full sm:w-64 aspect-square rounded-3xl overflow-hidden border-4 border-white shadow-xl group">
+                  <img 
+                    src={pendingProfilePhoto?.preview || profileData?.profilePicture} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                  />
+                  <div className="absolute top-4 left-4">
+                    <Badge className="bg-[#009698] text-white border-none px-3 py-1 shadow-lg">PRIMARY HEADSHOT</Badge>
+                  </div>
+                  {pendingProfilePhoto && (
+                    <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex items-center justify-center">
+                      <div className="bg-white px-4 py-2 rounded-2xl shadow-xl flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-[#009698]" />
+                        <span className="text-sm font-bold text-[#009698]">Uploading...</span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <label htmlFor="profile-photo-upload" className="h-12 w-12 rounded-full bg-white text-[#009698] flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-transform">
+                      <Camera className="w-6 h-6" />
+                    </label>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {(profileData?.talent?.headshots || []).map((shot: any) => (
+            <div className="space-y-6 pt-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <p className="font-bold text-lg">Additional Photos</p>
+                  <p className="text-xs text-muted-foreground">Add up to 10 more high-resolution shots.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {/* Additional Photos only */}
+              {(profileData?.talent?.headshots || [])
+                .filter(shot => shot.url !== profileData?.profilePicture)
+                .map((shot: any) => (
                 <div key={shot._id} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-gray-100 group transition-all duration-300 hover:border-[#009698]/50 shadow-sm">
                   <img src={shot.url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
