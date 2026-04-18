@@ -402,7 +402,7 @@ export const PROFESSIONAL_CORE_FIELDS: UnifiedFieldSpec[] = [
   { id: "business_name", label: "Business / Studio Name", section: "Professional Identity", type: "text", required: false, searchable: true },
   { id: "professional_title", label: "Professional Title", section: "Professional Identity", type: "text", required: false, searchable: true },
   { id: "prof_experience_level", label: "Experience Level", section: "Professional Overview", type: "select", required: false, searchable: true, options: ["Beginner (0-2 years)", "Intermediate (2-5 years)", "Advanced (5-10 years)", "Expert (10+ years)"] },
-  { id: "prof_years_of_experience", label: "Years of Experience", section: "Professional Overview", type: "number", required: false, searchable: true },
+  { id: "prof_years_of_experience", label: "Years of Experience", section: "Professional Overview", type: "select", required: false, searchable: true, options: ["No experience yet", "<1 year", "1-2 years", "3-5 years", "5+ years", "10+ years"] },
   { id: "notable_clients", label: "Notable Clients", section: "Professional Overview", type: "credits-list", required: false, searchable: true },
   { id: "notable_projects", label: "Notable Projects", section: "Professional Overview", type: "credits-list", required: false, searchable: true },
   { id: "awards_recognition", label: "Awards & Recognition", section: "Professional Overview", type: "textarea", required: false, searchable: true },
