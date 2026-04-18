@@ -344,27 +344,30 @@ export function UnifiedTalentProfileForm({
       label: "Professional",
       sections: [
         "Talent Type", 
-        "Actor Media", "Model Media", "Singer Media", "Dancer Media",
-        "Voice Artist Media", "Presenter Media", "Musician Media", "Creator Media",
-        "Comedian Media", "Stunt Media",
+        // Metadata / Details
+        "Actor Details", "Model Details", "Singer Details", "Dancer Details",
+        "Voice Artist Details", "Presenter Details", "Extra Details", "Musician Details", 
+        "Creator Details", "Comedian Details", "Stunt Details",
+        // Specialized Assets (Renamed from Media)
+        "Actor Profile", "Model Profile", "Singer Profile", "Dancer Profile",
+        "Voice Artist Profile", "Presenter Profile", "Musician Profile", "Creator Profile",
+        "Comedian Profile", "Stunt Profile",
+        // Professional Specialisms
+        "Photography Specialisms", "MUA & Hair Specialisms", "Coaching Specialisms", "Editing Specialisms",
         "Professional Overview", "Representation", "Booking Preferences"
       ]
     },
     {
       id: "appearance",
       label: "Appearance",
-      sections: ["Appearance"]
+      sections: ["Appearance", "Model Measurements", "Model Preferences"]
     },
     {
       id: "portfolio",
       label: "Portfolio",
       sections: [
-        "Actor Profile", "Model Profile", "Model Measurements", "Model Preferences",
-        "Singer Profile", "Dancer Profile", "Voice Artist Profile", "Presenter Profile",
-        "Extra Profile", "Musician Profile", "Creator Profile", "Comedian Profile",
-        "Stunt Profile",
         "Social",
-        // "Media"
+        // Media assets like Headshots are handled separately or in the CORE Media section
       ]
     }
   ], []);
