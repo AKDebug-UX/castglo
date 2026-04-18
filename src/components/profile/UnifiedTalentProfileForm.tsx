@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CreditsListEditor } from "./fields/CreditsListEditor";
+import { PortfolioMediaGallery } from "./fields/PortfolioMediaGallery";
 import {
   UNIFIED_TALENT_PROFILE_FIELD_SPEC,
   UnifiedFieldSpec,
@@ -28,6 +29,14 @@ interface UnifiedTalentProfileFormProps {
   activeTab?: string;
   onTabChange?: (tabId: string) => void;
   showTabs?: boolean;
+  pendingProfilePhoto?: any;
+  setPendingProfilePhoto?: any;
+  pendingPortfolioPhotos?: any[];
+  removePendingPortfolioPhoto?: (index: number) => void;
+  handlePortfolioSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  pendingIntroVideo?: any;
+  setPendingIntroVideo?: any;
+  handleIntroVideoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const countryToTimeZoneHint: Record<string, string[]> = {
@@ -226,7 +235,15 @@ export function UnifiedTalentProfileForm({
   isSaving = false,
   activeTab: externalActiveTab,
   onTabChange,
-  showTabs = true 
+  showTabs = true,
+  pendingProfilePhoto,
+  setPendingProfilePhoto,
+  pendingPortfolioPhotos,
+  removePendingPortfolioPhoto,
+  handlePortfolioSelect,
+  pendingIntroVideo,
+  setPendingIntroVideo,
+  handleIntroVideoSelect
 }: UnifiedTalentProfileFormProps) {
   const [internalActiveTab, setInternalActiveTab] = useState("basic");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -310,7 +327,8 @@ export function UnifiedTalentProfileForm({
         "Singer Profile", "Dancer Profile", "Voice Artist Profile", "Presenter Profile",
         "Extra Profile", "Musician Profile", "Creator Profile", "Comedian Profile",
         "Stunt Profile",
-        "Media", "Social"
+        "Social",
+        // "Media"
       ]
     }
   ], []);
@@ -642,7 +660,27 @@ export function UnifiedTalentProfileForm({
   };
 
   if (!showTabs) {
-    return renderTabContent(activeTab);
+    return (
+      <div className="space-y-10">
+        {activeTab === 'portfolio' && (
+          <PortfolioMediaGallery
+            profileData={rootData}
+            setProfileData={onChange}
+            pendingProfilePhoto={pendingProfilePhoto}
+            setPendingProfilePhoto={setPendingProfilePhoto}
+            pendingPortfolioPhotos={pendingPortfolioPhotos || []}
+            removePendingPortfolioPhoto={removePendingPortfolioPhoto!}
+            handlePortfolioSelect={handlePortfolioSelect!}
+            pendingIntroVideo={pendingIntroVideo}
+            setPendingIntroVideo={setPendingIntroVideo}
+            handleIntroVideoSelect={handleIntroVideoSelect!}
+            handleSave={onSave || (() => {})}
+            isSaving={isSaving}
+          />
+        )}
+        {renderTabContent(activeTab as string)}
+      </div>
+    );
   }
 
   return (
@@ -658,7 +696,7 @@ export function UnifiedTalentProfileForm({
         <TabsList className="sticky top-0 z-10 h-14 w-full justify-start overflow-x-auto bg-white/80 backdrop-blur-md border shadow-sm gap-2 p-1.5 rounded-2xl scrollbar-hide mb-6">
           {tabGroups.map(tab => {
             const hasFields = sectionsByTab[tab.id]?.length > 0;
-            if (!hasFields) return null;
+            if (!hasFields && tab.id !== 'portfolio') return null;
             const Icon = tabIcons[tab.id] || Sparkles;
             return (
               <TabsTrigger 
@@ -677,7 +715,23 @@ export function UnifiedTalentProfileForm({
           {tabGroups.map(tab => (
             <TabsContent key={tab.id} value={tab.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <Card className="rounded-[2rem] border shadow-card overflow-hidden">
-                <CardContent className="p-8 md:p-12">
+                <CardContent className="p-8 md:p-12 space-y-10">
+                  {tab.id === 'portfolio' && (
+                    <PortfolioMediaGallery
+                      profileData={rootData}
+                      setProfileData={onChange}
+                      pendingProfilePhoto={pendingProfilePhoto}
+                      setPendingProfilePhoto={setPendingProfilePhoto}
+                      pendingPortfolioPhotos={pendingPortfolioPhotos || []}
+                      removePendingPortfolioPhoto={removePendingPortfolioPhoto!}
+                      handlePortfolioSelect={handlePortfolioSelect!}
+                      pendingIntroVideo={pendingIntroVideo}
+                      setPendingIntroVideo={setPendingIntroVideo}
+                      handleIntroVideoSelect={handleIntroVideoSelect!}
+                      handleSave={onSave || (() => {})}
+                      isSaving={isSaving}
+                    />
+                  )}
                   {renderTabContent(tab.id)}
                 </CardContent>
               </Card>
