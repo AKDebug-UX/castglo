@@ -13,7 +13,7 @@ export default function Join() {
       description: "Showcase your skills, apply for roles, and get discovered by top casting directors.",
       icon: Sparkles,
       color: "bg-blue-50 text-blue-600",
-      link: "/pricing?category=talent"
+      link: "/join/talent"
     },
     {
       id: "casting_director",
@@ -21,7 +21,7 @@ export default function Join() {
       description: "Post projects, manage auditions, and find the perfect performers for your production.",
       icon: Zap,
       color: "bg-purple-50 text-purple-600",
-      link: "/pricing?category=casting_director"
+      link: "/join/casting_director"
     },
     {
       id: "industry_professional",
@@ -29,21 +29,25 @@ export default function Join() {
       description: "Offer your services, connect with talent, and grow your industry presence.",
       icon: Shield,
       color: "bg-orange-50 text-orange-600",
-      link: "/pricing?category=industry_professional"
+      link: "/join/industry_professional"
     }
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-[#DEFCFE]">
       <Header />
-      <main className="flex-1 py-16 lg:py-24">
-        <div className="container px-4 md:px-6">
+      <main className="flex-1 py-16 lg:py-24 relative overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute top-1/4 -left-20 w-80 h-80 bg-[#009698]/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-purple-500/10 rounded-full blur-[100px]" />
+
+        <div className="container px-4 md:px-6 relative z-10">
           <div className="text-center space-y-4 mb-16">
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-slate-900">
               Get <span className="text-[#009698]">Started</span> with CastGlo
             </h1>
-            <p className="text-xl text-slate-600 max-w-[700px] mx-auto">
-              Select how you want to join our platform to see the best plans tailored for your career.
+            <p className="text-xl text-slate-400 max-w-[700px] mx-auto">
+              Select how you want to join our platform to begin your journey with us.
             </p>
           </div>
 
@@ -60,9 +64,9 @@ export default function Join() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pb-10 pt-4 flex justify-center">
-                  <Button asChild className="rounded-full px-8 py-6 h-auto text-lg font-bold bg-slate-900 hover:bg-[#009698] transition-colors group">
+                  <Button asChild className="rounded-full px-8 py-6 h-auto text-lg font-bold bg-[#009698] hover:bg-[#009698]/90 text-white transition-all duration-300 group shadow-lg shadow-[#009698]/20">
                     <Link to={option.link}>
-                      Select Category
+                      Get Started
                       <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Link>
                   </Button>
@@ -71,12 +75,7 @@ export default function Join() {
             ))}
           </div>
 
-          <div className="mt-20 text-center">
-            <p className="text-slate-600 mb-4">Already have an account?</p>
-            <Button variant="outline" asChild className="rounded-full border-slate-200 h-12 px-8">
-              <Link to="/sign-in">Sign In to Dashboard</Link>
-            </Button>
-          </div>
+
         </div>
       </main>
       <Footer />

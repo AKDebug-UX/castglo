@@ -62,6 +62,16 @@ export const SOFTWARE_TOOLS = [
   "Adobe Photoshop", "Adobe Premiere Pro", "DaVinci Resolve", "Capture One", "Final Cut Pro", "Pro Tools", "Logic Pro", "After Effects", "Lightroom", "Canva", "Other"
 ];
 
+export const ACCENTS = [
+  "British (RP)", "British (London/Cockney)", "British (Northern)", "American (Standard)", "American (Southern)", "American (New York)",
+  "West African", "Nigerian (Standard)", "Nigerian (Pidgin)", "South African", "French Accent", "Italian Accent", "Spanish Accent",
+  "Australian", "Indian Accent", "Other"
+];
+
+export const AGE_RANGES = [
+  "Children (Under 12)", "Teens (13-17)", "Young Adults (18-25)", "Adults (26-45)", "Mature Adults (46-60)", "Seniors (60+)", "All Ages"
+];
+
 export const getProfessionalReferenceOptions = (source: string): string[] => {
   switch (source) {
     case "professional_types":
@@ -124,6 +134,10 @@ export const getProfessionalReferenceOptions = (source: string): string[] => {
       return FILE_TRANSFER_METHODS;
     case "software_tools":
       return SOFTWARE_TOOLS;
+    case "accents":
+      return ACCENTS;
+    case "age_ranges":
+      return AGE_RANGES;
     default:
       return [];
   }

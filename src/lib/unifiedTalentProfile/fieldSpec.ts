@@ -239,8 +239,8 @@ export const DANCER_FIELDS = byTalentType("Dancer", [
 ]);
 export const VOICE_ARTIST_FIELDS = byTalentType("Voice Artist", [
   { id: "voice_work_type", label: "Voice Work Type", section: "Voice Artist Details", type: "multi-select", required: true, searchable: true, options: ["Commercial Voiceover", "Animation", "Audiobook", "Narration", "Dubbing", "Radio", "Podcast", "Video Games", "E-learning", "Corporate", "Other"] },
-  { id: "voice_age_range", label: "Voice Age Range", section: "Voice Artist Details", type: "text", required: false, searchable: true },
-  { id: "voice_natural_accent", label: "Natural Accent", section: "Voice Artist Details", type: "text", required: false, searchable: true },
+  { id: "voice_age_range", label: "Voice Age Range", section: "Voice Artist Details", type: "select", required: false, searchable: true, options: ["Child", "Teen", "Young Adult", "Adult", "Middle Age", "Senior", "Versatile"] },
+  { id: "voice_natural_accent", label: "Natural Accent", section: "Voice Artist Details", type: "select", required: false, searchable: true, optionSource: "accents" },
   { id: "voice_performed_accents", label: "Performed Accents", section: "Voice Artist Details", type: "multi-select", required: false, searchable: true, optionSource: "accents" },
   { id: "voice_home_studio", label: "Home Studio Available", section: "Voice Artist Details", type: "boolean", required: false, searchable: true },
   { id: "voice_equipment_quality", label: "Recording Equipment Quality", section: "Voice Artist Details", type: "select", required: false, searchable: true, options: ["Basic", "Semi-professional", "Professional"] },

@@ -59,7 +59,9 @@ export interface ProfessionalFieldSpec {
     | "coaching_specialisms"
     | "coaching_delivery_modes"
     | "editing_specialisms"
-    | "file_transfer_methods";
+    | "file_transfer_methods"
+    | "accents"
+    | "age_ranges";
   validation?: string;
   visibility?: ProfessionalVisibilityRule;
 }
@@ -81,6 +83,7 @@ const CORE_FIELDS: ProfessionalFieldSpec[] = [
   { id: "remote_services_available", label: "Available for Remote Services", section: "Availability", type: "boolean", required: false, searchable: true },
   { id: "years_of_experience", label: "Years of Experience", section: "Professional Overview", type: "select", required: true, searchable: true, optionSource: "experience_years" },
   { id: "experience_level", label: "Experience Level", section: "Professional Overview", type: "select", required: true, searchable: true, optionSource: "experience_levels" },
+  { id: "performed_accents", label: "Performed Accents / Specialists", section: "Professional Overview", type: "multi-select", required: false, searchable: true, optionSource: "accents" },
   { id: "profile_status", label: "Profile Status", section: "System", type: "select", required: true, searchable: true, optionSource: "profile_statuses" },
   { id: "profile_visibility", label: "Profile Visibility", section: "System", type: "select", required: true, searchable: true, optionSource: "profile_visibility" },
 ];
@@ -89,6 +92,7 @@ const IDENTITY_FIELDS: ProfessionalFieldSpec[] = [
   { id: "primary_professional_type", label: "Primary Professional Type", section: "Professional Identity", type: "select", required: true, searchable: true, optionSource: "professional_types" },
   { id: "additional_professional_types", label: "Additional Professional Types", section: "Professional Identity", type: "multi-select", required: false, searchable: true, optionSource: "professional_types", validation: "Cannot duplicate primary type" },
   { id: "serves_client_types", label: "Who Do You Serve?", section: "Professional Focus", type: "multi-select", required: true, searchable: true, optionSource: "client_types" },
+  { id: "served_age_ranges", label: "Age Ranges Served", section: "Professional Focus", type: "multi-select", required: false, searchable: true, optionSource: "age_ranges" },
   { id: "industry_areas", label: "Industry Areas", section: "Professional Focus", type: "multi-select", required: false, searchable: true, optionSource: "industry_areas" },
 ];
 
