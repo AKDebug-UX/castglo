@@ -337,7 +337,7 @@ export function UnifiedTalentProfileForm({
     {
       id: "basic",
       label: "Basic Profile",
-      sections: ["Basic Profile", "About You", "Availability", "Contact", "Account / Contact", "Guardian Consent"]
+      sections: ["Basic Profile", "About You", "Availability", "Contact", "Guardian Consent"]
     },
     {
       id: "professional",
@@ -418,6 +418,15 @@ export function UnifiedTalentProfileForm({
         const nextAdditional = currentAdditional.filter(t => t !== value);
         nextUnified.additional_talent_types = nextAdditional;
         nextRoot.additional_talent_types = nextAdditional;
+      }
+    }
+
+    // Special logic: Auto update age group when Date of Birth changes
+    if (fieldId === "date_of_birth") {
+      const derivedAgeGroup = deriveAgeGroupFromDob(value);
+      if (derivedAgeGroup) {
+        nextUnified.age_group = derivedAgeGroup;
+        nextRoot.age_group = derivedAgeGroup;
       }
     }
 

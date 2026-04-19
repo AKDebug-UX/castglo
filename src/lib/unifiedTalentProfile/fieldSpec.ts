@@ -158,6 +158,14 @@ export const APPEARANCE_FIELDS: UnifiedFieldSpec[] = [
   { id: "hair_length", label: "Hair Length", section: "Appearance", type: "select", required: false, searchable: true, options: ["Bald", "Very Short", "Short", "Medium", "Long"] },
   { id: "eye_colour", label: "Eye Colour", section: "Appearance", type: "select", required: false, searchable: true, options: ["Brown", "Black", "Blue", "Green", "Hazel", "Grey", "Other"] },
   { id: "skin_tone", label: "Skin Tone / Complexion", section: "Appearance", type: "select", required: false, searchable: true, options: ["Fair", "Light", "Medium", "Olive", "Brown", "Dark", "Other"] },
+  { id: "ethnicity_visible", label: "Visible Ethnicity", section: "Appearance", type: "select", required: false, searchable: true, options: ["Caucasian / White", "Black / African Descent", "Asian", "Latino / Hispanic", "Middle Eastern", "Mixed / Multi-ethnic", "Other"] },
+  { id: "clothing_size_top", label: "Clothing Size (Top)", section: "Appearance", type: "text", required: false, searchable: true },
+  { id: "clothing_size_bottom", label: "Clothing Size (Bottom)", section: "Appearance", type: "text", required: false, searchable: true },
+  { id: "shoe_size", label: "Shoe Size (UK/EU/US)", section: "Appearance", type: "text", required: false, searchable: true },
+  { id: "chest_bust_measurement", label: "Chest / Bust Measurement", section: "Appearance", type: "text", required: false, searchable: true },
+  { id: "waist_measurement", label: "Waist Measurement", section: "Appearance", type: "text", required: false, searchable: true },
+  { id: "hip_measurement", label: "Hip Measurement", section: "Appearance", type: "text", required: false, searchable: true },
+  { id: "inside_leg_measurement", label: "Inside Leg Measurement", section: "Appearance", type: "text", required: false, searchable: true },
   { id: "distinguishing_features", label: "Distinguishing Features", section: "Appearance", type: "multi-select", required: false, searchable: true, options: ["Freckles", "Dimples", "Beard", "Tattoos", "Piercings", "Scars", "Glasses", "None", "Other"] },
   { id: "visible_tattoos_piercings", label: "Visible Tattoos / Piercings", section: "Appearance", type: "boolean", required: false, searchable: true },
   { id: "open_to_appearance_changes", label: "Open to Hair / Appearance Changes for Roles", section: "Appearance", type: "boolean", required: false, searchable: true },
@@ -303,6 +311,7 @@ export const CREATOR_FIELDS = byTalentType("Content Creator", [
   { id: "creator_livestream_experience", label: "Livestream Experience", section: "Creator Details", type: "boolean", required: false, searchable: true },
   { id: "creator_niche", label: "Niche / Audience Demographic", section: "Creator Details", type: "textarea", required: false, searchable: true },
   { id: "creator_reel", label: "Content Reel", section: "Creator Profile", type: "file-or-url", required: false, searchable: false },
+  { id: "creator_media_kit", label: "Media Kit", section: "Creator Profile", type: "file-or-url", required: false, searchable: false },
   { id: "creator_social_links", label: "Social Profile Links", section: "Creator Profile", type: "url-list", required: false, searchable: false },
   { id: "creator_campaign_examples", label: "Brand Campaign Examples", section: "Creator Profile", type: "url-list", required: false, searchable: false },
 ]);
@@ -341,6 +350,12 @@ export const GUARDIAN_FIELDS: UnifiedFieldSpec[] = [
   { id: "guardian_email", label: "Parent / Guardian Email", section: "Guardian Consent", type: "email", required: true, searchable: false, visibility: { showWhenUnder18: true } },
   { id: "guardian_phone", label: "Parent / Guardian Phone Number", section: "Guardian Consent", type: "phone", required: true, searchable: false, visibility: { showWhenUnder18: true } },
   { id: "guardian_consent_checkbox", label: "Guardian Consent Confirmation", section: "Guardian Consent", type: "checkbox", required: true, searchable: false, validation: "Must be checked", visibility: { showWhenUnder18: true } },
+];
+
+export const EMERGENCY_CONTACT_FIELDS: UnifiedFieldSpec[] = [
+  { id: "emergency_full_name", label: "Emergency Contact Name", section: "Emergency Contact", type: "text", required: true, searchable: false, validation: "2-100 chars" },
+  { id: "emergency_relationship", label: "Relationship to Talent", section: "Emergency Contact", type: "text", required: true, searchable: false, validation: "Max 50 chars" },
+  { id: "emergency_phone", label: "Emergency Contact Phone", section: "Emergency Contact", type: "phone", required: true, searchable: false, validation: "Intl format" },
 ];
 
 export const DYNAMIC_TALENT_FIELDS: UnifiedFieldSpec[] = [
@@ -427,6 +442,7 @@ export const UNIFIED_TALENT_PROFILE_FIELD_SPEC: UnifiedFieldSpec[] = [
   ...AVAILABILITY_FIELDS,
   ...DYNAMIC_TALENT_FIELDS,
   ...GUARDIAN_FIELDS,
+  ...EMERGENCY_CONTACT_FIELDS,
   ...PHOTOGRAPHER_FIELDS,
   ...MUA_STYLIST_FIELDS,
   ...COACH_FIELDS,
