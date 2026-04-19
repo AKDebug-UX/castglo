@@ -79,8 +79,8 @@ const CORE_FIELDS: ProfessionalFieldSpec[] = [
   { id: "full_bio", label: "Full About Description", section: "About", type: "textarea", required: false, searchable: true, validation: "Max 3000 chars" },
   { id: "city", label: "City", section: "Location", type: "text", required: true, searchable: true, validation: "2-100 chars" },
   { id: "country", label: "Country", section: "Location", type: "select", required: true, searchable: true, optionSource: "countries" },
-  { id: "willing_to_travel", label: "Willing to Travel", section: "Location / Availability", type: "boolean", required: false, searchable: true },
-  { id: "remote_services_available", label: "Available for Remote Services", section: "Availability", type: "boolean", required: false, searchable: true },
+  { id: "willing_to_travel", label: "Willing to Travel", section: "Location / Availability", type: "select", options: ["Yes", "No"], required: false, searchable: true },
+  { id: "remote_services_available", label: "Available for Remote Services", section: "Availability", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   { id: "years_of_experience", label: "Years of Experience", section: "Professional Overview", type: "select", required: true, searchable: true, optionSource: "experience_years" },
   { id: "experience_level", label: "Experience Level", section: "Professional Overview", type: "select", required: true, searchable: true, optionSource: "experience_levels" },
   { id: "performed_accents", label: "Performed Accents / Specialists", section: "Professional Overview", type: "multi-select", required: false, searchable: true, optionSource: "accents" },
@@ -109,16 +109,16 @@ const PORTFOLIO_FIELDS: ProfessionalFieldSpec[] = [
   { id: "youtube_url", label: "YouTube URL", section: "Social", type: "url", required: false, searchable: false },
   { id: "vimeo_url", label: "Vimeo URL", section: "Social", type: "url", required: false, searchable: false },
   { id: "portfolio_item_count", label: "Portfolio Item Count", section: "System", type: "integer", required: false, searchable: false },
-  { id: "testimonials_enabled", label: "Show Testimonials", section: "Reviews", type: "boolean", required: false, searchable: false },
+  { id: "testimonials_enabled", label: "Show Testimonials", section: "Reviews", type: "select", options: ["Yes", "No"], required: false, searchable: false },
   { id: "notable_clients", label: "Notable Clients / Brands", section: "Credibility", type: "textarea", required: false, searchable: true, validation: "Max 2000 chars" },
   { id: "notable_projects", label: "Notable Projects", section: "Credibility", type: "textarea", required: false, searchable: true, validation: "Max 2000 chars" },
 ];
 
 const AVAILABILITY_FIELDS: ProfessionalFieldSpec[] = [
   { id: "availability_type", label: "Availability Type", section: "Availability", type: "select", required: true, searchable: true, optionSource: "availability_types" },
-  { id: "last_minute_bookings", label: "Available for Last-Minute Bookings", section: "Availability", type: "boolean", required: false, searchable: true },
+  { id: "last_minute_bookings", label: "Available for Last-Minute Bookings", section: "Availability", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   { id: "notice_required", label: "Notice Required", section: "Availability", type: "select", required: false, searchable: true, optionSource: "notice_required" },
-  { id: "international_availability", label: "Available Internationally", section: "Availability", type: "boolean", required: false, searchable: true },
+  { id: "international_availability", label: "Available Internationally", section: "Availability", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   { id: "working_days", label: "Working Days", section: "Availability", type: "multi-select", required: false, searchable: true, optionSource: "working_days" },
   { id: "working_hours_summary", label: "Working Hours", section: "Availability", type: "text", required: false, searchable: false, validation: "Max 150 chars" },
   { id: "booking_lead_time", label: "Booking Lead Time", section: "Availability", type: "text", required: false, searchable: false, validation: "Max 100 chars" },
@@ -127,26 +127,26 @@ const AVAILABILITY_FIELDS: ProfessionalFieldSpec[] = [
 const BOOKING_TERMS_FIELDS: ProfessionalFieldSpec[] = [
   { id: "preferred_contact_method", label: "Preferred Contact Method", section: "Booking Terms", type: "select", required: true, searchable: false, optionSource: "contact_methods" },
   { id: "booking_method", label: "Booking Method", section: "Booking Terms", type: "select", required: true, searchable: true, optionSource: "booking_methods" },
-  { id: "deposit_required", label: "Deposit Required", section: "Booking Terms", type: "boolean", required: false, searchable: true },
+  { id: "deposit_required", label: "Deposit Required", section: "Booking Terms", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   { id: "deposit_percentage", label: "Deposit Percentage", section: "Booking Terms", type: "number", required: false, searchable: false, visibility: { showWhenField: "deposit_required", equals: true } },
   { id: "payment_methods", label: "Payment Methods Accepted", section: "Booking Terms", type: "multi-select", required: false, searchable: true, optionSource: "payment_methods" },
   { id: "cancellation_policy", label: "Cancellation Policy", section: "Booking Terms", type: "textarea", required: false, searchable: false, validation: "Max 1500 chars" },
   { id: "refund_policy", label: "Refund Policy", section: "Booking Terms", type: "textarea", required: false, searchable: false, validation: "Max 1500 chars" },
-  { id: "contract_required", label: "Contract Required", section: "Booking Terms", type: "boolean", required: false, searchable: true },
-  { id: "nda_friendly", label: "NDA Friendly", section: "Booking Terms", type: "boolean", required: false, searchable: true },
-  { id: "invoicing_available", label: "Invoicing Available", section: "Booking Terms", type: "boolean", required: false, searchable: true },
-  { id: "tax_registered", label: "Tax / VAT Registered", section: "Booking Terms", type: "boolean", required: false, searchable: true },
+  { id: "contract_required", label: "Contract Required", section: "Booking Terms", type: "select", options: ["Yes", "No"], required: false, searchable: true },
+  { id: "nda_friendly", label: "NDA Friendly", section: "Booking Terms", type: "select", options: ["Yes", "No"], required: false, searchable: true },
+  { id: "invoicing_available", label: "Invoicing Available", section: "Booking Terms", type: "select", options: ["Yes", "No"], required: false, searchable: true },
+  { id: "tax_registered", label: "Tax / VAT Registered", section: "Booking Terms", type: "select", options: ["Yes", "No"], required: false, searchable: true },
 ];
 
 const TRUST_FIELDS: ProfessionalFieldSpec[] = [
   { id: "certifications", label: "Certifications / Training", section: "Credibility", type: "textarea", required: false, searchable: true, validation: "Max 2000 chars" },
   { id: "professional_memberships", label: "Professional Memberships", section: "Credibility", type: "textarea", required: false, searchable: true, validation: "Max 1000 chars" },
   { id: "awards_recognition", label: "Awards / Recognition", section: "Credibility", type: "textarea", required: false, searchable: true, validation: "Max 1000 chars" },
-  { id: "studio_access", label: "Studio Access", section: "Credibility / Facilities", type: "boolean", required: false, searchable: true },
+  { id: "studio_access", label: "Studio Access", section: "Credibility / Facilities", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   { id: "studio_details", label: "Studio Details", section: "Credibility / Facilities", type: "textarea", required: false, searchable: false, visibility: { showWhenField: "studio_access", equals: true }, validation: "Max 1000 chars" },
-  { id: "insurance_available", label: "Insurance Available", section: "Credibility", type: "boolean", required: false, searchable: true },
+  { id: "insurance_available", label: "Insurance Available", section: "Credibility", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   { id: "insurance_details", label: "Insurance Details", section: "Credibility", type: "textarea", required: false, searchable: false, visibility: { showWhenField: "insurance_available", equals: true }, validation: "Max 1000 chars" },
-  { id: "dbs_checked", label: "DBS / Background Checked", section: "Credibility", type: "boolean", required: false, searchable: true },
+  { id: "dbs_checked", label: "DBS / Background Checked", section: "Credibility", type: "select", options: ["Yes", "No"], required: false, searchable: true },
 ];
 
 const SERVICE_LISTING_FIELDS: ProfessionalFieldSpec[] = [
@@ -164,18 +164,18 @@ const SERVICE_LISTING_FIELDS: ProfessionalFieldSpec[] = [
   { id: "pricing_model", label: "Pricing Model", section: "Service Listing", type: "select", required: true, searchable: true, optionSource: "pricing_models" },
   { id: "price_amount", label: "Price Amount", section: "Service Listing", type: "decimal", required: false, searchable: true, visibility: { showWhenField: "pricing_model", in: ["Fixed Price", "Hourly Rate", "Half Day Rate", "Daily Rate", "Per Session", "Per Look", "Per Image", "Per Edit", "Per Track", "Per Project", "Package Price", "Starting From"] } },
   { id: "currency", label: "Currency", section: "Service Listing", type: "select", required: true, searchable: true, optionSource: "currencies" },
-  { id: "custom_quote_available", label: "Custom Quote Available", section: "Service Listing", type: "boolean", required: false, searchable: true },
+  { id: "custom_quote_available", label: "Custom Quote Available", section: "Service Listing", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   { id: "turnaround_time", label: "Turnaround Time", section: "Service Listing", type: "text", required: false, searchable: true },
   { id: "revisions_included", label: "Revisions Included", section: "Service Listing", type: "text", required: false, searchable: true },
   { id: "booking_notice_required", label: "Booking Notice Required", section: "Service Listing", type: "select", required: false, searchable: true, optionSource: "notice_required" },
   { id: "cancellation_policy_summary", label: "Cancellation Policy", section: "Service Listing", type: "textarea", required: false, searchable: false },
   { id: "service_status", label: "Service Status", section: "Service Listing", type: "select", required: true, searchable: true, optionSource: "service_statuses" },
-  { id: "featured_service", label: "Featured Service", section: "Service Listing", type: "boolean", required: false, searchable: true },
+  { id: "featured_service", label: "Featured Service", section: "Service Listing", type: "select", options: ["Yes", "No"], required: false, searchable: true },
 ];
 
 const SERVICE_DELIVERABLE_FIELDS: ProfessionalFieldSpec[] = [
   { id: "deliverables", label: "What's Included / Deliverables", section: "Deliverables", type: "multi-item-text", required: false, searchable: true },
-  { id: "add_ons_available", label: "Add-ons Available", section: "Deliverables", type: "boolean", required: false, searchable: true },
+  { id: "add_ons_available", label: "Add-ons Available", section: "Deliverables", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   { id: "add_on_summary", label: "Add-On Summary", section: "Deliverables", type: "textarea", required: false, searchable: false, visibility: { showWhenField: "add_ons_available", equals: true } },
   { id: "usage_rights_summary", label: "Usage Rights / Licence", section: "Deliverables", type: "textarea", required: false, searchable: false },
 ];
@@ -188,7 +188,7 @@ const PORTFOLIO_ITEM_FIELDS: ProfessionalFieldSpec[] = [
   { id: "media_id", label: "Media File", section: "Portfolio Item", type: "file-reference", required: false, searchable: false },
   { id: "external_url", label: "External URL", section: "Portfolio Item", type: "url", required: false, searchable: false },
   { id: "related_service_ids", label: "Related Services", section: "Portfolio Item", type: "multi-select", required: false, searchable: false },
-  { id: "featured_portfolio_item", label: "Featured Portfolio Item", section: "Portfolio Item", type: "boolean", required: false, searchable: true },
+  { id: "featured_portfolio_item", label: "Featured Portfolio Item", section: "Portfolio Item", type: "select", options: ["Yes", "No"], required: false, searchable: true },
 ];
 
 const dynamicFor = (types: string[], fields: Omit<ProfessionalFieldSpec, "visibility">[]): ProfessionalFieldSpec[] =>
@@ -197,19 +197,19 @@ const dynamicFor = (types: string[], fields: Omit<ProfessionalFieldSpec, "visibi
 const DYNAMIC_FIELDS: ProfessionalFieldSpec[] = [
   ...dynamicFor(["Photographer"], [
     { id: "photographer_specialisms", label: "Photography Specialisms", section: "Photographer Profile", type: "multi-select", required: false, searchable: true, optionSource: "photography_specialisms" },
-    { id: "photographer_studio_access", label: "Studio Access", section: "Photographer Profile", type: "boolean", required: false, searchable: true },
-    { id: "photographer_retouching_included", label: "Retouching Included", section: "Photographer Profile", type: "boolean", required: false, searchable: true },
+    { id: "photographer_studio_access", label: "Studio Access", section: "Photographer Profile", type: "select", options: ["Yes", "No"], required: false, searchable: true },
+    { id: "photographer_retouching_included", label: "Retouching Included", section: "Photographer Profile", type: "select", options: ["Yes", "No"], required: false, searchable: true },
     { id: "photographer_equipment_summary", label: "Camera / Lighting Equipment", section: "Photographer Profile", type: "textarea", required: false, searchable: true },
   ]),
   ...dynamicFor(["Makeup Artist"], [
     { id: "mua_specialisms", label: "Makeup Specialisms", section: "Makeup Artist Profile", type: "multi-select", required: false, searchable: true, optionSource: "mua_specialisms" },
-    { id: "kit_available", label: "Professional Kit Available", section: "Makeup Artist Profile", type: "boolean", required: false, searchable: true },
-    { id: "travel_kit_available", label: "Travel Kit Available", section: "Makeup Artist Profile", type: "boolean", required: false, searchable: true },
+    { id: "kit_available", label: "Professional Kit Available", section: "Makeup Artist Profile", type: "select", options: ["Yes", "No"], required: false, searchable: true },
+    { id: "travel_kit_available", label: "Travel Kit Available", section: "Makeup Artist Profile", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   ]),
   ...dynamicFor(["Acting Coach"], [
     { id: "coaching_specialisms", label: "Coaching Specialisms", section: "Acting Coach Profile", type: "multi-select", required: false, searchable: true, optionSource: "coaching_specialisms" },
     { id: "coaching_delivery_modes", label: "Coaching Delivery Modes", section: "Acting Coach Profile", type: "multi-select", required: false, searchable: true, optionSource: "coaching_delivery_modes" },
-    { id: "youth_clients_supported", label: "Supports Under-18 Clients", section: "Acting Coach Profile", type: "boolean", required: false, searchable: true },
+    { id: "youth_clients_supported", label: "Supports Under-18 Clients", section: "Acting Coach Profile", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   ]),
   ...dynamicFor(["Video Editor", "Showreel Editor"], [
     { id: "editing_specialisms", label: "Editing Specialisms", section: "Editor Profile", type: "multi-select", required: false, searchable: true, optionSource: "editing_specialisms" },

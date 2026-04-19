@@ -13,6 +13,7 @@ import {
   UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC,
 } from "@/lib/unifiedCastingDirectorProfile/fieldSpec";
 import { getCastingDirectorReferenceOptions } from "@/lib/unifiedCastingDirectorProfile/referenceTables";
+import { MultiSelectChecklist } from "./fields/MultiSelectChecklist";
 
 type CastingProfileTab = "overview" | "hiring" | "projects" | "roles" | "audition" | "commercial" | "navigation";
 
@@ -41,37 +42,7 @@ const sectionOrder = [
 const asArray = (value: any): string[] => (Array.isArray(value) ? value.map(String) : []);
 const parseList = (value: string): string[] => value.split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean);
 
-function MultiSelectChecklist({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (next: string[]) => void }) {
-  const [query, setQuery] = useState("");
-  const filtered = useMemo(() => {
-    if (!query.trim()) return options;
-    const q = query.toLowerCase();
-    return options.filter((option) => option.toLowerCase().includes(q));
-  }, [query, options]);
 
-  return (
-    <div className="space-y-2">
-      {options.length > 10 && <Input placeholder="Search options..." value={query} onChange={(e) => setQuery(e.target.value)} />}
-      <div className="max-h-52 overflow-auto rounded-md border p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {filtered.map((option) => {
-          const checked = selected.includes(option);
-          return (
-            <label key={option} className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox
-                checked={checked}
-                onCheckedChange={(v) => {
-                  if (v) onChange([...selected, option]);
-                  else onChange(selected.filter((item) => item !== option));
-                }}
-              />
-              <span>{option}</span>
-            </label>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, isSaving = false, activeTab }: UnifiedCastingDirectorProfileFormProps) {
   const unified = rootData?.unifiedCastingDirectorProfile || {};
@@ -124,10 +95,16 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
     switch (field.type) {
       case "boolean":
         return (
-          <div className="flex items-center gap-2 rounded-md border p-3">
-            <Checkbox checked={!!value} onCheckedChange={(v) => setFieldValue(field.id, !!v)} />
-            <span className="text-sm">{field.label}</span>
-          </div>
+          <Select 
+            value={value || ""} 
+            onValueChange={(next) => setFieldValue(field.id, next)}
+          >
+            <SelectTrigger><SelectValue placeholder="Select Yes or No" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Yes">Yes</SelectItem>
+              <SelectItem value="No">No</SelectItem>
+            </SelectContent>
+          </Select>
         );
       case "select":
         return (

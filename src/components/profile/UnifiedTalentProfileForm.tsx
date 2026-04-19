@@ -15,6 +15,7 @@ import {
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CreditsListEditor } from "./fields/CreditsListEditor";
 import { PortfolioMediaGallery } from "./fields/PortfolioMediaGallery";
+import { MultiSelectChecklist } from "./fields/MultiSelectChecklist";
 import {
   UNIFIED_TALENT_PROFILE_FIELD_SPEC,
   UnifiedFieldSpec,
@@ -184,85 +185,7 @@ const parseFreeList = (value: string): string[] =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-function MultiSelectChecklist({
-  options,
-  selected,
-  onChange,
-}: {
-  options: string[];
-  selected: string[];
-  onChange: (next: string[]) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    return options.filter((option) => option.toLowerCase().includes(q) && !selected.includes(option));
-  }, [options, query, selected]);
-
-  const handleSelect = (option: string) => {
-    onChange([...selected, option]);
-    setQuery("");
-    inputRef.current?.focus();
-  };
-
-  const handleRemove = (option: string) => {
-    onChange(selected.filter((item) => item !== option));
-  };
-
-  return (
-    <div className="space-y-2 relative w-full">
-      <div 
-        className="min-h-[40px] border rounded-xl p-2 flex flex-wrap gap-2 items-center bg-transparent focus-within:ring-2 focus-within:ring-[#009698]/20 focus-within:border-[#009698] focus-within:ring-offset-2 transition-all cursor-text shadow-sm"
-        onClick={() => {
-           inputRef.current?.focus();
-           setIsOpen(true);
-        }}
-      >
-        {selected.map((option) => (
-          <Badge key={option} variant="secondary" className="flex items-center gap-1.5 bg-[#009698]/10 text-[#009698] hover:bg-[#009698]/20 rounded-lg px-3 py-1 font-semibold text-sm">
-            {option}
-            <div 
-              role="button"
-              className="text-[#009698]/60 hover:text-[#009698] transition-colors cursor-pointer rounded-full" 
-              onClick={(e) => { e.stopPropagation(); handleRemove(option); }}
-            >
-              <X className="w-3.5 h-3.5" />
-            </div>
-          </Badge>
-        ))}
-        <input 
-          ref={inputRef}
-          value={query} 
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setIsOpen(true);
-          }} 
-          onFocus={() => setIsOpen(true)}
-          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-          placeholder={selected.length === 0 ? "Type to search options..." : ""}
-          className="flex-1 bg-transparent outline-none min-w-[150px] text-sm h-7 text-foreground font-medium" 
-        />
-      </div>
-      
-      {isOpen && filtered.length > 0 && (
-        <div className="absolute z-[100] w-full top-[100%] mt-2 max-h-56 overflow-y-auto border border-gray-100 rounded-xl bg-white shadow-xl p-1.5 animate-in fade-in zoom-in-95 duration-200">
-          {filtered.map((option) => (
-            <div 
-              key={option} 
-              className="px-4 py-2.5 text-sm cursor-pointer hover:bg-[#009698]/10 hover:text-[#009698] rounded-lg transition-colors font-medium text-gray-700"
-              onClick={() => handleSelect(option)}
-            >
-              {option}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function UnifiedTalentProfileForm({ 
   rootData, 
@@ -314,8 +237,7 @@ export function UnifiedTalentProfileForm({
       if (detected) updates.current_country = detected;
     }
 
-    if (values.right_to_work === undefined) updates.right_to_work = false;
-    if (values.valid_passport === undefined) updates.valid_passport = false;
+
 
     const derivedAgeGroup = deriveAgeGroupFromDob(values.date_of_birth);
     if (derivedAgeGroup && values.age_group !== derivedAgeGroup) {
@@ -494,18 +416,17 @@ export function UnifiedTalentProfileForm({
       switch (field.type) {
         case "boolean":
         case "checkbox":
-          const strVal = value === true ? "True" : value === false ? "False" : "";
           return (
             <Select 
-              value={strVal} 
-              onValueChange={(next) => setFieldValue(field.id, next === "True" ? true : next === "False" ? false : null)}
+              value={value || ""} 
+              onValueChange={(next) => setFieldValue(field.id, next)}
             >
               <SelectTrigger className={hasError ? 'border-destructive' : ''}>
                 <SelectValue placeholder="Select Yes or No" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="True">Yes</SelectItem>
-                <SelectItem value="False">No</SelectItem>
+                <SelectItem value="Yes">Yes</SelectItem>
+                <SelectItem value="No">No</SelectItem>
               </SelectContent>
             </Select>
           );
