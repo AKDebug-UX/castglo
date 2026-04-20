@@ -57,11 +57,13 @@ export const FOLDER_TYPES = [
 ];
 
 export const PAYMENT_TYPES = [
+  "Professional / Equity",
   "Fixed fee",
   "Per day",
   "Per hour",
   "Profit share",
   "Expenses only",
+  "Unpaid",
   "Negotiable",
 ];
 
@@ -70,9 +72,12 @@ export const CURRENCIES = ["GBP", "USD", "EUR", "NGN", "Other"];
 export const LOCATION_TYPES = ["Local", "Nationwide", "International"];
 
 export const AUDITION_TYPES = [
+  "In-Person",
+  "Self-Tape Only",
+  "Live Zoom",
+  "Hybrid",
   "Open Call",
   "By Appointment Only",
-  "Self-Tape Only",
   "Invite Only",
   "Online Audition",
 ];
@@ -81,10 +86,23 @@ export const ROLE_TYPES = [
   "Lead",
   "Supporting",
   "Featured",
+  "Day Player",
   "Background / Extra",
   "Voice Role",
   "Dancer",
   "Child Role",
+  "Other",
+];
+
+export const PRODUCTION_TYPES = [
+  "Feature Film",
+  "Short Film",
+  "TV Series",
+  "Commercial",
+  "Music Video",
+  "Theatre",
+  "Content Creation",
+  "Live Event",
   "Other",
 ];
 
@@ -145,6 +163,19 @@ export const PRIVATE_DASHBOARD_TABS = [
   "Settings",
 ];
 
+export const AGE_RANGES = [
+  "0-5",
+  "6-12",
+  "13-17",
+  "18-25",
+  "26-35",
+  "36-45",
+  "46-55",
+  "56-65",
+  "66+",
+  "All Ages",
+];
+
 export const YEARS_OF_EXPERIENCE = [
   "No experience yet",
   "<1 year",
@@ -177,6 +208,10 @@ export const getCastingDirectorReferenceOptions = (source: string): string[] => 
       return ACCOUNT_TYPES;
     case "industry_areas":
       return INDUSTRY_AREAS;
+    case "production_types":
+      return PRODUCTION_TYPES;
+    case "age_ranges":
+      return AGE_RANGES;
     case "talent_types":
       return TALENT_TYPES;
     case "applicant_statuses":

@@ -45,6 +45,7 @@ export interface CastingDirectorFieldSpec {
     | "private_tabs"
     | "years_of_experience"
     | "experience_levels"
+    | "age_ranges"
     | "countries";
   validation?: string;
   visibility?: CastingDirectorVisibilityRule;
@@ -108,7 +109,7 @@ const HIRING_TOOL_FIELDS: CastingDirectorFieldSpec[] = [
 
 const PROJECT_FIELDS: CastingDirectorFieldSpec[] = [
   { id: "project_title", label: "Project Title", section: "Project / Casting Call", type: "text", required: true, searchable: true },
-  { id: "production_type", label: "Production Type", section: "Project / Casting Call", type: "text", required: true, searchable: true },
+  { id: "production_type", label: "Production Type", section: "Project / Casting Call", type: "select", required: true, searchable: true, optionSource: "production_types" },
   { id: "genre", label: "Genre", section: "Project / Casting Call", type: "text", required: false, searchable: true },
   { id: "production_company", label: "Production Company", section: "Project / Casting Call", type: "text", required: false, searchable: true },
   { id: "production_personnel", label: "Production Personnel", section: "Project / Casting Call", type: "multi-item-text", required: false, searchable: false },
@@ -149,8 +150,7 @@ const ROLE_FIELDS: CastingDirectorFieldSpec[] = [
   { id: "role_name", label: "Role Name", section: "Role Management", type: "text", required: true, searchable: true },
   { id: "role_type", label: "Role Type", section: "Role Management", type: "select", required: true, searchable: true, optionSource: "role_types" },
   { id: "role_status", label: "Role Status", section: "Role Management", type: "select", required: true, searchable: true, optionSource: "role_statuses" },
-  { id: "minimum_age", label: "Minimum Age", section: "Role Management", type: "integer", required: false, searchable: true },
-  { id: "maximum_age", label: "Maximum Age", section: "Role Management", type: "integer", required: false, searchable: true },
+  { id: "age_range", label: "Age Range", section: "Role Management", type: "select", required: false, searchable: true, optionSource: "age_ranges" },
   { id: "gender", label: "Gender", section: "Role Management", type: "select", required: false, searchable: true, optionSource: "genders" },
   { id: "ethnicity", label: "Ethnicity", section: "Role Management", type: "text", required: false, searchable: true },
   { id: "skills_required", label: "Skills Required", section: "Role Management", type: "multi-item-text", required: false, searchable: true },

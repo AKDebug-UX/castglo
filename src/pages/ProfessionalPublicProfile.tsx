@@ -231,9 +231,35 @@ export default function ProfessionalPublicProfile() {
                         )}
                         
                         <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-sm line-clamp-4">
-                          {profile.full_bio || profile.bio || "No biography provided."}
+                          {profile.full_bio || profile.bio || profile.unifiedCastingDirectorProfile?.full_about || "No biography provided."}
                         </p>
                       </div>
+
+                      {/* Director Stats Bar */}
+                      {profile.professionalCategory === "casting_director" && profile.unifiedCastingDirectorProfile && (
+                        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-[#009698]/5 border border-[#009698]/10">
+                          <div className="text-center">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Completed</p>
+                            <p className="text-lg font-bold text-[#009698]">{profile.unifiedCastingDirectorProfile.completed_castings || 0}</p>
+                            <p className="text-[9px] text-muted-foreground">Castings</p>
+                          </div>
+                          <div className="text-center border-l border-dashed border-[#009698]/20">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active</p>
+                            <p className="text-lg font-bold text-[#009698]">{profile.unifiedCastingDirectorProfile.active_calls_count || 0}</p>
+                            <p className="text-[9px] text-muted-foreground">Calls</p>
+                          </div>
+                          <div className="text-center border-l border-dashed border-[#009698]/20">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Experience</p>
+                            <p className="text-lg font-bold text-[#009698]">{profile.unifiedCastingDirectorProfile.years_of_experience || "N/A"}</p>
+                            <p className="text-[9px] text-muted-foreground">Years</p>
+                          </div>
+                          <div className="text-center border-l border-dashed border-[#009698]/20">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Response</p>
+                            <p className="text-lg font-bold text-[#009698]">{profile.unifiedCastingDirectorProfile.response_time || "48h"}</p>
+                            <p className="text-[9px] text-muted-foreground">Typical</p>
+                          </div>
+                        </div>
+                      )}
                       
                       <div className="mt-8 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-2xl bg-muted/30 p-5 border">
@@ -243,7 +269,7 @@ export default function ProfessionalPublicProfile() {
                           </div>
                           <div className="space-y-1">
                             <p className="text-sm font-bold">{profile.professional_title || profile.professionalCategory?.replace(/_/g, ' ')}</p>
-                            <p className="text-xs text-muted-foreground">Level: <span className="capitalize text-foreground font-medium">{profile.experience_level || "Beginner"}</span></p>
+                            <p className="text-xs text-muted-foreground">Level: <span className="capitalize text-foreground font-medium">{profile.unifiedCastingDirectorProfile?.experience_level || profile.experience_level || "Beginner"}</span></p>
                           </div>
                         </div>
                         
@@ -253,9 +279,9 @@ export default function ProfessionalPublicProfile() {
                             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Top Skills</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
-                            {profile.skills?.slice(0, 6).map((skill: string) => (
-                              <Badge key={skill} variant="secondary" className="bg-white border text-[9px] px-2 py-0">
-                                {skill}
+                            {(profile.unifiedCastingDirectorProfile?.industry_areas || profile.skills)?.slice(0, 8).map((tag: string) => (
+                              <Badge key={tag} variant="secondary" className="bg-white border text-[9px] px-2 py-0">
+                                {tag}
                               </Badge>
                             )) || <span className="text-xs text-muted-foreground">None specified</span>}
                           </div>
@@ -499,32 +525,38 @@ export default function ProfessionalPublicProfile() {
                       </div>
 
                       {/* Credibility & Recognition */}
-                      {(profile.notable_clients || profile.notable_projects || profile.awards_recognition) && (
+                      {(profile.notable_clients || profile.notable_projects || profile.awards_recognition || profile.unifiedCastingDirectorProfile?.notable_productions || profile.unifiedCastingDirectorProfile?.professional_memberships) && (
                         <div className="mt-10 pt-8 border-t">
                            <h3 className="font-bold text-lg mb-6">Recognition & Portfolio History</h3>
-                           <div className="grid gap-8 sm:grid-cols-3">
-                             {profile.notable_clients && (
+                           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                             {(profile.notable_clients || profile.unifiedCastingDirectorProfile?.notable_clients) && (
                                <div className="space-y-2">
                                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-2"><Target className="w-3.5 h-3.5" /> Notable Clients</h4>
-                                 <p className="text-sm leading-relaxed text-muted-foreground">{profile.notable_clients}</p>
+                                 <p className="text-sm leading-relaxed text-muted-foreground">{profile.notable_clients || profile.unifiedCastingDirectorProfile?.notable_clients}</p>
                                </div>
                              )}
-                             {profile.notable_projects && (
+                             {(profile.notable_projects || profile.unifiedCastingDirectorProfile?.notable_productions) && (
                                <div className="space-y-2">
-                                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-2"><FolderOpen className="w-3.5 h-3.5" /> Major Projects</h4>
-                                 <p className="text-sm leading-relaxed text-muted-foreground">{profile.notable_projects}</p>
+                                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-2"><FolderOpen className="w-3.5 h-3.5" /> Major Productions</h4>
+                                 <p className="text-sm leading-relaxed text-muted-foreground">{profile.notable_projects || profile.unifiedCastingDirectorProfile?.notable_productions}</p>
                                </div>
                              )}
-                             {profile.awards_recognition && (
+                             {(profile.awards_recognition || profile.unifiedCastingDirectorProfile?.awards_recognition) && (
                                <div className="space-y-2">
                                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-2"><Award className="w-3.5 h-3.5 text-amber-500" /> Awards</h4>
-                                 <p className="text-sm leading-relaxed text-muted-foreground">{profile.awards_recognition}</p>
+                                 <p className="text-sm leading-relaxed text-muted-foreground">{profile.awards_recognition || profile.unifiedCastingDirectorProfile?.awards_recognition}</p>
+                               </div>
+                             )}
+                             {(profile.unifiedCastingDirectorProfile?.professional_memberships) && (
+                               <div className="space-y-2">
+                                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-primary flex items-center gap-2"><Briefcase className="w-3.5 h-3.5" /> Memberships</h4>
+                                 <p className="text-sm leading-relaxed text-muted-foreground">{profile.unifiedCastingDirectorProfile.professional_memberships}</p>
                                </div>
                              )}
                            </div>
                         </div>
                       )}
-                    </Card>
+                      </Card>
                   </TabsContent>
 
                   {/* 8. Contact Tab */}
