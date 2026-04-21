@@ -33,11 +33,6 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <Navigate to="/verification-pending" replace />;
   }
 
-  // Check if account is verified (ID/Profile Verification)
-  if (!user.isVerified && user.role !== "admin" && !isVerificationPath) {
-    return <Navigate to="/verification-pending" replace />;
-  }
-
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     // Redirect to appropriate dashboard based on role
     const roleRoutes: Record<UserRole, string> = {
