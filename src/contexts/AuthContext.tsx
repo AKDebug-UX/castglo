@@ -50,7 +50,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               fullName: userData.fullName,
               profilePicture: userData.profilePicture,
               isEmailVerified: userData.emailVerified || userData.isEmailVerified || true,
-              isVerified: userData.isVerified || false,
             };
             setUser(userObj);
             localStorage.setItem('userData', JSON.stringify(userObj));
@@ -85,7 +84,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           fullName: userData.fullName,
           profilePicture: userData.profilePicture,
           isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-          isVerified: userData.isVerified || false,
         };
         setUser(userObj);
         localStorage.setItem('userData', JSON.stringify(userObj));
@@ -175,7 +173,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             fullName: userData.fullName,
             profilePicture: userData.profilePicture,
             isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-            isVerified: userData.isVerified || false,
           };
           setUser(userObj);
           localStorage.setItem('userData', JSON.stringify(userObj));
