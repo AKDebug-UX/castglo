@@ -80,6 +80,37 @@ export default function DirectorSettings() {
     setPendingProfilePhoto({ file, preview: URL.createObjectURL(file) });
   };
 
+  const handleSaveProfilePhoto = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!pendingProfilePhoto) return;
+    
+    setIsSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append("headshot", pendingProfilePhoto.file);
+      
+      const profileFormData = new FormData();
+      profileFormData.append("profilePicture", pendingProfilePhoto.file);
+      
+      await Promise.all([
+        profileAPI.addHeadshot(formData),
+        userAPI.updateProfilePicture(profileFormData)
+      ]);
+      
+      setPendingProfilePhoto(null);
+      await refreshUser();
+      await fetchProfileData();
+      toast.success("Profile photo updated successfully");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to update profile photo");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -203,6 +234,22 @@ export default function DirectorSettings() {
                 disabled={isSaving}
               />
             </label>
+            {pendingProfilePhoto && (
+              <Button 
+                size="sm" 
+                variant="secondary"
+                className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-white text-[#009698] hover:bg-gray-100 shadow-xl border-none h-8 px-3 text-xs font-bold animate-in zoom-in-50 duration-300"
+                onClick={handleSaveProfilePhoto}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <Upload className="w-3 h-3 mr-1" />
+                )}
+                Save Photo
+              </Button>
+            )}
           </div>
 
           <div className="flex-1 text-center md:text-left space-y-4">
