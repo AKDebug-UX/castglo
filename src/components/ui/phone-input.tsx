@@ -37,7 +37,7 @@ export function PhoneInput({
   
   // Parse the current value to find the country
   const selectedCountry = React.useMemo(() => {
-    if (!value) return COUNTRIES[0]; // Default to first country (Nigeria)
+    if (!value) return COUNTRIES[0]; // Default to first country (United Kingdom)
     return COUNTRIES.find((c) => value.startsWith(c.dial_code)) || COUNTRIES[0];
   }, [value]);
 

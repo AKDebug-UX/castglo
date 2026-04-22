@@ -26,7 +26,7 @@ export const INDUSTRY_AREAS = [
 ];
 
 export const COUNTRIES = [
-  "Nigeria","United Kingdom","United States","Canada","South Africa","Ghana","Kenya","Uganda","Rwanda","Tanzania","Ethiopia","Egypt","Morocco","Algeria","Tunisia","Cameroon","Senegal","Ivory Coast","France","Germany","Netherlands","Belgium","Spain","Portugal","Italy","Sweden","Norway","Denmark","Finland","Poland","Romania","Ukraine","Turkey","Greece","Ireland","India","Pakistan","Bangladesh","Sri Lanka","Nepal","China","Japan","South Korea","Indonesia","Malaysia","Singapore","Philippines","Thailand","Vietnam","Australia","New Zealand","Brazil","Mexico","Argentina","Jamaica","Trinidad and Tobago","United Arab Emirates","Saudi Arabia","Qatar","Israel","Russia"
+  "United Kingdom","Nigeria","United States","Canada","South Africa","Ghana","Kenya","Uganda","Rwanda","Tanzania","Ethiopia","Egypt","Morocco","Algeria","Tunisia","Cameroon","Senegal","Ivory Coast","France","Germany","Netherlands","Belgium","Spain","Portugal","Italy","Sweden","Norway","Denmark","Finland","Poland","Romania","Ukraine","Turkey","Greece","Ireland","India","Pakistan","Bangladesh","Sri Lanka","Nepal","China","Japan","South Korea","Indonesia","Malaysia","Singapore","Philippines","Thailand","Vietnam","Australia","New Zealand","Brazil","Mexico","Argentina","Jamaica","Trinidad and Tobago","United Arab Emirates","Saudi Arabia","Qatar","Israel","Russia"
 ];
 
 export const EXPERIENCE_YEARS = ["No experience yet", "<1 year", "1-2 years", "3-5 years", "5+ years", "10+ years"];
@@ -45,7 +45,7 @@ export const PAYMENT_METHODS = ["Bank Transfer", "Card Payment", "PayPal", "Cash
 export const DELIVERY_TYPES = ["In-person", "Remote", "Hybrid"];
 export const SERVICE_LOCATION_TYPES = ["Client Location", "My Studio", "Online", "On Set", "Event Venue", "Custom Location"];
 export const DURATION_TYPES = ["30 mins", "1 hour", "2 hours", "Half Day", "Full Day", "Multi-Day", "Per Project", "Custom"];
-export const CURRENCIES = ["GBP", "USD", "EUR", "Other"];
+export const CURRENCIES = ["GBP (£)", "NGN (₦)", "USD ($)", "EUR (€)", "Other"];
 export const SERVICE_STATUSES = ["Draft", "Active", "Paused", "Archived"];
 
 export const PORTFOLIO_ITEM_TYPES = ["Image", "Video", "Audio", "Document", "Link"];

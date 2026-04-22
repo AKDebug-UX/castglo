@@ -20,6 +20,7 @@ import {
   shouldShowField,
 } from "@/lib/unifiedTalentProfile/fieldSpec";
 import { getReferenceOptions, COUNTRIES } from "@/lib/unifiedTalentProfile/referenceTables";
+import { detectCountry } from "@/lib/locationUtils";
 
 interface UnifiedTalentProfileFormProps {
   rootData: any;
@@ -39,88 +40,6 @@ interface UnifiedTalentProfileFormProps {
   handleIntroVideoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const countryToTimeZoneHint: Record<string, string[]> = {
-  "Nigeria": ["Africa/Lagos"],
-  "United Kingdom": ["Europe/London", "GMT"],
-  "United States": ["America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Anchorage", "Pacific/Honolulu"],
-  "Canada": ["America/Toronto", "America/Vancouver", "America/Edmonton", "America/Winnipeg", "America/Halifax", "America/St_Johns"],
-  "South Africa": ["Africa/Johannesburg"],
-  "Ghana": ["Africa/Accra"],
-  "Kenya": ["Africa/Nairobi"],
-  "Uganda": ["Africa/Kampala"],
-  "Rwanda": ["Africa/Kigali"],
-  "Tanzania": ["Africa/Dar_es_Salaam"],
-  "Ethiopia": ["Africa/Addis_Ababa"],
-  "Egypt": ["Africa/Cairo"],
-  "Morocco": ["Africa/Casablanca"],
-  "Algeria": ["Africa/Algiers"],
-  "Tunisia": ["Africa/Tunis"],
-  "Cameroon": ["Africa/Douala"],
-  "Senegal": ["Africa/Dakar"],
-  "Ivory Coast": ["Africa/Abidjan"],
-  "France": ["Europe/Paris"],
-  "Germany": ["Europe/Berlin"],
-  "Netherlands": ["Europe/Amsterdam"],
-  "Belgium": ["Europe/Brussels"],
-  "Spain": ["Europe/Madrid"],
-  "Portugal": ["Europe/Lisbon"],
-  "Italy": ["Europe/Rome"],
-  "Sweden": ["Europe/Stockholm"],
-  "Norway": ["Europe/Oslo"],
-  "Denmark": ["Europe/Copenhagen"],
-  "Finland": ["Europe/Helsinki"],
-  "Poland": ["Europe/Warsaw"],
-  "Romania": ["Europe/Bucharest"],
-  "Ukraine": ["Europe/Kiev"],
-  "Turkey": ["Europe/Istanbul"],
-  "Greece": ["Europe/Athens"],
-  "Ireland": ["Europe/Dublin"],
-  "Scotland": ["Europe/London"], // Close enough
-  "Wales": ["Europe/London"], // Close enough
-  "India": ["Asia/Kolkata"],
-  "Pakistan": ["Asia/Karachi"],
-  "Bangladesh": ["Asia/Dhaka"],
-  "Sri Lanka": ["Asia/Colombo"],
-  "Nepal": ["Asia/Kathmandu"],
-  "China": ["Asia/Shanghai", "Asia/Chongqing", "Asia/Harbin", "Asia/Urumqi"],
-  "Japan": ["Asia/Tokyo"],
-  "South Korea": ["Asia/Seoul"],
-  "Indonesia": ["Asia/Jakarta", "Asia/Makassar", "Asia/Jayapura"],
-  "Malaysia": ["Asia/Kuala_Lumpur"],
-  "Singapore": ["Asia/Singapore"],
-  "Philippines": ["Asia/Manila"],
-  "Thailand": ["Asia/Bangkok"],
-  "Vietnam": ["Asia/Ho_Chi_Minh"],
-  "Australia": ["Australia/Sydney", "Australia/Melbourne", "Australia/Brisbane", "Australia/Perth", "Australia/Adelaide", "Australia/Darwin", "Australia/Hobart"],
-  "New Zealand": ["Pacific/Auckland"],
-  "Brazil": ["America/Sao_Paulo", "America/Manaus", "America/Belem", "America/Fortaleza"],
-  "Mexico": ["America/Mexico_City", "America/Monterrey", "America/Tijuana"],
-  "Argentina": ["America/Argentina/Buenos_Aires"],
-  "Jamaica": ["America/Jamaica"],
-  "Trinidad and Tobago": ["America/Port_of_Spain"],
-  "United Arab Emirates": ["Asia/Dubai"],
-  "Saudi Arabia": ["Asia/Riyadh"],
-  "Qatar": ["Asia/Qatar"],
-  "Israel": ["Asia/Jerusalem"],
-  "Russia": ["Europe/Moscow", "Asia/Yekaterinburg", "Asia/Novosibirsk", "Asia/Vladivostok"],
-};
-
-function detectCountry() {
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    for (const [country, tzs] of Object.entries(countryToTimeZoneHint)) {
-      if (tzs.includes(tz)) return country;
-    }
-    
-    // Fallback to language
-    const lang = navigator.language.split('-')[1];
-    if (lang === 'NG') return "Nigeria";
-    if (lang === 'GB') return "United Kingdom";
-    if (lang === 'US') return "United States";
-    // ... add more common fallbacks if needed
-  } catch (e) {}
-  return null;
-}
 
 const sectionOrder = [
   "Basic Profile",
@@ -226,16 +145,44 @@ export function UnifiedTalentProfileForm({
     return "55+";
   };
 
+  const deriveAgeGroupFromDob = (dob: string | undefined): string | null => {
+    if (!dob) return null;
+    const date = new Date(dob);
+    if (Number.isNaN(date.getTime())) return null;
+    const now = new Date();
+    if (date > now) return null;
+    const age = now.getFullYear() - date.getFullYear() - (now < new Date(now.getFullYear(), date.getMonth(), date.getDate()) ? 1 : 0);
+    if (age < 13) return "Under 13";
+    if (age <= 15) return "13-15";
+    if (age <= 17) return "16-17";
+    if (age <= 24) return "18-24";
+    if (age <= 34) return "25-34";
+    if (age <= 44) return "35-44";
+    if (age <= 54) return "45-54";
+    return "55+";
+  };
+
   useEffect(() => {
     // Auto-detect and set country if not present, and default booleans to false
     const updates: Record<string, any> = {};
     
     if (!values.current_country) {
       const detected = detectCountry();
-      if (detected) updates.current_country = detected;
+      updates.current_country = detected || "United Kingdom";
     }
 
+    if (!values.nationality) {
+      updates.nationality = "United Kingdom";
+    }
 
+    if (!values.phone_number) {
+      // Default to UK dial code
+      updates.phone_number = "+44";
+    }
+
+    if (!values.currency) {
+      updates.currency = "GBP (£)";
+    }
 
     const derivedAgeGroup = deriveAgeGroupFromDob(values.date_of_birth);
     if (derivedAgeGroup && values.age_group !== derivedAgeGroup) {

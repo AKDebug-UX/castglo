@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { detectCountry } from "@/lib/locationUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +48,29 @@ const parseList = (value: string): string[] => value.split(/\r?\n|,/).map((item)
 export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, isSaving = false, activeTab }: UnifiedCastingDirectorProfileFormProps) {
   const unified = rootData?.unifiedCastingDirectorProfile || {};
   const values = { ...rootData, ...unified };
+  
+  useEffect(() => {
+    const updates: Record<string, any> = {};
+    if (!values.current_country) {
+      updates.current_country = detectCountry();
+    }
+    if (!values.phone_number) {
+      updates.phone_number = "+44";
+    }
+    if (!values.currency) {
+      updates.currency = "GBP (£)";
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      onChange({
+        ...rootData,
+        unifiedCastingDirectorProfile: {
+          ...unified,
+          ...updates
+        }
+      });
+    }
+  }, []);
 
   const visibleFields = useMemo(() => {
     const base = UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC.filter((field) => shouldShowCastingDirectorField(field, values));

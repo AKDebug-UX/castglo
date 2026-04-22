@@ -67,7 +67,7 @@ export const PAYMENT_TYPES = [
   "Negotiable",
 ];
 
-export const CURRENCIES = ["GBP", "USD", "EUR", "NGN", "Other"];
+export const CURRENCIES = ["GBP (£)", "NGN (₦)", "USD ($)", "EUR (€)", "Other"];
 
 export const LOCATION_TYPES = ["Local", "Nationwide", "International"];
 
@@ -188,8 +188,8 @@ export const YEARS_OF_EXPERIENCE = [
 export const EXPERIENCE_LEVELS = ["Beginner", "Intermediate", "Experienced", "Expert"];
 
 export const COUNTRIES = [
-  "Nigeria",
   "United Kingdom",
+  "Nigeria",
   "United States",
   "Canada",
   "South Africa",

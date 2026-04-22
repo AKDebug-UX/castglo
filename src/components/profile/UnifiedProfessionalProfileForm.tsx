@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { detectCountry } from "@/lib/locationUtils";
 import { Loader2, Save } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +50,29 @@ export function UnifiedProfessionalProfileForm({
 }: UnifiedProfessionalProfileFormProps) {
   const unified = rootData?.unifiedProfessionalProfile || {};
   const values = { ...rootData, ...unified };
+  
+  useEffect(() => {
+    const updates: Record<string, any> = {};
+    if (!values.current_country) {
+      updates.current_country = detectCountry();
+    }
+    if (!values.phone_number) {
+      updates.phone_number = "+44";
+    }
+    if (!values.currency) {
+      updates.currency = "GBP (£)";
+    }
+    
+    if (Object.keys(updates).length > 0) {
+      onChange({
+        ...rootData,
+        unifiedProfessionalProfile: {
+          ...unified,
+          ...updates
+        }
+      });
+    }
+  }, []);
 
   const visibleFields = useMemo(() => {
     const base = UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC.filter((field) => shouldShowProfessionalField(field, values));

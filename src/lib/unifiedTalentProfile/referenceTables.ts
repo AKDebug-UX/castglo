@@ -233,7 +233,7 @@ export const ACCENTS: ReferenceItem[] = [
   { code: "ukrainian", label: "Ukrainian Accent", group: "Europe", countryFocus: "Ukraine", sortOrder: 57 },
   { code: "romanian", label: "Romanian Accent", group: "Europe", countryFocus: "Romania", sortOrder: 58 },
   { code: "hungarian", label: "Hungarian Accent", group: "Europe", countryFocus: "Hungary", sortOrder: 59 },
-  { code: "turkish", label: "Turkish Accent", group: "Europe / Middle East", countryFocus: "Türkiye", sortOrder: 60 },
+  { code: "turkish", label: "Turkish Accent", group: "Europe / Middle East", countryFocus: "Tï¿½rkiye", sortOrder: 60 },
   { code: "arabic_general", label: "General Arabic Accent", group: "Middle East / Africa", countryFocus: "Multiple", sortOrder: 61 },
   { code: "egyptian_arabic", label: "Egyptian Arabic Accent", group: "Middle East / Africa", countryFocus: "Egypt", sortOrder: 62 },
   { code: "levantine_arabic", label: "Levantine Arabic Accent", group: "Middle East / Africa", countryFocus: "Multiple", sortOrder: 63 },
@@ -415,7 +415,7 @@ export const DANCE_STYLES: ReferenceItem[] = [
 
 
 export const COUNTRIES = [
-  "Nigeria","United Kingdom","United States","Canada","South Africa","Ghana","Kenya","Uganda","Rwanda","Tanzania","Ethiopia","Egypt","Morocco","Algeria","Tunisia","Cameroon","Senegal","Ivory Coast","France","Germany","Netherlands","Belgium","Spain","Portugal","Italy","Sweden","Norway","Denmark","Finland","Poland","Romania","Ukraine","Turkey","Greece","Ireland","Scotland","Wales","India","Pakistan","Bangladesh","Sri Lanka","Nepal","China","Japan","South Korea","Indonesia","Malaysia","Singapore","Philippines","Thailand","Vietnam","Australia","New Zealand","Brazil","Mexico","Argentina","Jamaica","Trinidad and Tobago","United Arab Emirates","Saudi Arabia","Qatar","Israel","Russia"
+  "United Kingdom","Nigeria","United States","Canada","South Africa","Ghana","Kenya","Uganda","Rwanda","Tanzania","Ethiopia","Egypt","Morocco","Algeria","Tunisia","Cameroon","Senegal","Ivory Coast","France","Germany","Netherlands","Belgium","Spain","Portugal","Italy","Sweden","Norway","Denmark","Finland","Poland","Romania","Ukraine","Turkey","Greece","Ireland","Scotland","Wales","India","Pakistan","Bangladesh","Sri Lanka","Nepal","China","Japan","South Korea","Indonesia","Malaysia","Singapore","Philippines","Thailand","Vietnam","Australia","New Zealand","Brazil","Mexico","Argentina","Jamaica","Trinidad and Tobago","United Arab Emirates","Saudi Arabia","Qatar","Israel","Russia"
 ];
 export const getReferenceOptions = (source: string): string[] => {
   switch (source) {

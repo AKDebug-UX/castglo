@@ -106,7 +106,7 @@ export const CORE_PROFILE_FIELDS: UnifiedFieldSpec[] = [
   { id: "address", label: "Address", section: "Contact", type: "text", required: false, searchable: false, validation: "Max 200 chars" },
   { id: "date_of_birth", label: "Date of Birth", section: "Basic Profile", type: "date", required: true, searchable: false, validation: "YYYY-MM-DD, past date" },
   { id: "age_group", label: "Age Group", section: "Basic Profile", type: "select", required: true, searchable: true, options: ["Under 13", "13-15", "16-17", "18-24", "25-34", "35-44", "45-54", "55+"], validation: "Auto-derived optional" },
-  { id: "gender", label: "Gender", section: "Basic Profile", type: "select", required: true, searchable: true, options: ["female", "male", "Non-binary", "Prefer to self-describe", "Prefer not to say"] },
+  { id: "gender", label: "Gender", section: "Basic Profile", type: "select", required: true, searchable: true, options: ["Female", "Male", "Non-binary", "Prefer to self-describe", "Prefer not to say"] },
   { id: "gender_self_describe", label: "Gender Self Description", section: "Basic Profile", type: "text", required: false, searchable: true, validation: "Max 50 chars", visibility: { showWhenField: "gender", equals: "Prefer to self-describe" } },
   { id: "nationality", label: "Nationality", section: "Basic Profile", type: "select", required: true, searchable: true, optionSource: "countries", validation: "ISO country list preferred" },
   { id: "current_city", label: "City", section: "Basic Profile", type: "text", required: true, searchable: true, validation: "2-100 chars" },
@@ -148,7 +148,8 @@ export const REPRESENTATION_FIELDS: UnifiedFieldSpec[] = [
   { id: "agency_contact_details", label: "Agency / Manager Contact Details", section: "Representation", type: "textarea", required: false, searchable: false, validation: "Max 500 chars", visibility: { showWhenField: "representation_status", notEquals: "Self-represented" } },
   { id: "union_membership", label: "Union / Professional Membership", section: "Representation", type: "text", required: false, searchable: true, validation: "Max 100 chars" },
   { id: "preferred_contact_method", label: "Preferred Contact Method", section: "Contact", type: "select", required: true, searchable: false, options: ["Castglo", "Email", "Phone", "Agent/Manager"] },
-  { id: "expected_rate_range", label: "Expected Rate / Fee Range", section: "Booking Preferences", type: "select", required: false, searchable: true, options: ["Open to discussion", "�50-�100", "�100-�250", "�250-�500", "�500+", "Other"] },
+  { id: "currency", label: "Currency", section: "Booking Preferences", type: "select", required: false, searchable: true, options: ["GBP (£)", "NGN (₦)", "USD ($)", "EUR (€)"] },
+  { id: "expected_rate_range", label: "Expected Rate / Fee Range", section: "Booking Preferences", type: "select", required: false, searchable: true, options: ["Open to discussion", "£50-£100", "£100-£250", "£250-£500", "£500+", "Other"] },
   { id: "expected_rate_other", label: "Custom Rate", section: "Booking Preferences", type: "text", required: false, searchable: true, validation: "Max 100 chars", visibility: { showWhenField: "expected_rate_range", equals: "Other" } },
   { id: "open_to_unpaid", label: "Open to Portfolio-Building / Unpaid Opportunities", section: "Booking Preferences", type: "select", options: ["Yes", "No"], required: false, searchable: true },
 ];
