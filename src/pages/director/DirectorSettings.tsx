@@ -37,40 +37,40 @@ export default function DirectorSettings() {
     return Math.round(((filled + (hasPhoto ? 1 : 0)) / (coreFields.length + 1)) * 100);
   }, [profileData]);
 
+  const fetchProfileData = async () => {
+    try {
+      const [authRes, profileRes, subRes] = await Promise.all([
+        authAPI.getMe().catch(() => ({ data: { success: false } })),
+        profileAPI.getMe().catch(() => ({ data: { success: false } })),
+        subscriptionAPI.getStatus().catch(() => ({ data: { success: false } })),
+      ]);
+
+      let combinedData: any = {};
+      if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
+      if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
+
+      const unified = combinedData.unifiedCastingDirectorProfile || {};
+      if (!unified.full_name && combinedData.fullName) unified.full_name = combinedData.fullName;
+      if (!unified.display_name && combinedData.displayName) unified.display_name = combinedData.displayName;
+      if (!unified.company_name && combinedData.company_name) unified.company_name = combinedData.company_name;
+      if (!unified.professional_title && combinedData.professional_title) unified.professional_title = combinedData.professional_title;
+      if (!unified.email && combinedData.email) unified.email = combinedData.email;
+      if (!unified.short_bio && combinedData.bio) unified.short_bio = combinedData.bio;
+      if (!unified.city && combinedData.city) unified.city = combinedData.city;
+      if (!unified.country && combinedData.country) unified.country = combinedData.country;
+
+      combinedData.unifiedCastingDirectorProfile = unified;
+      setProfileData(combinedData);
+
+      if (subRes.data?.success) setSubscriptionInfo(subRes.data.data);
+    } catch (error) {
+      toast.error("Failed to load profile data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const [authRes, profileRes, subRes] = await Promise.all([
-          authAPI.getMe().catch(() => ({ data: { success: false } })),
-          profileAPI.getMe().catch(() => ({ data: { success: false } })),
-          subscriptionAPI.getStatus().catch(() => ({ data: { success: false } })),
-        ]);
-
-        let combinedData: any = {};
-        if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
-        if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
-
-        const unified = combinedData.unifiedCastingDirectorProfile || {};
-        if (!unified.full_name && combinedData.fullName) unified.full_name = combinedData.fullName;
-        if (!unified.display_name && combinedData.displayName) unified.display_name = combinedData.displayName;
-        if (!unified.company_name && combinedData.company_name) unified.company_name = combinedData.company_name;
-        if (!unified.professional_title && combinedData.professional_title) unified.professional_title = combinedData.professional_title;
-        if (!unified.email && combinedData.email) unified.email = combinedData.email;
-        if (!unified.short_bio && combinedData.bio) unified.short_bio = combinedData.bio;
-        if (!unified.city && combinedData.city) unified.city = combinedData.city;
-        if (!unified.country && combinedData.country) unified.country = combinedData.country;
-
-        combinedData.unifiedCastingDirectorProfile = unified;
-        setProfileData(combinedData);
-
-        if (subRes.data?.success) setSubscriptionInfo(subRes.data.data);
-      } catch (error) {
-        toast.error("Failed to load profile data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchProfileData();
   }, []);
 
@@ -100,7 +100,15 @@ export default function DirectorSettings() {
       if (pendingProfilePhoto) {
         const formData = new FormData();
         formData.append("headshot", pendingProfilePhoto.file);
-        await profileAPI.addHeadshot(formData);
+        
+        // Use userAPI to update the main profile picture for the header/avatar
+        const profileFormData = new FormData();
+        profileFormData.append("profilePicture", pendingProfilePhoto.file);
+        
+        await Promise.all([
+          profileAPI.addHeadshot(formData),
+          userAPI.updateProfilePicture(profileFormData)
+        ]);
         setPendingProfilePhoto(null);
       }
 
@@ -124,6 +132,7 @@ export default function DirectorSettings() {
 
       await Promise.all([userUpdate, profileUpdate]);
       await refreshUser();
+      await fetchProfileData();
       toast.success("Casting profile updated successfully");
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to update profile");

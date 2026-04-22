@@ -40,39 +40,39 @@ export default function ProfessionalProfile() {
     return Math.round(((filled + (hasPhoto ? 1 : 0)) / (coreFields.length + 1)) * 100);
   }, [profileData]);
 
+  const fetchProfile = async () => {
+    try {
+      const [authRes, profileRes] = await Promise.all([
+        authAPI.getMe().catch(() => ({ data: { success: false } })),
+        profileAPI.getMe().catch(() => ({ data: { success: false } })),
+      ]);
+
+      let combinedData: any = {};
+      if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
+      if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
+
+      const unified = combinedData.unifiedProfessionalProfile || {};
+      if (!unified.full_name && combinedData.fullName) unified.full_name = combinedData.fullName;
+      if (!unified.display_name && combinedData.displayName) unified.display_name = combinedData.displayName;
+      if (!unified.professional_title && combinedData.professional_title) unified.professional_title = combinedData.professional_title;
+      if (!unified.email && combinedData.email) unified.email = combinedData.email;
+      if (!unified.phone_number && (combinedData.phoneNumber || combinedData.phone)) unified.phone_number = combinedData.phoneNumber || combinedData.phone;
+      if (!unified.short_bio && combinedData.bio) unified.short_bio = combinedData.bio;
+      if (!unified.full_bio && combinedData.full_bio) unified.full_bio = combinedData.full_bio;
+      if (!unified.city && combinedData.city) unified.city = combinedData.city;
+      if (!unified.country && combinedData.country) unified.country = combinedData.country;
+      if (!unified.primary_professional_type && combinedData.professionalCategory) unified.primary_professional_type = combinedData.professionalCategory;
+
+      combinedData.unifiedProfessionalProfile = unified;
+      setProfileData(combinedData);
+    } catch (error) {
+      toast.error("Failed to load profile");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const [authRes, profileRes] = await Promise.all([
-          authAPI.getMe().catch(() => ({ data: { success: false } })),
-          profileAPI.getMe().catch(() => ({ data: { success: false } })),
-        ]);
-
-        let combinedData: any = {};
-        if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
-        if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
-
-        const unified = combinedData.unifiedProfessionalProfile || {};
-        if (!unified.full_name && combinedData.fullName) unified.full_name = combinedData.fullName;
-        if (!unified.display_name && combinedData.displayName) unified.display_name = combinedData.displayName;
-        if (!unified.professional_title && combinedData.professional_title) unified.professional_title = combinedData.professional_title;
-        if (!unified.email && combinedData.email) unified.email = combinedData.email;
-        if (!unified.phone_number && (combinedData.phoneNumber || combinedData.phone)) unified.phone_number = combinedData.phoneNumber || combinedData.phone;
-        if (!unified.short_bio && combinedData.bio) unified.short_bio = combinedData.bio;
-        if (!unified.full_bio && combinedData.full_bio) unified.full_bio = combinedData.full_bio;
-        if (!unified.city && combinedData.city) unified.city = combinedData.city;
-        if (!unified.country && combinedData.country) unified.country = combinedData.country;
-        if (!unified.primary_professional_type && combinedData.professionalCategory) unified.primary_professional_type = combinedData.professionalCategory;
-
-        combinedData.unifiedProfessionalProfile = unified;
-        setProfileData(combinedData);
-      } catch (error) {
-        toast.error("Failed to load profile");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchProfile();
   }, []);
 
@@ -117,7 +117,15 @@ export default function ProfessionalProfile() {
       if (pendingProfilePhoto) {
         const formData = new FormData();
         formData.append("headshot", pendingProfilePhoto.file);
-        await profileAPI.addHeadshot(formData);
+        
+        // Use userAPI to update the main profile picture for the header/avatar
+        const profileFormData = new FormData();
+        profileFormData.append("profilePicture", pendingProfilePhoto.file);
+        
+        await Promise.all([
+          profileAPI.addHeadshot(formData),
+          userAPI.updateProfilePicture(profileFormData)
+        ]);
         setPendingProfilePhoto(null);
       }
 
@@ -153,6 +161,7 @@ export default function ProfessionalProfile() {
 
       await Promise.all([userUpdate, profileUpdate]);
       await refreshUser();
+      await fetchProfile();
       toast.success("Professional profile updated successfully");
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to update profile");

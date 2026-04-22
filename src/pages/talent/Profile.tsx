@@ -26,42 +26,42 @@ export default function Profile() {
   const [pendingIntroVideo, setPendingIntroVideo] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("basic");
 
+  const fetchProfileData = async () => {
+    try {
+      const [authRes, profileRes] = await Promise.all([
+        authAPI.getMe().catch(() => ({ data: { success: false } })),
+        profileAPI.getMe().catch(() => ({ data: { success: false } })),
+      ]);
+
+      let combinedData: any = {};
+      if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
+      if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
+
+      const unified = combinedData.unifiedTalentProfile || {};
+      if (!unified.full_name && combinedData.fullName) unified.full_name = combinedData.fullName;
+      if (!unified.display_name && combinedData.stageName) unified.display_name = combinedData.stageName;
+      if (!unified.email && combinedData.email) unified.email = combinedData.email;
+      if (!unified.phone_number && (combinedData.phone || combinedData.phoneNumber)) unified.phone_number = combinedData.phone || combinedData.phoneNumber;
+      if (!unified.address && combinedData.address) unified.address = combinedData.address;
+      if (!unified.nationality && combinedData.nationality) unified.nationality = combinedData.nationality;
+      if (!unified.gender && combinedData.gender) unified.gender = combinedData.gender;
+
+      const existingProfilePhoto =
+        combinedData?.profilePicture ||
+        combinedData?.talent?.headshots?.[0]?.url ||
+        combinedData?.headshots?.[0]?.url;
+      if (!unified.profile_photo && existingProfilePhoto) unified.profile_photo = existingProfilePhoto;
+
+      combinedData.unifiedTalentProfile = unified;
+      setProfileData(combinedData);
+    } catch (error) {
+      toast.error("Failed to load profile data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const [authRes, profileRes] = await Promise.all([
-          authAPI.getMe().catch(() => ({ data: { success: false } })),
-          profileAPI.getMe().catch(() => ({ data: { success: false } })),
-        ]);
-
-        let combinedData: any = {};
-        if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
-        if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
-
-        const unified = combinedData.unifiedTalentProfile || {};
-        if (!unified.full_name && combinedData.fullName) unified.full_name = combinedData.fullName;
-        if (!unified.display_name && combinedData.stageName) unified.display_name = combinedData.stageName;
-        if (!unified.email && combinedData.email) unified.email = combinedData.email;
-        if (!unified.phone_number && (combinedData.phone || combinedData.phoneNumber)) unified.phone_number = combinedData.phone || combinedData.phoneNumber;
-        if (!unified.address && combinedData.address) unified.address = combinedData.address;
-        if (!unified.nationality && combinedData.nationality) unified.nationality = combinedData.nationality;
-        if (!unified.gender && combinedData.gender) unified.gender = combinedData.gender;
-
-        const existingProfilePhoto =
-          combinedData?.profilePicture ||
-          combinedData?.talent?.headshots?.[0]?.url ||
-          combinedData?.headshots?.[0]?.url;
-        if (!unified.profile_photo && existingProfilePhoto) unified.profile_photo = existingProfilePhoto;
-
-        combinedData.unifiedTalentProfile = unified;
-        setProfileData(combinedData);
-      } catch (error) {
-        toast.error("Failed to load profile data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchProfileData();
   }, []);
 
@@ -148,7 +148,15 @@ export default function Profile() {
       if (pendingProfilePhoto) {
         const formData = new FormData();
         formData.append("headshot", pendingProfilePhoto.file);
-        await profileAPI.addHeadshot(formData);
+        
+        // Use userAPI to update the main profile picture for the header/avatar
+        const profileFormData = new FormData();
+        profileFormData.append("profilePicture", pendingProfilePhoto.file);
+        
+        await Promise.all([
+          profileAPI.addHeadshot(formData),
+          userAPI.updateProfilePicture(profileFormData)
+        ]);
         setPendingProfilePhoto(null);
       }
 
@@ -232,6 +240,7 @@ export default function Profile() {
       ]);
 
       await refreshUser();
+      await fetchProfileData();
       toast.success("Profile updated successfully");
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to update profile");
