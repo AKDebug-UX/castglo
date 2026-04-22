@@ -149,7 +149,7 @@ export const REPRESENTATION_FIELDS: UnifiedFieldSpec[] = [
   { id: "union_membership", label: "Union / Professional Membership", section: "Representation", type: "text", required: false, searchable: true, validation: "Max 100 chars" },
   { id: "preferred_contact_method", label: "Preferred Contact Method", section: "Contact", type: "select", required: true, searchable: false, options: ["Castglo", "Email", "Phone", "Agent/Manager"] },
   { id: "currency", label: "Currency", section: "Booking Preferences", type: "select", required: false, searchable: true, options: ["GBP (£)", "NGN (₦)", "USD ($)", "EUR (€)"] },
-  { id: "expected_rate_range", label: "Expected Rate / Fee Range", section: "Booking Preferences", type: "select", required: false, searchable: true, options: ["Open to discussion", "£50-£100", "£100-£250", "£250-£500", "£500+", "Other"] },
+  { id: "expected_rate_range", label: "Expected Rate / Fee Range", section: "Booking Preferences", type: "select", required: false, searchable: true, options: ["Open to discussion", "50-100", "100-250", "250-500", "500+", "Other"] },
   { id: "expected_rate_other", label: "Custom Rate", section: "Booking Preferences", type: "text", required: false, searchable: true, validation: "Max 100 chars", visibility: { showWhenField: "expected_rate_range", equals: "Other" } },
   { id: "open_to_unpaid", label: "Open to Portfolio-Building / Unpaid Opportunities", section: "Booking Preferences", type: "select", options: ["Yes", "No"], required: false, searchable: true },
 ];

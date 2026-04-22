@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Upload, X, Eye as EyeIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,9 +20,25 @@ export default function ProfessionalProfile() {
   const { refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
+  const [activeSubTab, setActiveSubTab] = useState("general");
   const [profileData, setProfileData] = useState<any>(null);
   const [pendingProfilePhoto, setPendingProfilePhoto] = useState<{ file: File; preview: string } | null>(null);
   const [pendingPortfolioPhotos, setPendingPortfolioPhotos] = useState<{ file: File; preview: string }[]>([]);
+
+
+  const completionPercentage = useMemo(() => {
+    if (!profileData) return 0;
+    const unified = profileData.unifiedProfessionalProfile || {};
+    const coreFields = [
+      'full_name', 'email', 'phone_number', 'city', 'country',
+      'short_bio', 'primary_professional_type'
+    ];
+    const filled = coreFields.filter(f => unified[f] || profileData[f]).length;
+    // Add 1 if there's a profile photo
+    const hasPhoto = !!(profileData.profilePicture || profileData.headshots?.length);
+    return Math.round(((filled + (hasPhoto ? 1 : 0)) / (coreFields.length + 1)) * 100);
+  }, [profileData]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -154,53 +170,98 @@ export default function ProfessionalProfile() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-fade-in pb-20">
-      <Link to="/professional" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft className="w-4 h-4" />
-        Back to Dashboard
-      </Link>
+    <div className="space-y-8 animate-fade-in pb-20">
+      {/* Premium Hero Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#009698] to-[#006b6d] p-8 text-white shadow-xl">
+        <div className="absolute top-0 right-0 -m-12 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute bottom-0 left-0 -m-12 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Industry Professional Profile</h1>
-          <p className="text-muted-foreground">Complete all profile, service, portfolio, and business fields.</p>
-        </div>
-        <Button onClick={handleSave} disabled={isSaving} className="bg-[#009698] hover:bg-[#009698]/90">
-          {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          Save Profile
-        </Button>
-      </div>
+        <div className="relative flex flex-col md:flex-row items-center gap-8">
+          <div className="relative group">
+            <Avatar className="h-32 w-32 border-4 border-white/20 shadow-2xl transition-transform duration-500 group-hover:scale-105">
+              <AvatarImage
+                src={
+                  pendingProfilePhoto?.preview ||
+                  profileData?.profilePicture ||
+                  getAvatarUrl(profileData?.fullName)
+                }
+                className="object-cover"
+              />
+              <AvatarFallback className="bg-white/20 text-white font-bold text-3xl backdrop-blur-md">
+                {getInitials(profileData?.fullName)}
+              </AvatarFallback>
+            </Avatar>
+            <label
+              htmlFor="profile-photo-upload"
+              className="absolute bottom-1 right-1 h-10 w-10 rounded-full bg-white text-[#009698] flex items-center justify-center cursor-pointer shadow-lg hover:bg-gray-100 transition-all duration-300 hover:scale-110"
+            >
+              <Camera className="h-5 h-5" />
+              <input
+                id="profile-photo-upload"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleProfilePhotoSelect}
+                disabled={isSaving}
+              />
+            </label>
+          </div>
 
-      <Card className="overflow-hidden">
-        <div className="h-32 bg-gradient-to-r from-[#009698]/20 to-[#009698]/5 relative">
-          {profileData?.cover_image ? (
-            <img src={profileData.cover_image} alt="cover" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-primary/20"><ImageIcon className="w-8 h-8" /></div>
-          )}
-          <Button variant="secondary" size="sm" className="absolute bottom-3 right-3 h-8 text-xs gap-2">
-            <Camera className="w-3.5 h-3.5" /> Edit Banner
-          </Button>
-        </div>
-        <CardContent className="pt-0 relative">
-          <div className="flex items-end gap-5 -mt-10 mb-6">
-            <div className="relative group">
-              <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
-                <AvatarImage src={pendingProfilePhoto?.preview || profileData?.profilePicture || getAvatarUrl(profileData?.fullName)} />
-                <AvatarFallback className="bg-primary/10 text-primary text-2xl">{getInitials(profileData?.fullName)}</AvatarFallback>
-              </Avatar>
-              <label htmlFor="avatar-upload" className="absolute inset-0 flex items-center justify-center bg-black/40 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                <Camera className="h-6 w-6" />
-                <input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={handleProfilePhotoSelect} disabled={isSaving} />
-              </label>
+          <div className="flex-1 text-center md:text-left space-y-4">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                <h1 className="text-3xl font-bold tracking-tight">{profileData?.fullName || "Your Profile"}</h1>
+                {profileData?.isVerified && (
+                  <Badge className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-md px-3 py-1">
+                    Verified Professional
+                  </Badge>
+                )}
+              </div>
+              <p className="text-[#e0f1f1] text-lg opacity-90">{profileData?.unifiedProfessionalProfile?.professional_title || "Industry Professional"}</p>
             </div>
-            <div className="pb-2">
-              <h2 className="text-lg font-bold">{profileData?.fullName || "Professional Name"}</h2>
-              <p className="text-sm text-muted-foreground">{profileData?.unifiedProfessionalProfile?.professional_title || "Industry Professional"}</p>
+
+            <div className="space-y-2 max-w-md mx-auto md:mx-0">
+              <div className="flex justify-between text-sm font-medium">
+                <span>Profile Completion</span>
+                <span>{completionPercentage}%</span>
+              </div>
+              <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white transition-all duration-1000 ease-out"
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="flex flex-col gap-3 min-w-[200px]">
+            <Button
+              size="lg"
+              className="w-full bg-white text-[#009698] hover:bg-gray-100 font-bold shadow-lg transition-all duration-300 hover:-translate-y-1"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Upload className="w-5 h-5 mr-2" />
+              )}
+              Save Changes
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md font-bold"
+              asChild
+            >
+              <Link to={`/professional/${profileData?._id || profileData?.id}`}>
+                <EyeIcon className="w-5 h-5 mr-2" />
+                View Public Profile
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <Tabs defaultValue="general" className="w-full">
         <div className="overflow-x-auto">

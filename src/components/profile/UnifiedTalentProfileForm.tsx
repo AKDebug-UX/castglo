@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Loader2, Save, User, Briefcase, Sparkles, 
-  Camera, Eye, Layers, Share2, X
+  Camera, Eye, Layers, Share2, X, Ruler
 } from "lucide-react";
+import { CombinedCurrencyRateInput } from "./fields/CombinedCurrencyRateInput";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CreditsListEditor } from "./fields/CreditsListEditor";
 import { PortfolioMediaGallery } from "./fields/PortfolioMediaGallery";
@@ -35,6 +36,9 @@ interface UnifiedTalentProfileFormProps {
   pendingPortfolioPhotos?: any[];
   removePendingPortfolioPhoto?: (index: number) => void;
   handlePortfolioSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  pendingPortfolioVideos?: { file: File; preview: string; name: string }[];
+  removePendingPortfolioVideo?: (index: number) => void;
+  handlePortfolioVideoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   pendingIntroVideo?: any;
   setPendingIntroVideo?: any;
   handleIntroVideoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -102,6 +106,173 @@ const parseFreeList = (value: string): string[] =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+// ── Measurement unit helpers ──────────────────────────────────────────────────
+type MeasurementUnit = "metric" | "imperial";
+
+// Field IDs that are body measurements (linear, cm <-> inches)
+const LINEAR_MEASUREMENT_FIELD_IDS = new Set([
+  "chest_bust_measurement",
+  "waist_measurement",
+  "hip_measurement",
+  "inside_leg_measurement",
+  "model_chest_bust",
+  "model_waist",
+  "model_hips",
+  "model_inseam",
+]);
+
+const HEIGHT_FIELD_IDS = new Set(["height"]);
+const WEIGHT_FIELD_IDS = new Set(["weight"]);
+
+// Stored canonical value: cm (for linear), cm (for height), kg (for weight)
+// Imperial display: inches for linear; ft/in for height; lbs for weight
+
+function cmToInches(cm: number): number { return Math.round(cm / 2.54 * 10) / 10; }
+function inchesToCm(inches: number): number { return Math.round(inches * 2.54 * 10) / 10; }
+function cmToFtIn(cm: number): { ft: number; inches: number } {
+  const totalInches = cm / 2.54;
+  const ft = Math.floor(totalInches / 12);
+  const inches = Math.round(totalInches % 12);
+  return { ft, inches };
+}
+function ftInToCm(ft: number, inches: number): number {
+  return Math.round((ft * 12 + inches) * 2.54 * 10) / 10;
+}
+function kgToLbs(kg: number): number { return Math.round(kg * 2.20462 * 10) / 10; }
+function lbsToKg(lbs: number): number { return Math.round(lbs / 2.20462 * 10) / 10; }
+
+// ── MeasurementInput ──────────────────────────────────────────────────────────
+interface MeasurementInputProps {
+  fieldId: string;
+  value: string; // canonical metric value stored (e.g., "175", "70")
+  unit: MeasurementUnit;
+  onChange: (canonicalValue: string) => void;
+  hasError?: boolean;
+}
+
+function MeasurementInput({ fieldId, value, unit, onChange, hasError }: MeasurementInputProps) {
+  const canonicalNum = parseFloat(value) || 0;
+
+  // HEIGHT field: ft/in dual input in imperial
+  if (HEIGHT_FIELD_IDS.has(fieldId)) {
+    if (unit === "imperial") {
+      const { ft, inches } = cmToFtIn(canonicalNum);
+      return (
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Input
+              type="number"
+              min={0}
+              max={9}
+              value={canonicalNum > 0 ? ft : ""}
+              placeholder="5"
+              className={hasError ? "border-destructive" : ""}
+              onChange={(e) => {
+                const newFt = parseFloat(e.target.value) || 0;
+                onChange(String(ftInToCm(newFt, inches)));
+              }}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground pointer-events-none">ft</span>
+          </div>
+          <div className="relative flex-1">
+            <Input
+              type="number"
+              min={0}
+              max={11}
+              value={canonicalNum > 0 ? inches : ""}
+              placeholder="11"
+              className={hasError ? "border-destructive" : ""}
+              onChange={(e) => {
+                const newIn = parseFloat(e.target.value) || 0;
+                onChange(String(ftInToCm(ft, newIn)));
+              }}
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground pointer-events-none">in</span>
+          </div>
+        </div>
+      );
+    }
+    // metric
+    return (
+      <div className="relative">
+        <Input
+          type="number"
+          min={0}
+          value={canonicalNum > 0 ? canonicalNum : ""}
+          placeholder="175"
+          className={hasError ? "border-destructive" : ""}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground pointer-events-none">cm</span>
+      </div>
+    );
+  }
+
+  // WEIGHT field
+  if (WEIGHT_FIELD_IDS.has(fieldId)) {
+    const displayVal = unit === "imperial" && canonicalNum > 0
+      ? kgToLbs(canonicalNum)
+      : (canonicalNum > 0 ? canonicalNum : "");
+    const unit_label = unit === "imperial" ? "lbs" : "kg";
+    return (
+      <div className="relative">
+        <Input
+          type="number"
+          min={0}
+          value={displayVal}
+          placeholder={unit === "imperial" ? "154" : "70"}
+          className={hasError ? "border-destructive" : ""}
+          onChange={(e) => {
+            const n = parseFloat(e.target.value) || 0;
+            onChange(unit === "imperial" ? String(lbsToKg(n)) : e.target.value);
+          }}
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground pointer-events-none">{unit_label}</span>
+      </div>
+    );
+  }
+
+  // LINEAR body measurements (bust, waist, hips, inseam, etc.)
+  if (LINEAR_MEASUREMENT_FIELD_IDS.has(fieldId)) {
+    const displayVal = unit === "imperial" && canonicalNum > 0
+      ? cmToInches(canonicalNum)
+      : (canonicalNum > 0 ? canonicalNum : "");
+    const unit_label = unit === "imperial" ? "in" : "cm";
+    return (
+      <div className="relative">
+        <Input
+          type="number"
+          min={0}
+          value={displayVal}
+          placeholder={unit === "imperial" ? "34" : "86"}
+          className={hasError ? "border-destructive" : ""}
+          onChange={(e) => {
+            const n = parseFloat(e.target.value) || 0;
+            onChange(unit === "imperial" ? String(inchesToCm(n)) : e.target.value);
+          }}
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground pointer-events-none">{unit_label}</span>
+      </div>
+    );
+  }
+
+  // Fallback
+  return (
+    <Input
+      value={value || ""}
+      className={hasError ? "border-destructive" : ""}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
+const ALL_MEASUREMENT_FIELD_IDS = new Set([
+  ...HEIGHT_FIELD_IDS,
+  ...WEIGHT_FIELD_IDS,
+  ...LINEAR_MEASUREMENT_FIELD_IDS,
+]);
+// ─────────────────────────────────────────────────────────────────────────────
+
 
 
 export function UnifiedTalentProfileForm({ 
@@ -117,33 +288,20 @@ export function UnifiedTalentProfileForm({
   pendingPortfolioPhotos,
   removePendingPortfolioPhoto,
   handlePortfolioSelect,
+  pendingPortfolioVideos,
+  removePendingPortfolioVideo,
+  handlePortfolioVideoSelect,
   pendingIntroVideo,
   setPendingIntroVideo,
   handleIntroVideoSelect
 }: UnifiedTalentProfileFormProps) {
   const [internalActiveTab, setInternalActiveTab] = useState("basic");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>("metric");
   const activeTab = externalActiveTab || internalActiveTab;
 
   const unified = rootData?.unifiedTalentProfile || {};
   const values = { ...rootData, ...unified };
-
-  const deriveAgeGroupFromDob = (dob: string | undefined): string | null => {
-    if (!dob) return null;
-    const date = new Date(dob);
-    if (Number.isNaN(date.getTime())) return null;
-    const now = new Date();
-    if (date > now) return null;
-    const age = now.getFullYear() - date.getFullYear() - (now < new Date(now.getFullYear(), date.getMonth(), date.getDate()) ? 1 : 0);
-    if (age < 13) return "Under 13";
-    if (age <= 15) return "13-15";
-    if (age <= 17) return "16-17";
-    if (age <= 24) return "18-24";
-    if (age <= 34) return "25-34";
-    if (age <= 44) return "35-44";
-    if (age <= 54) return "45-54";
-    return "55+";
-  };
 
   const deriveAgeGroupFromDob = (dob: string | undefined): string | null => {
     if (!dob) return null;
@@ -502,6 +660,17 @@ export function UnifiedTalentProfileForm({
           return <CreditsListEditor label={field.label} value={value} onChange={(next) => setFieldValue(field.id, next)} />;
 
         default:
+          if (ALL_MEASUREMENT_FIELD_IDS.has(field.id)) {
+            return (
+              <MeasurementInput
+                fieldId={field.id}
+                value={String(value || "")}
+                unit={measurementUnit}
+                onChange={(v) => setFieldValue(field.id, v)}
+                hasError={hasError}
+              />
+            );
+          }
           return <Input value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
       }
     })();
@@ -520,8 +689,51 @@ export function UnifiedTalentProfileForm({
     const sections = sectionsByTab[tabId] || [];
     if (sections.length === 0) return null;
 
+    const isAppearanceTab = tabId === "appearance";
+
     return (
       <div className="space-y-10">
+        {/* ── Metric / Imperial toggle (Appearance tab only) ── */}
+        {isAppearanceTab && (
+          <div className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-[#009698]/20 bg-gradient-to-r from-[#009698]/5 to-[#006b6d]/5">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#009698]/10 flex items-center justify-center flex-shrink-0">
+                <Ruler className="w-4 h-4 text-[#009698]" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">Measurement System</p>
+                <p className="text-xs text-muted-foreground">Choose how you enter your physical measurements</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-white border shadow-sm flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setMeasurementUnit("metric")}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                  measurementUnit === "metric"
+                    ? "bg-[#009698] text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Metric
+                <span className="ml-1 opacity-70 font-normal">(cm / kg)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMeasurementUnit("imperial")}
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                  measurementUnit === "imperial"
+                    ? "bg-[#009698] text-white shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Imperial
+                <span className="ml-1 opacity-70 font-normal">(ft·in / lbs)</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {sections.map(({ section, fields }) => (
           <Card key={section} className="border-none shadow-none bg-transparent">
             <CardHeader className="px-0 pb-4 border-b mb-6">
@@ -530,17 +742,45 @@ export function UnifiedTalentProfileForm({
             </CardHeader>
             <CardContent className="px-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                {fields.map((field) => (
-                  <div key={field.id} className={`space-y-2 ${field.type === 'credits-list' ? 'md:col-span-2' : ''}`}>
-                    <div className="flex items-center gap-1">
-                      <label className="text-sm font-semibold text-foreground/70">{field.label}</label>
-                      {field.required && <span className="text-destructive font-bold">*</span>}
-                    </div>
-                    <div className="transition-all duration-200 focus-within:ring-2 focus-within:ring-[#009698]/20 focus-within:ring-offset-2 rounded-md">
-                      {renderField(field)}
-                    </div>
-                  </div>
-                ))}
+                {fields.reduce((acc: JSX.Element[], field, idx, arr) => {
+                  // Skip if this field was already handled as part of a group (expected_rate_range follows currency)
+                  if (field.id === 'expected_rate_range' && arr[idx-1]?.id === 'currency') return acc;
+                  
+                  const isCurrencyGroup = field.id === 'currency' && arr[idx+1]?.id === 'expected_rate_range';
+                  
+                  if (isCurrencyGroup) {
+                    acc.push(
+                      <div key="currency-rate-group" className="md:col-span-2 space-y-2">
+                        <div className="flex items-center gap-1">
+                          <label className="text-sm font-semibold text-foreground/70">Expected Rate / Fee Range</label>
+                          {(field.required || arr[idx+1].required) && <span className="text-destructive font-bold">*</span>}
+                        </div>
+                        <CombinedCurrencyRateInput 
+                          currencyValue={values.currency}
+                          rateValue={values.expected_rate_range}
+                          onCurrencyChange={(v) => setFieldValue('currency', v)}
+                          onRateChange={(v) => setFieldValue('expected_rate_range', v)}
+                          currencyOptions={getOptions(field)}
+                          rateOptions={getOptions(arr[idx+1])}
+                          errors={errors}
+                        />
+                      </div>
+                    );
+                  } else {
+                    acc.push(
+                      <div key={field.id} id={`field-${field.id}`} className={`space-y-2 ${field.type === 'credits-list' ? 'md:col-span-2' : ''}`}>
+                        <div className="flex items-center gap-1">
+                          <label className="text-sm font-semibold text-foreground/70">{field.label}</label>
+                          {field.required && <span className="text-destructive font-bold">*</span>}
+                        </div>
+                        <div className="transition-all duration-200 focus-within:ring-2 focus-within:ring-[#009698]/20 focus-within:ring-offset-2 rounded-md">
+                          {renderField(field)}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return acc;
+                }, [])}
               </div>
             </CardContent>
           </Card>
@@ -592,6 +832,9 @@ export function UnifiedTalentProfileForm({
             pendingPortfolioPhotos={pendingPortfolioPhotos || []}
             removePendingPortfolioPhoto={removePendingPortfolioPhoto!}
             handlePortfolioSelect={handlePortfolioSelect!}
+            pendingPortfolioVideos={pendingPortfolioVideos || []}
+            removePendingPortfolioVideo={removePendingPortfolioVideo!}
+            handlePortfolioVideoSelect={handlePortfolioVideoSelect!}
             pendingIntroVideo={pendingIntroVideo}
             setPendingIntroVideo={setPendingIntroVideo}
             handleIntroVideoSelect={handleIntroVideoSelect!}
@@ -638,7 +881,7 @@ export function UnifiedTalentProfileForm({
               <Card className="rounded-[2rem] border shadow-card overflow-hidden">
                 <CardContent className="p-8 md:p-12 space-y-10">
                   {tab.id === 'portfolio' && (
-                    <PortfolioMediaGallery
+              <PortfolioMediaGallery
                       profileData={rootData}
                       setProfileData={onChange}
                       pendingProfilePhoto={pendingProfilePhoto}
@@ -646,6 +889,9 @@ export function UnifiedTalentProfileForm({
                       pendingPortfolioPhotos={pendingPortfolioPhotos || []}
                       removePendingPortfolioPhoto={removePendingPortfolioPhoto!}
                       handlePortfolioSelect={handlePortfolioSelect!}
+                      pendingPortfolioVideos={pendingPortfolioVideos || []}
+                      removePendingPortfolioVideo={removePendingPortfolioVideo!}
+                      handlePortfolioVideoSelect={handlePortfolioVideoSelect!}
                       pendingIntroVideo={pendingIntroVideo}
                       setPendingIntroVideo={setPendingIntroVideo}
                       handleIntroVideoSelect={handleIntroVideoSelect!}

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ export default function Profile() {
 
   const [pendingProfilePhoto, setPendingProfilePhoto] = useState<{ file: File; preview: string } | null>(null);
   const [pendingPortfolioPhotos, setPendingPortfolioPhotos] = useState<{ file: File; preview: string }[]>([]);
+  const [pendingPortfolioVideos, setPendingPortfolioVideos] = useState<{ file: File; preview: string; name: string }[]>([]);
   const [pendingIntroVideo, setPendingIntroVideo] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("basic");
 
@@ -98,6 +100,26 @@ export default function Profile() {
     setPendingIntroVideo(e.target.files[0]);
   };
 
+  const handlePortfolioVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    const newVideos = files.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      name: file.name,
+    }));
+    setPendingPortfolioVideos((prev) => [...prev, ...newVideos]);
+  };
+
+  const removePendingPortfolioVideo = (index: number) => {
+    setPendingPortfolioVideos((prev) => {
+      const next = [...prev];
+      URL.revokeObjectURL(next[index].preview);
+      next.splice(index, 1);
+      return next;
+    });
+  };
+
   const handleSave = async (skipValidation: boolean = false) => {
     if (!profileData) return;
     setIsSaving(true);
@@ -160,6 +182,34 @@ export default function Profile() {
           toast.error(e?.response?.data?.message || "Failed to upload introduction video");
           setIsSaving(false);
           return;
+        }
+      }
+
+      if (pendingPortfolioVideos.length > 0) {
+        try {
+          const uploadedUrls: string[] = [];
+          await Promise.all(
+            pendingPortfolioVideos.map(async ({ file }) => {
+              const formData = new FormData();
+              formData.append("showreel", file);
+              const res = await profileAPI.uploadShowreel(formData);
+              const url = res.data?.data?.url || res.data?.data?.showreelUrl || res.data?.data?.showreel;
+              if (url) uploadedUrls.push(url);
+            })
+          );
+          setPendingPortfolioVideos([]);
+          if (uploadedUrls.length > 0) {
+            setProfileData((prev: any) => ({
+              ...prev,
+              talent: {
+                ...(prev?.talent || {}),
+                portfolioVideos: [...(prev?.talent?.portfolioVideos || []), ...uploadedUrls.map((url) => ({ url }))],
+              },
+            }));
+          }
+        } catch (e: any) {
+          console.error("Portfolio video upload error:", e);
+          toast.error("Failed to upload one or more portfolio videos");
         }
       }
 
@@ -281,7 +331,7 @@ export default function Profile() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 min-w-[160px]">
+          <div className="flex flex-col gap-3 min-w-[200px]">
             <Button
               size="lg"
               className="w-full bg-white text-[#009698] hover:bg-gray-100 font-bold shadow-lg transition-all duration-300 hover:-translate-y-1"
@@ -294,6 +344,17 @@ export default function Profile() {
                 <Upload className="w-5 h-5 mr-2" />
               )}
               Save Changes
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md font-bold"
+              asChild
+            >
+              <Link to={`/talent/${profileData?._id || profileData?.id}`}>
+                <Monitor className="w-5 h-5 mr-2" />
+                View Public Profile
+              </Link>
             </Button>
             <p className="text-[10px] text-center text-white/60">Last saved: {new Date().toLocaleTimeString()}</p>
           </div>
@@ -313,6 +374,9 @@ export default function Profile() {
         pendingPortfolioPhotos={pendingPortfolioPhotos}
         removePendingPortfolioPhoto={removePendingPortfolioPhoto}
         handlePortfolioSelect={handlePortfolioSelect}
+        pendingPortfolioVideos={pendingPortfolioVideos}
+        removePendingPortfolioVideo={removePendingPortfolioVideo}
+        handlePortfolioVideoSelect={handlePortfolioVideoSelect}
         pendingIntroVideo={pendingIntroVideo}
         setPendingIntroVideo={setPendingIntroVideo}
         handleIntroVideoSelect={handleIntroVideoSelect}

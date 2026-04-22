@@ -15,6 +15,7 @@ import {
 } from "@/lib/unifiedCastingDirectorProfile/fieldSpec";
 import { getCastingDirectorReferenceOptions } from "@/lib/unifiedCastingDirectorProfile/referenceTables";
 import { MultiSelectChecklist } from "./fields/MultiSelectChecklist";
+import { CombinedCurrencyRateInput } from "./fields/CombinedCurrencyRateInput";
 
 type CastingProfileTab = "overview" | "hiring" | "projects" | "roles" | "audition" | "commercial" | "navigation";
 
@@ -176,17 +177,47 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
             <CardTitle className="text-lg">{section}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {fields.map((field) => (
-              <div key={field.id} className="space-y-2">
-                {field.type !== "boolean" && (
-                  <div className="flex items-center gap-1">
-                    <label className="text-sm font-medium">{field.label}</label>
-                    {field.required && <span className="text-destructive font-bold">*</span>}
-                  </div>
-                )}
-                {renderField(field)}
-              </div>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              {fields.reduce((acc: JSX.Element[], field, idx, arr) => {
+                // Skip if this field was already handled as part of a group
+                if (field.id === 'currency' && arr[idx-1]?.id === 'payment_amount') return acc;
+                
+                const isPriceGroup = field.id === 'payment_amount' && arr[idx+1]?.id === 'currency';
+                
+                if (isPriceGroup) {
+                  acc.push(
+                    <div key="price-currency-group" className="md:col-span-2 space-y-2">
+                      <div className="flex items-center gap-1">
+                        <label className="text-sm font-medium">Payment Amount & Currency</label>
+                        {(field.required || arr[idx+1].required) && <span className="text-destructive font-bold">*</span>}
+                      </div>
+                      <CombinedCurrencyRateInput 
+                        currencyValue={values.currency}
+                        rateValue={values.payment_amount}
+                        onCurrencyChange={(v) => setFieldValue('currency', v)}
+                        onRateChange={(v) => setFieldValue('payment_amount', v)}
+                        currencyOptions={optionsFor(arr[idx+1])}
+                        rateOptions={[]} 
+                        errors={{}}
+                      />
+                    </div>
+                  );
+                } else {
+                  acc.push(
+                    <div key={field.id} className={`space-y-2 ${field.type === 'textarea' || field.type === 'multi-select' ? 'md:col-span-2' : ''}`}>
+                      {field.type !== "boolean" && (
+                        <div className="flex items-center gap-1">
+                          <label className="text-sm font-medium">{field.label}</label>
+                          {field.required && <span className="text-destructive font-bold">*</span>}
+                        </div>
+                      )}
+                      {renderField(field)}
+                    </div>
+                  );
+                }
+                return acc;
+              }, [])}
+            </div>
           </CardContent>
         </Card>
       ))}

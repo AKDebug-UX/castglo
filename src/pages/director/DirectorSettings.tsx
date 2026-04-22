@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Loader2, Upload, KeyRound } from "lucide-react";
+import { Camera, Loader2, Upload, KeyRound, Eye } from "lucide-react";
 import { profileAPI, userAPI, authAPI, subscriptionAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { getAvatarUrl, getInitials } from "@/lib/utils";
@@ -23,6 +24,18 @@ export default function DirectorSettings() {
   const [pendingProfilePhoto, setPendingProfilePhoto] = useState<{ file: File; preview: string } | null>(null);
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+
+  const completionPercentage = useMemo(() => {
+    if (!profileData) return 0;
+    const unified = profileData.unifiedCastingDirectorProfile || {};
+    const coreFields = [
+      'full_name', 'email', 'phone_number', 'city', 'country',
+      'short_bio', 'primary_account_type'
+    ];
+    const filled = coreFields.filter(f => unified[f] || profileData[f]).length;
+    const hasPhoto = !!(profileData.profilePicture || profileData.headshots?.length);
+    return Math.round(((filled + (hasPhoto ? 1 : 0)) / (coreFields.length + 1)) * 100);
+  }, [profileData]);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -146,44 +159,98 @@ export default function DirectorSettings() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Casting Director / Agency Profile</h1>
-          <p className="text-muted-foreground">Manage identity, hiring tools, casting workflow, and commercial settings.</p>
-        </div>
-        <Button onClick={handleSave} disabled={isSaving}>
-          {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          Save Changes
-        </Button>
-      </div>
+    <div className="space-y-8 animate-fade-in pb-20">
+      {/* Premium Hero Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#009698] to-[#006b6d] p-8 text-white shadow-xl">
+        <div className="absolute top-0 right-0 -m-12 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute bottom-0 left-0 -m-12 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={pendingProfilePhoto?.preview || profileData?.profilePicture || getAvatarUrl(profileData?.fullName)} />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">{getInitials(profileData?.fullName)}</AvatarFallback>
-              </Avatar>
-              <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-secondary flex items-center justify-center cursor-pointer shadow-sm hover:bg-secondary/80">
-                <Camera className="h-3.5 w-3.5" />
-                <input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={handleProfilePhotoSelect} disabled={isSaving} />
-              </label>
-            </div>
+        <div className="relative flex flex-col md:flex-row items-center gap-8">
+          <div className="relative group">
+            <Avatar className="h-32 w-32 border-4 border-white/20 shadow-2xl transition-transform duration-500 group-hover:scale-105">
+              <AvatarImage
+                src={
+                  pendingProfilePhoto?.preview ||
+                  profileData?.profilePicture ||
+                  getAvatarUrl(profileData?.fullName)
+                }
+                className="object-cover"
+              />
+              <AvatarFallback className="bg-white/20 text-white font-bold text-3xl backdrop-blur-md">
+                {getInitials(profileData?.fullName)}
+              </AvatarFallback>
+            </Avatar>
+            <label
+              htmlFor="profile-photo-upload"
+              className="absolute bottom-1 right-1 h-10 w-10 rounded-full bg-white text-[#009698] flex items-center justify-center cursor-pointer shadow-lg hover:bg-gray-100 transition-all duration-300 hover:scale-110"
+            >
+              <Camera className="h-5 h-5" />
+              <input
+                id="profile-photo-upload"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleProfilePhotoSelect}
+                disabled={isSaving}
+              />
+            </label>
+          </div>
+
+          <div className="flex-1 text-center md:text-left space-y-4">
             <div className="space-y-1">
-              <Button variant="outline" size="sm" asChild disabled={isSaving}>
-                <label htmlFor="avatar-upload" className="cursor-pointer">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Select New Logo
-                </label>
-              </Button>
-              <p className="text-[10px] text-muted-foreground">JPG/PNG/WEBP.</p>
-              {profileData?.isVerified && <Badge className="bg-green-600">Verified</Badge>}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                <h1 className="text-3xl font-bold tracking-tight">{profileData?.fullName || "Director Profile"}</h1>
+                {profileData?.isVerified && (
+                  <Badge className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-md px-3 py-1">
+                    Verified Director
+                  </Badge>
+                )}
+              </div>
+              <p className="text-[#e0f1f1] text-lg opacity-90">{profileData?.unifiedCastingDirectorProfile?.professional_title || "Casting Director / Agency"}</p>
+            </div>
+
+            <div className="space-y-2 max-w-md mx-auto md:mx-0">
+              <div className="flex justify-between text-sm font-medium">
+                <span>Profile Completion</span>
+                <span>{completionPercentage}%</span>
+              </div>
+              <div className="h-2 w-full bg-black/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white transition-all duration-1000 ease-out"
+                  style={{ width: `${completionPercentage}%` }}
+                />
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <div className="flex flex-col gap-3 min-w-[200px]">
+            <Button
+              size="lg"
+              className="w-full bg-white text-[#009698] hover:bg-gray-100 font-bold shadow-lg transition-all duration-300 hover:-translate-y-1"
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Upload className="w-5 h-5 mr-2" />
+              )}
+              Save Changes
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md font-bold"
+              asChild
+            >
+              <Link to={`/professional/${profileData?._id || profileData?.id}`}>
+                <Eye className="w-5 h-5 mr-2" />
+                View Public Profile
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto pb-2">
