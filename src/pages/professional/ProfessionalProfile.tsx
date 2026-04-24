@@ -171,26 +171,46 @@ export default function ProfessionalProfile() {
         setPendingPortfolioPhotos([]);
       }
 
-      const userUpdate = userAPI.updateProfile({
+      // 1. Update Core User Information
+      await userAPI.updateProfile({
         fullName: unifiedPayload.full_name,
         phoneNumber: unifiedPayload.phone_number,
         bio: unifiedPayload.short_bio,
         location: [unifiedPayload.city, unifiedPayload.country].filter(Boolean).join(", "),
-        companyName: unifiedPayload.business_name,
-        unifiedProfessionalProfile: unifiedPayload,
+        organisationType: unifiedPayload.business_name ? "Business" : "Individual",
+        jobTitle: unifiedPayload.professional_title,
       });
 
-      const profileUpdate = profileAPI.updateMe({
-        bio: unifiedPayload.full_bio || unifiedPayload.short_bio,
-        location: [unifiedPayload.city, unifiedPayload.country].filter(Boolean).join(", "),
-        website: unifiedPayload.portfolio_website,
-        instagram: unifiedPayload.instagram_url,
-        professionalCategory: unifiedPayload.primary_professional_type,
-        professionalRoles: [unifiedPayload.primary_professional_type, ...(unifiedPayload.additional_professional_types || [])].filter(Boolean),
-        unifiedProfessionalProfile: unifiedPayload,
+      // 2. Update Specialized Professional Information
+      await profileAPI.updateProfessional({
+        businessName: unifiedPayload.business_name,
+        primaryProfessionalType: unifiedPayload.primary_professional_type,
+        additionalTypes: unifiedPayload.additional_professional_types || [],
+        yearsOfExperience: unifiedPayload.years_of_experience,
+        experienceLevel: unifiedPayload.experience_level,
+        servesClientTypes: unifiedPayload.serves_client_types || [],
+        industryAreas: unifiedPayload.industry_areas || [],
+        
+        // Skills & Tools
+        softwareTools: unifiedPayload.software_tools || [],
+        equipmentOwned: unifiedPayload.equipment_owned,
+        
+        // Trust & Verification
+        insured: unifiedPayload.insurance_available === "Yes",
+        dbsChecked: unifiedPayload.dbs_checked === "Yes",
+        certifications: unifiedPayload.certifications,
+        awards: unifiedPayload.awards_recognition,
+        
+        // Booking & Terms
+        bookingMethod: unifiedPayload.booking_method,
+        preferredContactMethod: unifiedPayload.preferred_contact_method,
+        depositRequired: unifiedPayload.deposit_required === "Yes",
+        depositPercentage: unifiedPayload.deposit_percentage,
+        paymentMethods: unifiedPayload.payment_methods || [],
+        
+        // Services (If applicable - maps to the array structure)
+        services: unifiedPayload.services || []
       });
-
-      await Promise.all([userUpdate, profileUpdate]);
       await refreshUser();
       await fetchProfile();
       toast.success("Professional profile updated successfully");

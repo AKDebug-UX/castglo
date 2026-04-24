@@ -135,10 +135,8 @@ export default function Profile() {
       const profileFormData = new FormData();
       profileFormData.append("profilePicture", pendingProfilePhoto.file);
       
-      await Promise.all([
-        profileAPI.addHeadshot(formData),
-        userAPI.updateProfilePicture(profileFormData)
-      ]);
+      await profileAPI.addHeadshot(formData);
+      await userAPI.updateProfilePicture(profileFormData);
       
       setPendingProfilePhoto(null);
       await refreshUser();
@@ -184,10 +182,8 @@ export default function Profile() {
         const profileFormData = new FormData();
         profileFormData.append("profilePicture", pendingProfilePhoto.file);
         
-        await Promise.all([
-          profileAPI.addHeadshot(formData),
-          userAPI.updateProfilePicture(profileFormData)
-        ]);
+        await profileAPI.addHeadshot(formData);
+        await userAPI.updateProfilePicture(profileFormData);
         setPendingProfilePhoto(null);
       }
 
@@ -252,23 +248,70 @@ export default function Profile() {
         }
       }
 
-      await Promise.all([
-        userAPI.updateProfile({
-          fullName: unifiedPayload.full_name || profileData.fullName,
-          stageName: unifiedPayload.display_name || profileData.stageName,
-          bio: unifiedPayload.short_bio || profileData.bio,
-          location: unifiedPayload.current_city
-            ? `${unifiedPayload.current_city}${unifiedPayload.current_country ? ", " + unifiedPayload.current_country : ""}`
-            : profileData.location,
-          phoneNumber: unifiedPayload.phone_number || profileData.phone,
-          address: unifiedPayload.address || profileData.address,
-          unifiedTalentProfile: unifiedPayload,
-        }),
-        profileAPI.updateMe({
-          bio: unifiedPayload.short_bio || profileData.bio,
-          unifiedTalentProfile: unifiedPayload,
-        }),
-      ]);
+      // 1. Update Core User Information
+      await userAPI.updateProfile({
+        fullName: unifiedPayload.full_name || profileData.fullName,
+        stageName: unifiedPayload.display_name || profileData.stageName,
+        bio: unifiedPayload.short_bio || profileData.bio,
+        location: unifiedPayload.current_city
+          ? `${unifiedPayload.current_city}${unifiedPayload.current_country ? ", " + unifiedPayload.current_country : ""}`
+          : profileData.location,
+        phoneNumber: unifiedPayload.phone_number || profileData.phone,
+        address: unifiedPayload.address || profileData.address,
+        // Only send core info here, role-specific data goes to the specialized endpoint
+      });
+
+      // 2. Update Role-Specific Talent Information (Deeply nested as per Swagger)
+      await profileAPI.updateTalent({
+        displayName: unifiedPayload.display_name,
+        dateOfBirth: unifiedPayload.date_of_birth,
+        ageGroup: unifiedPayload.age_group,
+        nationality: unifiedPayload.nationality,
+        shortBio: unifiedPayload.short_bio,
+        fullBio: unifiedPayload.full_bio,
+        careerGoals: unifiedPayload.career_goals,
+        
+        // Nested sub-profiles
+        actorProfile: {
+          performanceCategory: unifiedPayload.actor_performance_category,
+          training: unifiedPayload.actor_training,
+          techniques: unifiedPayload.actor_techniques,
+          accents: unifiedPayload.actor_accents,
+          specialSkills: unifiedPayload.actor_special_skills,
+          notableCredits: unifiedPayload.actor_notable_credits,
+        },
+        singerProfile: {
+          category: unifiedPayload.singer_category,
+          genres: unifiedPayload.singer_genres,
+          vocalRange: unifiedPayload.singer_vocal_range,
+          instruments: unifiedPayload.singer_instruments,
+        },
+        
+        // Physical Appearance
+        physicalAppearance: {
+          height: unifiedPayload.height,
+          build: unifiedPayload.build,
+          eyeColor: unifiedPayload.eye_colour,
+          hairColor: unifiedPayload.hair_colour,
+          hairLength: unifiedPayload.hair_length,
+          ethnicity: unifiedPayload.ethnicity_visible,
+          distinguishingFeatures: unifiedPayload.distinguishing_features,
+          tattoos: !!unifiedPayload.visible_tattoos_piercings,
+        },
+        
+        // Emergency & Guardian
+        emergencyContact: {
+          fullName: unifiedPayload.emergency_full_name,
+          relationship: unifiedPayload.emergency_relationship,
+          phoneNumber: unifiedPayload.emergency_phone,
+        },
+        guardianConsent: {
+          fullName: unifiedPayload.guardian_full_name,
+          relationship: unifiedPayload.guardian_relationship,
+          email: unifiedPayload.guardian_email,
+          phoneNumber: unifiedPayload.guardian_phone,
+        }
+      });
 
       await refreshUser();
       await fetchProfileData();

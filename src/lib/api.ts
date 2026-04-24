@@ -127,6 +127,9 @@ export const API_ENDPOINTS = {
     CREATE: '/profiles',
     ME: '/profiles/me',
     UPDATE_ME: '/profiles/me',
+    UPDATE_TALENT: '/profiles/me/talent-type',
+    UPDATE_PROFESSIONAL: '/profiles/me/professional',
+    UPDATE_CASTING: '/casting/profile/me',
     ADD_HEADSHOT: '/profiles/me/headshots',
     DELETE_HEADSHOT: (headshotId: string) => `/profiles/me/headshots/${headshotId}`,
     UPLOAD_SHOWREEL: '/profiles/me/showreel',
@@ -283,6 +286,9 @@ export const profileAPI = {
   create: (data) => api.post(API_ENDPOINTS.PROFILES.CREATE, data),
   getMe: () => api.get(API_ENDPOINTS.PROFILES.ME),
   updateMe: (data) => api.patch(API_ENDPOINTS.PROFILES.UPDATE_ME, data),
+  updateTalent: (data) => api.patch(API_ENDPOINTS.PROFILES.UPDATE_TALENT, data),
+  updateProfessional: (data) => api.patch(API_ENDPOINTS.PROFILES.UPDATE_PROFESSIONAL, data),
+  updateCasting: (data) => api.patch(API_ENDPOINTS.PROFILES.UPDATE_CASTING, data),
   addHeadshot: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.ADD_HEADSHOT, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
