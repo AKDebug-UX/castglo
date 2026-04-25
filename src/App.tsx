@@ -69,6 +69,7 @@ const DirectorRoles = lazy(() => import("./pages/director/DirectorRoles"));
 const MatchedTalent = lazy(() => import("./pages/director/MatchedTalent"));
 const Collaborators = lazy(() => import("./pages/director/Collaborators"));
 const DirectorBilling = lazy(() => import("./pages/director/DirectorBilling"));
+const DirectorProfile = lazy(() => import("./pages/director/DirectorProfile"));
 
 // Admin Dashboard
 const AdminLayout = lazy(() => import("./components/dashboard/AdminLayout").then(m => ({ default: m.AdminLayout })));
@@ -191,6 +192,7 @@ const App = () => (
                 }
               >
                 <Route index element={<DirectorDashboard />} />
+                <Route path="profile" element={<DirectorProfile />} />
                 <Route path="settings" element={<DirectorSettings />} />
                 <Route path="projects" element={<MyProjects />} />
                 <Route path="projects/:id/edit" element={<CreateCasting />} />

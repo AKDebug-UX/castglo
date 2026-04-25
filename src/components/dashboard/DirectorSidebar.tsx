@@ -10,13 +10,16 @@ import {
   Sparkles,
   Handshake,
   CreditCard,
-  UserCircle
+  UserCircle,
+  Briefcase,
+  User
 } from "lucide-react";
 
 const navItems = [
   { title: "Dashboard", href: "/director", Icon: LayoutDashboard },
+  { title: "Profile", href: "/director/profile", Icon: UserCircle },
   { title: "Projects", href: "/director/projects", Icon: FolderOpen },
-  { title: "Roles", href: "/director/roles", Icon: UserCircle },
+  { title: "Roles", href: "/director/roles", Icon: Briefcase },
   { title: "Applicants", href: "/director/applicants", Icon: Users },
   { title: "Matched", href: "/director/matched", Icon: Sparkles },
   { title: "Messages", href: "/director/messages", Icon: MessageSquare },

@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { Menu, Bell, Settings, LogOut } from "lucide-react";
+import { Menu, Bell, Settings, LogOut, UserCircle } from "lucide-react";
 import userAvatar from "@/assets/user-avatar.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { notificationAPI } from "@/lib/api";
@@ -74,7 +74,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       case "admin":
         return "/admin/settings";
       case "casting_director":
-        return "/director/settings";
+        return "/director/profile";
       case "industry_professional":
         return "/professional/settings";
       case "talent":
@@ -161,6 +161,12 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
              <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to={getProfilePath()} className="cursor-pointer">
+                <UserCircle className="w-4 h-4 mr-2" />
+                Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to={user?.role === 'casting_director' ? '/director/settings' : user?.role === 'talent' ? '/talent/account-settings' : '/settings'} className="cursor-pointer">
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </Link>
