@@ -47,13 +47,13 @@ export function CombinedCurrencyRateInput({
                 {rateValue ? (
                   rateValue === "Open to discussion" || rateValue === "Other" 
                     ? rateValue 
-                    : `${currencyValue.match(/\((.+)\)/)?.[1] || ""}${rateValue.replace(/(\d+)/g, `${currencyValue.match(/\((.+)\)/)?.[1] || ""}$1`)}`
+                    : rateValue.replace(/(\d+)/g, `${(currencyValue || "").match(/\((.+)\)/)?.[1] || ""}$1`)
                 ) : "Select Expected Rate / Fee Range"}
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {rateOptions.map((opt) => {
-                const symbol = currencyValue.match(/\((.+)\)/)?.[1] || "";
+                const symbol = (currencyValue || "").match(/\((.+)\)/)?.[1] || "";
                 let display = opt;
                 if (opt !== "Open to discussion" && opt !== "Other") {
                   // Prepend symbol to numbers

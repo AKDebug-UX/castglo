@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { detectCountry } from "@/lib/locationUtils";
+import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Save } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +50,7 @@ export function UnifiedProfessionalProfileForm({
   activeTab,
   showTabs = false,
 }: UnifiedProfessionalProfileFormProps) {
+  const { user } = useAuth();
   const unified = rootData?.unifiedProfessionalProfile || {};
   const values = { ...rootData, ...unified };
   
@@ -61,7 +63,9 @@ export function UnifiedProfessionalProfileForm({
       updates.phone_number = "+44";
     }
     if (!values.currency) {
-      updates.currency = "GBP (£)";
+      updates.currency = user?.preferredCurrency === "NGN" ? "NGN (₦)" : 
+                        user?.preferredCurrency === "USD" ? "USD ($)" :
+                        user?.preferredCurrency === "EUR" ? "EUR (€)" : "GBP (£)";
     }
     
     if (Object.keys(updates).length > 0) {

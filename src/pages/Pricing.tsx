@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 export default function Pricing() {
-  const { user } = useAuth();
+  const { user, formatPrice } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const categoryParam = searchParams.get("category");
@@ -197,7 +197,7 @@ export default function Pricing() {
                           </div>
                           <div className="flex items-baseline gap-1">
                             <span className="text-4xl font-black">
-                              {plan.pricing[billingCycle] === 0 ? "Free" : `£${plan.pricing[billingCycle]}`}
+                              {plan.pricing[billingCycle] === 0 ? "Free" : formatPrice(plan.pricing[billingCycle])}
                             </span>
                             {plan.pricing[billingCycle] !== 0 && (
                               <span className="text-muted-foreground font-medium">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>

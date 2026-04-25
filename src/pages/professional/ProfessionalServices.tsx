@@ -39,7 +39,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function ProfessionalServices() {
-  const { user } = useAuth();
+  const { user, formatPrice } = useAuth();
   const [services, setServices] = useState([]);
   const [stats, setStats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,7 +75,7 @@ export default function ProfessionalServices() {
         setStats([
           { label: "Active Services", value: s.activeServices || "0", change: "Services listed", icon: Briefcase },
           { label: "Total Bookings", value: s.totalBookings || "0", change: "All time", icon: Calendar },
-          { label: "Avg. Price", value: `$${s.averagePrice || "0"}`, change: "Per service", icon: DollarSign },
+          { label: "Avg. Price", value: formatPrice(s.averagePrice || 0), change: "Per service", icon: DollarSign },
           { label: "Completed Bookings", value: `${s.completedBookings || "0"}`, change: "All time", icon: TrendingUp },
         ]);
       }
@@ -272,7 +272,7 @@ export default function ProfessionalServices() {
                         {formData.pricing_model === 'quote' ? 'Currency Preference' : 'Price'}
                       </Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">£</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">{formatPrice(0).replace(/[0-9.]/g, '')}</span>
                         <Input 
                           placeholder={formData.pricing_model === 'quote' ? 'GBP' : '0.00'}
                           type={formData.pricing_model === 'quote' ? 'text' : 'number'}
@@ -457,7 +457,7 @@ export default function ProfessionalServices() {
 
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                       <div>
-                        <p className="text-2xl font-black text-slate-900">£{service.price}</p>
+                        <p className="text-2xl font-black text-slate-900">{formatPrice(service.price)}</p>
                         <p className="text-xs font-bold text-slate-400 flex items-center gap-1 uppercase tracking-wider mt-0.5">
                           <Clock className="w-3 h-3" />
                           {service.duration || 'Flexible'}

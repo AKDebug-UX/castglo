@@ -81,3 +81,12 @@ export function formatBudget(budget: any) {
   
   return "Competitive Pay";
 }
+
+/**
+ * Checks if a string value represents a "None" selection in a list.
+ */
+export function isNoneOption(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.toLowerCase().trim();
+  return normalized === "none" || normalized === "n/a" || normalized === "none of the above";
+}

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, ShieldCheck, Upload, CreditCard, Bell, KeyRound, UserMinus, History } from "lucide-react";
 import { authAPI, profileAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 type SettingsTab =
   | "overview"
@@ -29,6 +30,7 @@ export default function AccountSettings() {
   }, [location.search]);
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("overview");
+  const { updatePreferredCurrency, formatPrice } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -215,6 +217,45 @@ export default function AccountSettings() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>App Preferences</CardTitle>
+              <p className="text-sm text-muted-foreground">Customize your experience across the platform</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Preferred Currency</p>
+                  <p className="text-xs text-muted-foreground">Used for all prices and rates across the app</p>
+                </div>
+                <Select
+                  value={user?.preferredCurrency || "GBP"}
+                  onValueChange={async (v) => {
+                    setIsSaving(true);
+                    const res = await updatePreferredCurrency(v);
+                    if (res.error) {
+                      toast.error(res.error);
+                    } else {
+                      toast.success("Currency preference updated");
+                    }
+                    setIsSaving(false);
+                  }}
+                  disabled={isSaving}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                    <SelectItem value="NGN">NGN (₦)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="security" className="mt-6 space-y-6">
@@ -315,7 +356,7 @@ export default function AccountSettings() {
                 </div>
                 <div className="p-4 rounded-lg border bg-white">
                   <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Price</p>
-                  <p className="font-medium">{subscriptionInfo?.plan?.price ? `£${subscriptionInfo.plan.price}/mo` : "£0"}</p>
+                  <p className="font-medium">{subscriptionInfo?.plan?.price ? `${formatPrice(subscriptionInfo.plan.price)}/mo` : formatPrice(0)}</p>
                 </div>
               </div>
             </CardContent>

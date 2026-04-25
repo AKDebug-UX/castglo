@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { CombinedCurrencyRateInput } from "./fields/CombinedCurrencyRateInput";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { useAuth } from "@/contexts/AuthContext";
 import { CreditsListEditor } from "./fields/CreditsListEditor";
 import { PortfolioMediaGallery } from "./fields/PortfolioMediaGallery";
 import { MultiSelectChecklist } from "./fields/MultiSelectChecklist";
@@ -47,9 +48,23 @@ interface UnifiedTalentProfileFormProps {
 
 const sectionOrder = [
   "Basic Profile",
+  "Talent Type",
+  "Actor Details",
+  "Model Details",
+  "Model Measurements",
+  "Model Preferences",
+  "Singer Details",
+  "Dancer Details",
+  "Voice Artist Details",
+  "Presenter Details",
+  "Extra Details",
+  "Musician Details",
+  "Creator Details",
+  "Comedian Details",
+  "Stunt Details",
   "Account / Contact",
   "Contact",
-  "Talent Type",
+  "Emergency Contact",
   "Professional Overview",
   "Representation",
   "Booking Preferences",
@@ -61,8 +76,6 @@ const sectionOrder = [
   "Actor Profile",
   "Actor Media",
   "Model Profile",
-  "Model Measurements",
-  "Model Preferences",
   "Model Media",
   "Singer Profile",
   "Singer Media",
@@ -295,6 +308,7 @@ export function UnifiedTalentProfileForm({
   setPendingIntroVideo,
   handleIntroVideoSelect
 }: UnifiedTalentProfileFormProps) {
+  const { user } = useAuth();
   const [internalActiveTab, setInternalActiveTab] = useState("basic");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>("metric");
@@ -339,7 +353,9 @@ export function UnifiedTalentProfileForm({
     }
 
     if (!values.currency) {
-      updates.currency = "GBP (£)";
+      updates.currency = user?.preferredCurrency === "NGN" ? "NGN (₦)" : 
+                        user?.preferredCurrency === "USD" ? "USD ($)" :
+                        user?.preferredCurrency === "EUR" ? "EUR (€)" : "GBP (£)";
     }
 
     const derivedAgeGroup = deriveAgeGroupFromDob(values.date_of_birth);
@@ -362,7 +378,7 @@ export function UnifiedTalentProfileForm({
     {
       id: "basic",
       label: "Basic Profile",
-      sections: ["Basic Profile", "About You", "Availability", "Contact", "Guardian Consent"]
+      sections: ["Basic Profile", "About You", "Availability", "Contact", "Account / Contact", "Emergency Contact", "Guardian Consent"]
     },
     {
       id: "professional",
@@ -768,7 +784,12 @@ export function UnifiedTalentProfileForm({
                     );
                   } else {
                     acc.push(
-                      <div key={field.id} id={`field-${field.id}`} className={`space-y-2 ${field.type === 'credits-list' ? 'md:col-span-2' : ''}`}>
+                      <div 
+                        key={field.id} 
+                        id={`field-${field.id}`} 
+                        data-testid={`field-${field.id}`}
+                        className={`space-y-2 ${field.type === 'credits-list' ? 'md:col-span-2' : ''}`}
+                      >
                         <div className="flex items-center gap-1">
                           <label className="text-sm font-semibold text-foreground/70">{field.label}</label>
                           {field.required && <span className="text-destructive font-bold">*</span>}

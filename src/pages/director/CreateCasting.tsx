@@ -49,8 +49,10 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ArrowLeft, ChevronRight, HelpCircle, Rocket, X, Loader2, Trash2, Plus, Video, Image as ImageIcon, Zap, Star, FastForward } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CreateCasting() {
+  const { formatPrice } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
@@ -634,7 +636,7 @@ export default function CreateCasting() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-lg">£29.99</span>
+                    <span className="font-bold text-lg">{formatPrice(29.99)}</span>
                     <Checkbox className="ml-2 mt-1 hidden" checked={formData.featuredPosting} readOnly />
                   </div>
                 </div>
@@ -650,7 +652,7 @@ export default function CreateCasting() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-lg">£14.99</span>
+                    <span className="font-bold text-lg">{formatPrice(14.99)}</span>
                     <Checkbox className="ml-2 mt-1 hidden" checked={formData.urgentHiringBadge} readOnly />
                   </div>
                 </div>
@@ -669,7 +671,7 @@ export default function CreateCasting() {
                   <div className="mt-4 p-4 bg-slate-50 rounded-lg border flex justify-between items-center">
                      <span className="font-bold">Total Add-ons Cost:</span>
                      <span className="font-bold text-lg">
-                        £{((formData.featuredPosting ? 29.99 : 0) + (formData.urgentHiringBadge ? 14.99 : 0)).toFixed(2)}
+                        {formatPrice((formData.featuredPosting ? 29.99 : 0) + (formData.urgentHiringBadge ? 14.99 : 0))}
                      </span>
                   </div>
                 ) : null}

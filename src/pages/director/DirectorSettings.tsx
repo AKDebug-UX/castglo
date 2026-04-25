@@ -15,8 +15,10 @@ import { UnifiedCastingDirectorProfileForm } from "@/components/profile/UnifiedC
 import { UNIFIED_CASTING_DIRECTOR_FIELD_IDS } from "@/lib/unifiedCastingDirectorProfile/fieldSpec";
 import { validateUnifiedCastingDirectorProfile } from "@/lib/unifiedCastingDirectorProfile/validation";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 export default function DirectorSettings() {
-  const { refreshUser } = useAuth();
+  const { refreshUser, user, updatePreferredCurrency } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -143,25 +145,36 @@ export default function DirectorSettings() {
         setPendingProfilePhoto(null);
       }
 
-      const userUpdate = userAPI.updateProfile({
+      // 1. Update Core User Information
+      await userAPI.updateProfile({
         fullName: unifiedPayload.full_name || profileData?.fullName,
         phoneNumber: unifiedPayload.phone_number || profileData?.phoneNumber,
         bio: unifiedPayload.short_bio || profileData?.bio,
         location: [unifiedPayload.city, unifiedPayload.country].filter(Boolean).join(", "),
-        companyName: unifiedPayload.company_name || profileData?.companyName,
-        unifiedCastingDirectorProfile: unifiedPayload,
+        organisationType: "Casting Agency",
+        jobTitle: unifiedPayload.professional_title,
       });
 
-      const profileUpdate = profileAPI.updateMe({
-        bio: unifiedPayload.full_about || unifiedPayload.short_bio,
-        location: [unifiedPayload.city, unifiedPayload.country].filter(Boolean).join(", "),
-        website: unifiedPayload.website,
-        professionalCategory: unifiedPayload.primary_account_type,
-        professionalRoles: [unifiedPayload.primary_account_type, ...(unifiedPayload.additional_account_types || [])].filter(Boolean),
-        unifiedCastingDirectorProfile: unifiedPayload,
+      // 2. Update Specialized Casting Profile Information
+      await profileAPI.updateCasting({
+        displayName: unifiedPayload.display_name,
+        companyName: unifiedPayload.company_name,
+        professionalTitle: unifiedPayload.professional_title,
+        shortBio: unifiedPayload.short_bio,
+        fullAbout: unifiedPayload.full_about,
+        city: unifiedPayload.city,
+        country: unifiedPayload.country,
+        primaryAccountType: unifiedPayload.primary_account_type,
+        additionalAccountTypes: unifiedPayload.additional_account_types || [],
+        industryAreas: unifiedPayload.industry_areas || [],
+        
+        // Tool Settings
+        applicantStatuses: unifiedPayload.applicant_statuses || [],
+        matchEngineEnabled: unifiedPayload.match_engine_enabled === "Yes",
+        enableManageApplicants: unifiedPayload.enable_manage_applicants === "Yes",
+        folderTypes: unifiedPayload.folder_types || [],
+        notesPolicy: unifiedPayload.notes_policy
       });
-
-      await Promise.all([userUpdate, profileUpdate]);
       await refreshUser();
       await fetchProfileData();
       toast.success("Casting profile updated successfully");
@@ -324,7 +337,47 @@ export default function DirectorSettings() {
         </div>
 
         {(["overview", "hiring", "projects", "roles", "audition", "commercial", "navigation"] as const).map((tab) => (
-          <TabsContent key={tab} value={tab} className="mt-6">
+          <TabsContent key={tab} value={tab} className="mt-6 space-y-6">
+            {tab === "overview" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>App Preferences</CardTitle>
+                  <p className="text-sm text-muted-foreground">Customize your experience across the platform</p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">Preferred Currency</p>
+                      <p className="text-xs text-muted-foreground">Used for all prices and rates across the app</p>
+                    </div>
+                    <Select
+                      value={user?.preferredCurrency || "GBP"}
+                      onValueChange={async (v) => {
+                        setIsSaving(true);
+                        const res = await updatePreferredCurrency(v);
+                        if (res.error) {
+                          toast.error(res.error);
+                        } else {
+                          toast.success("Currency preference updated");
+                        }
+                        setIsSaving(false);
+                      }}
+                      disabled={isSaving}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GBP">GBP (£)</SelectItem>
+                        <SelectItem value="NGN">NGN (₦)</SelectItem>
+                        <SelectItem value="USD">USD ($)</SelectItem>
+                        <SelectItem value="EUR">EUR (€)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <UnifiedCastingDirectorProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab={tab} />
           </TabsContent>
         ))}

@@ -15,10 +15,12 @@ import {
 } from "lucide-react";
 import { profileAPI, authAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { Link } from "react-router-dom";
 
 export default function ProfessionalDashboard() {
+  const { formatPrice } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -48,7 +50,7 @@ export default function ProfessionalDashboard() {
         // Calculate stats with safe defaults
         setStats([
           { label: "Total Bookings", value: "0", change: "Live data", Icon: Calendar },
-          { label: "Revenue", value: "£0", change: "This month", Icon: DollarSign },
+          { label: "Revenue", value: formatPrice(0), change: "This month", Icon: DollarSign },
           { label: "Profile Views", value: profileData?.views?.toString() || "0", change: "Total views", Icon: Eye },
           { label: "Rating", value: profileData?.rating?.toString() || "0.0", change: "From reviews", Icon: Star },
         ]);

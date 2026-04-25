@@ -8,8 +8,10 @@ import { toast } from "sonner";
 import { KeyRound, Loader2, UserMinus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 export default function ProfessionalSettings() {
-  const { user } = useAuth();
+  const { user, updatePreferredCurrency, formatPrice } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -103,6 +105,45 @@ export default function ProfessionalSettings() {
               <div className="p-4 rounded-xl border bg-white">
                 <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Plan</p>
                 <p className="font-medium">{subscriptionInfo?.plan?.name || "Free"}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>App Preferences</CardTitle>
+              <p className="text-sm text-muted-foreground">Customize your experience across the platform</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Preferred Currency</p>
+                  <p className="text-xs text-muted-foreground">Used for all prices and rates across the app</p>
+                </div>
+                <Select
+                  value={user?.preferredCurrency || "GBP"}
+                  onValueChange={async (v) => {
+                    setIsSaving(true);
+                    const res = await updatePreferredCurrency(v);
+                    if (res.error) {
+                      toast.error(res.error);
+                    } else {
+                      toast.success("Currency preference updated");
+                    }
+                    setIsSaving(false);
+                  }}
+                  disabled={isSaving}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GBP">GBP (£)</SelectItem>
+                    <SelectItem value="NGN">NGN (₦)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                    <SelectItem value="EUR">EUR (€)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>

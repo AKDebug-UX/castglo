@@ -27,7 +27,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function ProfessionalBookings() {
-  const { user } = useAuth();
+  const { user, formatPrice } = useAuth();
   const [activeTab, setActiveTab] = useState("upcoming");
   const [bookings, setBookings] = useState([]);
   const [stats, setStats] = useState([]);
@@ -48,7 +48,7 @@ export default function ProfessionalBookings() {
         const s = statsRes.data.data;
         setStats([
           { label: "Upcoming", value: s.upcomingCount || "0", change: "Session scheduled", icon: Calendar },
-          { label: "Revenue", value: `£${s.totalRevenue || "0"}`, change: "Total earned", icon: DollarSign },
+          { label: "Revenue", value: formatPrice(s.totalRevenue || 0), change: "Total earned", icon: DollarSign },
           { label: "Completed", value: s.completedCount || "0", change: "Jobs finished", icon: CheckCircle },
           { label: "Pending", value: s.pendingCount || "0", change: "Awaiting confirmation", icon: Clock },
         ]);
@@ -167,7 +167,7 @@ export default function ProfessionalBookings() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right mr-4">
-                      <p className="text-2xl font-black text-slate-900">£{booking.amount}</p>
+                      <p className="text-2xl font-black text-slate-900">{formatPrice(booking.amount)}</p>
                       <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Amount</p>
                     </div>
                     
@@ -236,7 +236,7 @@ export default function ProfessionalBookings() {
                                 <div className="p-4 rounded-2xl bg-[#DEFCFE]/30 border border-[#009698]/10">
                                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Payment Status</p>
                                   <div className="flex items-center justify-between">
-                                    <p className="text-xl font-black text-slate-900">£{selectedBooking.amount}</p>
+                                    <p className="text-xl font-black text-slate-900">{formatPrice(selectedBooking.amount)}</p>
                                     <Badge className="bg-white text-[#009698] border-[#009698]/20 font-bold">Paid via Stripe</Badge>
                                   </div>
                                 </div>

@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarIcon, Clock, MapPin, DollarSign, Loader2, CheckCircle2 } from "lucide-react";
 import { bookingAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BookingDialogProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface BookingDialogProps {
 }
 
 export function BookingDialog({ isOpen, onOpenChange, talent }: BookingDialogProps) {
+  const { formatPrice } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
@@ -132,7 +134,7 @@ export function BookingDialog({ isOpen, onOpenChange, talent }: BookingDialogPro
           <div className="space-y-2">
             <label className="text-sm font-bold flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-primary" />
-              Budget / Amount (£) *
+              Budget / Amount ({formatPrice(0).replace(/[0-9.]/g, '')}) *
             </label>
             <Input 
               type="number" 

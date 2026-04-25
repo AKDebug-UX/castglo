@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { detectCountry } from "@/lib/locationUtils";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +48,7 @@ const parseList = (value: string): string[] => value.split(/\r?\n|,/).map((item)
 
 
 export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, isSaving = false, activeTab }: UnifiedCastingDirectorProfileFormProps) {
+  const { user } = useAuth();
   const unified = rootData?.unifiedCastingDirectorProfile || {};
   const values = { ...rootData, ...unified };
   
@@ -59,7 +61,9 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
       updates.phone_number = "+44";
     }
     if (!values.currency) {
-      updates.currency = "GBP (£)";
+      updates.currency = user?.preferredCurrency === "NGN" ? "NGN (₦)" : 
+                        user?.preferredCurrency === "USD" ? "USD ($)" :
+                        user?.preferredCurrency === "EUR" ? "EUR (€)" : "GBP (£)";
     }
     
     if (Object.keys(updates).length > 0) {

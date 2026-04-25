@@ -21,8 +21,10 @@
  import { Eye, Loader2, Calendar, Clock, DollarSign, User } from "lucide-react";
  import { adminAPI } from "@/lib/api";
  import { toast } from "sonner";
+ import { useAuth } from "@/contexts/AuthContext";
 
  export default function AdminBookings() {
+   const { formatPrice } = useAuth();
    const [bookings, setBookings] = useState([]);
    const [isLoading, setIsLoading] = useState(true);
    const [stats, setStats] = useState([]);
@@ -141,7 +143,7 @@
                      <TableCell>
                        <div>
                          <p className="font-medium">{booking.serviceId?.title || booking.serviceName}</p>
-                         <p className="text-sm text-muted-foreground">£{booking.amount || booking.price}</p>
+                         <p className="text-sm text-muted-foreground">{formatPrice(booking.amount || booking.price || 0)}</p>
                        </div>
                      </TableCell>
                      <TableCell>
@@ -212,7 +214,7 @@
                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                      <DollarSign className="w-3 h-3" /> Price
                    </p>
-                   <p className="text-sm font-semibold">£{selectedBooking.amount || selectedBooking.price}</p>
+                   <p className="text-sm font-semibold">{formatPrice(selectedBooking.amount || selectedBooking.price || 0)}</p>
                  </div>
                  <div className="space-y-1">
                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Status</p>

@@ -11,6 +11,7 @@ interface User {
   profilePicture?: string;
   isEmailVerified: boolean;
   isVerified?: boolean;
+  preferredCurrency?: string;
 }
 
 interface AuthContextType {
@@ -24,6 +25,8 @@ interface AuthContextType {
   verifyEmail: (token: string) => Promise<{ error?: string }>;
   resendVerification: (email: string) => Promise<{ error?: string }>;
   refreshUser: () => Promise<void>;
+  updatePreferredCurrency: (currency: string) => Promise<{ error?: string }>;
+  formatPrice: (amount: number | string) => string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -51,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               profilePicture: userData.profilePicture,
               isEmailVerified: userData.emailVerified || userData.isEmailVerified || true,
               isVerified: userData.isVerified || false,
+              preferredCurrency: userData.preferredCurrency || "GBP",
             };
             setUser(userObj);
             localStorage.setItem('userData', JSON.stringify(userObj));
@@ -86,6 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           profilePicture: userData.profilePicture,
           isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
           isVerified: userData.isVerified || false,
+          preferredCurrency: userData.preferredCurrency || "GBP",
         };
         setUser(userObj);
         localStorage.setItem('userData', JSON.stringify(userObj));
@@ -176,6 +181,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             profilePicture: userData.profilePicture,
             isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
             isVerified: userData.isVerified || false,
+            preferredCurrency: userData.preferredCurrency || "GBP",
           };
           setUser(userObj);
           localStorage.setItem('userData', JSON.stringify(userObj));
@@ -197,7 +203,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       resetPassword,
       verifyEmail,
       resendVerification,
-      refreshUser
+      refreshUser,
+      updatePreferredCurrency: async (currency: string) => {
+        try {
+          const res = await userAPI.updateProfile({ preferredCurrency: currency });
+          if (res.data.success) {
+            await refreshUser();
+            return {};
+          }
+          return { error: res.data.message || "Failed to update currency" };
+        } catch (e: any) {
+          return { error: e?.response?.data?.message || "An error occurred" };
+        }
+      },
+      formatPrice: (amount: number | string) => {
+        const currency = user?.preferredCurrency || "GBP";
+        const symbolMap: Record<string, string> = {
+          "GBP": "£",
+          "NGN": "₦",
+          "USD": "$",
+          "EUR": "€"
+        };
+        const symbol = symbolMap[currency] || symbolMap["GBP"];
+        
+        const numericAmount = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.]/g, '')) : amount;
+        if (isNaN(numericAmount)) return amount.toString();
+        
+        return `${symbol}${numericAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+      }
     }}>
       {children}
     </AuthContext.Provider>
