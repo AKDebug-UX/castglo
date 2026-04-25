@@ -20,7 +20,7 @@ import { getProfessionalReferenceOptions } from "@/lib/unifiedProfessionalProfil
 import { MultiSelectChecklist } from "./fields/MultiSelectChecklist";
 import { CombinedCurrencyRateInput } from "./fields/CombinedCurrencyRateInput";
 
-type FormTab = "general" | "professional" | "business" | "specialized" | "media";
+type FormTab = "general" | "professional" | "business" | "media";
 
 interface UnifiedProfessionalProfileFormProps {
   rootData: any;

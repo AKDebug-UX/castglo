@@ -246,8 +246,8 @@ export const sectionToTabMap: Record<string, "general" | "professional" | "busin
   "Professional Overview": "professional",
   "Professional Identity": "professional",
   "Professional Focus": "professional",
-  "Skills": "specialized",
-  "Skills / Tools": "specialized",
+  "Skills": "professional",
+  "Skills / Tools": "professional",
   "Portfolio": "media",
   "Reviews": "business",
   "Credibility": "business",
@@ -257,10 +257,10 @@ export const sectionToTabMap: Record<string, "general" | "professional" | "busin
   "Service Listing": "business",
   "Deliverables": "business",
   "Portfolio Item": "media",
-  "Photographer Profile": "specialized",
-  "Makeup Artist Profile": "specialized",
-  "Acting Coach Profile": "specialized",
-  "Editor Profile": "specialized",
+  "Photographer Profile": "professional",
+  "Makeup Artist Profile": "professional",
+  "Acting Coach Profile": "professional",
+  "Editor Profile": "professional",
 };
 
 export const shouldShowProfessionalField = (field: ProfessionalFieldSpec, values: Record<string, any>): boolean => {

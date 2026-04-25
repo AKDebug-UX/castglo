@@ -345,7 +345,6 @@ export default function ProfessionalProfile() {
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="professional">Professional</TabsTrigger>
             <TabsTrigger value="business">Business</TabsTrigger>
-            <TabsTrigger value="specialized">Specialized</TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
           </TabsList>
         </div>
@@ -360,10 +359,6 @@ export default function ProfessionalProfile() {
 
         <TabsContent value="business" className="mt-4 space-y-6">
           <UnifiedProfessionalProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab="business" />
-        </TabsContent>
-
-        <TabsContent value="specialized" className="mt-4">
-          <UnifiedProfessionalProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab="specialized" />
         </TabsContent>
 
         <TabsContent value="media" className="mt-4 space-y-6">
