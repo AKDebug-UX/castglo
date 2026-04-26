@@ -153,9 +153,11 @@ export default function DirectorProfile() {
         professionalTitle: unifiedPayload.professional_title,
         shortBio: unifiedPayload.short_bio,
         fullAbout: unifiedPayload.full_about,
-        city: unifiedPayload.city,
-        country: unifiedPayload.country,
-        primaryAccountType: unifiedPayload.primary_account_type,
+        location: {
+          city: unifiedPayload.city,
+          country: unifiedPayload.country,
+        },
+        accountType: unifiedPayload.primary_account_type,
         additionalAccountTypes: unifiedPayload.additional_account_types || [],
         industryAreas: unifiedPayload.industry_areas || [],
         

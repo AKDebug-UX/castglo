@@ -256,12 +256,11 @@ export default function Profile() {
         location: unifiedPayload.current_city
           ? `${unifiedPayload.current_city}${unifiedPayload.current_country ? ", " + unifiedPayload.current_country : ""}`
           : profileData.location,
-        phoneNumber: unifiedPayload.phone_number || profileData.phone,
+        phoneNumber: unifiedPayload.phone_number || profileData.phone || profileData.phoneNumber,
         address: unifiedPayload.address || profileData.address,
-        // Only send core info here, role-specific data goes to the specialized endpoint
       });
-
-      // 2. Update Role-Specific Talent Information (Deeply nested as per Swagger)
+ 
+      // 2. Update Role-Specific Talent Information
       await profileAPI.updateTalent({
         displayName: unifiedPayload.display_name,
         dateOfBirth: unifiedPayload.date_of_birth,
@@ -275,7 +274,7 @@ export default function Profile() {
         actorProfile: {
           performanceCategory: unifiedPayload.actor_performance_category,
           training: unifiedPayload.actor_training,
-          techniques: unifiedPayload.actor_techniques,
+          actorTechniques: unifiedPayload.actor_techniques,
           accents: unifiedPayload.actor_accents,
           specialSkills: unifiedPayload.actor_special_skills,
           notableCredits: unifiedPayload.actor_notable_credits,
@@ -287,16 +286,16 @@ export default function Profile() {
           instruments: unifiedPayload.singer_instruments,
         },
         
-        // Physical Appearance
-        physicalAppearance: {
+        // Physical Appearance (now renamed to 'appearance' in API)
+        appearance: {
           height: unifiedPayload.height,
           build: unifiedPayload.build,
-          eyeColor: unifiedPayload.eye_colour,
-          hairColor: unifiedPayload.hair_colour,
+          eyeColour: unifiedPayload.eye_colour,
+          hairColour: unifiedPayload.hair_colour,
           hairLength: unifiedPayload.hair_length,
-          ethnicity: unifiedPayload.ethnicity_visible,
+          ethnicityVisible: unifiedPayload.ethnicity_visible,
           distinguishingFeatures: unifiedPayload.distinguishing_features,
-          tattoos: !!unifiedPayload.visible_tattoos_piercings,
+          visibleTattoosPiercings: !!unifiedPayload.visible_tattoos_piercings,
         },
         
         // Emergency & Guardian

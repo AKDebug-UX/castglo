@@ -196,7 +196,7 @@ export default function ProfessionalProfile() {
         equipmentOwned: unifiedPayload.equipment_owned,
         
         // Trust & Verification
-        insured: unifiedPayload.insurance_available === "Yes",
+        insuranceAvailable: unifiedPayload.insurance_available === "Yes",
         dbsChecked: unifiedPayload.dbs_checked === "Yes",
         certifications: unifiedPayload.certifications,
         awards: unifiedPayload.awards_recognition,
