@@ -21,7 +21,7 @@ export const unifiedTalentProfileSchema = z
     display_name: z.string().min(2, "Display name must be at least 2 characters").max(100, "Display name cannot exceed 100 characters"),
     email: z.string().email("Please enter a valid email address"),
     phone_number: z.string().min(7, "Phone number is too short").max(30, "Phone number is too long"),
-    date_of_birth: z.string(),
+    dateOfBirth: z.string(),
     age_group: z.string(),
     gender: z.string(),
     gender_self_describe: z.string().max(50).optional(),

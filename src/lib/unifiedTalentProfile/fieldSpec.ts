@@ -61,13 +61,13 @@ export interface UnifiedFieldSpec {
   searchable: boolean;
   options?: string[];
   optionSource?:
-    | "countries"
-    | "languages"
-    | "accents"
-    | "music_genres"
-    | "instruments"
-    | "dance_styles"
-    | "opportunities_sought";
+  | "countries"
+  | "languages"
+  | "accents"
+  | "music_genres"
+  | "instruments"
+  | "dance_styles"
+  | "opportunities_sought";
   validation?: string;
   visibility?: VisibilityRule;
 }
@@ -104,7 +104,7 @@ export const CORE_PROFILE_FIELDS: UnifiedFieldSpec[] = [
   { id: "email", label: "Email Address", section: "Contact", type: "email", required: true, searchable: false, validation: "Valid email + unique" },
   { id: "phone_number", label: "Phone Number", section: "Contact", type: "phone", required: true, searchable: false, validation: "Intl format" },
   { id: "address", label: "Address", section: "Contact", type: "text", required: false, searchable: false, validation: "Max 200 chars" },
-  { id: "date_of_birth", label: "Date of Birth", section: "Basic Profile", type: "date", required: true, searchable: false, validation: "YYYY-MM-DD, past date" },
+  { id: "dateOfBirth", label: "Date of Birth", section: "Basic Profile", type: "date", required: true, searchable: false, validation: "YYYY-MM-DD, past date" },
   { id: "age_group", label: "Age Group", section: "Basic Profile", type: "select", required: true, searchable: true, options: ["Under 13", "13-15", "16-17", "18-24", "25-34", "35-44", "45-54", "55+"], validation: "Auto-derived optional" },
   { id: "gender", label: "Gender", section: "Basic Profile", type: "select", required: true, searchable: true, options: ["Female", "Male", "Non-binary", "Prefer to self-describe", "Prefer not to say"] },
   { id: "gender_self_describe", label: "Gender Self Description", section: "Basic Profile", type: "text", required: false, searchable: true, validation: "Max 50 chars", visibility: { showWhenField: "gender", equals: "Prefer to self-describe" } },

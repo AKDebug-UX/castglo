@@ -11,8 +11,9 @@ import { toast } from "sonner";
 import { getAvatarUrl, getInitials } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { UnifiedCastingDirectorProfileForm } from "@/components/profile/UnifiedCastingDirectorProfileForm";
-import { UNIFIED_CASTING_DIRECTOR_FIELD_IDS } from "@/lib/unifiedCastingDirectorProfile/fieldSpec";
+import { UNIFIED_CASTING_DIRECTOR_FIELD_IDS, UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC } from "@/lib/unifiedCastingDirectorProfile/fieldSpec";
 import { validateUnifiedCastingDirectorProfile } from "@/lib/unifiedCastingDirectorProfile/validation";
+import { ProfileSummaryView } from "@/components/profile/ProfileSummaryView";
 
 export default function DirectorProfile() {
   const { refreshUser } = useAuth();
@@ -45,15 +46,25 @@ export default function DirectorProfile() {
       if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
       if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
 
+      const cp = combinedData.castingDirectorProfile || combinedData.castingProfile || {};
       const unified = combinedData.unifiedCastingDirectorProfile || {};
-      if (!unified.full_name && combinedData.fullName) unified.full_name = combinedData.fullName;
-      if (!unified.display_name && combinedData.displayName) unified.display_name = combinedData.displayName;
-      if (!unified.company_name && combinedData.company_name) unified.company_name = combinedData.company_name;
-      if (!unified.professional_title && combinedData.professional_title) unified.professional_title = combinedData.professional_title;
-      if (!unified.email && combinedData.email) unified.email = combinedData.email;
-      if (!unified.short_bio && combinedData.bio) unified.short_bio = combinedData.bio;
-      if (!unified.city && combinedData.city) unified.city = combinedData.city;
-      if (!unified.country && combinedData.country) unified.country = combinedData.country;
+
+      // Map root and nested API properties back to unified field IDs
+      if (!unified.full_name) unified.full_name = combinedData.fullName;
+      if (!unified.display_name) unified.display_name = combinedData.displayName || cp.displayName;
+      if (!unified.company_name) unified.company_name = combinedData.company_name || cp.companyName;
+      if (!unified.professional_title) unified.professional_title = combinedData.professional_title || cp.professionalTitle || combinedData.jobTitle;
+      if (!unified.email) unified.email = combinedData.email;
+      if (!unified.phone_number) unified.phone_number = combinedData.phone || combinedData.phoneNumber;
+      if (!unified.short_bio) unified.short_bio = combinedData.bio || cp.shortBio;
+      if (!unified.full_about) unified.full_about = combinedData.fullAbout || cp.fullAbout;
+      if (!unified.city) unified.city = combinedData.city || cp.location?.city;
+      if (!unified.country) unified.country = combinedData.country || cp.location?.country;
+      
+      if (!unified.primary_account_type) unified.primary_account_type = cp.accountType;
+      if (!unified.additional_account_types) unified.additional_account_types = cp.additionalAccountTypes;
+      if (!unified.industry_areas) unified.industry_areas = cp.industryAreas;
+      if (!unified.applicant_statuses) unified.applicant_statuses = cp.applicantStatuses;
 
       combinedData.unifiedCastingDirectorProfile = unified;
       setProfileData(combinedData);
@@ -305,6 +316,7 @@ export default function DirectorProfile() {
             <TabsTrigger value="audition" className="py-2 px-4">Pre-Audition</TabsTrigger>
             <TabsTrigger value="commercial" className="py-2 px-4">Commercial</TabsTrigger>
             <TabsTrigger value="navigation" className="py-2 px-4">Tabs</TabsTrigger>
+            <TabsTrigger value="summary" className="py-2 px-4">Summary</TabsTrigger>
           </TabsList>
         </div>
 
@@ -313,6 +325,14 @@ export default function DirectorProfile() {
             <UnifiedCastingDirectorProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab={tab} />
           </TabsContent>
         ))}
+
+        <TabsContent value="summary" className="mt-6">
+          <ProfileSummaryView 
+            fields={UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC} 
+            values={{...profileData, ...(profileData?.unifiedCastingDirectorProfile || {})}} 
+            title="Casting Director Profile Summary" 
+          />
+        </TabsContent>
       </Tabs>
     </div>
   );

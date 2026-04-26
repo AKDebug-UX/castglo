@@ -13,8 +13,10 @@ import { toast } from "sonner";
 import { UnifiedProfessionalProfileForm } from "@/components/profile/UnifiedProfessionalProfileForm";
 import {
   UNIFIED_PROFESSIONAL_FIELD_IDS,
+  UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC,
 } from "@/lib/unifiedProfessionalProfile/fieldSpec";
 import { validateUnifiedProfessionalProfile } from "@/lib/unifiedProfessionalProfile/validation";
+import { ProfileSummaryView } from "@/components/profile/ProfileSummaryView";
 
 export default function ProfessionalProfile() {
   const { refreshUser } = useAuth();
@@ -51,17 +53,43 @@ export default function ProfessionalProfile() {
       if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
       if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
 
+      const pp = combinedData.professionalProfile || combinedData.professional || {};
       const unified = combinedData.unifiedProfessionalProfile || {};
-      if (!unified.full_name && combinedData.fullName) unified.full_name = combinedData.fullName;
-      if (!unified.display_name && combinedData.displayName) unified.display_name = combinedData.displayName;
-      if (!unified.professional_title && combinedData.professional_title) unified.professional_title = combinedData.professional_title;
-      if (!unified.email && combinedData.email) unified.email = combinedData.email;
-      if (!unified.phone_number && (combinedData.phoneNumber || combinedData.phone)) unified.phone_number = combinedData.phoneNumber || combinedData.phone;
-      if (!unified.short_bio && combinedData.bio) unified.short_bio = combinedData.bio;
-      if (!unified.full_bio && combinedData.full_bio) unified.full_bio = combinedData.full_bio;
-      if (!unified.city && combinedData.city) unified.city = combinedData.city;
-      if (!unified.country && combinedData.country) unified.country = combinedData.country;
-      if (!unified.primary_professional_type && combinedData.professionalCategory) unified.primary_professional_type = combinedData.professionalCategory;
+
+      // Map root and nested API properties back to unified field IDs
+      if (!unified.full_name) unified.full_name = combinedData.fullName;
+      if (!unified.display_name) unified.display_name = combinedData.displayName;
+      if (!unified.email) unified.email = combinedData.email;
+      if (!unified.phone_number) unified.phone_number = combinedData.phoneNumber || combinedData.phone;
+      if (!unified.short_bio) unified.short_bio = combinedData.bio || pp.bio;
+      if (!unified.full_bio) unified.full_bio = combinedData.full_bio || pp.fullBio;
+      if (!unified.city) unified.city = combinedData.city;
+      if (!unified.country) unified.country = combinedData.country;
+      
+      // Map specialized professional information
+      if (!unified.business_name) unified.business_name = pp.businessName;
+      if (!unified.professional_title) unified.professional_title = combinedData.professional_title || pp.professionalTitle || combinedData.jobTitle;
+      if (!unified.primary_professional_type) unified.primary_professional_type = combinedData.professionalCategory || pp.primaryProfessionalType;
+      if (!unified.additional_professional_types) unified.additional_professional_types = pp.additionalTypes;
+      if (!unified.years_of_experience) unified.years_of_experience = pp.yearsOfExperience;
+      if (!unified.experience_level) unified.experience_level = pp.experienceLevel;
+      if (!unified.serves_client_types) unified.serves_client_types = pp.servesClientTypes;
+      if (!unified.industry_areas) unified.industry_areas = pp.industryAreas;
+      
+      if (!unified.software_tools) unified.software_tools = pp.softwareTools;
+      if (!unified.equipment_owned) unified.equipment_owned = pp.equipmentOwned;
+      
+      if (unified.insurance_available === undefined && pp.insuranceAvailable !== undefined) unified.insurance_available = pp.insuranceAvailable ? "Yes" : "No";
+      if (unified.dbs_checked === undefined && pp.dbsChecked !== undefined) unified.dbs_checked = pp.dbsChecked ? "Yes" : "No";
+      if (!unified.certifications) unified.certifications = pp.certifications;
+      if (!unified.awards_recognition) unified.awards_recognition = pp.awards;
+      
+      if (!unified.booking_method) unified.booking_method = pp.bookingMethod;
+      if (!unified.preferred_contact_method) unified.preferred_contact_method = pp.preferredContactMethod;
+      if (unified.deposit_required === undefined && pp.depositRequired !== undefined) unified.deposit_required = pp.depositRequired ? "Yes" : "No";
+      if (!unified.deposit_percentage) unified.deposit_percentage = pp.depositPercentage;
+      if (!unified.payment_methods) unified.payment_methods = pp.paymentMethods;
+      if (!unified.services) unified.services = pp.services;
 
       combinedData.unifiedProfessionalProfile = unified;
       setProfileData(combinedData);
@@ -346,6 +374,7 @@ export default function ProfessionalProfile() {
             <TabsTrigger value="professional">Professional</TabsTrigger>
             <TabsTrigger value="business">Business</TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
+            <TabsTrigger value="summary">Summary</TabsTrigger>
           </TabsList>
         </div>
 
@@ -412,6 +441,14 @@ export default function ProfessionalProfile() {
           </Card>
 
           <UnifiedProfessionalProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab="media" />
+        </TabsContent>
+
+        <TabsContent value="summary" className="mt-4">
+          <ProfileSummaryView 
+            fields={UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC} 
+            values={{...profileData, ...(profileData?.unifiedProfessionalProfile || {})}} 
+            title="Professional Profile Summary" 
+          />
         </TabsContent>
       </Tabs>
     </div>

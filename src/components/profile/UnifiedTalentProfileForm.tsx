@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Loader2, Save, User, Briefcase, Sparkles, 
-  Camera, Eye, Layers, Share2, X, Ruler
+import {
+  Loader2, Save, User, Briefcase, Sparkles,
+  Camera, Eye, Layers, Share2, X, Ruler, ClipboardList
 } from "lucide-react";
+import { ProfileSummaryView } from "./ProfileSummaryView";
 import { CombinedCurrencyRateInput } from "./fields/CombinedCurrencyRateInput";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -288,9 +289,9 @@ const ALL_MEASUREMENT_FIELD_IDS = new Set([
 
 
 
-export function UnifiedTalentProfileForm({ 
-  rootData, 
-  onChange, 
+export function UnifiedTalentProfileForm({
+  rootData,
+  onChange,
   onSave,
   isSaving = false,
   activeTab: externalActiveTab,
@@ -337,7 +338,7 @@ export function UnifiedTalentProfileForm({
   useEffect(() => {
     // Auto-detect and set country if not present, and default booleans to false
     const updates: Record<string, any> = {};
-    
+
     if (!values.current_country) {
       const detected = detectCountry();
       updates.current_country = detected || "United Kingdom";
@@ -353,12 +354,12 @@ export function UnifiedTalentProfileForm({
     }
 
     if (!values.currency) {
-      updates.currency = user?.preferredCurrency === "NGN" ? "NGN (₦)" : 
-                        user?.preferredCurrency === "USD" ? "USD ($)" :
-                        user?.preferredCurrency === "EUR" ? "EUR (€)" : "GBP (£)";
+      updates.currency = user?.preferredCurrency === "NGN" ? "NGN (₦)" :
+        user?.preferredCurrency === "USD" ? "USD ($)" :
+          user?.preferredCurrency === "EUR" ? "EUR (€)" : "GBP (£)";
     }
 
-    const derivedAgeGroup = deriveAgeGroupFromDob(values.date_of_birth);
+    const derivedAgeGroup = deriveAgeGroupFromDob(values.dateOfBirth);
     if (derivedAgeGroup && values.age_group !== derivedAgeGroup) {
       updates.age_group = derivedAgeGroup;
     }
@@ -384,10 +385,10 @@ export function UnifiedTalentProfileForm({
       id: "professional",
       label: "Professional",
       sections: [
-        "Talent Type", 
+        "Talent Type",
         // Metadata / Details
         "Actor Details", "Model Details", "Singer Details", "Dancer Details",
-        "Voice Artist Details", "Presenter Details", "Extra Details", "Musician Details", 
+        "Voice Artist Details", "Presenter Details", "Extra Details", "Musician Details",
         "Creator Details", "Comedian Details", "Stunt Details",
         // Specialized Assets (Renamed from Media)
         "Actor Profile", "Model Profile", "Singer Profile", "Dancer Profile",
@@ -406,10 +407,12 @@ export function UnifiedTalentProfileForm({
     {
       id: "portfolio",
       label: "Portfolio",
-      sections: [
-        "Social",
-        // Media assets like Headshots are handled separately or in the CORE Media section
-      ]
+      sections: ["Social"]
+    },
+    {
+      id: "summary",
+      label: "Summary",
+      sections: []
     }
   ], []);
 
@@ -426,7 +429,7 @@ export function UnifiedTalentProfileForm({
     }
 
     const result: Record<string, { section: string; fields: UnifiedFieldSpec[] }[]> = {};
-    
+
     tabGroups.forEach(tab => {
       result[tab.id] = tab.sections
         .map(sectionName => ({
@@ -463,7 +466,7 @@ export function UnifiedTalentProfileForm({
     }
 
     // Special logic: Auto update age group when Date of Birth changes
-    if (fieldId === "date_of_birth") {
+    if (fieldId === "dateOfBirth") {
       const derivedAgeGroup = deriveAgeGroupFromDob(value);
       if (derivedAgeGroup) {
         nextUnified.age_group = derivedAgeGroup;
@@ -485,12 +488,12 @@ export function UnifiedTalentProfileForm({
       fields.forEach((field) => {
         if (field.required) {
           const value = values[field.id];
-          const isEmpty = 
-            value === null || 
-            value === undefined || 
-            value === "" || 
+          const isEmpty =
+            value === null ||
+            value === undefined ||
+            value === "" ||
             (Array.isArray(value) && value.length === 0);
-          
+
           if (isEmpty) {
             newErrors[field.id] = `${field.label} is required.`;
           }
@@ -503,6 +506,7 @@ export function UnifiedTalentProfileForm({
   };
 
   const handleTabSave = () => {
+    if (activeTab === "summary") return;
     if (validateTab(activeTab)) {
       if (onSave) onSave(true);
     } else {
@@ -536,8 +540,8 @@ export function UnifiedTalentProfileForm({
         case "boolean":
         case "checkbox":
           return (
-            <Select 
-              value={value || ""} 
+            <Select
+              value={value || ""}
               onValueChange={(next) => setFieldValue(field.id, next)}
             >
               <SelectTrigger className={hasError ? 'border-destructive' : ''}>
@@ -643,8 +647,13 @@ export function UnifiedTalentProfileForm({
             </div>
           );
 
-        case "date":
-          return <Input type="date" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+        case "date": {
+          let dateValue = value || "";
+          if (dateValue && typeof dateValue === "string" && dateValue.includes("T")) {
+            dateValue = dateValue.split("T")[0];
+          }
+          return <Input type="date" value={dateValue} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
+        }
 
         case "email":
           return (
@@ -671,7 +680,7 @@ export function UnifiedTalentProfileForm({
 
         case "url":
           return <Input type="url" value={value || ""} className={hasError ? 'border-destructive' : ''} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
-        
+
         case "credits-list":
           return <CreditsListEditor label={field.label} value={value} onChange={(next) => setFieldValue(field.id, next)} />;
 
@@ -702,6 +711,16 @@ export function UnifiedTalentProfileForm({
   };
 
   const renderTabContent = (tabId: string) => {
+    if (tabId === "summary") {
+      return (
+        <ProfileSummaryView
+          fields={UNIFIED_TALENT_PROFILE_FIELD_SPEC}
+          values={values}
+          title="Profile Overview"
+        />
+      );
+    }
+
     const sections = sectionsByTab[tabId] || [];
     if (sections.length === 0) return null;
 
@@ -725,11 +744,10 @@ export function UnifiedTalentProfileForm({
               <button
                 type="button"
                 onClick={() => setMeasurementUnit("metric")}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-                  measurementUnit === "metric"
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${measurementUnit === "metric"
                     ? "bg-[#009698] text-white shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 Metric
                 <span className="ml-1 opacity-70 font-normal">(cm / kg)</span>
@@ -737,11 +755,10 @@ export function UnifiedTalentProfileForm({
               <button
                 type="button"
                 onClick={() => setMeasurementUnit("imperial")}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
-                  measurementUnit === "imperial"
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${measurementUnit === "imperial"
                     ? "bg-[#009698] text-white shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 Imperial
                 <span className="ml-1 opacity-70 font-normal">(ft·in / lbs)</span>
@@ -760,33 +777,33 @@ export function UnifiedTalentProfileForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 {fields.reduce((acc: JSX.Element[], field, idx, arr) => {
                   // Skip if this field was already handled as part of a group (expected_rate_range follows currency)
-                  if (field.id === 'expected_rate_range' && arr[idx-1]?.id === 'currency') return acc;
-                  
-                  const isCurrencyGroup = field.id === 'currency' && arr[idx+1]?.id === 'expected_rate_range';
-                  
+                  if (field.id === 'expected_rate_range' && arr[idx - 1]?.id === 'currency') return acc;
+
+                  const isCurrencyGroup = field.id === 'currency' && arr[idx + 1]?.id === 'expected_rate_range';
+
                   if (isCurrencyGroup) {
                     acc.push(
                       <div key="currency-rate-group" className="md:col-span-2 space-y-2">
                         <div className="flex items-center gap-1">
                           <label className="text-sm font-semibold text-foreground/70">Expected Rate / Fee Range</label>
-                          {(field.required || arr[idx+1].required) && <span className="text-destructive font-bold">*</span>}
+                          {(field.required || arr[idx + 1].required) && <span className="text-destructive font-bold">*</span>}
                         </div>
-                        <CombinedCurrencyRateInput 
+                        <CombinedCurrencyRateInput
                           currencyValue={values.currency}
                           rateValue={values.expected_rate_range}
                           onCurrencyChange={(v) => setFieldValue('currency', v)}
                           onRateChange={(v) => setFieldValue('expected_rate_range', v)}
                           currencyOptions={getOptions(field)}
-                          rateOptions={getOptions(arr[idx+1])}
+                          rateOptions={getOptions(arr[idx + 1])}
                           errors={errors}
                         />
                       </div>
                     );
                   } else {
                     acc.push(
-                      <div 
-                        key={field.id} 
-                        id={`field-${field.id}`} 
+                      <div
+                        key={field.id}
+                        id={`field-${field.id}`}
                         data-testid={`field-${field.id}`}
                         className={`space-y-2 ${field.type === 'credits-list' ? 'md:col-span-2' : ''}`}
                       >
@@ -809,9 +826,9 @@ export function UnifiedTalentProfileForm({
 
         {onSave && (
           <div className="flex justify-end pt-8 border-t">
-            <Button 
+            <Button
               size="lg"
-              onClick={handleTabSave} 
+              onClick={handleTabSave}
               disabled={isSaving}
               className="w-full sm:w-auto bg-[#009698] hover:bg-[#009698]/90 font-bold px-8"
             >
@@ -838,7 +855,8 @@ export function UnifiedTalentProfileForm({
     professional: Briefcase,
     specialisms: Sparkles,
     appearance: Eye,
-    portfolio: Share2
+    portfolio: Share2,
+    summary: ClipboardList
   };
 
   if (!showTabs) {
@@ -859,7 +877,7 @@ export function UnifiedTalentProfileForm({
             pendingIntroVideo={pendingIntroVideo}
             setPendingIntroVideo={setPendingIntroVideo}
             handleIntroVideoSelect={handleIntroVideoSelect!}
-            handleSave={onSave || (() => {})}
+            handleSave={onSave || (() => { })}
             isSaving={isSaving}
           />
         )}
@@ -870,8 +888,8 @@ export function UnifiedTalentProfileForm({
 
   return (
     <div className="space-y-8">
-      <Tabs 
-        value={activeTab} 
+      <Tabs
+        value={activeTab}
         onValueChange={(value) => {
           setInternalActiveTab(value);
           if (onTabChange) onTabChange(value);
@@ -881,12 +899,12 @@ export function UnifiedTalentProfileForm({
         <TabsList className="sticky top-0 z-10 h-14 w-full justify-start overflow-x-auto bg-white/80 backdrop-blur-md border shadow-sm gap-2 p-1.5 rounded-2xl scrollbar-hide mb-6">
           {tabGroups.map(tab => {
             const hasFields = sectionsByTab[tab.id]?.length > 0;
-            if (!hasFields && tab.id !== 'portfolio') return null;
+            if (!hasFields && tab.id !== 'portfolio' && tab.id !== 'summary') return null;
             const Icon = tabIcons[tab.id] || Sparkles;
             return (
-              <TabsTrigger 
-                key={tab.id} 
-                value={tab.id} 
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
                 className="flex items-center gap-2 px-6 h-full rounded-xl transition-all duration-300 data-[state=active]:bg-[#009698] data-[state=active]:text-white data-[state=active]:shadow-lg"
               >
                 <Icon className="w-4 h-4" />
@@ -902,7 +920,7 @@ export function UnifiedTalentProfileForm({
               <Card className="rounded-[2rem] border shadow-card overflow-hidden">
                 <CardContent className="p-8 md:p-12 space-y-10">
                   {tab.id === 'portfolio' && (
-              <PortfolioMediaGallery
+                    <PortfolioMediaGallery
                       profileData={rootData}
                       setProfileData={onChange}
                       pendingProfilePhoto={pendingProfilePhoto}
@@ -916,7 +934,7 @@ export function UnifiedTalentProfileForm({
                       pendingIntroVideo={pendingIntroVideo}
                       setPendingIntroVideo={setPendingIntroVideo}
                       handleIntroVideoSelect={handleIntroVideoSelect!}
-                      handleSave={onSave || (() => {})}
+                      handleSave={onSave || (() => { })}
                       isSaving={isSaving}
                     />
                   )}
