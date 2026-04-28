@@ -319,7 +319,7 @@ export function UnifiedTalentProfileForm({
 
   const handleAutoFill = () => {
     const dummyData = generateDummyProfileData(UNIFIED_TALENT_PROFILE_FIELD_SPEC);
-    
+
     // Auto-derive age group if DOB is present
     if (dummyData.dateOfBirth) {
       const derived = deriveAgeGroupFromDob(dummyData.dateOfBirth);
@@ -583,8 +583,8 @@ export function UnifiedTalentProfileForm({
         case "select":
           const isBooleanSelect = options.includes("Yes") && options.includes("No");
           return (
-            <Select 
-              value={isBooleanSelect ? (value === true ? "Yes" : value === false ? "No" : "") : (value || "")} 
+            <Select
+              value={isBooleanSelect ? (value === true ? "Yes" : value === false ? "No" : "") : (value || "")}
               onValueChange={(next) => setFieldValue(field.id, next)}
             >
               <SelectTrigger className={hasError ? 'border-destructive' : ''}>
@@ -775,8 +775,8 @@ export function UnifiedTalentProfileForm({
                 type="button"
                 onClick={() => setMeasurementUnit("metric")}
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${measurementUnit === "metric"
-                    ? "bg-[#009698] text-white shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[#009698] text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 Metric
@@ -786,8 +786,8 @@ export function UnifiedTalentProfileForm({
                 type="button"
                 onClick={() => setMeasurementUnit("imperial")}
                 className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${measurementUnit === "imperial"
-                    ? "bg-[#009698] text-white shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "bg-[#009698] text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 Imperial
