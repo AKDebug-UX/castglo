@@ -1,0 +1,83 @@
+.casting-view-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.casting-section {
+  margin-bottom: 2rem;
+}
+
+.company-name {
+  font-size: 1.5rem;
+  color: var(--accent-gold);
+  margin-bottom: 1rem;
+}
+
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.project-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  transition: var(--transition-smooth);
+}
+
+.project-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(5px);
+}
+
+.project-info h5 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.125rem;
+}
+
+.project-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.preferences-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.pref-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pref-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.pref-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 992px) {
+  .casting-view-grid {
+    grid-template-columns: 1fr;
+  }
+}

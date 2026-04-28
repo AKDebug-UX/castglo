@@ -116,12 +116,20 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
   }, [visibleFields]);
 
   const setFieldValue = (fieldId: string, value: any) => {
+    let finalValue = value;
+    // Map "Yes"/"No" to true/false for boolean types or selects with Yes/No options
+    const fieldSpec = UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC.find(f => f.id === fieldId);
+    if (fieldSpec?.type === "boolean" || (fieldSpec?.type === "select" && fieldSpec.options?.includes("Yes") && fieldSpec.options?.includes("No"))) {
+      if (value === "Yes") finalValue = true;
+      else if (value === "No") finalValue = false;
+    }
+
     onChange({
       ...rootData,
-      [fieldId]: value,
+      [fieldId]: finalValue,
       unifiedCastingDirectorProfile: {
         ...unified,
-        [fieldId]: value,
+        [fieldId]: finalValue,
       },
     });
   };
@@ -140,7 +148,7 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
       case "boolean":
         return (
           <Select 
-            value={value || ""} 
+            value={value === true ? "Yes" : value === false ? "No" : ""} 
             onValueChange={(next) => setFieldValue(field.id, next)}
           >
             <SelectTrigger><SelectValue placeholder="Select Yes or No" /></SelectTrigger>
@@ -151,8 +159,12 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
           </Select>
         );
       case "select":
+        const isBooleanSelect = options.includes("Yes") && options.includes("No");
         return (
-          <Select value={value || ""} onValueChange={(next) => setFieldValue(field.id, next)}>
+          <Select 
+            value={isBooleanSelect ? (value === true ? "Yes" : value === false ? "No" : "") : (value || "")} 
+            onValueChange={(next) => setFieldValue(field.id, next)}
+          >
             <SelectTrigger><SelectValue placeholder={`Select ${field.label}`} /></SelectTrigger>
             <SelectContent>
               {options.map((option) => (

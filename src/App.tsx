@@ -38,6 +38,7 @@ const PublicCastingDetail = lazy(() => import("./pages/PublicCasting/PublicCasti
 const PublicCasting = lazy(() => import("./pages/PublicCasting"));
 const TalentProfile = lazy(() => import("./pages/TalentProfile"));
 const ProfessionalPublicProfile = lazy(() => import("./pages/ProfessionalPublicProfile"));
+const UnifiedProfile = lazy(() => import("./pages/UnifiedProfile"));
 const WhatsNew = lazy(() => import("./pages/WhatsNew"));
 
 // Talent Dashboard
@@ -157,6 +158,8 @@ const App = () => (
               <Route path="/copyright-policy" element={<CopyrightPolicy />} />
               <Route path="/anti-scam-guidelines" element={<AntiScamGuidelines />} />
               <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/profile/:id" element={<UnifiedProfile />} />
+              <Route path="/profile/me" element={<UnifiedProfile />} />
               <Route path="/payment/cancel" element={<PaymentCancel />} />
               {/* Talent Dashboard Routes */}
               <Route

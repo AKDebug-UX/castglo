@@ -471,8 +471,16 @@ export function UnifiedTalentProfileForm({
       });
     }
 
-    let nextUnified = { ...unified, [fieldId]: value };
-    let nextRoot = { ...rootData, [fieldId]: value };
+    let finalValue = value;
+    // Map "Yes"/"No" to true/false for boolean/checkbox types
+    const fieldSpec = UNIFIED_TALENT_PROFILE_FIELD_SPEC.find(f => f.id === fieldId);
+    if (fieldSpec?.type === "boolean" || fieldSpec?.type === "checkbox" || (fieldSpec?.type === "select" && fieldSpec.options?.includes("Yes") && fieldSpec.options?.includes("No"))) {
+      if (value === "Yes") finalValue = true;
+      else if (value === "No") finalValue = false;
+    }
+
+    let nextUnified = { ...unified, [fieldId]: finalValue };
+    let nextRoot = { ...rootData, [fieldId]: finalValue };
 
     // Special logic: ensure primary and additional talent types are mutually exclusive
     if (fieldId === "primary_talent_type") {
@@ -559,7 +567,7 @@ export function UnifiedTalentProfileForm({
         case "checkbox":
           return (
             <Select
-              value={value || ""}
+              value={value === true ? "Yes" : value === false ? "No" : ""}
               onValueChange={(next) => setFieldValue(field.id, next)}
             >
               <SelectTrigger className={hasError ? 'border-destructive' : ''}>
@@ -573,8 +581,12 @@ export function UnifiedTalentProfileForm({
           );
 
         case "select":
+          const isBooleanSelect = options.includes("Yes") && options.includes("No");
           return (
-            <Select value={value || ""} onValueChange={(next) => setFieldValue(field.id, next)}>
+            <Select 
+              value={isBooleanSelect ? (value === true ? "Yes" : value === false ? "No" : "") : (value || "")} 
+              onValueChange={(next) => setFieldValue(field.id, next)}
+            >
               <SelectTrigger className={hasError ? 'border-destructive' : ''}>
                 <SelectValue placeholder={`Select ${field.label}`} />
               </SelectTrigger>

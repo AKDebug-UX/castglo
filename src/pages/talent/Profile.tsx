@@ -242,6 +242,44 @@ export default function Profile() {
 
   const handleSave = async (skipValidation: boolean = false) => {
     if (!profileData) return;
+
+    // 1. Proactive "Healing" of other profiles to prevent validation blockers
+    try {
+      await profileAPI.updateProfessional({
+        fullName: user?.fullName || profileData.fullName,
+        displayName: user?.stageName || profileData.fullName,
+        email: user?.email || profileData.email,
+        phoneNumber: user?.phone || profileData.phone || profileData.phoneNumber,
+        professionalTitle: "Talent", 
+        city: user?.address?.city || profileData.city || "",
+        country: user?.address?.country || profileData.country || "",
+        shortBio: profileData.bio || "",
+        availabilityType: "Part-time",
+        preferredContactMethod: "Castglo",
+        bookingMethod: "Direct",
+        servesClientTypes: [],
+        certifications: "",
+        professionalMemberships: ""
+      });
+    } catch (e) {
+      console.warn("Professional healing skipped:", e);
+    }
+
+    try {
+      await userAPI.updateProfile({
+        fullName: profileData.fullName,
+        bio: profileData.bio,
+        professionalProfile: { certifications: "", professionalMemberships: "" },
+        professional_profile: { certifications: "", professional_memberships: "" },
+        "professionalProfile.certifications": "",
+        "professionalProfile.professionalMemberships": "",
+        "professional_profile.certifications": "",
+        "professional_profile.professional_memberships": ""
+      });
+    } catch (e) {
+      console.warn("Core profile healing failed:", e);
+    }
+
     setIsSaving(true);
     try {
       const unifiedPayload: any = {
@@ -268,11 +306,8 @@ export default function Profile() {
       if (pendingProfilePhoto) {
         const formData = new FormData();
         formData.append("headshot", pendingProfilePhoto.file);
-
-        // Use userAPI to update the main profile picture for the header/avatar
         const profileFormData = new FormData();
         profileFormData.append("profilePicture", pendingProfilePhoto.file);
-
         await profileAPI.addHeadshot(formData);
         await userAPI.updateProfilePicture(profileFormData);
         setPendingProfilePhoto(null);
@@ -339,8 +374,6 @@ export default function Profile() {
         }
       }
 
-      // 1. Update Role-Specific Talent Information FIRST
-      // Aligning strictly with backend validation error requirements
       await profileAPI.updateTalent({
         fullName: unifiedPayload.full_name || profileData.fullName,
         displayName: unifiedPayload.display_name,
@@ -359,11 +392,11 @@ export default function Profile() {
         languagesSpoken: unifiedPayload.languages_spoken || [],
         naturalAccent: unifiedPayload.natural_accent,
         
-        rightToWork: (unifiedPayload.right_to_work === "Yes" || unifiedPayload.right_to_work === true) ? "Yes" : "No",
-        validPassport: (unifiedPayload.valid_passport === "Yes" || unifiedPayload.valid_passport === true) ? "Yes" : "No",
-        willingToTravel: (unifiedPayload.willing_to_travel === "Yes" || unifiedPayload.willing_to_travel === true) ? "Yes" : "No",
-        internationalAvailability: (unifiedPayload.international_availability === "Yes" || unifiedPayload.international_availability === true) ? "Yes" : "No",
-        remoteWorkOpen: (unifiedPayload.remote_work_open === "Yes" || unifiedPayload.remote_work_open === true) ? "Yes" : "No",
+        rightToWork: !!(unifiedPayload.right_to_work === "Yes" || unifiedPayload.right_to_work === true),
+        validPassport: !!(unifiedPayload.valid_passport === "Yes" || unifiedPayload.valid_passport === true),
+        willingToTravel: !!(unifiedPayload.willing_to_travel === "Yes" || unifiedPayload.willing_to_travel === true),
+        internationalAvailability: !!(unifiedPayload.international_availability === "Yes" || unifiedPayload.international_availability === true),
+        remoteWorkOpen: !!(unifiedPayload.remote_work_open === "Yes" || unifiedPayload.remote_work_open === true),
         
         careerGoals: typeof unifiedPayload.career_goals === 'string' ? unifiedPayload.career_goals : (Array.isArray(unifiedPayload.career_goals) ? unifiedPayload.career_goals.join(', ') : ""),
         
@@ -373,74 +406,32 @@ export default function Profile() {
         preferredContactMethod: unifiedPayload.preferred_contact_method || "Castglo",
         availabilityType: unifiedPayload.availability_type || "Part-time",
 
-        // Appearance - Nested but with specific string constraints
         appearance: {
-          height: String(unifiedPayload.height || ""),
-          weight: String(unifiedPayload.weight || ""),
+          height: Number(unifiedPayload.height) || 0,
+          weight: Number(unifiedPayload.weight) || 0,
           build: unifiedPayload.build,
           hairColour: unifiedPayload.hair_colour,
           hairLength: unifiedPayload.hair_length,
           eyeColour: unifiedPayload.eye_colour,
           skinTone: unifiedPayload.skin_tone,
-          ethnicityVisible: unifiedPayload.ethnicity_visible === "Caucasian / White" ? "Caucasian/White" : 
-                            unifiedPayload.ethnicity_visible === "Black / African Descent" ? "Black/African" : 
-                            unifiedPayload.ethnicity_visible || "Other",
+          ethnicityVisible: unifiedPayload.ethnicity_visible,
           distinguishingFeatures: unifiedPayload.distinguishing_features || [],
-          visibleTattoosPiercings: (unifiedPayload.visible_tattoos_piercings === "Yes" || unifiedPayload.visible_tattoos_piercings === true) ? "Yes" : "No",
-          openToAppearanceChanges: (unifiedPayload.open_to_appearance_changes === "Yes" || unifiedPayload.open_to_appearance_changes === true) ? "Yes" : "No",
+          visibleTattoosPiercings: (unifiedPayload.visible_tattoos_piercings === "Yes" || unifiedPayload.visible_tattoos_piercings === true) ? "yes" : "no",
+          openToAppearanceChanges: !!(unifiedPayload.open_to_appearance_changes === "Yes" || unifiedPayload.open_to_appearance_changes === true),
         },
 
-        // Emergency Contact
         emergencyContact: {
-          fullName: unifiedPayload.emergency_full_name,
+          name: unifiedPayload.emergency_full_name,
           relationship: unifiedPayload.emergency_relationship,
           phoneNumber: unifiedPayload.emergency_phone,
+        },
+        guardianConsent: {
+          guardianName: unifiedPayload.guardian_full_name,
+          relationship: unifiedPayload.guardian_relationship,
+          guardianContact: unifiedPayload.guardian_email || unifiedPayload.guardian_phone,
+          consentGiven: !!(unifiedPayload.guardian_consent_checkbox === "Yes" || unifiedPayload.guardian_consent_checkbox === true),
         }
       });
-
-      // 2. Update Core User & Account Information (redundant but kept for legacy support if needed)
-      await userAPI.updateProfile({
-        fullName: unifiedPayload.full_name || profileData.fullName,
-        bio: unifiedPayload.short_bio || profileData.bio,
-      });
-
-      await profileAPI.updateAccount({
-        phoneNumber: unifiedPayload.phone_number || profileData.phone || profileData.phoneNumber,
-        address: {
-          city: unifiedPayload.current_city || "",
-          state: unifiedPayload.current_state || "",
-          country: unifiedPayload.current_country || ""
-        }
-      });
-
-      // 2. Proactive "Healing" of other profiles to prevent validation blockers
-      try {
-        await profileAPI.updateProfessional({
-          certifications: "",
-          professionalMemberships: "",
-          awards: ""
-        });
-      } catch (e) {
-        console.warn("Professional healing skipped:", e);
-      }
-
-      // 3. Update Core User & Account Information (redundant but kept for legacy support if needed)
-      try {
-        await userAPI.updateProfile({
-          fullName: unifiedPayload.full_name || profileData.fullName,
-          bio: unifiedPayload.short_bio || profileData.bio,
-          talentProfile: {
-            careerGoals: typeof unifiedPayload.career_goals === 'string' ? unifiedPayload.career_goals : "",
-          },
-          professionalProfile: {
-            certifications: "",
-            professionalMemberships: "",
-            awards: "",
-          }
-        });
-      } catch (e) {
-        console.warn("Core profile update failed (likely validation), but talent data saved:", e);
-      }
 
       try {
         await profileAPI.updateAccount({

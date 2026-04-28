@@ -241,21 +241,21 @@ export default function ProfessionalProfile() {
         servesClientTypes: unifiedPayload.serves_client_types || [],
 
         // Flattened Business Fields (No longer in businessDetails)
-        businessName: unifiedPayload.business_name,
-        insuranceAvailable: (unifiedPayload.insurance_available === "Yes" || unifiedPayload.insurance_available === true) ? "Yes" : "No",
-        dbsChecked: (unifiedPayload.dbs_checked === "Yes" || unifiedPayload.dbs_checked === true) ? "Yes" : "No",
+        // Boolean Flags aligned with API
+        insuranceAvailable: !!(unifiedPayload.insurance_available === "Yes" || unifiedPayload.insurance_available === true),
+        dbsChecked: !!(unifiedPayload.dbs_checked === "Yes" || unifiedPayload.dbs_checked === true),
         certifications: Array.isArray(unifiedPayload.certifications) ? unifiedPayload.certifications.join(', ') : (unifiedPayload.certifications || ""),
         
-        studioAccess: (unifiedPayload.studio_access === "Yes" || unifiedPayload.studio_access === true) ? "Yes" : "No",
+        studioAccess: !!(unifiedPayload.studio_access === "Yes" || unifiedPayload.studio_access === true),
         studioDetails: unifiedPayload.studio_details || "",
-        depositRequired: (unifiedPayload.deposit_required === "Yes" || unifiedPayload.deposit_required === true) ? "Yes" : "No",
-        depositPercentage: unifiedPayload.deposit_percentage ? String(unifiedPayload.deposit_percentage) : "0",
+        depositRequired: !!(unifiedPayload.deposit_required === "Yes" || unifiedPayload.deposit_required === true),
+        depositPercentage: Number(unifiedPayload.deposit_percentage) || 0,
         cancellationPolicy: unifiedPayload.cancellation_policy || "",
         refundPolicy: unifiedPayload.refund_policy || "",
-        contractRequired: (unifiedPayload.contract_required === "Yes" || unifiedPayload.contract_required === true) ? "Yes" : "No",
-        ndaFriendly: (unifiedPayload.nda_friendly === "Yes" || unifiedPayload.nda_friendly === true) ? "Yes" : "No",
-        invoicingAvailable: (unifiedPayload.invoicing_available === "Yes" || unifiedPayload.invoicing_available === true) ? "Yes" : "No",
-        taxRegistered: (unifiedPayload.tax_registered === "Yes" || unifiedPayload.tax_registered === true) ? "Yes" : "No",
+        contractRequired: !!(unifiedPayload.contract_required === "Yes" || unifiedPayload.contract_required === true),
+        ndaFriendly: !!(unifiedPayload.nda_friendly === "Yes" || unifiedPayload.nda_friendly === true),
+        invoicingAvailable: !!(unifiedPayload.invoicing_available === "Yes" || unifiedPayload.invoicing_available === true),
+        taxRegistered: !!(unifiedPayload.tax_registered === "Yes" || unifiedPayload.tax_registered === true),
       });
 
       // 2. Proactive "Healing" of other profiles to prevent cross-model validation blockers
