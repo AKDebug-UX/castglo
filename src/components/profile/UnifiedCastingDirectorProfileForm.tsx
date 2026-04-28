@@ -253,6 +253,7 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
           </CardContent>
         </Card>
       ))}
+      </div>
 
       {onSave && (
         <div className="flex justify-end">

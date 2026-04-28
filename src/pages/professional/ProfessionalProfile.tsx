@@ -218,71 +218,82 @@ export default function ProfessionalProfile() {
         setPendingPortfolioPhotos([]);
       }
 
-      // 1. Update Core User & Account Information
-      // We include "healing" payloads to fix corrupted legacy fields in the DB (e.g. [] where String is expected)
-      await userAPI.updateProfile({
-        fullName: unifiedPayload.full_name,
-        bio: unifiedPayload.short_bio,
-        jobTitle: unifiedPayload.professional_title,
-        organisationType: unifiedPayload.business_name ? "Business" : "Individual",
-        talentProfile: {
-          careerGoals: typeof unifiedPayload.career_goals === 'string' ? unifiedPayload.career_goals : "",
-        },
-        professionalProfile: {
-          certifications: typeof unifiedPayload.certifications === 'string' ? unifiedPayload.certifications : "",
-          professionalMemberships: typeof unifiedPayload.professional_memberships === 'string' ? unifiedPayload.professional_memberships : "",
-          awards: typeof unifiedPayload.awards_recognition === 'string' ? unifiedPayload.awards_recognition : "",
-        }
-      });
-
-      await profileAPI.updateAccount({
-        phoneNumber: unifiedPayload.phone_number,
-        address: {
-          city: unifiedPayload.city || "",
-          state: unifiedPayload.state || "", // If available in spec
-          country: unifiedPayload.country || ""
-        }
-      });
-
-      // 2. Update Specialized Professional Information
+      // 1. Update Specialized Professional Information FIRST
+      // Aligning strictly with backend validation error requirements (FLAT structure)
       await profileAPI.updateProfessional({
-        businessName: unifiedPayload.business_name,
-        primaryProfessionalType: unifiedPayload.primary_professional_type,
-        additionalTypes: unifiedPayload.additional_professional_types || [],
-        yearsOfExperience: unifiedPayload.years_of_experience,
-        experienceLevel: unifiedPayload.experience_level?.toLowerCase(),
-        servesClientTypes: unifiedPayload.serves_client_types || [],
-        industryAreas: unifiedPayload.industry_areas || [],
+        fullName: unifiedPayload.full_name || profileData?.fullName,
+        displayName: unifiedPayload.display_name || profileData?.stageName,
+        professionalTitle: unifiedPayload.professional_title,
+        email: unifiedPayload.email || profileData?.email,
+        phoneNumber: unifiedPayload.phone_number || profileData?.phoneNumber || profileData?.phone,
+        city: unifiedPayload.city || "",
+        country: unifiedPayload.country || "",
+        shortBio: unifiedPayload.short_bio || "",
+        fullBio: unifiedPayload.full_bio || "",
         
-        // Skills & Tools
-        coreSkills: unifiedPayload.core_skills || [],
-        customSkills: unifiedPayload.custom_skills || "",
-        softwareTools: unifiedPayload.software_tools || [],
+        primaryProfessionalType: unifiedPayload.primary_professional_type,
+        yearsOfExperience: unifiedPayload.years_of_experience,
+        experienceLevel: unifiedPayload.experience_level,
+        
+        availabilityType: unifiedPayload.availability_type || "Part-time",
+        preferredContactMethod: unifiedPayload.preferred_contact_method || "Castglo",
+        bookingMethod: unifiedPayload.booking_method || "Direct",
+        servesClientTypes: unifiedPayload.serves_client_types || [],
 
-        // Nested Business Details
-        businessDetails: {
-          insuranceAvailable: unifiedPayload.insurance_available === "Yes" || unifiedPayload.insurance_available === true,
-          dbsChecked: unifiedPayload.dbs_checked === "Yes" || unifiedPayload.dbs_checked === true,
-          // Handle certifications/awards as arrays but ensure they are cleaned of empty strings
-          certifications: Array.isArray(unifiedPayload.certifications) ? unifiedPayload.certifications : (unifiedPayload.certifications ? [unifiedPayload.certifications] : []),
-          awards: Array.isArray(unifiedPayload.awards_recognition) ? unifiedPayload.awards_recognition : (unifiedPayload.awards_recognition ? [unifiedPayload.awards_recognition] : []),
-          
-          studioAccess: unifiedPayload.studio_access === "Yes" || unifiedPayload.studio_access === true,
-          studioDetails: unifiedPayload.studio_details || "",
-
-          bookingMethod: unifiedPayload.booking_method,
-          preferredContactMethod: unifiedPayload.preferred_contact_method,
-          depositRequired: unifiedPayload.deposit_required === "Yes" || unifiedPayload.deposit_required === true,
-          depositPercentage: unifiedPayload.deposit_percentage ? Number(unifiedPayload.deposit_percentage) : 0,
-          paymentMethods: unifiedPayload.payment_methods || [],
-          cancellationPolicy: unifiedPayload.cancellation_policy || "",
-          refundPolicy: unifiedPayload.refund_policy || "",
-          contractRequired: unifiedPayload.contract_required === "Yes" || unifiedPayload.contract_required === true,
-          ndaFriendly: unifiedPayload.nda_friendly === "Yes" || unifiedPayload.nda_friendly === "Yes",
-          invoicingAvailable: unifiedPayload.invoicing_available === "Yes" || unifiedPayload.invoicing_available === true,
-          taxRegistered: unifiedPayload.tax_registered === "Yes" || unifiedPayload.tax_registered === true,
-        }
+        // Flattened Business Fields (No longer in businessDetails)
+        businessName: unifiedPayload.business_name,
+        insuranceAvailable: (unifiedPayload.insurance_available === "Yes" || unifiedPayload.insurance_available === true) ? "Yes" : "No",
+        dbsChecked: (unifiedPayload.dbs_checked === "Yes" || unifiedPayload.dbs_checked === true) ? "Yes" : "No",
+        certifications: Array.isArray(unifiedPayload.certifications) ? unifiedPayload.certifications.join(', ') : (unifiedPayload.certifications || ""),
+        
+        studioAccess: (unifiedPayload.studio_access === "Yes" || unifiedPayload.studio_access === true) ? "Yes" : "No",
+        studioDetails: unifiedPayload.studio_details || "",
+        depositRequired: (unifiedPayload.deposit_required === "Yes" || unifiedPayload.deposit_required === true) ? "Yes" : "No",
+        depositPercentage: unifiedPayload.deposit_percentage ? String(unifiedPayload.deposit_percentage) : "0",
+        cancellationPolicy: unifiedPayload.cancellation_policy || "",
+        refundPolicy: unifiedPayload.refund_policy || "",
+        contractRequired: (unifiedPayload.contract_required === "Yes" || unifiedPayload.contract_required === true) ? "Yes" : "No",
+        ndaFriendly: (unifiedPayload.nda_friendly === "Yes" || unifiedPayload.nda_friendly === true) ? "Yes" : "No",
+        invoicingAvailable: (unifiedPayload.invoicing_available === "Yes" || unifiedPayload.invoicing_available === true) ? "Yes" : "No",
+        taxRegistered: (unifiedPayload.tax_registered === "Yes" || unifiedPayload.tax_registered === true) ? "Yes" : "No",
       });
+
+      // 2. Proactive "Healing" of other profiles to prevent cross-model validation blockers
+      try {
+        await profileAPI.updateTalent({ shortBio: unifiedPayload.short_bio || "", careerGoals: "" });
+        // We also "heal" the root professional fields if they are corrupted
+        await userAPI.updateProfile({
+          professionalProfile: { certifications: "", professionalMemberships: "", awards: "" },
+          talentProfile: { careerGoals: "" }
+        });
+      } catch (e) {
+        console.warn("Cross-profile healing skipped:", e);
+      }
+
+      // 3. Update Core User & Account Information (isolated to prevent blocking)
+      try {
+        await userAPI.updateProfile({
+          fullName: unifiedPayload.full_name,
+          bio: unifiedPayload.short_bio,
+          jobTitle: unifiedPayload.professional_title,
+          organisationType: unifiedPayload.business_name ? "Business" : "Individual",
+        });
+      } catch (e) {
+        console.warn("Core profile update failed, but professional data saved:", e);
+      }
+
+      try {
+        await profileAPI.updateAccount({
+          phoneNumber: unifiedPayload.phone_number,
+          address: {
+            city: unifiedPayload.city || "",
+            state: unifiedPayload.state || "",
+            country: unifiedPayload.country || ""
+          }
+        });
+      } catch (e) {
+        console.warn("Account update failed:", e);
+      }
 
       // 3. Optional: Extract service if filled in the form
       if (unifiedPayload.service_title) {

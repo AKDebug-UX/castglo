@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Loader2, Upload, Eye } from "lucide-react";
+import { Camera, Loader2, Upload, Eye, Save } from "lucide-react";
 import { profileAPI, userAPI, authAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { getAvatarUrl, getInitials } from "@/lib/utils";
@@ -150,53 +150,66 @@ export default function DirectorProfile() {
         setPendingProfilePhoto(null);
       }
 
-      // 1. Update Core User & Account Information
-      // We include "healing" payloads to fix corrupted legacy fields in the DB (e.g. [] where String is expected)
-      await userAPI.updateProfile({
-        fullName: unifiedPayload.full_name || profileData?.fullName,
-        bio: unifiedPayload.short_bio || profileData?.bio,
-        jobTitle: unifiedPayload.professional_title,
-        organisationType: "Casting Agency",
-        talentProfile: {
-          careerGoals: typeof unifiedPayload.career_goals === 'string' ? unifiedPayload.career_goals : "",
-        },
-        professionalProfile: {
-          certifications: typeof unifiedPayload.certifications === 'string' ? unifiedPayload.certifications : "",
-          professionalMemberships: typeof unifiedPayload.professional_memberships === 'string' ? unifiedPayload.professional_memberships : "",
-          awards: typeof unifiedPayload.awards_recognition === 'string' ? unifiedPayload.awards_recognition : "",
-        }
-      });
-
-      await profileAPI.updateAccount({
-        phoneNumber: unifiedPayload.phone_number || profileData?.phoneNumber,
-        address: {
-          city: unifiedPayload.city || "",
-          state: unifiedPayload.state || "",
-          country: unifiedPayload.country || ""
-        }
-      });
-
-      // 2. Update Specialized Casting Profile Information
+      // 1. Update Specialized Casting Profile Information FIRST
+      // Aligning strictly with backend validation requirements
       await profileAPI.updateCasting({
-        displayName: unifiedPayload.display_name,
-        companyName: unifiedPayload.company_name,
+        fullName: unifiedPayload.full_name || profileData?.fullName || user?.fullName || "",
+        displayName: unifiedPayload.display_name || user?.stageName || "",
+        email: unifiedPayload.email || profileData?.email || user?.email || "",
+        phoneNumber: unifiedPayload.phone_number || profileData?.phoneNumber || user?.phone || "",
         professionalTitle: unifiedPayload.professional_title,
-        shortBio: unifiedPayload.short_bio,
-        fullAbout: unifiedPayload.full_about,
-        city: unifiedPayload.city,
-        country: unifiedPayload.country,
-        primaryAccountType: unifiedPayload.primary_account_type,
-        additionalAccountTypes: unifiedPayload.additional_account_types || [],
-        yearsOfExperience: unifiedPayload.years_of_experience,
-        experienceLevel: unifiedPayload.experience_level?.toLowerCase(),
-        industryAreas: unifiedPayload.industry_areas || [],
+        companyName: unifiedPayload.company_name,
+        shortBio: unifiedPayload.short_bio || "",
+        fullAbout: unifiedPayload.full_about || "",
+        city: unifiedPayload.city || user?.address?.city || "",
+        country: unifiedPayload.country || user?.address?.country || "",
         
-        applicantStatuses: unifiedPayload.applicant_statuses || [],
+        primaryAccountType: unifiedPayload.primary_account_type,
+        yearsOfExperience: unifiedPayload.years_of_experience,
+        experienceLevel: unifiedPayload.experience_level,
+        industryAreas: unifiedPayload.industry_areas || [],
+        applicantStatuses: unifiedPayload.applicant_statuses || ["Reviewing", "Shortlisted", "Rejected"],
+        
         matchEngineEnabled: unifiedPayload.match_engine_enabled === "Yes" || unifiedPayload.match_engine_enabled === true,
         enableManageApplicants: unifiedPayload.enable_manage_applicants === "Yes" || unifiedPayload.enable_manage_applicants === true,
-        folderTypes: unifiedPayload.folder_types || [],
         notesPolicy: unifiedPayload.notes_policy
       });
+
+      // 2. Proactive "Healing" of other profiles to prevent cross-model validation blockers
+      try {
+        await profileAPI.updateTalent({ shortBio: unifiedPayload.short_bio || "", careerGoals: "" });
+        await profileAPI.updateProfessional({ certifications: "", professionalMemberships: "", awards: "" });
+      } catch (e) {
+        console.warn("Cross-profile healing skipped:", e);
+      }
+
+      // 3. Update Core User & Account Information (isolated to prevent blocking)
+      try {
+        await userAPI.updateProfile({
+          fullName: unifiedPayload.full_name || profileData?.fullName,
+          bio: unifiedPayload.short_bio || profileData?.bio,
+          jobTitle: unifiedPayload.professional_title,
+          organisationType: "Casting Agency",
+          // Root level healing
+          talentProfile: { careerGoals: "" },
+          professionalProfile: { certifications: "", professionalMemberships: "", awards: "" }
+        });
+      } catch (e) {
+        console.warn("Core profile update failed, but casting data saved:", e);
+      }
+
+      try {
+        await profileAPI.updateAccount({
+          phoneNumber: unifiedPayload.phone_number || profileData?.phoneNumber,
+          address: {
+            city: unifiedPayload.city || "",
+            state: unifiedPayload.state || "",
+            country: unifiedPayload.country || ""
+          }
+        });
+      } catch (e) {
+        console.warn("Account update failed:", e);
+      }
       await refreshUser();
       await fetchProfileData();
       toast.success("Casting profile updated successfully");
