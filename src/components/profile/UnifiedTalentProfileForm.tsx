@@ -564,10 +564,11 @@ export function UnifiedTalentProfileForm({
     const fieldContent = (() => {
       switch (field.type) {
         case "boolean":
-        case "checkbox":
+        case "checkbox": {
+          const booleanVal = (value === true || value === "Yes") ? "Yes" : (value === false || value === "No" ? "No" : "");
           return (
             <Select
-              value={value === true ? "Yes" : value === false ? "No" : ""}
+              value={booleanVal}
               onValueChange={(next) => setFieldValue(field.id, next)}
             >
               <SelectTrigger className={hasError ? 'border-destructive' : ''}>
@@ -579,12 +580,16 @@ export function UnifiedTalentProfileForm({
               </SelectContent>
             </Select>
           );
+        }
 
         case "select":
           const isBooleanSelect = options.includes("Yes") && options.includes("No");
+          const selectValue = isBooleanSelect 
+            ? ((value === true || value === "Yes") ? "Yes" : (value === false || value === "No" ? "No" : ""))
+            : (value || "");
           return (
             <Select
-              value={isBooleanSelect ? (value === true ? "Yes" : value === false ? "No" : "") : (value || "")}
+              value={selectValue}
               onValueChange={(next) => setFieldValue(field.id, next)}
             >
               <SelectTrigger className={hasError ? 'border-destructive' : ''}>
@@ -693,6 +698,16 @@ export function UnifiedTalentProfileForm({
               className={hasError ? 'border-destructive' : ''}
               disabled={field.id === "email"}
               onChange={(e) => setFieldValue(field.id, e.target.value)}
+            />
+          );
+
+        case "date":
+          return (
+            <Input
+              type="date"
+              value={value || ""}
+              onChange={(e) => setFieldValue(field.id, e.target.value)}
+              className={hasError ? 'border-destructive' : ''}
             />
           );
 

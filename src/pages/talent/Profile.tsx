@@ -47,20 +47,28 @@ export default function Profile() {
       if (!unified.phone_number) unified.phone_number = combinedData.phone || combinedData.phoneNumber;
 
       const addr = combinedData.address || {};
-      if (!unified.current_city) unified.current_city = addr.city || combinedData.city;
-      if (!unified.current_state) unified.current_state = addr.state;
-      if (!unified.current_country) unified.current_country = addr.country || combinedData.country;
+      if (!unified.current_city) unified.current_city = tp.currentCity || addr.city || combinedData.city;
+      if (!unified.current_state) unified.current_state = tp.currentState || addr.state;
+      if (!unified.current_country) unified.current_country = tp.currentCountry || addr.country || combinedData.country;
 
       if (!unified.address) unified.address = combinedData.address;
-      if (!unified.gender) unified.gender = combinedData.gender;
+      if (!unified.gender) unified.gender = tp.gender || combinedData.gender;
       if (!unified.primary_talent_type) unified.primary_talent_type = tp.primaryTalentType || combinedData.talentTypes?.[0];
       if (!unified.additional_talent_types) unified.additional_talent_types = tp.additionalTalentTypes || combinedData.talentTypes?.slice(1);
-      if (!unified.dateOfBirth) unified.dateOfBirth = tp.dateOfBirth;
+      if (!unified.dateOfBirth) {
+        unified.dateOfBirth = tp.dateOfBirth;
+      }
+      if (unified.dateOfBirth && unified.dateOfBirth.includes('T')) {
+        unified.dateOfBirth = unified.dateOfBirth.split('T')[0];
+      }
+      
       if (!unified.age_group) unified.age_group = tp.ageGroup;
       if (!unified.nationality) unified.nationality = tp.nationality;
       if (!unified.short_bio) unified.short_bio = combinedData.bio || tp.shortBio;
       if (!unified.full_bio) unified.full_bio = tp.fullBio;
-      if (!unified.career_goals) unified.career_goals = typeof tp.careerGoals === 'string' ? tp.careerGoals : "";
+      if (!unified.career_goals) unified.career_goals = typeof tp.careerGoals === 'string' ? tp.careerGoals : (Array.isArray(tp.careerGoals) ? tp.careerGoals.join(', ') : "");
+      if (!unified.years_of_experience) unified.years_of_experience = tp.yearsOfExperience;
+      if (!unified.experience_level) unified.experience_level = tp.experienceLevel;
 
       if (unified.right_to_work === undefined && tp.rightToWork !== undefined) unified.right_to_work = tp.rightToWork === true || tp.rightToWork === "Yes" ? "Yes" : "No";
       if (unified.valid_passport === undefined && tp.validPassport !== undefined) unified.valid_passport = tp.validPassport === true || tp.validPassport === "Yes" ? "Yes" : "No";
@@ -68,9 +76,10 @@ export default function Profile() {
       if (unified.international_availability === undefined && tp.internationalAvailability !== undefined) unified.international_availability = tp.internationalAvailability === true || tp.internationalAvailability === "Yes" ? "Yes" : "No";
       if (unified.remote_work_open === undefined && tp.remoteWorkOpen !== undefined) unified.remote_work_open = tp.remoteWorkOpen === true || tp.remoteWorkOpen === "Yes" ? "Yes" : "No";
 
-      if (!unified.languages_spoken) unified.languages_spoken = combinedData.languages || tp.languagesSpoken;
-      if (!unified.fluent_languages) unified.fluent_languages = combinedData.fluentLanguages || tp.fluentLanguages;
+      if (!unified.languages_spoken) unified.languages_spoken = tp.languages?.performance || combinedData.languages || tp.languagesSpoken;
+      if (!unified.fluent_languages) unified.fluent_languages = tp.languages?.fluent || combinedData.fluentLanguages || tp.fluentLanguages;
       if (!unified.natural_accent) unified.natural_accent = combinedData.naturalAccent || tp.naturalAccent;
+      if (!unified.additional_accents) unified.additional_accents = tp.accents || [];
       if (!unified.skills) unified.skills = combinedData.skills || tp.skills;
       if (!unified.equipment) unified.equipment = combinedData.equipment || tp.equipment;
 
@@ -90,31 +99,60 @@ export default function Profile() {
       }
       if (tp.appearance) {
         if (!unified.height) unified.height = tp.appearance.height;
+        if (!unified.weight) unified.weight = tp.appearance.weight;
         if (!unified.build) unified.build = tp.appearance.build;
         if (!unified.eye_colour) unified.eye_colour = tp.appearance.eyeColour;
         if (!unified.hair_colour) unified.hair_colour = tp.appearance.hairColour;
         if (!unified.hair_length) unified.hair_length = tp.appearance.hairLength;
+        if (!unified.skin_tone) unified.skin_tone = tp.appearance.skinTone;
         if (!unified.ethnicity_visible) unified.ethnicity_visible = tp.appearance.ethnicityVisible;
         if (!unified.distinguishing_features) unified.distinguishing_features = tp.appearance.distinguishingFeatures;
         if (unified.visible_tattoos_piercings === undefined && tp.appearance.visibleTattoosPiercings !== undefined) {
           unified.visible_tattoos_piercings = tp.appearance.visibleTattoosPiercings === true || tp.appearance.visibleTattoosPiercings === "Yes" ? "Yes" : "No";
         }
+        if (unified.open_to_appearance_changes === undefined && tp.appearance.openToAppearanceChanges !== undefined) {
+          unified.open_to_appearance_changes = tp.appearance.openToAppearanceChanges === true || tp.appearance.openToAppearanceChanges === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.clothing_size_top) unified.clothing_size_top = tp.appearance.clothingSizeTop;
+        if (!unified.clothing_size_bottom) unified.clothing_size_bottom = tp.appearance.clothingSizeBottom;
+        if (!unified.shoe_size) unified.shoe_size = tp.appearance.shoeSize;
+        if (!unified.chest_bust_measurement) unified.chest_bust_measurement = tp.appearance.chestBustMeasurement;
+        if (!unified.waist_measurement) unified.waist_measurement = tp.appearance.waistMeasurement;
+        if (!unified.hip_measurement) unified.hip_measurement = tp.appearance.hipMeasurement;
       }
       if (tp.availability) {
-        if (!unified.availability_type) unified.availability_type = tp.availability.availabilityType;
-        if (unified.last_minute_bookings === undefined && tp.availability.lastMinuteBookings !== undefined) {
-          unified.last_minute_bookings = tp.availability.lastMinuteBookings === true || tp.availability.lastMinuteBookings === "Yes" ? "Yes" : "No";
+        if (!unified.availability_type) unified.availability_type = tp.availabilityType || tp.availability.availabilityType;
+        if (unified.last_minute_bookings === undefined && (tp.lastMinuteBookings !== undefined || tp.availability.lastMinuteBookings !== undefined)) {
+          const val = tp.lastMinuteBookings !== undefined ? tp.lastMinuteBookings : tp.availability.lastMinuteBookings;
+          unified.last_minute_bookings = val === true || val === "Yes" ? "Yes" : "No";
         }
-        if (!unified.notice_required) unified.notice_required = tp.availability.noticeRequired;
-        if (!unified.opportunities_sought) unified.opportunities_sought = tp.availability.opportunitiesSought;
-        if (!unified.opportunities_not_accepted) unified.opportunities_not_accepted = tp.availability.opportunitiesNotAccepted;
+        if (!unified.notice_required) unified.notice_required = tp.noticeRequired || tp.availability.noticeRequired;
+        if (!unified.opportunities_sought) unified.opportunities_sought = tp.opportunitiesSought || tp.availability.opportunitiesSought;
+        if (!unified.opportunities_not_accepted) unified.opportunities_not_accepted = tp.opportunitiesNotAccepted || tp.availability.opportunitiesNotAccepted;
+      } else if (tp.availabilityType) {
+        // Handle flattened availability fields
+        if (!unified.availability_type) unified.availability_type = tp.availabilityType;
+        if (unified.last_minute_bookings === undefined && tp.lastMinuteBookings !== undefined) {
+          unified.last_minute_bookings = tp.lastMinuteBookings === true || tp.lastMinuteBookings === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.notice_required) unified.notice_required = tp.noticeRequired;
+        if (!unified.opportunities_sought) unified.opportunities_sought = tp.opportunitiesSought;
+        if (!unified.opportunities_not_accepted) unified.opportunities_not_accepted = tp.opportunitiesNotAccepted;
       }
+
       if (tp.representation) {
-        if (!unified.representation_status) unified.representation_status = tp.representation.status;
-        if (!unified.agency_name) unified.agency_name = tp.representation.agencyName;
-        if (!unified.agency_contact_details) unified.agency_contact_details = tp.representation.agencyContactDetails;
-        if (!unified.union_membership) unified.union_membership = tp.representation.unionMembership;
-        if (!unified.preferred_contact_method) unified.preferred_contact_method = tp.representation.preferredContactMethod;
+        if (!unified.representation_status) unified.representation_status = tp.representationStatus || tp.representation.status;
+        if (!unified.agency_name) unified.agency_name = tp.agencyName || tp.representation.agencyName;
+        if (!unified.agency_contact_details) unified.agency_contact_details = tp.agencyContactDetails || tp.representation.agencyContactDetails;
+        if (!unified.union_membership) unified.union_membership = tp.unionMembership || tp.representation.unionMembership;
+        if (!unified.preferred_contact_method) unified.preferred_contact_method = tp.preferredContactMethod || tp.representation.preferredContactMethod;
+      } else if (tp.representationStatus) {
+        // Handle flattened representation fields
+        if (!unified.representation_status) unified.representation_status = tp.representationStatus;
+        if (!unified.agency_name) unified.agency_name = tp.agencyName;
+        if (!unified.agency_contact_details) unified.agency_contact_details = tp.agencyContactDetails;
+        if (!unified.union_membership) unified.union_membership = tp.unionMembership;
+        if (!unified.preferred_contact_method) unified.preferred_contact_method = tp.preferredContactMethod;
       }
       if (tp.bookingPreferences) {
         if (!unified.currency) unified.currency = tp.bookingPreferences.currency;
@@ -125,16 +163,31 @@ export default function Profile() {
         }
       }
       if (tp.emergencyContact) {
-        if (!unified.emergency_full_name) unified.emergency_full_name = tp.emergencyContact.fullName;
-        if (!unified.emergency_relationship) unified.emergency_relationship = tp.emergencyContact.relationship;
-        if (!unified.emergency_phone) unified.emergency_phone = tp.emergencyContact.phone || tp.emergencyContact.phoneNumber;
+        if (!unified.emergency_full_name) unified.emergency_full_name = tp.emergencyFullName || tp.emergencyContact.fullName;
+        if (!unified.emergency_relationship) unified.emergency_relationship = tp.emergencyRelationship || tp.emergencyContact.relationship;
+        if (!unified.emergency_phone) unified.emergency_phone = tp.emergencyPhone || tp.emergencyContact.phone || tp.emergencyContact.phoneNumber;
+      } else if (tp.emergencyFullName) {
+        if (!unified.emergency_full_name) unified.emergency_full_name = tp.emergencyFullName;
+        if (!unified.emergency_relationship) unified.emergency_relationship = tp.emergencyRelationship;
+        if (!unified.emergency_phone) unified.emergency_phone = tp.emergencyPhone;
       }
       if (tp.guardianConsent) {
-        if (!unified.guardian_full_name) unified.guardian_full_name = tp.guardianConsent.fullName;
-        if (!unified.guardian_relationship) unified.guardian_relationship = tp.guardianConsent.relationship;
-        if (!unified.guardian_email) unified.guardian_email = tp.guardianConsent.email;
-        if (!unified.guardian_phone) unified.guardian_phone = tp.guardianConsent.phone;
-        if (unified.guardian_consent_checkbox === undefined && tp.guardianConsent.consentGiven !== undefined) unified.guardian_consent_checkbox = tp.guardianConsent.consentGiven ? "Yes" : "No";
+        if (!unified.guardian_full_name) unified.guardian_full_name = tp.guardianFullName || tp.guardianConsent.fullName;
+        if (!unified.guardian_relationship) unified.guardian_relationship = tp.guardianRelationship || tp.guardianConsent.relationship;
+        if (!unified.guardian_email) unified.guardian_email = tp.guardianEmail || tp.guardianConsent.email;
+        if (!unified.guardian_phone) unified.guardian_phone = tp.guardianPhone || tp.guardianConsent.phone;
+        if (unified.guardian_consent_checkbox === undefined && (tp.guardianConsentGiven !== undefined || tp.guardianConsent.consentGiven !== undefined)) {
+          const val = tp.guardianConsentGiven !== undefined ? tp.guardianConsentGiven : tp.guardianConsent.consentGiven;
+          unified.guardian_consent_checkbox = val ? "Yes" : "No";
+        }
+      } else if (tp.guardianFullName) {
+        if (!unified.guardian_full_name) unified.guardian_full_name = tp.guardianFullName;
+        if (!unified.guardian_relationship) unified.guardian_relationship = tp.guardianRelationship;
+        if (!unified.guardian_email) unified.guardian_email = tp.guardianEmail;
+        if (!unified.guardian_phone) unified.guardian_phone = tp.guardianPhone;
+        if (unified.guardian_consent_checkbox === undefined && tp.guardianConsentGiven !== undefined) {
+          unified.guardian_consent_checkbox = tp.guardianConsentGiven ? "Yes" : "No";
+        }
       }
 
       const existingProfilePhoto =
@@ -390,6 +443,7 @@ export default function Profile() {
 
         primaryTalentType: unifiedPayload.primary_talent_type,
         languagesSpoken: unifiedPayload.languages_spoken || [],
+        fluentLanguages: unifiedPayload.fluent_languages || [],
         naturalAccent: unifiedPayload.natural_accent,
 
         rightToWork: !!(unifiedPayload.right_to_work === "Yes" || unifiedPayload.right_to_work === true),
@@ -405,6 +459,10 @@ export default function Profile() {
         representationStatus: unifiedPayload.representation_status || "Self-represented",
         preferredContactMethod: unifiedPayload.preferred_contact_method || "Castglo",
         availabilityType: unifiedPayload.availability_type || "Part-time",
+        lastMinuteBookings: !!(unifiedPayload.last_minute_bookings === "Yes" || unifiedPayload.last_minute_bookings === true),
+        noticeRequired: unifiedPayload.notice_required,
+        opportunitiesSought: unifiedPayload.opportunities_sought || [],
+        opportunitiesNotAccepted: unifiedPayload.opportunities_not_accepted || [],
 
         appearance: {
           height: Number(unifiedPayload.height) || 0,
@@ -416,8 +474,8 @@ export default function Profile() {
           skinTone: unifiedPayload.skin_tone,
           ethnicityVisible: unifiedPayload.ethnicity_visible,
           distinguishingFeatures: unifiedPayload.distinguishing_features || [],
-          visibleTattoosPiercings: (unifiedPayload.visible_tattoos_piercings === "Yes" || unifiedPayload.visible_tattoos_piercings === true) ? "yes" : "no",
-          openToAppearanceChanges: !!(unifiedPayload.open_to_appearance_changes === "Yes" || unifiedPayload.open_to_appearance_changes === true),
+          visibleTattoosPiercings: (unifiedPayload.visible_tattoos_piercings === "Yes" || unifiedPayload.visible_tattoos_piercings === true) ? "Yes" : "No",
+          openToAppearanceChanges: (unifiedPayload.open_to_appearance_changes === "Yes" || unifiedPayload.open_to_appearance_changes === true) ? "Yes" : "No",
         },
 
         emergencyContact: {
