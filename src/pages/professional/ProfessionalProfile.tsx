@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Upload, X, Eye as EyeIcon } from "lucide-react";
+import { ArrowLeft, Camera, Image as ImageIcon, Loader2, Upload, X, Eye as EyeIcon, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -63,10 +63,9 @@ export default function ProfessionalProfile() {
       if (!unified.phone_number) unified.phone_number = combinedData.phoneNumber || combinedData.phone;
       if (!unified.short_bio) unified.short_bio = combinedData.bio || pp.bio;
       if (!unified.full_bio) unified.full_bio = combinedData.full_bio || pp.fullBio;
-      if (!unified.city) unified.city = combinedData.city;
-      if (!unified.country) unified.country = combinedData.country;
-      
       // Map specialized professional information
+      const bd = pp.businessDetails || {};
+      
       if (!unified.business_name) unified.business_name = pp.businessName;
       if (!unified.professional_title) unified.professional_title = combinedData.professional_title || pp.professionalTitle || combinedData.jobTitle;
       if (!unified.primary_professional_type) unified.primary_professional_type = combinedData.professionalCategory || pp.primaryProfessionalType;
@@ -79,17 +78,36 @@ export default function ProfessionalProfile() {
       if (!unified.software_tools) unified.software_tools = pp.softwareTools;
       if (!unified.equipment_owned) unified.equipment_owned = pp.equipmentOwned;
       
-      if (unified.insurance_available === undefined && pp.insuranceAvailable !== undefined) unified.insurance_available = pp.insuranceAvailable ? "Yes" : "No";
-      if (unified.dbs_checked === undefined && pp.dbsChecked !== undefined) unified.dbs_checked = pp.dbsChecked ? "Yes" : "No";
-      if (!unified.certifications) unified.certifications = pp.certifications;
-      if (!unified.awards_recognition) unified.awards_recognition = pp.awards;
+      // Trust & Verification (Checking root then businessDetails)
+      if (unified.insurance_available === undefined) {
+        const val = pp.insuranceAvailable !== undefined ? pp.insuranceAvailable : bd.insuranceAvailable;
+        if (val !== undefined) unified.insurance_available = val === true || val === "Yes" ? "Yes" : "No";
+      }
+      if (unified.dbs_checked === undefined) {
+        const val = pp.dbsChecked !== undefined ? pp.dbsChecked : bd.dbsChecked;
+        if (val !== undefined) unified.dbs_checked = val === true || val === "Yes" ? "Yes" : "No";
+      }
       
-      if (!unified.booking_method) unified.booking_method = pp.bookingMethod;
-      if (!unified.preferred_contact_method) unified.preferred_contact_method = pp.preferredContactMethod;
-      if (unified.deposit_required === undefined && pp.depositRequired !== undefined) unified.deposit_required = pp.depositRequired ? "Yes" : "No";
-      if (!unified.deposit_percentage) unified.deposit_percentage = pp.depositPercentage;
-      if (!unified.payment_methods) unified.payment_methods = pp.paymentMethods;
+      if (!unified.certifications) unified.certifications = typeof pp.certifications === 'string' ? pp.certifications : (typeof bd.certifications === 'string' ? bd.certifications : "");
+      if (!unified.awards_recognition) unified.awards_recognition = typeof pp.awards === 'string' ? pp.awards : (typeof bd.awards === 'string' ? bd.awards : "");
+      if (!unified.professional_memberships) unified.professional_memberships = typeof pp.professionalMemberships === 'string' ? pp.professionalMemberships : (typeof bd.professionalMemberships === 'string' ? bd.professionalMemberships : "");
+      
+      // Booking & Terms
+      if (!unified.booking_method) unified.booking_method = pp.bookingMethod || bd.bookingMethod;
+      if (!unified.preferred_contact_method) unified.preferred_contact_method = pp.preferredContactMethod || bd.preferredContactMethod;
+      if (unified.deposit_required === undefined) {
+        const val = pp.depositRequired !== undefined ? pp.depositRequired : bd.depositRequired;
+        if (val !== undefined) unified.deposit_required = val ? "Yes" : "No";
+      }
+      if (!unified.deposit_percentage) unified.deposit_percentage = pp.depositPercentage || bd.depositPercentage;
+      if (!unified.payment_methods) unified.payment_methods = pp.paymentMethods || bd.paymentMethods;
       if (!unified.services) unified.services = pp.services;
+
+      // Map address fields if they are in the structured address object
+      const addr = combinedData.address || {};
+      if (!unified.city) unified.city = addr.city || combinedData.city;
+      if (!unified.state) unified.state = addr.state;
+      if (!unified.country) unified.country = addr.country || combinedData.country;
 
       combinedData.unifiedProfessionalProfile = unified;
       setProfileData(combinedData);
@@ -156,7 +174,7 @@ export default function ProfessionalProfile() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (skipValidation: boolean = false) => {
     setIsSaving(true);
     try {
       const unifiedPayload = {
@@ -164,7 +182,7 @@ export default function ProfessionalProfile() {
         ...Object.fromEntries(Object.entries(profileData || {}).filter(([key]) => UNIFIED_PROFESSIONAL_FIELD_IDS.has(key))),
       };
 
-      const shouldValidateUnified = Object.keys(unifiedPayload).length > 0;
+      const shouldValidateUnified = !skipValidation && Object.keys(unifiedPayload).length > 0;
       if (shouldValidateUnified) {
         const validation = validateUnifiedProfessionalProfile(unifiedPayload);
         if (!validation.success) {
@@ -192,21 +210,38 @@ export default function ProfessionalProfile() {
         await Promise.all(
           pendingPortfolioPhotos.map((photo) => {
             const formData = new FormData();
-            formData.append("headshot", photo.file);
-            return profileAPI.addHeadshot(formData);
+            formData.append("portfolio", photo.file);
+            formData.append("title", "Portfolio Image");
+            return profileAPI.addPortfolio(formData);
           })
         );
         setPendingPortfolioPhotos([]);
       }
 
-      // 1. Update Core User Information
+      // 1. Update Core User & Account Information
+      // We include "healing" payloads to fix corrupted legacy fields in the DB (e.g. [] where String is expected)
       await userAPI.updateProfile({
         fullName: unifiedPayload.full_name,
-        phoneNumber: unifiedPayload.phone_number,
         bio: unifiedPayload.short_bio,
-        location: [unifiedPayload.city, unifiedPayload.country].filter(Boolean).join(", "),
-        organisationType: unifiedPayload.business_name ? "Business" : "Individual",
         jobTitle: unifiedPayload.professional_title,
+        organisationType: unifiedPayload.business_name ? "Business" : "Individual",
+        talentProfile: {
+          careerGoals: typeof unifiedPayload.career_goals === 'string' ? unifiedPayload.career_goals : "",
+        },
+        professionalProfile: {
+          certifications: typeof unifiedPayload.certifications === 'string' ? unifiedPayload.certifications : "",
+          professionalMemberships: typeof unifiedPayload.professional_memberships === 'string' ? unifiedPayload.professional_memberships : "",
+          awards: typeof unifiedPayload.awards_recognition === 'string' ? unifiedPayload.awards_recognition : "",
+        }
+      });
+
+      await profileAPI.updateAccount({
+        phoneNumber: unifiedPayload.phone_number,
+        address: {
+          city: unifiedPayload.city || "",
+          state: unifiedPayload.state || "", // If available in spec
+          country: unifiedPayload.country || ""
+        }
       });
 
       // 2. Update Specialized Professional Information
@@ -215,30 +250,55 @@ export default function ProfessionalProfile() {
         primaryProfessionalType: unifiedPayload.primary_professional_type,
         additionalTypes: unifiedPayload.additional_professional_types || [],
         yearsOfExperience: unifiedPayload.years_of_experience,
-        experienceLevel: unifiedPayload.experience_level,
+        experienceLevel: unifiedPayload.experience_level?.toLowerCase(),
         servesClientTypes: unifiedPayload.serves_client_types || [],
         industryAreas: unifiedPayload.industry_areas || [],
         
         // Skills & Tools
+        coreSkills: unifiedPayload.core_skills || [],
+        customSkills: unifiedPayload.custom_skills || "",
         softwareTools: unifiedPayload.software_tools || [],
-        equipmentOwned: unifiedPayload.equipment_owned,
-        
-        // Trust & Verification
-        insuranceAvailable: unifiedPayload.insurance_available === "Yes",
-        dbsChecked: unifiedPayload.dbs_checked === "Yes",
-        certifications: unifiedPayload.certifications,
-        awards: unifiedPayload.awards_recognition,
-        
-        // Booking & Terms
-        bookingMethod: unifiedPayload.booking_method,
-        preferredContactMethod: unifiedPayload.preferred_contact_method,
-        depositRequired: unifiedPayload.deposit_required === "Yes",
-        depositPercentage: unifiedPayload.deposit_percentage,
-        paymentMethods: unifiedPayload.payment_methods || [],
-        
-        // Services (If applicable - maps to the array structure)
-        services: unifiedPayload.services || []
+
+        // Nested Business Details
+        businessDetails: {
+          insuranceAvailable: unifiedPayload.insurance_available === "Yes" || unifiedPayload.insurance_available === true,
+          dbsChecked: unifiedPayload.dbs_checked === "Yes" || unifiedPayload.dbs_checked === true,
+          // Handle certifications/awards as arrays but ensure they are cleaned of empty strings
+          certifications: Array.isArray(unifiedPayload.certifications) ? unifiedPayload.certifications : (unifiedPayload.certifications ? [unifiedPayload.certifications] : []),
+          awards: Array.isArray(unifiedPayload.awards_recognition) ? unifiedPayload.awards_recognition : (unifiedPayload.awards_recognition ? [unifiedPayload.awards_recognition] : []),
+          
+          studioAccess: unifiedPayload.studio_access === "Yes" || unifiedPayload.studio_access === true,
+          studioDetails: unifiedPayload.studio_details || "",
+
+          bookingMethod: unifiedPayload.booking_method,
+          preferredContactMethod: unifiedPayload.preferred_contact_method,
+          depositRequired: unifiedPayload.deposit_required === "Yes" || unifiedPayload.deposit_required === true,
+          depositPercentage: unifiedPayload.deposit_percentage ? Number(unifiedPayload.deposit_percentage) : 0,
+          paymentMethods: unifiedPayload.payment_methods || [],
+          cancellationPolicy: unifiedPayload.cancellation_policy || "",
+          refundPolicy: unifiedPayload.refund_policy || "",
+          contractRequired: unifiedPayload.contract_required === "Yes" || unifiedPayload.contract_required === true,
+          ndaFriendly: unifiedPayload.nda_friendly === "Yes" || unifiedPayload.nda_friendly === "Yes",
+          invoicingAvailable: unifiedPayload.invoicing_available === "Yes" || unifiedPayload.invoicing_available === true,
+          taxRegistered: unifiedPayload.tax_registered === "Yes" || unifiedPayload.tax_registered === true,
+        }
       });
+
+      // 3. Optional: Extract service if filled in the form
+      if (unifiedPayload.service_title) {
+        try {
+          const serviceData = new FormData();
+          serviceData.append("title", unifiedPayload.service_title);
+          serviceData.append("description", unifiedPayload.service_short_description || "Service listing");
+          serviceData.append("price", (unifiedPayload.price_amount || 0).toString());
+          serviceData.append("duration", "60"); // Default since we use text fields
+          
+          await serviceAPI.create(serviceData);
+        } catch (e) {
+          console.error("Failed to create service from unified form:", e);
+        }
+      }
+
       await refreshUser();
       await fetchProfile();
       toast.success("Professional profile updated successfully");
@@ -443,12 +503,31 @@ export default function ProfessionalProfile() {
           <UnifiedProfessionalProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab="media" />
         </TabsContent>
 
-        <TabsContent value="summary" className="mt-4">
+        <TabsContent value="summary" className="mt-4 space-y-6">
           <ProfileSummaryView 
             fields={UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC} 
             values={{...profileData, ...(profileData?.unifiedProfessionalProfile || {})}} 
             title="Professional Profile Summary" 
           />
+          <div className="flex justify-end pt-4">
+            <Button 
+              onClick={() => handleSave(false)} 
+              disabled={isSaving}
+              className="bg-[#009698] hover:bg-[#009698]/90 text-white font-bold px-8 py-6 rounded-2xl shadow-lg"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Saving Profile...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-5 w-5" />
+                  Save Entire Profile
+                </>
+              )}
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

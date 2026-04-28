@@ -58,8 +58,11 @@ export default function DirectorProfile() {
       if (!unified.phone_number) unified.phone_number = combinedData.phone || combinedData.phoneNumber;
       if (!unified.short_bio) unified.short_bio = combinedData.bio || cp.shortBio;
       if (!unified.full_about) unified.full_about = combinedData.fullAbout || cp.fullAbout;
-      if (!unified.city) unified.city = combinedData.city || cp.location?.city;
-      if (!unified.country) unified.country = combinedData.country || cp.location?.country;
+      
+      const addr = combinedData.address || cp.location || {};
+      if (!unified.city) unified.city = addr.city || combinedData.city;
+      if (!unified.state) unified.state = addr.state;
+      if (!unified.country) unified.country = addr.country || combinedData.country;
       
       if (!unified.primary_account_type) unified.primary_account_type = cp.accountType;
       if (!unified.additional_account_types) unified.additional_account_types = cp.additionalAccountTypes;
@@ -116,7 +119,7 @@ export default function DirectorProfile() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (skipValidation: boolean = false) => {
     setIsSaving(true);
     try {
       const unifiedPayload = {
@@ -124,7 +127,7 @@ export default function DirectorProfile() {
         ...Object.fromEntries(Object.entries(profileData || {}).filter(([key]) => UNIFIED_CASTING_DIRECTOR_FIELD_IDS.has(key))),
       };
 
-      if (Object.keys(unifiedPayload).length > 0) {
+      if (!skipValidation && Object.keys(unifiedPayload).length > 0) {
         const validation = validateUnifiedCastingDirectorProfile(unifiedPayload);
         if (!validation.success) {
           const message = validation.error.issues[0]?.message || "Please fix casting profile validation errors.";
@@ -147,14 +150,30 @@ export default function DirectorProfile() {
         setPendingProfilePhoto(null);
       }
 
-      // 1. Update Core User Information
+      // 1. Update Core User & Account Information
+      // We include "healing" payloads to fix corrupted legacy fields in the DB (e.g. [] where String is expected)
       await userAPI.updateProfile({
         fullName: unifiedPayload.full_name || profileData?.fullName,
-        phoneNumber: unifiedPayload.phone_number || profileData?.phoneNumber,
         bio: unifiedPayload.short_bio || profileData?.bio,
-        location: [unifiedPayload.city, unifiedPayload.country].filter(Boolean).join(", "),
-        organisationType: "Casting Agency",
         jobTitle: unifiedPayload.professional_title,
+        organisationType: "Casting Agency",
+        talentProfile: {
+          careerGoals: typeof unifiedPayload.career_goals === 'string' ? unifiedPayload.career_goals : "",
+        },
+        professionalProfile: {
+          certifications: typeof unifiedPayload.certifications === 'string' ? unifiedPayload.certifications : "",
+          professionalMemberships: typeof unifiedPayload.professional_memberships === 'string' ? unifiedPayload.professional_memberships : "",
+          awards: typeof unifiedPayload.awards_recognition === 'string' ? unifiedPayload.awards_recognition : "",
+        }
+      });
+
+      await profileAPI.updateAccount({
+        phoneNumber: unifiedPayload.phone_number || profileData?.phoneNumber,
+        address: {
+          city: unifiedPayload.city || "",
+          state: unifiedPayload.state || "",
+          country: unifiedPayload.country || ""
+        }
       });
 
       // 2. Update Specialized Casting Profile Information
@@ -164,17 +183,17 @@ export default function DirectorProfile() {
         professionalTitle: unifiedPayload.professional_title,
         shortBio: unifiedPayload.short_bio,
         fullAbout: unifiedPayload.full_about,
-        location: {
-          city: unifiedPayload.city,
-          country: unifiedPayload.country,
-        },
-        accountType: unifiedPayload.primary_account_type,
+        city: unifiedPayload.city,
+        country: unifiedPayload.country,
+        primaryAccountType: unifiedPayload.primary_account_type,
         additionalAccountTypes: unifiedPayload.additional_account_types || [],
+        yearsOfExperience: unifiedPayload.years_of_experience,
+        experienceLevel: unifiedPayload.experience_level?.toLowerCase(),
         industryAreas: unifiedPayload.industry_areas || [],
         
         applicantStatuses: unifiedPayload.applicant_statuses || [],
-        matchEngineEnabled: unifiedPayload.match_engine_enabled === "Yes",
-        enableManageApplicants: unifiedPayload.enable_manage_applicants === "Yes",
+        matchEngineEnabled: unifiedPayload.match_engine_enabled === "Yes" || unifiedPayload.match_engine_enabled === true,
+        enableManageApplicants: unifiedPayload.enable_manage_applicants === "Yes" || unifiedPayload.enable_manage_applicants === true,
         folderTypes: unifiedPayload.folder_types || [],
         notesPolicy: unifiedPayload.notes_policy
       });
@@ -326,12 +345,31 @@ export default function DirectorProfile() {
           </TabsContent>
         ))}
 
-        <TabsContent value="summary" className="mt-6">
+        <TabsContent value="summary" className="mt-6 space-y-6">
           <ProfileSummaryView 
             fields={UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC} 
             values={{...profileData, ...(profileData?.unifiedCastingDirectorProfile || {})}} 
             title="Casting Director Profile Summary" 
           />
+          <div className="flex justify-end pt-4">
+            <Button 
+              onClick={() => handleSave(false)} 
+              disabled={isSaving}
+              className="bg-[#009698] hover:bg-[#009698]/90 text-white font-bold px-8 py-6 rounded-2xl shadow-lg"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Saving Profile...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-5 w-5" />
+                  Save Entire Profile
+                </>
+              )}
+            </Button>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

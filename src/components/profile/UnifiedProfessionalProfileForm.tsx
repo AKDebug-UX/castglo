@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { detectCountry } from "@/lib/locationUtils";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Wand2 } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { generateDummyProfileData } from "@/lib/profileAutofill";
 import {
   ProfessionalFieldSpec,
   sectionToTabMap,
@@ -25,7 +27,7 @@ type FormTab = "general" | "professional" | "business" | "media";
 interface UnifiedProfessionalProfileFormProps {
   rootData: any;
   onChange: (nextRootData: any) => void;
-  onSave?: () => void;
+  onSave?: (skipValidation?: boolean) => void;
   isSaving?: boolean;
   activeTab?: FormTab;
   showTabs?: boolean;
@@ -51,8 +53,20 @@ export function UnifiedProfessionalProfileForm({
   showTabs = false,
 }: UnifiedProfessionalProfileFormProps) {
   const { user } = useAuth();
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const unified = rootData?.unifiedProfessionalProfile || {};
   const values = { ...rootData, ...unified };
+
+  const handleAutoFill = () => {
+    const dummyData = generateDummyProfileData(
+      UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC,
+      getProfessionalReferenceOptions
+    );
+    const nextUnified = { ...unified, ...dummyData };
+    const nextRoot = { ...rootData, ...dummyData, unifiedProfessionalProfile: nextUnified };
+    onChange(nextRoot);
+    toast.success("Professional form auto-filled with mock data");
+  };
   
   useEffect(() => {
     const updates: Record<string, any> = {};
@@ -190,7 +204,19 @@ export function UnifiedProfessionalProfileForm({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleAutoFill}
+          className="flex items-center gap-2 border-[#009698] text-[#009698] hover:bg-[#009698]/10 rounded-xl"
+        >
+          <Wand2 className="w-4 h-4" />
+          Auto-fill Mock Data
+        </Button>
+      </div>
       {showTabs && (
         <Card>
           <CardHeader>
@@ -253,7 +279,7 @@ export function UnifiedProfessionalProfileForm({
 
       {onSave && (
         <div className="flex justify-end">
-          <Button onClick={onSave} disabled={isSaving} className="bg-[#009698] hover:bg-[#009698]/90">
+          <Button onClick={() => onSave(true)} disabled={isSaving} className="bg-[#009698] hover:bg-[#009698]/90">
             {isSaving ? "Saving..." : "Save This Section"}
           </Button>
         </div>

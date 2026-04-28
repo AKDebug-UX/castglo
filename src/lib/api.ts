@@ -133,6 +133,10 @@ export const API_ENDPOINTS = {
     ADD_HEADSHOT: '/profiles/me/headshots',
     DELETE_HEADSHOT: (headshotId: string) => `/profiles/me/headshots/${headshotId}`,
     UPLOAD_SHOWREEL: '/profiles/me/showreel',
+    ADD_PORTFOLIO: '/profiles/me/portfolio',
+    DELETE_PORTFOLIO: (itemId: string) => `/profiles/me/portfolio/${itemId}`,
+    UPDATE_ACCOUNT: '/profiles/me/account',
+    GET_COMPLETENESS: '/profiles/me/completeness',
     SEARCH: '/profiles/search',
     GET_ONE: (userId: string) => `/profiles/${userId}`,
   },
@@ -165,6 +169,20 @@ export const API_ENDPOINTS = {
     DELETE_ACCOUNT: '/user/account',
     SEARCH: '/users/search',
     GET_ONE: (userId: string) => `/users/${userId}`,
+  },
+  PROJECTS: {
+    CREATE: '/projects',
+    ME: '/projects/me',
+    GET_ONE: (id: string) => `/projects/${id}`,
+    UPDATE: (id: string) => `/projects/${id}`,
+    DELETE: (id: string) => `/projects/${id}`,
+    ROLES: (id: string) => `/projects/${id}/roles`,
+  },
+  PORTFOLIO: {
+    ADD: '/portfolio',
+    GET_ME: '/portfolio/me',
+    UPDATE: (id: string) => `/portfolio/${id}`,
+    DELETE: (id: string) => `/portfolio/${id}`,
   },
 };
 
@@ -296,6 +314,12 @@ export const profileAPI = {
   uploadShowreel: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.UPLOAD_SHOWREEL, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  addPortfolio: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.ADD_PORTFOLIO, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deletePortfolio: (id: string) => api.delete(API_ENDPOINTS.PROFILES.DELETE_PORTFOLIO(id)),
+  updateAccount: (data) => api.patch(API_ENDPOINTS.PROFILES.UPDATE_ACCOUNT, data),
+  getCompleteness: () => api.get(API_ENDPOINTS.PROFILES.GET_COMPLETENESS),
   search: (params) => api.get(API_ENDPOINTS.PROFILES.SEARCH, { params }),
   getOne: (userId: string) => api.get(API_ENDPOINTS.PROFILES.GET_ONE(userId)),
 };
@@ -412,6 +436,25 @@ export const adminAPI = {
 // --- LEAD ENDPOINTS ---
 export const leadAPI = {
   create: (data) => api.post(API_ENDPOINTS.LEADS.CREATE, data),
+};
+
+// --- PROJECT ENDPOINTS ---
+export const projectAPI = {
+  create: (data) => api.post(API_ENDPOINTS.PROJECTS.CREATE, data),
+  getMe: () => api.get(API_ENDPOINTS.PROJECTS.ME),
+  getOne: (id: string) => api.get(API_ENDPOINTS.PROJECTS.GET_ONE(id)),
+  update: (id: string, data) => api.patch(API_ENDPOINTS.PROJECTS.UPDATE(id), data),
+  delete: (id: string) => api.delete(API_ENDPOINTS.PROJECTS.DELETE(id)),
+  addRole: (id: string, data) => api.post(API_ENDPOINTS.PROJECTS.ROLES(id), data),
+  getRoles: (id: string) => api.get(API_ENDPOINTS.PROJECTS.ROLES(id)),
+};
+
+// --- PORTFOLIO ENDPOINTS ---
+export const portfolioAPI = {
+  add: (data) => api.post(API_ENDPOINTS.PORTFOLIO.ADD, data),
+  getMe: () => api.get(API_ENDPOINTS.PORTFOLIO.GET_ME),
+  update: (id: string, data) => api.patch(API_ENDPOINTS.PORTFOLIO.UPDATE(id), data),
+  delete: (id: string) => api.delete(API_ENDPOINTS.PORTFOLIO.DELETE(id)),
 };
 
 export default api;

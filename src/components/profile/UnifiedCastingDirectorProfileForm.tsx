@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { Wand2 } from "lucide-react";
+import { toast } from "sonner";
+import { generateDummyProfileData } from "@/lib/profileAutofill";
 import {
   castingDirectorSectionTabMap,
   CastingDirectorFieldSpec,
@@ -23,7 +26,7 @@ type CastingProfileTab = "overview" | "hiring" | "projects" | "roles" | "auditio
 interface UnifiedCastingDirectorProfileFormProps {
   rootData: any;
   onChange: (nextRootData: any) => void;
-  onSave?: () => void;
+  onSave?: (skipValidation?: boolean) => void;
   isSaving?: boolean;
   activeTab?: CastingProfileTab;
 }
@@ -48,9 +51,21 @@ const parseList = (value: string): string[] => value.split(/\r?\n|,/).map((item)
 
 
 export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, isSaving = false, activeTab }: UnifiedCastingDirectorProfileFormProps) {
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { user } = useAuth();
   const unified = rootData?.unifiedCastingDirectorProfile || {};
   const values = { ...rootData, ...unified };
+
+  const handleAutoFill = () => {
+    const dummyData = generateDummyProfileData(
+      UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC,
+      getCastingDirectorReferenceOptions
+    );
+    const nextUnified = { ...unified, ...dummyData };
+    const nextRoot = { ...rootData, ...dummyData, unifiedCastingDirectorProfile: nextUnified };
+    onChange(nextRoot);
+    toast.success("Casting Director form auto-filled with mock data");
+  };
   
   useEffect(() => {
     const updates: Record<string, any> = {};
@@ -174,7 +189,20 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleAutoFill}
+          className="flex items-center gap-2 border-[#009698] text-[#009698] hover:bg-[#009698]/10 rounded-xl"
+        >
+          <Wand2 className="w-4 h-4" />
+          Auto-fill Mock Data
+        </Button>
+      </div>
+      <div className="space-y-10">
       {sections.map(([section, fields]) => (
         <Card key={section}>
           <CardHeader className="pb-3">
@@ -228,7 +256,7 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
 
       {onSave && (
         <div className="flex justify-end">
-          <Button onClick={onSave} disabled={isSaving} className="bg-[#009698] hover:bg-[#009698]/90">
+          <Button onClick={() => onSave(true)} disabled={isSaving} className="bg-[#009698] hover:bg-[#009698]/90">
             {isSaving ? "Saving..." : "Save Section"}
           </Button>
         </div>

@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Loader2, Save, User, Briefcase, Sparkles,
-  Camera, Eye, Layers, Share2, X, Ruler, ClipboardList
+  Camera, Eye, Layers, Share2, X, Ruler, ClipboardList, Wand2
 } from "lucide-react";
+import { toast } from "sonner";
+import { generateDummyProfileData } from "@/lib/profileAutofill";
 import { ProfileSummaryView } from "./ProfileSummaryView";
 import { CombinedCurrencyRateInput } from "./fields/CombinedCurrencyRateInput";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -315,6 +317,23 @@ export function UnifiedTalentProfileForm({
   const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>("metric");
   const activeTab = externalActiveTab || internalActiveTab;
 
+  const handleAutoFill = () => {
+    const dummyData = generateDummyProfileData(UNIFIED_TALENT_PROFILE_FIELD_SPEC);
+    
+    // Auto-derive age group if DOB is present
+    if (dummyData.dateOfBirth) {
+      const derived = deriveAgeGroupFromDob(dummyData.dateOfBirth);
+      if (derived) {
+        dummyData.age_group = derived;
+      }
+    }
+
+    const nextUnified = { ...unified, ...dummyData };
+    const nextRoot = { ...rootData, ...dummyData, unifiedTalentProfile: nextUnified };
+    onChange(nextRoot);
+    toast.success("Profile form auto-filled with mock data");
+  };
+
   const unified = rootData?.unifiedTalentProfile || {};
   const values = { ...rootData, ...unified };
 
@@ -506,7 +525,6 @@ export function UnifiedTalentProfileForm({
   };
 
   const handleTabSave = () => {
-    if (activeTab === "summary") return;
     if (validateTab(activeTab)) {
       if (onSave) onSave(true);
     } else {
@@ -888,6 +906,18 @@ export function UnifiedTalentProfileForm({
 
   return (
     <div className="space-y-8">
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleAutoFill}
+          className="flex items-center gap-2 border-[#009698] text-[#009698] hover:bg-[#009698]/10 rounded-xl"
+        >
+          <Wand2 className="w-4 h-4" />
+          Auto-fill Mock Data
+        </Button>
+      </div>
       <Tabs
         value={activeTab}
         onValueChange={(value) => {
