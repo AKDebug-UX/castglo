@@ -421,17 +421,20 @@ export default function Profile() {
         },
 
         emergencyContact: {
-          fullName: unifiedPayload.emergency_full_name,
-          relationship: unifiedPayload.emergency_relationship,
-          phone: unifiedPayload.emergency_phone,
+          fullName: unifiedPayload.emergency_full_name || "",
+          relationship: unifiedPayload.emergency_relationship || "",
+          phoneNumber: unifiedPayload.emergency_phone || "",
         },
-        guardianConsent: {
-          fullName: unifiedPayload.guardian_full_name,
-          relationship: unifiedPayload.guardian_relationship,
-          email: unifiedPayload.guardian_email,
-          phone: unifiedPayload.guardian_phone,
-          consentGiven: !!(unifiedPayload.guardian_consent_checkbox === "Yes" || unifiedPayload.guardian_consent_checkbox === true),
-        }
+        ...(isMinorFromAgeGroup(unifiedPayload.age_group) ? {
+          guardianConsent: {
+            fullName: unifiedPayload.guardian_full_name,
+            relationship: unifiedPayload.guardian_relationship,
+            email: unifiedPayload.guardian_email,
+            phone: unifiedPayload.guardian_phone,
+            consentGiven: !!(unifiedPayload.guardian_consent_checkbox === "Yes" || unifiedPayload.guardian_consent_checkbox === true),
+          }
+        } : {})
+
       });
 
       try {

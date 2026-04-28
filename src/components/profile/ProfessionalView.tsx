@@ -1,6 +1,6 @@
 import React from 'react';
 import { useProfile } from '@/contexts/ProfileContext';
-import { Briefcase, Tool, Award, Heart, ShieldCheck, Mail } from 'lucide-react';
+import { Briefcase, Wrench, Award, Heart, ShieldCheck, Mail } from 'lucide-react';
 import './ProfessionalView.css';
 
 export const ProfessionalView: React.FC = () => {
@@ -23,7 +23,7 @@ export const ProfessionalView: React.FC = () => {
         </section>
 
         <section className="professional-section glass-card">
-          <h3 className="section-title"><Tool size={20} /> Skills & Expertise</h3>
+          <h3 className="section-title"><Wrench size={20} /> Skills & Expertise</h3>
           <div className="skills-grid">
             {professional?.coreSkills?.map((skill: string) => (
               <div key={skill} className="skill-item">

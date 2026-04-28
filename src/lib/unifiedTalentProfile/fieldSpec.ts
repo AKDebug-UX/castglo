@@ -162,7 +162,7 @@ export const APPEARANCE_FIELDS: UnifiedFieldSpec[] = [
   { id: "hair_length", label: "Hair Length", section: "Appearance", type: "select", required: false, searchable: true, options: ["Bald", "Very Short", "Short", "Medium", "Long"] },
   { id: "eye_colour", label: "Eye Colour", section: "Appearance", type: "select", required: false, searchable: true, options: ["Brown", "Black", "Blue", "Green", "Hazel", "Grey", "Other"] },
   { id: "skin_tone", label: "Skin Tone / Complexion", section: "Appearance", type: "select", required: false, searchable: true, options: ["Fair", "Light", "Medium", "Olive", "Brown", "Dark", "Other"] },
-  { id: "ethnicity_visible", label: "Visible Ethnicity", section: "Appearance", type: "select", required: false, searchable: true, options: ["Caucasian / White", "Black / African Descent", "Asian", "Latino / Hispanic", "Middle Eastern", "Mixed / Multi-ethnic", "Other"] },
+  { id: "ethnicity_visible", label: "Visible Ethnicity", section: "Appearance", type: "select", required: false, searchable: true, options: ["Caucasian/White", "Black/African", "Asian", "Latino/Hispanic", "Middle Eastern", "Mixed", "Other"] },
   { id: "clothing_size_top", label: "Clothing Size (Top)", section: "Appearance", type: "text", required: false, searchable: true },
   { id: "clothing_size_bottom", label: "Clothing Size (Bottom)", section: "Appearance", type: "text", required: false, searchable: true },
   { id: "shoe_size", label: "Shoe Size (UK/EU/US)", section: "Appearance", type: "text", required: false, searchable: true },
