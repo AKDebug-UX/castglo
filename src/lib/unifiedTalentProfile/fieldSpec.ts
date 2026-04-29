@@ -129,6 +129,7 @@ export const CORE_PROFILE_FIELDS: UnifiedFieldSpec[] = [
   { id: "portfolio_url", label: "Website / Portfolio URL", section: "Contact / Media", type: "url", required: false, searchable: false, validation: "HTTPS preferred" },
   { id: "cover_image", label: "Cover Image / Banner", section: "Media", type: "file", required: false, searchable: false, validation: "jpg/png/webp" },
   { id: "full_bio", label: "Full About Description", section: "About You", type: "textarea", required: false, searchable: true, validation: "Max 3000 chars" },
+  { id: "equipment_summary", label: "Primary Equipment / Gear", section: "About You", type: "textarea", required: false, searchable: true },
   { id: "social_instagram", label: "Instagram Profile", section: "Social", type: "url", required: false, searchable: false },
   { id: "social_tiktok", label: "TikTok Profile", section: "Social", type: "url", required: false, searchable: false },
   { id: "social_youtube", label: "YouTube Profile", section: "Social", type: "url", required: false, searchable: false },
@@ -377,7 +378,6 @@ export const DYNAMIC_TALENT_FIELDS: UnifiedFieldSpec[] = [
 ];
 
 export const PHOTOGRAPHER_FIELDS = byTalentType("Photographer", [
-  { id: "equipment_summary", label: "Primary Equipment", section: "Photography Specialisms", type: "text", required: false, searchable: true },
   { id: "editing_software", label: "Editing Software", section: "Photography Specialisms", type: "text", required: false, searchable: true },
   { id: "lighting_style", label: "Lighting Style", section: "Photography Specialisms", type: "text", required: false, searchable: true },
 ]);

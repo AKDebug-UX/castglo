@@ -50,7 +50,11 @@ export default function ProfessionalProfile() {
       ]);
 
       let combinedData: any = {};
-      if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
+      if (authRes.data?.success) {
+        combinedData = { ...combinedData, ...authRes.data.data };
+        // Store the User ID separately so it's not overwritten by the profile _id
+        combinedData.userId = authRes.data.data._id || authRes.data.data.id;
+      }
       if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
 
       const pp = combinedData.professionalProfile || combinedData.professional || {};
@@ -77,7 +81,8 @@ export default function ProfessionalProfile() {
       if (!unified.industry_areas) unified.industry_areas = pp.industryAreas;
       
       if (!unified.software_tools) unified.software_tools = pp.softwareTools;
-      if (!unified.equipment_owned) unified.equipment_owned = pp.equipmentOwned;
+      if (!unified.equipment_summary) unified.equipment_summary = pp.equipmentSummary || pp.equipmentOwned;
+      if (!unified.equipment_owned) unified.equipment_owned = pp.equipmentOwned || pp.equipmentSummary;
       
       // Trust & Verification (Checking root then businessDetails)
       if (unified.insurance_available === undefined) {
@@ -140,6 +145,61 @@ export default function ProfessionalProfile() {
         const val = pp.taxRegistered !== undefined ? pp.taxRegistered : bd.taxRegistered;
         if (val !== undefined) unified.tax_registered = val ? "Yes" : "No";
       }
+      
+      if (!unified.insurance_details) unified.insurance_details = pp.insuranceDetails || bd.insuranceDetails;
+      if (!unified.served_age_ranges) unified.served_age_ranges = pp.servedAgeRanges;
+      if (!unified.core_skills) unified.core_skills = pp.coreSkills;
+      if (!unified.custom_skills) unified.custom_skills = pp.customSkills;
+      if (!unified.portfolio_website) unified.portfolio_website = pp.portfolioWebsite || combinedData.website;
+      if (!unified.instagram_url) unified.instagram_url = pp.instagramUrl || combinedData.instagramUrl;
+      if (!unified.youtube_url) unified.youtube_url = pp.youtubeUrl || combinedData.youtubeUrl;
+      if (!unified.vimeo_url) unified.vimeo_url = pp.vimeoUrl || combinedData.vimeoUrl;
+      
+      if (unified.testimonials_enabled === undefined && pp.testimonialsEnabled !== undefined) {
+        unified.testimonials_enabled = pp.testimonialsEnabled ? "Yes" : "No";
+      }
+      
+      if (!unified.notable_clients) unified.notable_clients = pp.notableClients;
+      if (!unified.notable_projects) unified.notable_projects = pp.notableProjects;
+      
+      if (unified.last_minute_bookings === undefined && pp.lastMinuteBookings !== undefined) {
+        unified.last_minute_bookings = pp.lastMinuteBookings ? "Yes" : "No";
+      }
+      if (!unified.notice_required) unified.notice_required = pp.noticeRequired;
+      if (unified.international_availability === undefined && pp.internationalAvailability !== undefined) {
+        unified.international_availability = pp.internationalAvailability ? "Yes" : "No";
+      }
+      if (!unified.working_days) unified.working_days = pp.workingDays;
+      if (!unified.working_hours_summary) unified.working_hours_summary = pp.workingHoursSummary;
+      if (!unified.booking_lead_time) unified.booking_lead_time = pp.bookingLeadTime;
+
+      // Specialized fields
+      if (!unified.photographer_specialisms) unified.photographer_specialisms = pp.photographerSpecialisms;
+      if (unified.photographer_studio_access === undefined && pp.photographerStudioAccess !== undefined) {
+        unified.photographer_studio_access = pp.photographerStudioAccess ? "Yes" : "No";
+      }
+      if (unified.photographer_retouching_included === undefined && pp.photographerRetouchingIncluded !== undefined) {
+        unified.photographer_retouching_included = pp.photographerRetouchingIncluded ? "Yes" : "No";
+      }
+      if (!unified.photographer_equipment_summary) unified.photographer_equipment_summary = pp.photographerEquipmentSummary;
+      
+      if (!unified.mua_specialisms) unified.mua_specialisms = pp.muaSpecialisms;
+      if (unified.kit_available === undefined && pp.kitAvailable !== undefined) {
+        unified.kit_available = pp.kitAvailable ? "Yes" : "No";
+      }
+      if (unified.travel_kit_available === undefined && pp.travelKitAvailable !== undefined) {
+        unified.travel_kit_available = pp.travelKitAvailable ? "Yes" : "No";
+      }
+      
+      if (!unified.coaching_specialisms) unified.coaching_specialisms = pp.coachingSpecialisms;
+      if (!unified.coaching_delivery_modes) unified.coaching_delivery_modes = pp.coachingDeliveryModes;
+      if (unified.youth_clients_supported === undefined && pp.youthClientsSupported !== undefined) {
+        unified.youth_clients_supported = pp.youthClientsSupported ? "Yes" : "No";
+      }
+      
+      if (!unified.editing_specialisms) unified.editing_specialisms = pp.editingSpecialisms;
+      if (!unified.file_transfer_methods) unified.file_transfer_methods = pp.fileTransferMethods;
+      if (!unified.revision_workflow) unified.revision_workflow = pp.revisionWorkflow;
 
       // Map address fields if they are in the structured address object
       const addr = combinedData.address || {};
@@ -284,7 +344,8 @@ export default function ProfessionalProfile() {
         additionalProfessionalTypes: unifiedPayload.additional_professional_types || [],
         industryAreas: unifiedPayload.industry_areas || [],
         softwareTools: unifiedPayload.software_tools || [],
-        equipmentOwned: unifiedPayload.equipment_owned || "",
+        equipmentSummary: (unifiedPayload.equipment_summary || unifiedPayload.equipment_owned) || undefined,
+        equipmentOwned: (unifiedPayload.equipment_owned || unifiedPayload.equipment_summary) || undefined,
         certifications: Array.isArray(unifiedPayload.certifications) ? unifiedPayload.certifications.join(', ') : (unifiedPayload.certifications || ""),
 
         // Commercial fields
@@ -306,6 +367,43 @@ export default function ProfessionalProfile() {
         ndaFriendly: !!(unifiedPayload.nda_friendly === "Yes" || unifiedPayload.nda_friendly === true),
         invoicingAvailable: !!(unifiedPayload.invoicing_available === "Yes" || unifiedPayload.invoicing_available === true),
         taxRegistered: !!(unifiedPayload.tax_registered === "Yes" || unifiedPayload.tax_registered === true),
+        
+        // Additional missing fields
+        insuranceDetails: unifiedPayload.insurance_details || undefined,
+        servedAgeRanges: unifiedPayload.served_age_ranges || [],
+        coreSkills: unifiedPayload.core_skills || [],
+        customSkills: unifiedPayload.custom_skills || undefined,
+        portfolioWebsite: unifiedPayload.portfolio_website || undefined,
+        instagramUrl: unifiedPayload.instagram_url || undefined,
+        youtubeUrl: unifiedPayload.youtube_url || undefined,
+        vimeoUrl: unifiedPayload.vimeo_url || undefined,
+        testimonialsEnabled: !!(unifiedPayload.testimonials_enabled === "Yes" || unifiedPayload.testimonials_enabled === true),
+        notableClients: unifiedPayload.notable_clients || undefined,
+        notableProjects: unifiedPayload.notable_projects || undefined,
+        lastMinuteBookings: !!(unifiedPayload.last_minute_bookings === "Yes" || unifiedPayload.last_minute_bookings === true),
+        noticeRequired: unifiedPayload.notice_required || undefined,
+        internationalAvailability: !!(unifiedPayload.international_availability === "Yes" || unifiedPayload.international_availability === true),
+        workingDays: unifiedPayload.working_days || [],
+        workingHoursSummary: unifiedPayload.working_hours_summary || undefined,
+        bookingLeadTime: unifiedPayload.booking_lead_time || undefined,
+
+        // Specialized fields
+        photographerSpecialisms: unifiedPayload.photographer_specialisms || [],
+        photographerStudioAccess: !!(unifiedPayload.photographer_studio_access === "Yes" || unifiedPayload.photographer_studio_access === true),
+        photographerRetouchingIncluded: !!(unifiedPayload.photographer_retouching_included === "Yes" || unifiedPayload.photographer_retouching_included === true),
+        photographerEquipmentSummary: unifiedPayload.photographer_equipment_summary || undefined,
+        
+        muaSpecialisms: unifiedPayload.mua_specialisms || [],
+        kitAvailable: !!(unifiedPayload.kit_available === "Yes" || unifiedPayload.kit_available === true),
+        travelKitAvailable: !!(unifiedPayload.travel_kit_available === "Yes" || unifiedPayload.travel_kit_available === true),
+        
+        coachingSpecialisms: unifiedPayload.coaching_specialisms || [],
+        coachingDeliveryModes: unifiedPayload.coaching_delivery_modes || [],
+        youthClientsSupported: !!(unifiedPayload.youth_clients_supported === "Yes" || unifiedPayload.youth_clients_supported === true),
+        
+        editingSpecialisms: unifiedPayload.editing_specialisms || [],
+        fileTransferMethods: unifiedPayload.file_transfer_methods || [],
+        revisionWorkflow: unifiedPayload.revision_workflow || undefined,
       };
 
       if (activeTab === "summary") {
@@ -457,7 +555,7 @@ export default function ProfessionalProfile() {
               className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md font-bold"
               asChild
             >
-              <Link to={`/professional/${profileData?._id || profileData?.id}`}>
+              <Link to={`/professional/${profileData?.userId || profileData?._id || profileData?.id}`}>
                 <EyeIcon className="w-5 h-5 mr-2" />
                 View Public Profile
               </Link>

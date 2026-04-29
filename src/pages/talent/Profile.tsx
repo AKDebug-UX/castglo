@@ -34,7 +34,11 @@ export default function Profile() {
       ]);
 
       let combinedData: any = {};
-      if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
+      if (authRes.data?.success) {
+        combinedData = { ...combinedData, ...authRes.data.data };
+        // Store the User ID separately so it's not overwritten by the profile _id
+        combinedData.userId = authRes.data.data._id || authRes.data.data.id;
+      }
       if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
 
       const tp = combinedData.talentProfile || {};
@@ -197,6 +201,228 @@ export default function Profile() {
         if (!unified.dancer_clips) unified.dancer_clips = tp.dancerClips || dp.clips;
         if (!unified.dancer_choreography_samples) unified.dancer_choreography_samples = tp.dancerChoreographySamples || dp.choreographySamples;
       }
+      if (tp.voiceArtistProfile || tp.voiceWorkType) {
+        const vap = tp.voiceArtistProfile || {};
+        if (!unified.voice_work_type) unified.voice_work_type = tp.voiceWorkType || vap.workType;
+        if (!unified.voice_age_range) unified.voice_age_range = tp.voiceAgeRange || vap.ageRange;
+        if (!unified.voice_natural_accent) unified.voice_natural_accent = tp.voiceNaturalAccent || vap.naturalAccent;
+        if (!unified.voice_performed_accents) unified.voice_performed_accents = tp.voicePerformedAccents || vap.performedAccents;
+        if (unified.voice_home_studio === undefined) {
+          const val = tp.voiceHomeStudio !== undefined ? tp.voiceHomeStudio : vap.homeStudio;
+          if (val !== undefined) unified.voice_home_studio = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.voice_equipment_quality) unified.voice_equipment_quality = tp.voiceEquipmentQuality || vap.equipmentQuality;
+        if (unified.voice_remote_recording === undefined) {
+          const val = tp.voiceRemoteRecording !== undefined ? tp.voiceRemoteRecording : vap.remoteRecording;
+          if (val !== undefined) unified.voice_remote_recording = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.voice_live_directed_sessions === undefined) {
+          const val = tp.voiceLiveDirectedSessions !== undefined ? tp.voiceLiveDirectedSessions : vap.liveDirectedSessions;
+          if (val !== undefined) unified.voice_live_directed_sessions = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.voice_audio_editing === undefined) {
+          const val = tp.voiceAudioEditing !== undefined ? tp.voiceAudioEditing : vap.audioEditing;
+          if (val !== undefined) unified.voice_audio_editing = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.voice_languages) unified.voice_languages = tp.voiceLanguages || vap.languages;
+        if (!unified.voice_reel) unified.voice_reel = tp.voiceReel || vap.reel;
+        if (!unified.voice_character_demo) unified.voice_character_demo = tp.voiceCharacterDemo || vap.characterDemo;
+        if (!unified.voice_narration_sample) unified.voice_narration_sample = tp.voiceNarrationSample || vap.narrationSample;
+      }
+      if (tp.presenterProfile || tp.presenterType) {
+        const pp = tp.presenterProfile || {};
+        if (!unified.presenter_type) unified.presenter_type = tp.presenterType || pp.presenterType;
+        if (!unified.presenter_comfort) unified.presenter_comfort = tp.presenterComfort || pp.comfort;
+        if (!unified.presenter_languages) unified.presenter_languages = tp.presenterLanguages || pp.languages;
+        if (unified.presenter_broadcast_experience === undefined) {
+          const val = tp.presenterBroadcastExperience !== undefined ? tp.presenterBroadcastExperience : pp.broadcastExperience;
+          if (val !== undefined) unified.presenter_broadcast_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.presenter_event_experience === undefined) {
+          const val = tp.presenterEventExperience !== undefined ? tp.presenterEventExperience : pp.eventExperience;
+          if (val !== undefined) unified.presenter_event_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.presenter_notable_clients) unified.presenter_notable_clients = tp.presenterNotableClients || pp.notableClients;
+        if (!unified.presenter_reel) unified.presenter_reel = tp.presenterReel || pp.reel;
+        if (!unified.presenter_hosting_clips) unified.presenter_hosting_clips = tp.presenterHostingClips || pp.hostingClips;
+        if (!unified.presenter_interview_samples) unified.presenter_interview_samples = tp.presenterInterviewSamples || pp.interviewSamples;
+      }
+      if (tp.extraProfile || tp.extraExperience !== undefined) {
+        const ep = tp.extraProfile || {};
+        if (unified.extra_experience === undefined) {
+          const val = tp.extraExperience !== undefined ? tp.extraExperience : ep.experience;
+          if (val !== undefined) unified.extra_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.extra_open_to) unified.extra_open_to = tp.extraOpenTo || ep.openTo;
+        if (unified.extra_driving_licence === undefined) {
+          const val = tp.extraDrivingLicence !== undefined ? tp.extraDrivingLicence : ep.drivingLicence;
+          if (val !== undefined) unified.extra_driving_licence = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.extra_own_vehicle === undefined) {
+          const val = tp.extraOwnVehicle !== undefined ? tp.extraOwnVehicle : ep.ownVehicle;
+          if (val !== undefined) unified.extra_own_vehicle = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.extra_period_costume === undefined) {
+          const val = tp.extraPeriodCostume !== undefined ? tp.extraPeriodCostume : ep.periodCostume;
+          if (val !== undefined) unified.extra_period_costume = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.extra_special_look) unified.extra_special_look = tp.extraSpecialLook || ep.specialLook;
+        if (unified.extra_uniform_roles === undefined) {
+          const val = tp.extraUniformRoles !== undefined ? tp.extraUniformRoles : ep.uniformRoles;
+          if (val !== undefined) unified.extra_uniform_roles = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.extra_long_shoot_days === undefined) {
+          const val = tp.extraLongShootDays !== undefined ? tp.extraLongShootDays : ep.longShootDays;
+          if (val !== undefined) unified.extra_long_shoot_days = val === true || val === "Yes" ? "Yes" : "No";
+        }
+      }
+      if (tp.musicianProfile || tp.musicianPrimaryInstrument) {
+        const mup = tp.musicianProfile || {};
+        if (!unified.musician_primary_instrument) unified.musician_primary_instrument = tp.musicianPrimaryInstrument || mup.primaryInstrument;
+        if (!unified.musician_additional_instruments) unified.musician_additional_instruments = tp.musicianAdditionalInstruments || mup.additionalInstruments;
+        if (!unified.musician_genres) unified.musician_genres = tp.musicianGenres || mup.genres;
+        if (unified.musician_sight_reading === undefined) {
+          const val = tp.musicianSightReading !== undefined ? tp.musicianSightReading : mup.sightReading;
+          if (val !== undefined) unified.musician_sight_reading = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.musician_improvisation === undefined) {
+          const val = tp.musicianImprovisation !== undefined ? tp.musicianImprovisation : mup.improvisation;
+          if (val !== undefined) unified.musician_improvisation = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.musician_live_gig_experience === undefined) {
+          const val = tp.musicianLiveGigExperience !== undefined ? tp.musicianLiveGigExperience : mup.liveGigExperience;
+          if (val !== undefined) unified.musician_live_gig_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.musician_studio_session_experience === undefined) {
+          const val = tp.musicianStudioSessionExperience !== undefined ? tp.musicianStudioSessionExperience : mup.studioSessionExperience;
+          if (val !== undefined) unified.musician_studio_session_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.musician_touring_experience === undefined) {
+          const val = tp.musicianTouringExperience !== undefined ? tp.musicianTouringExperience : mup.touringExperience;
+          if (val !== undefined) unified.musician_touring_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.musician_composition_skills === undefined) {
+          const val = tp.musicianCompositionSkills !== undefined ? tp.musicianCompositionSkills : mup.compositionSkills;
+          if (val !== undefined) unified.musician_composition_skills = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.musician_notable_credits) unified.musician_notable_credits = tp.musicianNotableCredits || mup.notableCredits;
+        if (!unified.musician_reel) unified.musician_reel = tp.musicianReel || mup.reel;
+        if (!unified.musician_audio_samples) unified.musician_audio_samples = tp.musicianAudioSamples || mup.audioSamples;
+        if (!unified.musician_original_links) unified.musician_original_links = tp.musicianOriginalLinks || mup.originalLinks;
+      }
+      if (tp.creatorProfile || tp.creatorContentType) {
+        const cp = tp.creatorProfile || {};
+        if (!unified.creator_content_type) unified.creator_content_type = tp.creatorContentType || cp.contentType;
+        if (!unified.creator_platforms) unified.creator_platforms = tp.creatorPlatforms || cp.platforms;
+        if (!unified.creator_audience_size) unified.creator_audience_size = tp.creatorAudienceSize || cp.audienceSize;
+        if (!unified.creator_engagement_rate) unified.creator_engagement_rate = tp.creatorEngagementRate || cp.engagementRate;
+        if (unified.creator_brand_collabs === undefined) {
+          const val = tp.creatorBrandCollabs !== undefined ? tp.creatorBrandCollabs : cp.brandCollabs;
+          if (val !== undefined) unified.creator_brand_collabs = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.creator_ugc_experience === undefined) {
+          const val = tp.creatorUgcExperience !== undefined ? tp.creatorUgcExperience : cp.ugcExperience;
+          if (val !== undefined) unified.creator_ugc_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.creator_editing_skills === undefined) {
+          const val = tp.creatorEditingSkills !== undefined ? tp.creatorEditingSkills : cp.editingSkills;
+          if (val !== undefined) unified.creator_editing_skills = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.creator_livestream_experience === undefined) {
+          const val = tp.creatorLivestreamExperience !== undefined ? tp.creatorLivestreamExperience : cp.livestreamExperience;
+          if (val !== undefined) unified.creator_livestream_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.creator_niche) unified.creator_niche = tp.creatorNiche || cp.niche;
+        if (!unified.creator_reel) unified.creator_reel = tp.creatorReel || cp.reel;
+        if (!unified.creator_media_kit) unified.creator_media_kit = tp.creatorMediaKit || cp.mediaKit;
+        if (!unified.creator_social_links) unified.creator_social_links = tp.creatorSocialLinks || cp.socialLinks;
+        if (!unified.creator_campaign_examples) unified.creator_campaign_examples = tp.creatorCampaignExamples || cp.campaignExamples;
+      }
+      if (tp.comedianProfile || tp.comedianType) {
+        const cop = tp.comedianProfile || {};
+        if (!unified.comedian_type) unified.comedian_type = tp.comedianType || cop.type;
+        if (unified.comedian_live_experience === undefined) {
+          const val = tp.comedianLiveExperience !== undefined ? tp.comedianLiveExperience : cop.liveExperience;
+          if (val !== undefined) unified.comedian_live_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.comedian_writing_experience === undefined) {
+          const val = tp.comedianWritingExperience !== undefined ? tp.comedianWritingExperience : cop.writingExperience;
+          if (val !== undefined) unified.comedian_writing_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.comedian_improv_experience === undefined) {
+          const val = tp.comedianImprovExperience !== undefined ? tp.comedianImprovExperience : cop.improvExperience;
+          if (val !== undefined) unified.comedian_improv_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.comedian_tv_digital_credits) unified.comedian_tv_digital_credits = tp.comedianTvDigitalCredits || cop.tvDigitalCredits;
+        if (unified.comedian_clean_sets === undefined) {
+          const val = tp.comedianCleanSets !== undefined ? tp.comedianCleanSets : cop.cleanSets;
+          if (val !== undefined) unified.comedian_clean_sets = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.comedian_notable_venues) unified.comedian_notable_venues = tp.comedianNotableVenues || cop.notableVenues;
+        if (!unified.comedian_reel) unified.comedian_reel = tp.comedianReel || cop.reel;
+        if (!unified.comedian_standup_clip) unified.comedian_standup_clip = tp.comedianStandupClip || cop.standupClip;
+        if (!unified.comedian_sketch_samples) unified.comedian_sketch_samples = tp.comedianSketchSamples || cop.sketchSamples;
+      }
+      if (tp.stuntProfile || tp.stuntSpeciality) {
+        const stup = tp.stuntProfile || {};
+        if (!unified.stunt_speciality) unified.stunt_speciality = tp.stuntSpeciality || stup.speciality;
+        if (!unified.stunt_certifications) unified.stunt_certifications = tp.stuntCertifications || stup.certifications;
+        if (!unified.stunt_martial_arts) unified.stunt_martial_arts = tp.stuntMartialArts || stup.martialArts;
+        if (unified.stunt_weapons_training === undefined) {
+          const val = tp.stuntWeaponsTraining !== undefined ? tp.stuntWeaponsTraining : stup.weaponsTraining;
+          if (val !== undefined) unified.stunt_weapons_training = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.stunt_driving_licence_types) unified.stunt_driving_licence_types = tp.stuntDrivingLicenceTypes || stup.drivingLicenceTypes;
+        if (unified.stunt_swimming_ability === undefined) {
+          const val = tp.stuntSwimmingAbility !== undefined ? tp.stuntSwimmingAbility : stup.swimmingAbility;
+          if (val !== undefined) unified.stunt_swimming_ability = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.stunt_rigging_experience === undefined) {
+          const val = tp.stuntRiggingExperience !== undefined ? tp.stuntRiggingExperience : stup.riggingExperience;
+          if (val !== undefined) unified.stunt_rigging_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (unified.stunt_mocap_experience === undefined) {
+          const val = tp.stuntMocapExperience !== undefined ? tp.stuntMocapExperience : stup.mocapExperience;
+          if (val !== undefined) unified.stunt_mocap_experience = val === true || val === "Yes" ? "Yes" : "No";
+        }
+        if (!unified.stunt_notable_credits) unified.stunt_notable_credits = tp.stuntNotableCredits || stup.notableCredits;
+        if (!unified.stunt_reel) unified.stunt_reel = tp.stuntReel || stup.reel;
+        if (!unified.stunt_fight_clips) unified.stunt_fight_clips = tp.stuntFightClips || stup.fightClips;
+        if (!unified.stunt_cert_uploads) unified.stunt_cert_uploads = tp.stuntCertUploads || stup.certUploads;
+      }
+      if (!unified.equipment_summary) unified.equipment_summary = tp.equipmentSummary || tp.equipment;
+      if (!unified.editing_software) unified.editing_software = tp.editingSoftware;
+      if (!unified.lighting_style) unified.lighting_style = tp.lightingStyle;
+      if (!unified.brands_used) unified.brands_used = tp.brandsUsed;
+      if (unified.sfx_experience === undefined && tp.sfxExperience !== undefined) unified.sfx_experience = tp.sfxExperience === true || tp.sfxExperience === "Yes" ? "Yes" : "No";
+      if (unified.group_booking_available === undefined && tp.groupBookingAvailable !== undefined) unified.group_booking_available = tp.groupBookingAvailable === true || tp.groupBookingAvailable === "Yes" ? "Yes" : "No";
+      if (!unified.delivery_mode) unified.delivery_mode = tp.deliveryMode;
+      if (!unified.coaching_specialisms) unified.coaching_specialisms = tp.coachingSpecialisms;
+      if (!unified.editing_specialisms) unified.editing_specialisms = tp.editingSpecialisms;
+      if (!unified.transfer_method) unified.transfer_method = tp.transferMethod;
+
+      if (!unified.business_name) unified.business_name = tp.businessName;
+      if (!unified.professional_title) unified.professional_title = tp.professionalTitle;
+      if (!unified.prof_experience_level) unified.prof_experience_level = tp.profExperienceLevel;
+      if (!unified.prof_years_of_experience) unified.prof_years_of_experience = tp.profYearsOfExperience;
+      if (!unified.notable_clients) unified.notable_clients = tp.notableClients;
+      if (!unified.notable_projects) unified.notable_projects = tp.notableProjects;
+      if (!unified.awards_recognition) unified.awards_recognition = tp.awardsRecognition;
+      if (unified.studio_access === undefined && tp.studioAccess !== undefined) unified.studio_access = tp.studioAccess === true || tp.studioAccess === "Yes" ? "Yes" : "No";
+      if (!unified.studio_details) unified.studio_details = tp.studioDetails;
+      if (unified.insurance_available === undefined && tp.insuranceAvailable !== undefined) unified.insurance_available = tp.insuranceAvailable === true || tp.insuranceAvailable === "Yes" ? "Yes" : "No";
+      if (unified.nda_friendly === undefined && tp.ndaFriendly !== undefined) unified.nda_friendly = tp.ndaFriendly === true || tp.ndaFriendly === "Yes" ? "Yes" : "No";
+      if (unified.contract_required === undefined && tp.contractRequired !== undefined) unified.contract_required = tp.contractRequired === true || tp.contractRequired === "Yes" ? "Yes" : "No";
+      if (!unified.deposit_percent) unified.deposit_percent = tp.depositPercent;
+      if (!unified.payment_methods) unified.payment_methods = tp.paymentMethods;
+      if (!unified.cancellation_policy) unified.cancellation_policy = tp.cancellationPolicy;
+      if (!unified.refund_policy) unified.refund_policy = tp.refundPolicy;
+      if (!unified.serves_client_types) unified.serves_client_types = tp.servesClientTypes;
+      if (!unified.specific_skills) unified.specific_skills = tp.specificSkills;
+      if (unified.testimonials_enabled === undefined && tp.testimonialsEnabled !== undefined) unified.testimonials_enabled = tp.testimonialsEnabled === true || tp.testimonialsEnabled === "Yes" ? "Yes" : "No";
+      if (!unified.instagram_url) unified.instagram_url = tp.instagramUrl;
+      if (!unified.linkedin_url) unified.linkedin_url = tp.linkedinUrl;
+
       if (tp.appearance) {
         if (!unified.height) unified.height = tp.appearance.height;
         if (!unified.weight) unified.weight = tp.appearance.weight;
@@ -639,8 +865,8 @@ export default function Profile() {
 
         // Appearance
         appearance: {
-          height: Number(unifiedPayload.height) || 0,
-          weight: Number(unifiedPayload.weight) || 0,
+          height: unifiedPayload.height,
+          weight: unifiedPayload.weight,
           build: unifiedPayload.build,
           hairColour: unifiedPayload.hair_colour,
           hairLength: unifiedPayload.hair_length,
@@ -659,15 +885,129 @@ export default function Profile() {
           insideLegMeasurement: unifiedPayload.inside_leg_measurement,
         },
 
+        // Category specific details (Voice Artist, Presenter, etc.)
+        voiceWorkType: unifiedPayload.voice_work_type || [],
+        voiceAgeRange: unifiedPayload.voice_age_range,
+        voiceNaturalAccent: unifiedPayload.voice_natural_accent,
+        voicePerformedAccents: unifiedPayload.voice_performed_accents || [],
+        voiceHomeStudio: !!(unifiedPayload.voice_home_studio === "Yes" || unifiedPayload.voice_home_studio === true),
+        voiceEquipmentQuality: unifiedPayload.voice_equipment_quality,
+        voiceRemoteRecording: !!(unifiedPayload.voice_remote_recording === "Yes" || unifiedPayload.voice_remote_recording === true),
+        voiceLiveDirectedSessions: !!(unifiedPayload.voice_live_directed_sessions === "Yes" || unifiedPayload.voice_live_directed_sessions === true),
+        voiceAudioEditing: !!(unifiedPayload.voice_audio_editing === "Yes" || unifiedPayload.voice_audio_editing === true),
+        voiceLanguages: unifiedPayload.voice_languages || [],
+        voiceReel: unifiedPayload.voice_reel,
+        voiceCharacterDemo: unifiedPayload.voice_character_demo,
+        voiceNarrationSample: unifiedPayload.voice_narration_sample,
+
+        presenterType: unifiedPayload.presenter_type,
+        presenterComfort: unifiedPayload.presenter_comfort || [],
+        presenterLanguages: unifiedPayload.presenter_languages || [],
+        presenterBroadcastExperience: !!(unifiedPayload.presenter_broadcast_experience === "Yes" || unifiedPayload.presenter_broadcast_experience === true),
+        presenterEventExperience: !!(unifiedPayload.presenter_event_experience === "Yes" || unifiedPayload.presenter_event_experience === true),
+        presenterNotableClients: unifiedPayload.presenter_notable_clients,
+        presenterReel: unifiedPayload.presenter_reel,
+        presenterHostingClips: unifiedPayload.presenter_hosting_clips || [],
+        presenterInterviewSamples: unifiedPayload.presenter_interview_samples || [],
+
+        extraExperience: !!(unifiedPayload.extra_experience === "Yes" || unifiedPayload.extra_experience === true),
+        extraOpenTo: unifiedPayload.extra_open_to || [],
+        extraDrivingLicence: !!(unifiedPayload.extra_driving_licence === "Yes" || unifiedPayload.extra_driving_licence === true),
+        extraOwnVehicle: !!(unifiedPayload.extra_own_vehicle === "Yes" || unifiedPayload.extra_own_vehicle === true),
+        extraPeriodCostume: !!(unifiedPayload.extra_period_costume === "Yes" || unifiedPayload.extra_period_costume === true),
+        extraSpecialLook: unifiedPayload.extra_special_look,
+        extraUniformRoles: !!(unifiedPayload.extra_uniform_roles === "Yes" || unifiedPayload.extra_uniform_roles === true),
+        extraLongShootDays: !!(unifiedPayload.extra_long_shoot_days === "Yes" || unifiedPayload.extra_long_shoot_days === true),
+
+        musicianPrimaryInstrument: unifiedPayload.musician_primary_instrument,
+        musicianAdditionalInstruments: unifiedPayload.musician_additional_instruments || [],
+        musicianGenres: unifiedPayload.musician_genres || [],
+        musicianSightReading: !!(unifiedPayload.musician_sight_reading === "Yes" || unifiedPayload.musician_sight_reading === true),
+        musicianImprovisation: !!(unifiedPayload.musician_improvisation === "Yes" || unifiedPayload.musician_improvisation === true),
+        musicianLiveGigExperience: !!(unifiedPayload.musician_live_gig_experience === "Yes" || unifiedPayload.musician_live_gig_experience === true),
+        musicianStudioSessionExperience: !!(unifiedPayload.musician_studio_session_experience === "Yes" || unifiedPayload.musician_studio_session_experience === true),
+        musicianTouringExperience: !!(unifiedPayload.musician_touring_experience === "Yes" || unifiedPayload.musician_touring_experience === true),
+        musicianCompositionSkills: !!(unifiedPayload.musician_composition_skills === "Yes" || unifiedPayload.musician_composition_skills === true),
+        musicianNotableCredits: unifiedPayload.musician_notable_credits || [],
+        musicianReel: unifiedPayload.musician_reel,
+        musicianAudioSamples: unifiedPayload.musician_audio_samples || [],
+        musicianOriginalLinks: unifiedPayload.musician_original_links || [],
+
+        creatorContentType: unifiedPayload.creator_content_type || [],
+        creatorPlatforms: unifiedPayload.creator_platforms || [],
+        creatorAudienceSize: unifiedPayload.creator_audience_size,
+        creatorEngagementRate: unifiedPayload.creator_engagement_rate,
+        creatorBrandCollabs: !!(unifiedPayload.creator_brand_collabs === "Yes" || unifiedPayload.creator_brand_collabs === true),
+        creatorUgcExperience: !!(unifiedPayload.creator_ugc_experience === "Yes" || unifiedPayload.creator_ugc_experience === true),
+        creatorEditingSkills: !!(unifiedPayload.creator_editing_skills === "Yes" || unifiedPayload.creator_editing_skills === true),
+        creatorLivestreamExperience: !!(unifiedPayload.creator_livestream_experience === "Yes" || unifiedPayload.creator_livestream_experience === true),
+        creatorNiche: unifiedPayload.creator_niche,
+        creatorReel: unifiedPayload.creator_reel,
+        creatorMediaKit: unifiedPayload.creator_media_kit,
+        creatorSocialLinks: unifiedPayload.creator_social_links || [],
+        creatorCampaignExamples: unifiedPayload.creator_campaign_examples || [],
+
+        comedianType: unifiedPayload.comedian_type || [],
+        comedianLiveExperience: !!(unifiedPayload.comedian_live_experience === "Yes" || unifiedPayload.comedian_live_experience === true),
+        comedianWritingExperience: !!(unifiedPayload.comedian_writing_experience === "Yes" || unifiedPayload.comedian_writing_experience === true),
+        comedianImprovExperience: !!(unifiedPayload.comedian_improv_experience === "Yes" || unifiedPayload.comedian_improv_experience === true),
+        comedianTvDigitalCredits: unifiedPayload.comedian_tv_digital_credits || [],
+        comedianCleanSets: !!(unifiedPayload.comedian_clean_sets === "Yes" || unifiedPayload.comedian_clean_sets === true),
+        comedianNotableVenues: unifiedPayload.comedian_notable_venues || [],
+        comedianReel: unifiedPayload.comedian_reel,
+        comedianStandupClip: unifiedPayload.comedian_standup_clip,
+        comedianSketchSamples: unifiedPayload.comedian_sketch_samples || [],
+
+        stuntSpeciality: unifiedPayload.stunt_speciality || [],
+        stuntCertifications: unifiedPayload.stunt_certifications,
+        stuntMartialArts: unifiedPayload.stunt_martial_arts,
+        stuntWeaponsTraining: !!(unifiedPayload.stunt_weapons_training === "Yes" || unifiedPayload.stunt_weapons_training === true),
+        stuntDrivingLicenceTypes: unifiedPayload.stunt_driving_licence_types,
+        stuntSwimmingAbility: !!(unifiedPayload.stunt_swimming_ability === "Yes" || unifiedPayload.stunt_swimming_ability === true),
+        stuntRiggingExperience: !!(unifiedPayload.stunt_rigging_experience === "Yes" || unifiedPayload.stunt_rigging_experience === true),
+        stuntMocapExperience: !!(unifiedPayload.stunt_mocap_experience === "Yes" || unifiedPayload.stunt_mocap_experience === true),
+        stuntNotableCredits: unifiedPayload.stunt_notable_credits || [],
+        stuntReel: unifiedPayload.stunt_reel,
+        stuntFightClips: unifiedPayload.stunt_fight_clips || [],
+        stuntCertUploads: unifiedPayload.stunt_cert_uploads || [],
+
+        // Professional Specialisms
+        equipmentSummary: (unifiedPayload.equipment_summary || unifiedPayload.equipment) || undefined,
+        editingSoftware: unifiedPayload.editing_software || undefined,
+        lightingStyle: unifiedPayload.lighting_style || undefined,
+        brandsUsed: unifiedPayload.brands_used || undefined,
+        sfxExperience: !!(unifiedPayload.sfx_experience === "Yes" || unifiedPayload.sfx_experience === true),
+        groupBookingAvailable: !!(unifiedPayload.group_booking_available === "Yes" || unifiedPayload.group_booking_available === true),
+        deliveryMode: unifiedPayload.delivery_mode || undefined,
+        coachingSpecialisms: unifiedPayload.coaching_specialisms || undefined,
+        editingSpecialisms: unifiedPayload.editing_specialisms || undefined,
+        transferMethod: unifiedPayload.transfer_method || undefined,
+
+        // Professional Identity & Business
+        businessName: unifiedPayload.business_name || undefined,
+        professionalTitle: unifiedPayload.professional_title || undefined,
+        profExperienceLevel: unifiedPayload.prof_experience_level || undefined,
+        profYearsOfExperience: unifiedPayload.prof_years_of_experience || undefined,
+        notableClients: unifiedPayload.notable_clients || [],
+        notableProjects: unifiedPayload.notable_projects || [],
+        studioAccess: !!(unifiedPayload.studio_access === "Yes" || unifiedPayload.studio_access === true),
+        studioDetails: unifiedPayload.studio_details || undefined,
+        insuranceAvailable: !!(unifiedPayload.insurance_available === "Yes" || unifiedPayload.insurance_available === true),
+        ndaFriendly: !!(unifiedPayload.nda_friendly === "Yes" || unifiedPayload.nda_friendly === true),
+        contractRequired: !!(unifiedPayload.contract_required === "Yes" || unifiedPayload.contract_required === true),
+        depositPercent: Number(unifiedPayload.deposit_percent) || 0,
+        paymentMethods: unifiedPayload.payment_methods || undefined,
+        cancellationPolicy: unifiedPayload.cancellation_policy || undefined,
+        refundPolicy: unifiedPayload.refund_policy || undefined,
+        servesClientTypes: unifiedPayload.serves_client_types || [],
+        specificSkills: unifiedPayload.specific_skills || [],
+        testimonialsEnabled: !!(unifiedPayload.testimonials_enabled === "Yes" || unifiedPayload.testimonials_enabled === true),
+        instagramUrl: unifiedPayload.instagram_url,
+        linkedinUrl: unifiedPayload.linkedin_url,
+
         // Portfolio
         socialLinks: unifiedPayload.social_links || [],
       };
-
-      if (activeTab === "summary") {
-        return;
-      }
-
-      await profileAPI.updateTalent(payload);
 
       if (activeTab === "summary") {
         return;
@@ -813,7 +1153,7 @@ export default function Profile() {
               className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md font-bold"
               asChild
             >
-              <Link to={`/talent/${profileData?._id || profileData?.id}`}>
+              <Link to={`/talent/${profileData?.userId || profileData?._id || profileData?.id}`}>
                 <Monitor className="w-5 h-5 mr-2" />
                 View Public Profile
               </Link>

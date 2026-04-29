@@ -47,7 +47,7 @@ export function CombinedCurrencyRateInput({
                 {rateValue ? (
                   rateValue === "Open to discussion" || rateValue === "Other" 
                     ? rateValue 
-                    : rateValue.replace(/(\d+)/g, `${(currencyValue || "").match(/\((.+)\)/)?.[1] || ""}$1`)
+                    : String(rateValue).replace(/(\d+)/g, `${(currencyValue || "").match(/\((.+)\)/)?.[1] || ""}$1`)
                 ) : "Select Expected Rate / Fee Range"}
               </SelectValue>
             </SelectTrigger>
@@ -57,7 +57,7 @@ export function CombinedCurrencyRateInput({
                 let display = opt;
                 if (opt !== "Open to discussion" && opt !== "Other") {
                   // Prepend symbol to numbers
-                  display = opt.replace(/(\d+)/g, `${symbol}$1`);
+                  display = String(opt).replace(/(\d+)/g, `${symbol}$1`);
                 }
                 return (
                   <SelectItem key={opt} value={opt}>

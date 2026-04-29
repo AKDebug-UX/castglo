@@ -16,7 +16,7 @@ import { validateUnifiedCastingDirectorProfile } from "@/lib/unifiedCastingDirec
 import { ProfileSummaryView } from "@/components/profile/ProfileSummaryView";
 
 export default function DirectorProfile() {
-  const { refreshUser } = useAuth();
+  const { user: authUser, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -37,13 +37,16 @@ export default function DirectorProfile() {
 
   const fetchProfileData = async () => {
     try {
-      const [authRes, profileRes] = await Promise.all([
-        authAPI.getMe().catch(() => ({ data: { success: false } })),
+      const [profileRes] = await Promise.all([
         profileAPI.getMe().catch(() => ({ data: { success: false } })),
       ]);
 
       let combinedData: any = {};
-      if (authRes.data?.success) combinedData = { ...combinedData, ...authRes.data.data };
+      if (authUser) {
+        combinedData = { ...combinedData, ...authUser };
+        // Store the User ID separately so it's not overwritten by the profile _id
+        combinedData.userId = authUser.id;
+      }
       if (profileRes.data?.success) combinedData = { ...combinedData, ...profileRes.data.data };
 
       const cp = combinedData.castingDirectorProfile || combinedData.castingProfile || {};
@@ -158,32 +161,33 @@ export default function DirectorProfile() {
         setPendingProfilePhoto(null);
       }
 
-      // 1. Update Specialized Casting Profile Information FIRST
-      // Aligning strictly with backend validation requirements
-      const payload: any = {
-        fullName: unifiedPayload.full_name || profileData?.fullName || user?.fullName || "",
-        email: unifiedPayload.email || profileData?.email || user?.email || "",
-        phoneNumber: unifiedPayload.phone_number || profileData?.phoneNumber || user?.phone || "",
-        professionalTitle: unifiedPayload.professional_title || profileData?.unifiedCastingDirectorProfile?.professional_title || "",
-        city: unifiedPayload.city || user?.address?.city || "",
-        country: unifiedPayload.country || user?.address?.country || "",
-        primaryAccountType: unifiedPayload.primary_account_type || profileData?.unifiedCastingDirectorProfile?.primary_account_type || "",
-        
-        // Overview fields
-        displayName: unifiedPayload.display_name || user?.stageName || "",
-        companyName: unifiedPayload.company_name,
-        shortBio: unifiedPayload.short_bio || "",
-        fullAbout: unifiedPayload.full_about || "",
-        yearsOfExperience: unifiedPayload.years_of_experience,
-        experienceLevel: unifiedPayload.experience_level,
-        industryAreas: unifiedPayload.industry_areas || [],
-        applicantStatuses: unifiedPayload.applicant_statuses || ["Reviewing", "Shortlisted", "Rejected"],
+      // 1. Update Specialized Casting Profile Information
+      // Robustly map all unified fields to camelCase for backend compatibility
+      const snakeToCamel = (str: string) => str.replace(/([-_][a-z])/g, group => group.toUpperCase().replace('-', '').replace('_', ''));
+      
+      const payload: any = {};
+      
+      // Auto-map all fields from spec
+      Object.entries(unifiedPayload).forEach(([key, value]) => {
+        const camelKey = snakeToCamel(key);
+        payload[camelKey] = value;
+      });
 
-        // Settings / Hiring fields
-        matchEngineEnabled: unifiedPayload.match_engine_enabled === "Yes" || unifiedPayload.match_engine_enabled === true,
-        enableManageApplicants: unifiedPayload.enable_manage_applicants === "Yes" || unifiedPayload.enable_manage_applicants === true,
-        notesPolicy: unifiedPayload.notes_policy
-      };
+      // Explicitly ensure core fields are mapped to root expected names if different
+      payload.fullName = unifiedPayload.full_name || profileData?.fullName || user?.fullName || "";
+      payload.email = unifiedPayload.email || profileData?.email || user?.email || "";
+      payload.phoneNumber = unifiedPayload.phone_number || profileData?.phoneNumber || user?.phone || "";
+      payload.professionalTitle = unifiedPayload.professional_title || profileData?.professional_title || "";
+      payload.displayName = unifiedPayload.display_name || user?.stageName || "";
+      payload.companyName = unifiedPayload.company_name || profileData?.companyName || "";
+      payload.city = unifiedPayload.city || profileData?.city || "";
+      payload.country = unifiedPayload.country || profileData?.country || "";
+      
+      // Handle boolean conversions for common select fields if they came as "Yes"/"No"
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === "Yes") payload[key] = true;
+        if (payload[key] === "No") payload[key] = false;
+      });
 
       if (activeTab === "summary") {
         return;
@@ -310,7 +314,7 @@ export default function DirectorProfile() {
               className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md font-bold"
               asChild
             >
-              <Link to={`/professional/${profileData?._id || profileData?.id}`}>
+              <Link to={`/professional/${profileData?.userId || profileData?._id || profileData?.id}`}>
                 <Eye className="w-5 h-5 mr-2" />
                 View Public Profile
               </Link>
@@ -328,12 +332,11 @@ export default function DirectorProfile() {
             <TabsTrigger value="roles" className="py-2 px-4">Roles</TabsTrigger>
             <TabsTrigger value="audition" className="py-2 px-4">Pre-Audition</TabsTrigger>
             <TabsTrigger value="commercial" className="py-2 px-4">Commercial</TabsTrigger>
-            <TabsTrigger value="navigation" className="py-2 px-4">Tabs</TabsTrigger>
             <TabsTrigger value="summary" className="py-2 px-4">Summary</TabsTrigger>
           </TabsList>
         </div>
 
-        {(["overview", "hiring", "projects", "roles", "audition", "commercial", "navigation"] as const).map((tab) => (
+        {(["overview", "hiring", "projects", "roles", "audition", "commercial"] as const).map((tab) => (
           <TabsContent key={tab} value={tab} className="mt-6 space-y-6">
             <UnifiedCastingDirectorProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab={tab} />
           </TabsContent>

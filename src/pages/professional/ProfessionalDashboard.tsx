@@ -20,29 +20,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 
 export default function ProfessionalDashboard() {
-  const { formatPrice } = useAuth();
+  const { user: authUser, formatPrice } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [userRes, profileRes] = await Promise.all([
-          authAPI.getMe().catch(err => {
-            console.error("Auth fetch error:", err);
-            return { data: { success: false } };
-          }),
+        const [profileRes] = await Promise.all([
           profileAPI.getMe().catch(err => {
             console.error("Profile fetch error:", err);
             return { data: { success: false } };
           })
         ]);
-
-        if (userRes.data?.success) {
-          setUser(userRes.data.data);
-        }
 
         const profileData = profileRes.data?.success ? profileRes.data.data : null;
         setProfile(profileData);
@@ -77,12 +68,12 @@ export default function ProfessionalDashboard() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Welcome back, {user?.fullName || 'Professional'}!</h1>
+          <h1 className="text-2xl font-bold">Welcome back, {authUser?.fullName || 'Professional'}!</h1>
           <p className="text-muted-foreground">Manage your services and connect with talent</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
-            <Link to={`/professional/${user?._id || user?.id}`}>
+            <Link to={`/professional/${authUser?.id || authUser?._id}`}>
               <Eye className="w-4 h-4 mr-2" />
               View Public Profile
             </Link>

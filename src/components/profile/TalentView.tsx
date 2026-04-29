@@ -19,6 +19,15 @@ export const TalentView: React.FC = () => {
           </p>
         </section>
 
+        {talent?.equipmentSummary && (
+          <section className="talent-section glass-card">
+            <h3 className="section-title"><Star size={20} /> Equipment & Gear</h3>
+            <p className="bio-text whitespace-pre-wrap">
+              {talent.equipmentSummary}
+            </p>
+          </section>
+        )}
+
         <section className="talent-section glass-card">
           <h3 className="section-title"><Ruler size={20} /> Physical Attributes</h3>
           <div className="attributes-grid">

@@ -14,8 +14,8 @@ import { castingCallAPI, applicationAPI, authAPI, livestreamAPI } from "@/lib/ap
 import { toast } from "sonner";
 
 export default function DirectorDashboard() {
+  const { user: authUser } = useAuth();
   const [isLoading, setIsLoading]     = useState(true);
-  const [user, setUser]               = useState<any>(null);
   const [listings, setListings]       = useState<any[]>([]);
   const [recentApps, setRecentApps]   = useState<any[]>([]);
   const [activeStreams, setActiveStreams] = useState<any[]>([]);
@@ -27,13 +27,11 @@ export default function DirectorDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [userRes, listingsRes, streamsRes] = await Promise.all([
-          authAPI.getMe(),
+        const [listingsRes, streamsRes] = await Promise.all([
           castingCallAPI.getMyListings(),
           livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
         ]);
 
-        if (userRes.data.success) setUser(userRes.data.data);
         if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
           setActiveStreams(streamsRes.data.data.filter((s: any) => s.status === "live").slice(0, 2));
         }
@@ -121,7 +119,7 @@ export default function DirectorDashboard() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold">
-            Welcome back, {user?.fullName?.split(" ")[0] || "Director"} 👋
+            Welcome back, {authUser?.fullName?.split(" ")[0] || "Director"} 👋
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Here's an overview of your casting activity.

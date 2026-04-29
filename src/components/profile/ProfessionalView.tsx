@@ -38,6 +38,15 @@ export const ProfessionalView: React.FC = () => {
             ))}
           </div>
         </section>
+
+        {professional?.equipmentSummary && (
+          <section className="professional-section glass-card">
+            <h3 className="section-title"><Wrench size={20} /> Primary Equipment</h3>
+            <p className="bio-text whitespace-pre-wrap">
+              {professional.equipmentSummary}
+            </p>
+          </section>
+        )}
       </div>
 
       <div className="professional-side-col">

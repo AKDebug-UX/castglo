@@ -42,7 +42,6 @@ const sectionOrder = [
   "Pre-Audition Workflow",
   "Pre-Audition Form",
   "Marketplace / Commercial",
-  "Profile Navigation",
 ];
 
 const asArray = (value: any): string[] => (Array.isArray(value) ? value.map(String) : []);

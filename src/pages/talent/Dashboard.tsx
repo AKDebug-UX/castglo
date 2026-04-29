@@ -20,26 +20,23 @@ import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 
 export default function Dashboard() {
+  const { user: authUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [upcomingCastings, setUpcomingCastings] = useState([]);
   const [recentSubmissions, setRecentSubmissions] = useState([]);
-  const [userName, setUserName] = useState("");
   const [activeStreams, setActiveStreams] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [userRes, appsRes, castingsRes, streamsRes] = await Promise.all([
-          authAPI.getMe().catch(err => ({ data: { success: false } })),
+        const [appsRes, castingsRes, streamsRes] = await Promise.all([
           applicationAPI.getMe().catch(err => ({ data: { success: false } })),
           castingCallAPI.getAll({ limit: 2 }).catch(err => ({ data: { success: false } })),
           livestreamAPI.getMyStreams().catch(err => ({ data: { success: false } }))
         ]);
 
-        if (userRes.data?.success) {
-          setUserName(userRes.data.data.fullName);
-        }
+        if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
 
         if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
           setActiveStreams(streamsRes.data.data.slice(0, 2));
@@ -105,7 +102,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold">Welcome back, {userName || "User"}!</h1>
+        <h1 className="text-2xl font-bold">Welcome back, {authUser?.fullName || "User"}!</h1>
         <p className="text-muted-foreground">Here's what's happening with your casting opportunities</p>
       </div>
 

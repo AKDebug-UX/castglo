@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { profileAPI, castingAPI } from '@/lib/api';
+import { profileAPI } from '@/lib/api';
 import { useAuth } from './AuthContext';
 
 interface ProfileContextType {

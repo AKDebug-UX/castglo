@@ -77,6 +77,7 @@ const CORE_FIELDS: ProfessionalFieldSpec[] = [
   { id: "cover_image", label: "Cover Image / Banner", section: "Media", type: "file", required: false, searchable: false },
   { id: "short_bio", label: "Short Bio", section: "About", type: "textarea", required: true, searchable: true, validation: "50-300 chars" },
   { id: "full_bio", label: "Full About Description", section: "About", type: "textarea", required: false, searchable: true, validation: "Max 3000 chars" },
+  { id: "equipment_summary", label: "Primary Equipment / Gear", section: "About", type: "textarea", required: false, searchable: true, validation: "Max 1000 chars" },
   { id: "city", label: "City", section: "Location", type: "text", required: true, searchable: true, validation: "2-100 chars" },
   { id: "country", label: "Country", section: "Location", type: "select", required: true, searchable: true, optionSource: "countries" },
   { id: "willing_to_travel", label: "Willing to Travel", section: "Location / Availability", type: "select", options: ["Yes", "No"], required: false, searchable: true },
@@ -100,7 +101,6 @@ const SKILLS_FIELDS: ProfessionalFieldSpec[] = [
   { id: "core_skills", label: "Core Skills / Specialisms", section: "Skills", type: "multi-select", required: false, searchable: true },
   { id: "custom_skills", label: "Additional Custom Skills", section: "Skills", type: "textarea", required: false, searchable: true, validation: "Max 1000 chars" },
   { id: "software_tools", label: "Software / Tools Used", section: "Skills / Tools", type: "multi-select", required: false, searchable: true, optionSource: "software_tools" },
-  { id: "equipment_summary", label: "Equipment / Tools Summary", section: "Skills / Tools", type: "textarea", required: false, searchable: true, validation: "Max 1000 chars" },
 ];
 
 const PORTFOLIO_FIELDS: ProfessionalFieldSpec[] = [

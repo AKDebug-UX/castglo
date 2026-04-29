@@ -189,9 +189,6 @@ const MARKETPLACE_FIELDS: CastingDirectorFieldSpec[] = [
   { id: "social_promotion_boost", label: "Social Promotion Boost", section: "Marketplace / Commercial", type: "select", options: ["Yes", "No"], required: false, searchable: true },
   { id: "additional_collaborator_seats", label: "Additional Collaborator Seats", section: "Marketplace / Commercial", type: "integer", required: false, searchable: true },
   { id: "premium_analytics", label: "Premium Analytics", section: "Marketplace / Commercial", type: "select", options: ["Yes", "No"], required: false, searchable: true },
-
-  { id: "public_profile_tabs", label: "Public Profile Tabs", section: "Profile Navigation", type: "multi-select", required: false, searchable: false, optionSource: "public_tabs" },
-  { id: "private_dashboard_tabs", label: "Private Dashboard Tabs", section: "Profile Navigation", type: "multi-select", required: false, searchable: false, optionSource: "private_tabs" },
 ];
 
 export const UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC: CastingDirectorFieldSpec[] = [
@@ -217,7 +214,6 @@ export const castingDirectorSectionTabMap: Record<string, "overview" | "hiring" 
   "Pre-Audition Workflow": "audition",
   "Pre-Audition Form": "audition",
   "Marketplace / Commercial": "commercial",
-  "Profile Navigation": "navigation",
 };
 
 export const shouldShowCastingDirectorField = (

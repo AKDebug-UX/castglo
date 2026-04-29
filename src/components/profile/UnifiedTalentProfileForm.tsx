@@ -426,7 +426,9 @@ export function UnifiedTalentProfileForm({
         "Comedian Profile", "Stunt Profile",
         // Professional Specialisms
         "Photography Specialisms", "MUA & Hair Specialisms", "Coaching Specialisms", "Editing Specialisms",
-        "Professional Overview", "Representation", "Booking Preferences"
+        "Professional Overview", "Representation", "Booking Preferences",
+        // Professional Identity & Business
+        "Professional Identity", "Business & Facilities", "Business Terms"
       ]
     },
     {
@@ -437,7 +439,7 @@ export function UnifiedTalentProfileForm({
     {
       id: "portfolio",
       label: "Portfolio",
-      sections: ["Social"]
+      sections: ["Social", "Media", "Contact / Media"]
     },
     {
       id: "summary",
