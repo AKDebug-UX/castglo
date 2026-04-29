@@ -259,66 +259,60 @@ export default function ProfessionalProfile() {
       // 1. Update Specialized Professional Information FIRST
       // Aligning strictly with backend validation error requirements (FLAT structure)
       const payload: any = {
-        // ALWAYS include mandatory fields to satisfy backend validation
-        fullName: activeTab === "general" ? (unifiedPayload.full_name || profileData?.fullName) : (profileData?.fullName || unifiedPayload.full_name),
-        displayName: activeTab === "general" ? (unifiedPayload.display_name || profileData?.stageName) : (profileData?.stageName || unifiedPayload.display_name),
-        professionalTitle: activeTab === "general" ? (unifiedPayload.professional_title || profileData?.professional_title) : (profileData?.unifiedProfessionalProfile?.professional_title || profileData?.professional_title || unifiedPayload.professional_title),
-        email: activeTab === "general" ? (unifiedPayload.email || profileData?.email) : (profileData?.email || unifiedPayload.email),
-        phoneNumber: activeTab === "general" ? (unifiedPayload.phone_number || profileData?.phone_number || profileData?.phoneNumber) : (profileData?.phoneNumber || profileData?.phone_number || unifiedPayload.phone_number),
-        city: activeTab === "general" ? (unifiedPayload.city || profileData?.city || "") : (profileData?.unifiedProfessionalProfile?.city || profileData?.city || unifiedPayload.city || ""),
-        country: activeTab === "general" ? (unifiedPayload.country || profileData?.country || "") : (profileData?.unifiedProfessionalProfile?.country || profileData?.country || unifiedPayload.country || ""),
-        shortBio: activeTab === "general" ? (unifiedPayload.short_bio || profileData?.short_bio || "") : (profileData?.unifiedProfessionalProfile?.shortBio || profileData?.short_bio || unifiedPayload.short_bio || ""),
-        yearsOfExperience: activeTab === "professional" ? (unifiedPayload.years_of_experience || profileData?.years_of_experience) : (profileData?.unifiedProfessionalProfile?.yearsOfExperience || profileData?.years_of_experience || unifiedPayload.years_of_experience),
-        experienceLevel: activeTab === "professional" ? (unifiedPayload.experience_level || profileData?.experience_level) : (profileData?.unifiedProfessionalProfile?.experienceLevel || profileData?.experience_level || unifiedPayload.experience_level),
-        primaryProfessionalType: activeTab === "professional" ? (unifiedPayload.primary_professional_type || profileData?.primary_professional_type) : (profileData?.unifiedProfessionalProfile?.primaryProfessionalType || profileData?.primary_professional_type || unifiedPayload.primary_professional_type),
+        fullName: unifiedPayload.full_name || profileData?.fullName,
+        displayName: unifiedPayload.display_name || profileData?.stageName,
+        professionalTitle: unifiedPayload.professional_title || profileData?.unifiedProfessionalProfile?.professional_title || profileData?.professional_title,
+        email: unifiedPayload.email || profileData?.email,
+        phoneNumber: unifiedPayload.phone_number || profileData?.phone_number || profileData?.phoneNumber,
+        city: unifiedPayload.city || profileData?.city || "",
+        country: unifiedPayload.country || profileData?.country || "",
+        shortBio: unifiedPayload.short_bio || profileData?.short_bio || "",
+        yearsOfExperience: unifiedPayload.years_of_experience || profileData?.years_of_experience,
+        experienceLevel: unifiedPayload.experience_level || profileData?.experience_level,
+        primaryProfessionalType: unifiedPayload.primary_professional_type || profileData?.primary_professional_type,
         
-        // Commercial required fields
-        servesClientTypes: activeTab === "business" ? (unifiedPayload.serves_client_types || profileData?.serves_client_types || []) : (profileData?.unifiedProfessionalProfile?.servesClientTypes || profileData?.serves_client_types || unifiedPayload.serves_client_types || []),
-        availabilityType: activeTab === "business" ? (unifiedPayload.availability_type || profileData?.availability_type || "Part-time") : (profileData?.unifiedProfessionalProfile?.availabilityType || profileData?.availability_type || unifiedPayload.availability_type || "Part-time"),
-        preferredContactMethod: activeTab === "business" ? (unifiedPayload.preferred_contact_method || profileData?.preferred_contact_method || "Castglo") : (profileData?.unifiedProfessionalProfile?.preferredContactMethod || profileData?.preferred_contact_method || unifiedPayload.preferred_contact_method || "Castglo"),
-        bookingMethod: activeTab === "business" ? (unifiedPayload.booking_method || profileData?.booking_method || "Direct") : (profileData?.unifiedProfessionalProfile?.bookingMethod || profileData?.booking_method || unifiedPayload.booking_method || "Direct"),
+        // General fields
+        businessName: unifiedPayload.business_name || unifiedPayload.businessName || profileData?.unifiedProfessionalProfile?.businessName,
+        business_name: unifiedPayload.business_name || unifiedPayload.businessName || profileData?.unifiedProfessionalProfile?.businessName,
+        companyName: unifiedPayload.business_name || unifiedPayload.companyName || profileData?.unifiedProfessionalProfile?.companyName,
+        fullBio: unifiedPayload.full_bio || unifiedPayload.fullBio || "",
+        full_bio: unifiedPayload.full_bio || unifiedPayload.fullBio || "",
+        willingToTravel: !!(unifiedPayload.willing_to_travel === "Yes" || unifiedPayload.willing_to_travel === true),
+        willing_to_travel: !!(unifiedPayload.willing_to_travel === "Yes" || unifiedPayload.willing_to_travel === true),
+
+        // Professional fields
+        additionalProfessionalTypes: unifiedPayload.additional_professional_types || [],
+        industryAreas: unifiedPayload.industry_areas || [],
+        softwareTools: unifiedPayload.software_tools || [],
+        equipmentOwned: unifiedPayload.equipment_owned || "",
+        certifications: Array.isArray(unifiedPayload.certifications) ? unifiedPayload.certifications.join(', ') : (unifiedPayload.certifications || ""),
+
+        // Commercial fields
+        servesClientTypes: unifiedPayload.serves_client_types || profileData?.serves_client_types || [],
+        availabilityType: unifiedPayload.availability_type || profileData?.availability_type || "Part-time",
+        preferredContactMethod: unifiedPayload.preferred_contact_method || profileData?.preferred_contact_method || "Castglo",
+        bookingMethod: unifiedPayload.booking_method || profileData?.booking_method || "Direct",
+        remoteServicesAvailable: !!(unifiedPayload.remote_services_available === "Yes" || unifiedPayload.remote_services_available === true),
+        remote_services_available: !!(unifiedPayload.remote_services_available === "Yes" || unifiedPayload.remote_services_available === true),
+        insuranceAvailable: !!(unifiedPayload.insurance_available === "Yes" || unifiedPayload.insurance_available === true),
+        dbsChecked: !!(unifiedPayload.dbs_checked === "Yes" || unifiedPayload.dbs_checked === true),
+        studioAccess: !!(unifiedPayload.studio_access === "Yes" || unifiedPayload.studio_access === true),
+        studioDetails: unifiedPayload.studio_details || "",
+        depositRequired: !!(unifiedPayload.deposit_required === "Yes" || unifiedPayload.deposit_required === true),
+        depositPercentage: Number(unifiedPayload.deposit_percentage) || 0,
+        cancellationPolicy: unifiedPayload.cancellation_policy || "",
+        refundPolicy: unifiedPayload.refund_policy || "",
+        contractRequired: !!(unifiedPayload.contract_required === "Yes" || unifiedPayload.contract_required === true),
+        ndaFriendly: !!(unifiedPayload.nda_friendly === "Yes" || unifiedPayload.nda_friendly === true),
+        invoicingAvailable: !!(unifiedPayload.invoicing_available === "Yes" || unifiedPayload.invoicing_available === true),
+        taxRegistered: !!(unifiedPayload.tax_registered === "Yes" || unifiedPayload.tax_registered === true),
       };
 
-      if (activeTab === "general") {
-        Object.assign(payload, {
-          businessName: unifiedPayload.business_name || unifiedPayload.businessName,
-          business_name: unifiedPayload.business_name || unifiedPayload.businessName,
-          companyName: unifiedPayload.business_name || unifiedPayload.companyName,
-          fullBio: unifiedPayload.full_bio || unifiedPayload.fullBio || "",
-          full_bio: unifiedPayload.full_bio || unifiedPayload.fullBio || "",
-          willingToTravel: !!(unifiedPayload.willing_to_travel === "Yes" || unifiedPayload.willing_to_travel === true),
-          willing_to_travel: !!(unifiedPayload.willing_to_travel === "Yes" || unifiedPayload.willing_to_travel === true),
-        });
+      if (activeTab === "summary") {
+        return;
       }
 
-      if (activeTab === "professional") {
-        Object.assign(payload, {
-          additionalProfessionalTypes: unifiedPayload.additional_professional_types || [],
-          industryAreas: unifiedPayload.industry_areas || [],
-          softwareTools: unifiedPayload.software_tools || [],
-          equipmentOwned: unifiedPayload.equipment_owned || "",
-          certifications: Array.isArray(unifiedPayload.certifications) ? unifiedPayload.certifications.join(', ') : (unifiedPayload.certifications || ""),
-        });
-      }
-
-      if (activeTab === "business") {
-        Object.assign(payload, {
-          remoteServicesAvailable: !!(unifiedPayload.remote_services_available === "Yes" || unifiedPayload.remote_services_available === true),
-          remote_services_available: !!(unifiedPayload.remote_services_available === "Yes" || unifiedPayload.remote_services_available === true),
-          insuranceAvailable: !!(unifiedPayload.insurance_available === "Yes" || unifiedPayload.insurance_available === true),
-          dbsChecked: !!(unifiedPayload.dbs_checked === "Yes" || unifiedPayload.dbs_checked === true),
-          studioAccess: !!(unifiedPayload.studio_access === "Yes" || unifiedPayload.studio_access === true),
-          studioDetails: unifiedPayload.studio_details || "",
-          depositRequired: !!(unifiedPayload.deposit_required === "Yes" || unifiedPayload.deposit_required === true),
-          depositPercentage: Number(unifiedPayload.deposit_percentage) || 0,
-          cancellationPolicy: unifiedPayload.cancellation_policy || "",
-          refundPolicy: unifiedPayload.refund_policy || "",
-          contractRequired: !!(unifiedPayload.contract_required === "Yes" || unifiedPayload.contract_required === true),
-          ndaFriendly: !!(unifiedPayload.nda_friendly === "Yes" || unifiedPayload.nda_friendly === true),
-          invoicingAvailable: !!(unifiedPayload.invoicing_available === "Yes" || unifiedPayload.invoicing_available === true),
-          taxRegistered: !!(unifiedPayload.tax_registered === "Yes" || unifiedPayload.tax_registered === true),
-        });
-      }
+      await profileAPI.updateProfessional(payload);
 
       if (activeTab === "summary") {
         return;

@@ -219,6 +219,7 @@ export default function Profile() {
         if (!unified.chest_bust_measurement) unified.chest_bust_measurement = tp.appearance.chestBustMeasurement;
         if (!unified.waist_measurement) unified.waist_measurement = tp.appearance.waistMeasurement;
         if (!unified.hip_measurement) unified.hip_measurement = tp.appearance.hipMeasurement;
+        if (!unified.inside_leg_measurement) unified.inside_leg_measurement = tp.appearance.insideLegMeasurement;
       }
       if (tp.availability) {
         if (!unified.availability_type) unified.availability_type = tp.availabilityType || tp.availability.availabilityType;
@@ -528,153 +529,145 @@ export default function Profile() {
       }
 
       const payload: any = {
-        // ALWAYS include mandatory fields to satisfy backend validation
-        fullName: activeTab === "basic" ? (unifiedPayload.full_name || profileData.fullName) : (profileData.fullName || unifiedPayload.full_name),
-        email: activeTab === "basic" ? (unifiedPayload.email || profileData.email) : (profileData.email || unifiedPayload.email),
-        phoneNumber: activeTab === "basic" ? (unifiedPayload.phone_number || profileData.phoneNumber || profileData.phone) : (profileData.phoneNumber || profileData.phone || unifiedPayload.phone_number),
-        ageGroup: activeTab === "basic" ? unifiedPayload.age_group : (profileData.unifiedTalentProfile?.age_group || unifiedPayload.age_group),
-        gender: activeTab === "basic" ? unifiedPayload.gender : (profileData.unifiedTalentProfile?.gender || unifiedPayload.gender),
-        currentCity: activeTab === "basic" ? unifiedPayload.current_city : (profileData.unifiedTalentProfile?.current_city || unifiedPayload.current_city),
-        currentCountry: activeTab === "basic" ? unifiedPayload.current_country : (profileData.unifiedTalentProfile?.current_country || unifiedPayload.current_country),
-        primaryTalentType: activeTab === "professional" ? unifiedPayload.primary_talent_type : (profileData.unifiedTalentProfile?.primary_talent_type || unifiedPayload.primary_talent_type),
-        languagesSpoken: activeTab === "professional" ? (unifiedPayload.languages_spoken || []) : (profileData.unifiedTalentProfile?.languages_spoken || unifiedPayload.languages_spoken || []),
+        fullName: unifiedPayload.full_name || profileData.fullName,
+        email: unifiedPayload.email || profileData.email,
+        phoneNumber: unifiedPayload.phone_number || profileData.phoneNumber || profileData.phone,
+        ageGroup: unifiedPayload.age_group,
+        gender: unifiedPayload.gender,
+        currentCity: unifiedPayload.current_city,
+        currentCountry: unifiedPayload.current_country,
+        primaryTalentType: unifiedPayload.primary_talent_type,
+        languagesSpoken: unifiedPayload.languages_spoken || [],
+
+        // Basic Info fields
+        displayName: unifiedPayload.display_name,
+        address: unifiedPayload.address,
+        nationality: unifiedPayload.nationality,
+        dateOfBirth: unifiedPayload.dateOfBirth,
+        shortBio: unifiedPayload.short_bio || profileData.bio || "",
+        fullBio: unifiedPayload.full_bio || "",
+        preferredContactMethod: unifiedPayload.preferred_contact_method || "Castglo",
+        emergencyContact: {
+          fullName: unifiedPayload.emergency_full_name || "",
+          relationship: unifiedPayload.emergency_relationship || "",
+          phoneNumber: unifiedPayload.emergency_phone || "",
+        },
+        ...(isMinorFromAgeGroup(unifiedPayload.age_group) ? {
+          guardianConsent: {
+            fullName: unifiedPayload.guardian_full_name,
+            relationship: unifiedPayload.guardian_relationship,
+            email: unifiedPayload.guardian_email,
+            phone: unifiedPayload.guardian_phone,
+            consentGiven: !!(unifiedPayload.guardian_consent_checkbox === "Yes" || unifiedPayload.guardian_consent_checkbox === true),
+          }
+        } : {}),
+
+        // Professional fields
+        fluentLanguages: unifiedPayload.fluent_languages || [],
+        naturalAccent: unifiedPayload.natural_accent,
+        rightToWork: !!(unifiedPayload.right_to_work === "Yes" || unifiedPayload.right_to_work === true),
+        validPassport: !!(unifiedPayload.valid_passport === "Yes" || unifiedPayload.valid_passport === true),
+        willingToTravel: !!(unifiedPayload.willing_to_travel === "Yes" || unifiedPayload.willing_to_travel === true),
+        internationalAvailability: !!(unifiedPayload.international_availability === "Yes" || unifiedPayload.international_availability === true),
+        remoteWorkOpen: !!(unifiedPayload.remote_work_open === "Yes" || unifiedPayload.remote_work_open === true),
+        careerGoals: typeof unifiedPayload.career_goals === 'string' ? unifiedPayload.career_goals : (Array.isArray(unifiedPayload.career_goals) ? unifiedPayload.career_goals.join(', ') : ""),
+        yearsOfExperience: unifiedPayload.years_of_experience,
+        experienceLevel: unifiedPayload.experience_level,
+        representationStatus: unifiedPayload.representation_status || "Self-represented",
+        agencyName: unifiedPayload.agency_name,
+        agencyContactDetails: unifiedPayload.agency_contact_details,
+        unionMembership: unifiedPayload.union_membership,
+        awardsRecognition: unifiedPayload.awards_recognition,
+        openToUnpaid: !!(unifiedPayload.open_to_unpaid === "Yes" || unifiedPayload.open_to_unpaid === true),
+        currency: unifiedPayload.currency ? unifiedPayload.currency.split(' ')[0] : undefined,
+        expectedRateRange: unifiedPayload.expected_rate_range,
+        availabilityType: unifiedPayload.availability_type || "Part-time",
+        lastMinuteBookings: !!(unifiedPayload.last_minute_bookings === "Yes" || unifiedPayload.last_minute_bookings === true),
+        noticeRequired: unifiedPayload.notice_required,
+        opportunitiesSought: unifiedPayload.opportunities_sought || [],
+        opportunitiesNotAccepted: unifiedPayload.opportunities_not_accepted || [],
+
+        // Talent specific details
+        actorPerformanceCategory: unifiedPayload.actor_performance_category,
+        actorPlayingAgeRange: unifiedPayload.actor_playing_age_range,
+        actorFormalTraining: !!(unifiedPayload.actor_training === "Yes" || unifiedPayload.actor_training === true),
+        actorInstitution: unifiedPayload.actor_training_school,
+        actorTechniques: unifiedPayload.actor_techniques || [],
+        actorAccents: unifiedPayload.actor_accents || [],
+        actorSpecialSkills: unifiedPayload.actor_special_skills || [],
+        actorNotableCredits: unifiedPayload.actor_notable_credits || [],
+        actorShowreel: unifiedPayload.actor_showreel,
+        actorMonologue: unifiedPayload.actor_monologue,
+        actorVoiceReel: unifiedPayload.actor_voice_reel,
+
+        modelPrimaryCategory: unifiedPayload.model_primary_category,
+        modelAdditionalCategories: unifiedPayload.model_additional_categories || [],
+        modelOpenHairChanges: !!(unifiedPayload.model_open_hair_changes === "Yes" || unifiedPayload.model_open_hair_changes === true),
+        modelOpenBeautyCampaigns: !!(unifiedPayload.model_open_beauty_campaigns === "Yes" || unifiedPayload.model_open_beauty_campaigns === true),
+        modelOpenRunway: !!(unifiedPayload.model_open_runway === "Yes" || unifiedPayload.model_open_runway === true),
+        modelOpenSwimwear: !!(unifiedPayload.model_open_swimwear === "Yes" || unifiedPayload.model_open_swimwear === true),
+        modelOpenLingerie: !!(unifiedPayload.model_open_lingerie === "Yes" || unifiedPayload.model_open_lingerie === true),
+        modelCompCard: unifiedPayload.model_comp_card,
+        modelRunwayVideo: unifiedPayload.model_runway_video,
+        modelCampaignLinks: unifiedPayload.model_campaign_links || [],
+
+        singerCategory: unifiedPayload.singer_category,
+        singerVocalRange: unifiedPayload.singer_vocal_range,
+        singerGenres: unifiedPayload.singer_genres || [],
+        singerCanHarmonise: !!(unifiedPayload.singer_can_harmonise === "Yes" || unifiedPayload.singer_can_harmonise === true),
+        singerSightRead: !!(unifiedPayload.singer_sight_read === "Yes" || unifiedPayload.singer_sight_read === true),
+        singerSongwriting: !!(unifiedPayload.singer_songwriting === "Yes" || unifiedPayload.singer_songwriting === true),
+        singerLiveExperience: !!(unifiedPayload.singer_live_experience === "Yes" || unifiedPayload.singer_live_experience === true),
+        singerStudioExperience: !!(unifiedPayload.singer_studio_experience === "Yes" || unifiedPayload.singer_studio_experience === true),
+        singerNotableCredits: unifiedPayload.singer_notable_credits || [],
+        singerVocalReel: unifiedPayload.singer_vocal_reel,
+        singerPerformanceVideo: unifiedPayload.singer_performance_video,
+        singerOriginalMusicLinks: unifiedPayload.singer_original_music_links || [],
+
+        dancerPrimaryStyle: unifiedPayload.dancer_primary_style,
+        dancerAdditionalStyles: unifiedPayload.dancer_additional_styles || [],
+        dancerTrainingSchool: unifiedPayload.dancer_training_school,
+        dancerChoreographyExperience: !!(unifiedPayload.dancer_choreography_experience === "Yes" || unifiedPayload.dancer_choreography_experience === true),
+        dancerPartnerWork: !!(unifiedPayload.dancer_partner_work === "Yes" || unifiedPayload.dancer_partner_work === true),
+        dancerTeachingExperience: !!(unifiedPayload.dancer_teaching_experience === "Yes" || unifiedPayload.dancer_teaching_experience === true),
+        dancerLiveExperience: !!(unifiedPayload.dancer_live_experience === "Yes" || unifiedPayload.dancer_live_experience === true),
+        dancerTouringExperience: !!(unifiedPayload.dancer_touring_experience === "Yes" || unifiedPayload.dancer_touring_experience === true),
+        dancerNotableCredits: unifiedPayload.dancer_notable_credits || [],
+        dancerReel: unifiedPayload.dancer_reel,
+        dancerClips: unifiedPayload.dancer_clips || [],
+        dancerChoreographySamples: unifiedPayload.dancer_choreography_samples,
+
+        // Appearance
+        appearance: {
+          height: Number(unifiedPayload.height) || 0,
+          weight: Number(unifiedPayload.weight) || 0,
+          build: unifiedPayload.build,
+          hairColour: unifiedPayload.hair_colour,
+          hairLength: unifiedPayload.hair_length,
+          eyeColour: unifiedPayload.eye_colour,
+          skinTone: unifiedPayload.skin_tone,
+          ethnicityVisible: unifiedPayload.ethnicity_visible,
+          distinguishingFeatures: unifiedPayload.distinguishing_features || [],
+          visibleTattoosPiercings: !!(unifiedPayload.visible_tattoos_piercings === "Yes" || unifiedPayload.visible_tattoos_piercings === true),
+          openToAppearanceChanges: !!(unifiedPayload.open_to_appearance_changes === "Yes" || unifiedPayload.open_to_appearance_changes === true),
+          clothingSizeTop: unifiedPayload.clothing_size_top,
+          clothingSizeBottom: unifiedPayload.clothing_size_bottom,
+          shoeSize: unifiedPayload.shoe_size,
+          chestBustMeasurement: unifiedPayload.chest_bust_measurement,
+          waistMeasurement: unifiedPayload.waist_measurement,
+          hipMeasurement: unifiedPayload.hip_measurement,
+          insideLegMeasurement: unifiedPayload.inside_leg_measurement,
+        },
+
+        // Portfolio
+        socialLinks: unifiedPayload.social_links || [],
       };
 
-      if (activeTab === "basic") {
-        Object.assign(payload, {
-          displayName: unifiedPayload.display_name,
-          address: unifiedPayload.address,
-          nationality: unifiedPayload.nationality,
-          dateOfBirth: unifiedPayload.dateOfBirth,
-          shortBio: unifiedPayload.short_bio || profileData.bio || "",
-          fullBio: unifiedPayload.full_bio || "",
-          preferredContactMethod: unifiedPayload.preferred_contact_method || "Castglo",
-          emergencyContact: {
-            fullName: unifiedPayload.emergency_full_name || "",
-            relationship: unifiedPayload.emergency_relationship || "",
-            phoneNumber: unifiedPayload.emergency_phone || "",
-          },
-          ...(isMinorFromAgeGroup(unifiedPayload.age_group) ? {
-            guardianConsent: {
-              fullName: unifiedPayload.guardian_full_name,
-              relationship: unifiedPayload.guardian_relationship,
-              email: unifiedPayload.guardian_email,
-              phone: unifiedPayload.guardian_phone,
-              consentGiven: !!(unifiedPayload.guardian_consent_checkbox === "Yes" || unifiedPayload.guardian_consent_checkbox === true),
-            }
-          } : {})
-        });
+      if (activeTab === "summary") {
+        return;
       }
 
-      if (activeTab === "professional") {
-        Object.assign(payload, {
-          fluentLanguages: unifiedPayload.fluent_languages || [],
-          naturalAccent: unifiedPayload.natural_accent,
-          rightToWork: !!(unifiedPayload.right_to_work === "Yes" || unifiedPayload.right_to_work === true),
-          validPassport: !!(unifiedPayload.valid_passport === "Yes" || unifiedPayload.valid_passport === true),
-          willingToTravel: !!(unifiedPayload.willing_to_travel === "Yes" || unifiedPayload.willing_to_travel === true),
-          internationalAvailability: !!(unifiedPayload.international_availability === "Yes" || unifiedPayload.international_availability === true),
-          remoteWorkOpen: !!(unifiedPayload.remote_work_open === "Yes" || unifiedPayload.remote_work_open === true),
-          careerGoals: typeof unifiedPayload.career_goals === 'string' ? unifiedPayload.career_goals : (Array.isArray(unifiedPayload.career_goals) ? unifiedPayload.career_goals.join(', ') : ""),
-          yearsOfExperience: unifiedPayload.years_of_experience,
-          experienceLevel: unifiedPayload.experience_level,
-          representationStatus: unifiedPayload.representation_status || "Self-represented",
-          agencyName: unifiedPayload.agency_name,
-          agencyContactDetails: unifiedPayload.agency_contact_details,
-          unionMembership: unifiedPayload.union_membership,
-          awardsRecognition: unifiedPayload.awards_recognition,
-          openToUnpaid: !!(unifiedPayload.open_to_unpaid === "Yes" || unifiedPayload.open_to_unpaid === true),
-          currency: unifiedPayload.currency ? unifiedPayload.currency.split(' ')[0] : undefined,
-          expectedRateRange: unifiedPayload.expected_rate_range,
-          availabilityType: unifiedPayload.availability_type || "Part-time",
-          lastMinuteBookings: !!(unifiedPayload.last_minute_bookings === "Yes" || unifiedPayload.last_minute_bookings === true),
-          noticeRequired: unifiedPayload.notice_required,
-          opportunitiesSought: unifiedPayload.opportunities_sought || [],
-          opportunitiesNotAccepted: unifiedPayload.opportunities_not_accepted || [],
-
-          // Talent specific fields
-          actorPerformanceCategory: unifiedPayload.actor_performance_category,
-          actorPlayingAgeRange: unifiedPayload.actor_playing_age_range,
-          actorFormalTraining: !!(unifiedPayload.actor_training === "Yes" || unifiedPayload.actor_training === true),
-          actorInstitution: unifiedPayload.actor_training_school,
-          actorTechniques: unifiedPayload.actor_techniques || [],
-          actorAccents: unifiedPayload.actor_accents || [],
-          actorSpecialSkills: unifiedPayload.actor_special_skills || [],
-          actorNotableCredits: unifiedPayload.actor_notable_credits || [],
-          actorShowreel: unifiedPayload.actor_showreel,
-          actorMonologue: unifiedPayload.actor_monologue,
-          actorVoiceReel: unifiedPayload.actor_voice_reel,
-
-          modelPrimaryCategory: unifiedPayload.model_primary_category,
-          modelAdditionalCategories: unifiedPayload.model_additional_categories || [],
-          modelOpenHairChanges: !!(unifiedPayload.model_open_hair_changes === "Yes" || unifiedPayload.model_open_hair_changes === true),
-          modelOpenBeautyCampaigns: !!(unifiedPayload.model_open_beauty_campaigns === "Yes" || unifiedPayload.model_open_beauty_campaigns === true),
-          modelOpenRunway: !!(unifiedPayload.model_open_runway === "Yes" || unifiedPayload.model_open_runway === true),
-          modelOpenSwimwear: !!(unifiedPayload.model_open_swimwear === "Yes" || unifiedPayload.model_open_swimwear === true),
-          modelOpenLingerie: !!(unifiedPayload.model_open_lingerie === "Yes" || unifiedPayload.model_open_lingerie === true),
-          modelCompCard: unifiedPayload.model_comp_card,
-          modelRunwayVideo: unifiedPayload.model_runway_video,
-          modelCampaignLinks: unifiedPayload.model_campaign_links || [],
-
-          singerCategory: unifiedPayload.singer_category,
-          singerVocalRange: unifiedPayload.singer_vocal_range,
-          singerGenres: unifiedPayload.singer_genres || [],
-          singerCanHarmonise: !!(unifiedPayload.singer_can_harmonise === "Yes" || unifiedPayload.singer_can_harmonise === true),
-          singerSightRead: !!(unifiedPayload.singer_sight_read === "Yes" || unifiedPayload.singer_sight_read === true),
-          singerSongwriting: !!(unifiedPayload.singer_songwriting === "Yes" || unifiedPayload.singer_songwriting === true),
-          singerLiveExperience: !!(unifiedPayload.singer_live_experience === "Yes" || unifiedPayload.singer_live_experience === true),
-          singerStudioExperience: !!(unifiedPayload.singer_studio_experience === "Yes" || unifiedPayload.singer_studio_experience === true),
-          singerNotableCredits: unifiedPayload.singer_notable_credits || [],
-          singerVocalReel: unifiedPayload.singer_vocal_reel,
-          singerPerformanceVideo: unifiedPayload.singer_performance_video,
-          singerOriginalMusicLinks: unifiedPayload.singer_original_music_links || [],
-
-          dancerPrimaryStyle: unifiedPayload.dancer_primary_style,
-          dancerAdditionalStyles: unifiedPayload.dancer_additional_styles || [],
-          dancerTrainingSchool: unifiedPayload.dancer_training_school,
-          dancerChoreographyExperience: !!(unifiedPayload.dancer_choreography_experience === "Yes" || unifiedPayload.dancer_choreography_experience === true),
-          dancerPartnerWork: !!(unifiedPayload.dancer_partner_work === "Yes" || unifiedPayload.dancer_partner_work === true),
-          dancerTeachingExperience: !!(unifiedPayload.dancer_teaching_experience === "Yes" || unifiedPayload.dancer_teaching_experience === true),
-          dancerLiveExperience: !!(unifiedPayload.dancer_live_experience === "Yes" || unifiedPayload.dancer_live_experience === true),
-          dancerTouringExperience: !!(unifiedPayload.dancer_touring_experience === "Yes" || unifiedPayload.dancer_touring_experience === true),
-          dancerNotableCredits: unifiedPayload.dancer_notable_credits || [],
-          dancerReel: unifiedPayload.dancer_reel,
-          dancerClips: unifiedPayload.dancer_clips || [],
-          dancerChoreographySamples: unifiedPayload.dancer_choreography_samples,
-        });
-      }
-
-      if (activeTab === "appearance") {
-        Object.assign(payload, {
-          appearance: {
-            height: Number(unifiedPayload.height) || 0,
-            weight: Number(unifiedPayload.weight) || 0,
-            build: unifiedPayload.build,
-            hairColour: unifiedPayload.hair_colour,
-            hairLength: unifiedPayload.hair_length,
-            eyeColour: unifiedPayload.eye_colour,
-            skinTone: unifiedPayload.skin_tone,
-            ethnicityVisible: unifiedPayload.ethnicity_visible,
-            distinguishingFeatures: unifiedPayload.distinguishing_features || [],
-            visibleTattoosPiercings: (unifiedPayload.visible_tattoos_piercings === "Yes" || unifiedPayload.visible_tattoos_piercings === true) ? "Yes" : "No",
-            openToAppearanceChanges: (unifiedPayload.open_to_appearance_changes === "Yes" || unifiedPayload.open_to_appearance_changes === true) ? "Yes" : "No",
-          },
-          modelChestBust: unifiedPayload.model_chest_bust,
-          modelWaist: unifiedPayload.model_waist,
-          modelHips: unifiedPayload.model_hips,
-          modelDressSize: unifiedPayload.model_dress_size,
-          modelShoeSize: unifiedPayload.model_shoe_size,
-          modelCollarSize: unifiedPayload.model_collar_size,
-          modelInseam: unifiedPayload.model_inseam,
-          modelSuitSize: unifiedPayload.model_suit_size,
-        });
-      }
-
-      if (activeTab === "portfolio") {
-        Object.assign(payload, {
-          socialLinks: unifiedPayload.social_links || [],
-        });
-      }
+      await profileAPI.updateTalent(payload);
 
       if (activeTab === "summary") {
         return;
