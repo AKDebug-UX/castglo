@@ -58,12 +58,13 @@ export const generateDummyProfileData = (
         break;
       case "select":
         if (field.options && field.options.length > 0) {
-          dummyData[field.id] = field.options[0];
-          // For visibility toggles, prefer boolean true for "Yes" to match form logic
+          // For visibility toggles, prefer "Yes"
           if (field.options.includes("Yes")) {
-            dummyData[field.id] = true;
+            dummyData[field.id] = "Yes";
           } else if (field.options.includes("Paid")) {
             dummyData[field.id] = "Paid";
+          } else {
+            dummyData[field.id] = field.options[0];
           }
         } else if (field.optionSource) {
           const options = getOptions(field.optionSource);
@@ -78,8 +79,8 @@ export const generateDummyProfileData = (
         } else if (field.optionSource) {
           const options = getOptions(field.optionSource);
           if (options && options.length > 0) {
-            // Take up to 2 items for multi-select
-            dummyData[field.id] = options.slice(0, 2);
+            // Take up to 3 items for multi-select
+            dummyData[field.id] = options.slice(0, 3);
           }
         } else {
           dummyData[field.id] = [];
@@ -94,11 +95,22 @@ export const generateDummyProfileData = (
         ];
         break;
       case "multi-item-text":
-        dummyData[field.id] = ["Excellence", "Diversity", "Innovation"];
+        if (field.id === "social_links") {
+          dummyData[field.id] = ["https://instagram.com/mock", "https://linkedin.com/in/mock"];
+        } else if (field.id === "software_tools" || field.id === "core_skills" || field.id === "photographer_specialisms" || field.id === "mua_specialisms" || field.id === "editing_specialisms") {
+           dummyData[field.id] = ["Adobe Creative Suite", "Technical Proficiency", "Creative Direction"];
+        } else {
+          dummyData[field.id] = ["Excellence", "Diversity", "Innovation"];
+        }
         break;
       default:
         break;
     }
+    
+    // Explicit overrides for professional fields
+    if (field.id === "business_name") dummyData[field.id] = "Reed Professional Services";
+    if (field.id === "professional_title") dummyData[field.id] = "Senior Industry Specialist";
+    if (field.id === "core_skills") dummyData[field.id] = ["Adobe Creative Suite", "Project Management", "Technical Direction"];
   });
 
   return dummyData;
