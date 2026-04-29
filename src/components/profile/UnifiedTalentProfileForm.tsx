@@ -318,20 +318,31 @@ export function UnifiedTalentProfileForm({
   const activeTab = externalActiveTab || internalActiveTab;
 
   const handleAutoFill = () => {
-    const dummyData = generateDummyProfileData(UNIFIED_TALENT_PROFILE_FIELD_SPEC);
+    const activeTabGroup = tabGroups.find(t => t.id === activeTab);
+    if (!activeTabGroup) return;
 
-    // Auto-derive age group if DOB is present
-    if (dummyData.dateOfBirth) {
-      const derived = deriveAgeGroupFromDob(dummyData.dateOfBirth);
+    const dummyData = generateDummyProfileData(UNIFIED_TALENT_PROFILE_FIELD_SPEC);
+    
+    // Filter dummyData to only include fields from sections in the active tab
+    const filteredDummy: Record<string, any> = {};
+    UNIFIED_TALENT_PROFILE_FIELD_SPEC.forEach(field => {
+      if (activeTabGroup.sections.includes(field.section) && dummyData[field.id] !== undefined) {
+        filteredDummy[field.id] = dummyData[field.id];
+      }
+    });
+
+    // Auto-derive age group if DOB is present and in active tab
+    if (filteredDummy.dateOfBirth) {
+      const derived = deriveAgeGroupFromDob(filteredDummy.dateOfBirth);
       if (derived) {
-        dummyData.age_group = derived;
+        filteredDummy.age_group = derived;
       }
     }
 
-    const nextUnified = { ...unified, ...dummyData };
-    const nextRoot = { ...rootData, ...dummyData, unifiedTalentProfile: nextUnified };
+    const nextUnified = { ...unified, ...filteredDummy };
+    const nextRoot = { ...rootData, ...filteredDummy, unifiedTalentProfile: nextUnified };
     onChange(nextRoot);
-    toast.success("Profile form auto-filled with mock data");
+    toast.success(`Form in ${activeTabGroup.label} auto-filled with mock data`);
   };
 
   const unified = rootData?.unifiedTalentProfile || {};
@@ -698,16 +709,6 @@ export function UnifiedTalentProfileForm({
               className={hasError ? 'border-destructive' : ''}
               disabled={field.id === "email"}
               onChange={(e) => setFieldValue(field.id, e.target.value)}
-            />
-          );
-
-        case "date":
-          return (
-            <Input
-              type="date"
-              value={value || ""}
-              onChange={(e) => setFieldValue(field.id, e.target.value)}
-              className={hasError ? 'border-destructive' : ''}
             />
           );
 

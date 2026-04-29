@@ -34,29 +34,39 @@ export function PhoneInput({
   disabled,
 }: PhoneInputProps) {
   const [open, setOpen] = React.useState(false);
-  
+  const [localNumber, setLocalNumber] = React.useState("");
+
   // Parse the current value to find the country
   const selectedCountry = React.useMemo(() => {
     if (!value) return COUNTRIES[0]; // Default to first country (United Kingdom)
     return COUNTRIES.find((c) => value.startsWith(c.dial_code)) || COUNTRIES[0];
   }, [value]);
 
-  // The actual number without the dial code
-  const phoneNumber = React.useMemo(() => {
-    if (!value) return "";
-    if (value.startsWith(selectedCountry.dial_code)) {
-      return value.slice(selectedCountry.dial_code.length);
+  // Sync local number when prop value changes
+  React.useEffect(() => {
+    if (!value) {
+      setLocalNumber("");
+      return;
     }
-    return value;
-  }, [value, selectedCountry]);
+    if (value.startsWith(selectedCountry.dial_code)) {
+      setLocalNumber(value.slice(selectedCountry.dial_code.length));
+    } else {
+      // If value doesn't start with selected country (e.g. changed externally)
+      // find the new country
+      const newCountry = COUNTRIES.find((c) => value.startsWith(c.dial_code)) || COUNTRIES[0];
+      setLocalNumber(value.slice(newCountry.dial_code.length));
+    }
+  }, [value, selectedCountry.dial_code]);
 
   const handleCountrySelect = (country: Country) => {
-    onChange(country.dial_code + phoneNumber);
+    const nextValue = country.dial_code + localNumber;
+    onChange(nextValue);
     setOpen(false);
   };
 
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawNumber = e.target.value.replace(/[^\d]/g, ""); // Keep only digits
+    setLocalNumber(rawNumber);
     onChange(selectedCountry.dial_code + rawNumber);
   };
 
@@ -108,7 +118,7 @@ export function PhoneInput({
       </Popover>
       <Input
         type="tel"
-        value={phoneNumber}
+        value={localNumber}
         onChange={handleNumberChange}
         placeholder={placeholder}
         className="flex-1"

@@ -68,6 +68,14 @@ export default function DirectorProfile() {
       if (!unified.additional_account_types) unified.additional_account_types = cp.additionalAccountTypes;
       if (!unified.industry_areas) unified.industry_areas = cp.industryAreas;
       if (!unified.applicant_statuses) unified.applicant_statuses = cp.applicantStatuses;
+      
+      if (unified.match_engine_enabled === undefined) {
+        unified.match_engine_enabled = cp.matchEngineEnabled ? "Yes" : "No";
+      }
+      if (unified.enable_manage_applicants === undefined) {
+        unified.enable_manage_applicants = cp.enableManageApplicants ? "Yes" : "No";
+      }
+      if (!unified.notes_policy) unified.notes_policy = cp.notesPolicy;
 
       combinedData.unifiedCastingDirectorProfile = unified;
       setProfileData(combinedData);
@@ -152,64 +160,44 @@ export default function DirectorProfile() {
 
       // 1. Update Specialized Casting Profile Information FIRST
       // Aligning strictly with backend validation requirements
-      await profileAPI.updateCasting({
-        fullName: unifiedPayload.full_name || profileData?.fullName || user?.fullName || "",
-        displayName: unifiedPayload.display_name || user?.stageName || "",
-        email: unifiedPayload.email || profileData?.email || user?.email || "",
-        phoneNumber: unifiedPayload.phone_number || profileData?.phoneNumber || user?.phone || "",
-        professionalTitle: unifiedPayload.professional_title,
-        companyName: unifiedPayload.company_name,
-        shortBio: unifiedPayload.short_bio || "",
-        fullAbout: unifiedPayload.full_about || "",
-        city: unifiedPayload.city || user?.address?.city || "",
-        country: unifiedPayload.country || user?.address?.country || "",
-        
-        primaryAccountType: unifiedPayload.primary_account_type,
-        yearsOfExperience: unifiedPayload.years_of_experience,
-        experienceLevel: unifiedPayload.experience_level,
-        industryAreas: unifiedPayload.industry_areas || [],
-        applicantStatuses: unifiedPayload.applicant_statuses || ["Reviewing", "Shortlisted", "Rejected"],
-        
-        matchEngineEnabled: unifiedPayload.match_engine_enabled === "Yes" || unifiedPayload.match_engine_enabled === true,
-        enableManageApplicants: unifiedPayload.enable_manage_applicants === "Yes" || unifiedPayload.enable_manage_applicants === true,
-        notesPolicy: unifiedPayload.notes_policy
-      });
+      const payload: any = {
+        // ALWAYS include mandatory fields to satisfy backend validation
+        fullName: activeTab === "overview" ? (unifiedPayload.full_name || profileData?.fullName || user?.fullName || "") : (profileData?.fullName || user?.fullName || unifiedPayload.full_name || ""),
+        email: activeTab === "overview" ? (unifiedPayload.email || profileData?.email || user?.email || "") : (profileData?.email || user?.email || unifiedPayload.email || ""),
+        phoneNumber: activeTab === "overview" ? (unifiedPayload.phone_number || profileData?.phoneNumber || user?.phone || "") : (profileData?.phoneNumber || user?.phone || unifiedPayload.phone_number || ""),
+        professionalTitle: activeTab === "overview" ? unifiedPayload.professional_title : (profileData?.unifiedCastingDirectorProfile?.professional_title || unifiedPayload.professional_title),
+        city: activeTab === "overview" ? (unifiedPayload.city || user?.address?.city || "") : (profileData?.unifiedCastingDirectorProfile?.city || unifiedPayload.city || user?.address?.city || ""),
+        country: activeTab === "overview" ? (unifiedPayload.country || user?.address?.country || "") : (profileData?.unifiedCastingDirectorProfile?.country || unifiedPayload.country || user?.address?.country || ""),
+        primaryAccountType: activeTab === "overview" ? unifiedPayload.primary_account_type : (profileData?.unifiedCastingDirectorProfile?.primary_account_type || unifiedPayload.primary_account_type),
+      };
 
-      // 2. Proactive "Healing" of other profiles to prevent cross-model validation blockers
-      try {
-        await profileAPI.updateTalent({ shortBio: unifiedPayload.short_bio || "", careerGoals: "" });
-        await profileAPI.updateProfessional({ certifications: "", professionalMemberships: "", awards: "" });
-      } catch (e) {
-        console.warn("Cross-profile healing skipped:", e);
-      }
-
-      // 3. Update Core User & Account Information (isolated to prevent blocking)
-      try {
-        await userAPI.updateProfile({
-          fullName: unifiedPayload.full_name || profileData?.fullName,
-          bio: unifiedPayload.short_bio || profileData?.bio,
-          jobTitle: unifiedPayload.professional_title,
-          organisationType: "Casting Agency",
-          // Root level healing
-          talentProfile: { careerGoals: "" },
-          professionalProfile: { certifications: "", professionalMemberships: "", awards: "" }
+      if (activeTab === "overview") {
+        Object.assign(payload, {
+          displayName: unifiedPayload.display_name || user?.stageName || "",
+          companyName: unifiedPayload.company_name,
+          shortBio: unifiedPayload.short_bio || "",
+          fullAbout: unifiedPayload.full_about || "",
+          yearsOfExperience: unifiedPayload.years_of_experience,
+          experienceLevel: unifiedPayload.experience_level,
+          industryAreas: unifiedPayload.industry_areas || [],
+          applicantStatuses: unifiedPayload.applicant_statuses || ["Reviewing", "Shortlisted", "Rejected"],
         });
-      } catch (e) {
-        console.warn("Core profile update failed, but casting data saved:", e);
       }
 
-      try {
-        await profileAPI.updateAccount({
-          phoneNumber: unifiedPayload.phone_number || profileData?.phoneNumber,
-          address: {
-            city: unifiedPayload.city || "",
-            state: unifiedPayload.state || "",
-            country: unifiedPayload.country || ""
-          }
+      if (["hiring", "projects", "roles", "audition", "commercial"].includes(activeTab)) {
+        Object.assign(payload, {
+          matchEngineEnabled: unifiedPayload.match_engine_enabled === "Yes" || unifiedPayload.match_engine_enabled === true,
+          enableManageApplicants: unifiedPayload.enable_manage_applicants === "Yes" || unifiedPayload.enable_manage_applicants === true,
+          notesPolicy: unifiedPayload.notes_policy
         });
-      } catch (e) {
-        console.warn("Account update failed:", e);
       }
+
+      if (activeTab === "summary") {
+        return;
+      }
+
+      await profileAPI.updateCasting(payload);
+
       await refreshUser();
       await fetchProfileData();
       toast.success("Casting profile updated successfully");

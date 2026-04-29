@@ -130,7 +130,7 @@ export const API_ENDPOINTS = {
     UPDATE_TALENT: '/profiles/me/talent-type',
     UPDATE_PROFESSIONAL: '/profiles/me/professional',
     UPDATE_CASTING: '/casting/profile/me',
-    ADD_HEADSHOT: '/profiles/me/headshots',
+    ADD_HEADSHOT: '/prFofiles/me/headshots',
     DELETE_HEADSHOT: (headshotId: string) => `/profiles/me/headshots/${headshotId}`,
     UPLOAD_SHOWREEL: '/profiles/me/showreel',
     ADD_PORTFOLIO: '/profiles/me/portfolio',
