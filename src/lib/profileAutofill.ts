@@ -22,7 +22,6 @@ export const generateDummyProfileData = (
         else if (field.id === "project_title") dummyData[field.id] = "Project Aurora";
         else if (field.id === "role_name") dummyData[field.id] = "Protagonist (Lead)";
         else if (field.id === "preaudition_question_text") dummyData[field.id] = "What is your primary acting experience?";
-        else if (field.id === "preaudition_deadline") dummyData[field.id] = "Next Friday";
         else dummyData[field.id] = `Mock ${field.label}`;
         break;
       case "email":
@@ -107,10 +106,33 @@ export const generateDummyProfileData = (
         break;
     }
     
-    // Explicit overrides for professional fields
+    // Explicit overrides for professional and casting director fields
     if (field.id === "business_name") dummyData[field.id] = "Reed Professional Services";
     if (field.id === "professional_title") dummyData[field.id] = "Senior Industry Specialist";
     if (field.id === "core_skills") dummyData[field.id] = ["Adobe Creative Suite", "Project Management", "Technical Direction"];
+    
+    // Casting Director specific overrides
+    if (field.id === "project_title") dummyData[field.id] = "Project Aurora";
+    if (field.id === "production_company") dummyData[field.id] = "Reed International Studios";
+    if (field.id === "production_type") dummyData[field.id] = "Feature Film";
+    if (field.id === "genre") dummyData[field.id] = "Sci-Fi / Drama";
+    if (field.id === "production_description") dummyData[field.id] = "A groundbreaking exploration of human resilience in a post-apocalyptic world. This feature film aims to push the boundaries of storytelling and visual effects.";
+    if (field.id === "role_name") dummyData[field.id] = "Protagonist (Lead)";
+    if (field.id === "role_description") dummyData[field.id] = "A complex character with a strong emotional range. Must be able to portray both vulnerability and intense strength.";
+    if (field.id === "ethnicity") dummyData[field.id] = "Open to all ethnicities";
+    if (field.id === "accent_requirements") dummyData[field.id] = "Standard British or American accent";
+    if (field.id === "language_requirements") dummyData[field.id] = "Fluent English";
+    if (field.id === "union_status_requirement") dummyData[field.id] = "Equity / SAG-AFTRA preferred";
+    if (field.id === "compensation_notes") dummyData[field.id] = "Travel and accommodation provided. Daily per diem included.";
+    
+    if (field.id === "preaudition_instructions") dummyData[field.id] = "Please record a 60-second monologue from any classical play. Ensure good lighting and clear audio. Upload as a MP4 or MOV file.";
+    if (field.id === "preaudition_question_text") dummyData[field.id] = "What is your primary acting experience?";
+    if (field.id === "location_city") dummyData[field.id] = "London";
+    if (field.id === "payment_amount") dummyData[field.id] = 500;
+    if (field.id === "completed_castings") dummyData[field.id] = 15;
+    if (field.id === "active_calls_count") dummyData[field.id] = 3;
+    if (field.id === "response_time") dummyData[field.id] = "Within 24 hours";
+    if (field.id === "years_of_experience") dummyData[field.id] = "10+ years";
   });
 
   return dummyData;

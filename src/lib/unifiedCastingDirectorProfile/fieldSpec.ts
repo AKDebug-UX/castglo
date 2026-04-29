@@ -10,6 +10,7 @@ export type CastingDirectorFieldType =
   | "integer"
   | "url"
   | "file"
+  | "date"
   | "multi-item-text";
 
 export interface CastingDirectorVisibilityRule {
@@ -123,12 +124,12 @@ const PROJECT_FIELDS: CastingDirectorFieldSpec[] = [
   { id: "currency", label: "Currency", section: "Project / Casting Call", type: "select", required: false, searchable: true, optionSource: "currencies" },
   { id: "compensation_notes", label: "Additional Compensation Notes", section: "Project / Casting Call", type: "textarea", required: false, searchable: false },
 
-  { id: "project_date", label: "Project Date", section: "Project / Casting Call", type: "text", required: false, searchable: false },
-  { id: "start_date", label: "Start Date", section: "Project / Casting Call", type: "text", required: false, searchable: false },
-  { id: "end_date", label: "End Date", section: "Project / Casting Call", type: "text", required: false, searchable: false },
-  { id: "audition_date", label: "Audition Date", section: "Project / Casting Call", type: "text", required: false, searchable: false },
-  { id: "callback_date", label: "Callback Date", section: "Project / Casting Call", type: "text", required: false, searchable: false },
-  { id: "submission_deadline", label: "Submission Deadline", section: "Project / Casting Call", type: "text", required: false, searchable: false },
+  { id: "project_date", label: "Project Date", section: "Project / Casting Call", type: "date", required: false, searchable: false },
+  { id: "start_date", label: "Start Date", section: "Project / Casting Call", type: "date", required: false, searchable: false },
+  { id: "end_date", label: "End Date", section: "Project / Casting Call", type: "date", required: false, searchable: false },
+  { id: "audition_date", label: "Audition Date", section: "Project / Casting Call", type: "date", required: false, searchable: false },
+  { id: "callback_date", label: "Callback Date", section: "Project / Casting Call", type: "date", required: false, searchable: false },
+  { id: "submission_deadline", label: "Submission Deadline", section: "Project / Casting Call", type: "date", required: false, searchable: false },
   { id: "location_type", label: "Location Type", section: "Project / Casting Call", type: "select", required: false, searchable: true, optionSource: "location_types" },
   { id: "location_city", label: "City", section: "Project / Casting Call", type: "text", required: false, searchable: true },
   { id: "location_country", label: "Country", section: "Project / Casting Call", type: "select", required: false, searchable: true, optionSource: "countries" },
@@ -169,7 +170,7 @@ const ROLE_FIELDS: CastingDirectorFieldSpec[] = [
   { id: "preaudition_send_message", label: "Send Message to Talent", section: "Pre-Audition Workflow", type: "select", options: ["Yes", "No"], required: false, searchable: false },
   { id: "preaudition_questions_enabled", label: "Enable Pre-Audition Questions", section: "Pre-Audition Workflow", type: "select", options: ["Yes", "No"], required: false, searchable: false },
   { id: "preaudition_instructions", label: "Instructions", section: "Pre-Audition Workflow", type: "textarea", required: false, searchable: false },
-  { id: "preaudition_deadline", label: "Submission Deadline", section: "Pre-Audition Workflow", type: "text", required: false, searchable: false },
+  { id: "preaudition_deadline", label: "Submission Deadline", section: "Pre-Audition Workflow", type: "date", required: false, searchable: false },
 
   { id: "preaudition_question_text", label: "Question Text", section: "Pre-Audition Form", type: "text", required: false, searchable: false },
   { id: "preaudition_question_type", label: "Question Type", section: "Pre-Audition Form", type: "select", required: false, searchable: false, optionSource: "preaudition_question_types" },

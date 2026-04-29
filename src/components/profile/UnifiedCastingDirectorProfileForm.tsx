@@ -147,7 +147,7 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
       case "boolean":
         return (
           <Select 
-            value={value === true ? "Yes" : value === false ? "No" : ""} 
+            value={value === true || value === "Yes" ? "Yes" : (value === false || value === "No" ? "No" : "")} 
             onValueChange={(next) => setFieldValue(field.id, next)}
           >
             <SelectTrigger><SelectValue placeholder="Select Yes or No" /></SelectTrigger>
@@ -161,7 +161,10 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
         const isBooleanSelect = options.includes("Yes") && options.includes("No");
         return (
           <Select 
-            value={isBooleanSelect ? (value === true ? "Yes" : value === false ? "No" : "") : (value || "")} 
+            value={isBooleanSelect 
+              ? (value === true || value === "Yes" ? "Yes" : (value === false || value === "No" ? "No" : "")) 
+              : (value || "")
+            } 
             onValueChange={(next) => setFieldValue(field.id, next)}
           >
             <SelectTrigger><SelectValue placeholder={`Select ${field.label}`} /></SelectTrigger>
@@ -192,6 +195,8 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
             onChange={(next) => setFieldValue(field.id, next)}
           />
         );
+      case "date":
+        return <Input type="date" value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} />;
       case "file":
         return <Input type="file" onChange={(e) => setFieldValue(field.id, e.target.files?.[0] ? `file:${e.target.files[0].name}` : "")} />;
       default:
