@@ -10,8 +10,9 @@ import {
   Sparkles, ArrowRight, Plus, UserCheck,
   TrendingUp, BarChart2
 } from "lucide-react";
-import { castingCallAPI, applicationAPI, authAPI, livestreamAPI } from "@/lib/api";
+import { castingCallAPI, applicationAPI, livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function DirectorDashboard() {
   const { user: authUser } = useAuth();

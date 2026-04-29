@@ -15,9 +15,10 @@ import {
   Star,
   Video
 } from "lucide-react";
-import { applicationAPI, castingCallAPI, authAPI, livestreamAPI } from "@/lib/api";
+import { applicationAPI, castingCallAPI, livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Dashboard() {
   const { user: authUser } = useAuth();
@@ -35,8 +36,6 @@ export default function Dashboard() {
           castingCallAPI.getAll({ limit: 2 }).catch(err => ({ data: { success: false } })),
           livestreamAPI.getMyStreams().catch(err => ({ data: { success: false } }))
         ]);
-
-        if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
 
         if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
           setActiveStreams(streamsRes.data.data.slice(0, 2));
