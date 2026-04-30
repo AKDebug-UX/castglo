@@ -149,7 +149,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const verifyEmail = async (token: string): Promise<{ error?: string }> => {
     try {
       const response = await authAPI.verifyEmail({ token });
-      if (response.data.success) return {};
+      if (response.data.success) {
+        if (user) {
+          const updatedUser = { ...user, isEmailVerified: true };
+          setUser(updatedUser);
+          localStorage.setItem('userData', JSON.stringify(updatedUser));
+        }
+        return {};
+      }
       return { error: response.data.message };
     } catch (error) {
       return { error: error.response?.data?.message || "An error occurred" };
