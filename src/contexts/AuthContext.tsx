@@ -151,7 +151,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await authAPI.verifyEmail({ token });
       if (response.data.success) {
         if (user) {
-          const updatedUser = { ...user, isEmailVerified: true };
+          const updatedUser = { ...user, isEmailVerified: true, isVerified: true };
           setUser(updatedUser);
           localStorage.setItem('userData', JSON.stringify(updatedUser));
         }
