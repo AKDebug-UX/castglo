@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAvatarUrl, getInitials } from "@/lib/utils";
 import { UnifiedTalentProfileForm } from "@/components/profile/UnifiedTalentProfileForm";
-import { UNIFIED_FIELD_IDS, validateUnifiedTalentProfile, isMinorFromAgeGroup } from "@/lib/unifiedTalentProfile";
+import { UNIFIED_FIELD_IDS, validateUnifiedTalentProfile, isMinorFromAgeGroup, UNIFIED_TALENT_PROFILE_FIELD_SPEC } from "@/lib/unifiedTalentProfile";
 
 export default function Profile() {
   const { refreshUser } = useAuth();
@@ -25,6 +25,9 @@ export default function Profile() {
   const [pendingPortfolioVideos, setPendingPortfolioVideos] = useState<{ file: File; preview: string; name: string }[]>([]);
   const [pendingIntroVideo, setPendingIntroVideo] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("basic");
+  
+  const snakeToCamel = (str: string) => str.replace(/([-_][a-z])/g, group => group.toUpperCase().replace('-', '').replace('_', ''));
+  const camelToSnake = (str: string) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 
   const fetchProfileData = async () => {
     try {
@@ -44,7 +47,46 @@ export default function Profile() {
       const tp = combinedData.talentProfile || {};
       const unified = combinedData.unifiedTalentProfile || {};
 
-      // Map root and nested API properties back to unified field IDs
+      // 1. Map root and nested API properties back to unified field IDs
+      // Create a flat map of all keys in the response to catch nested data
+      const flatData: Record<string, any> = {};
+      const flatten = (obj: any) => {
+        if (!obj || typeof obj !== 'object') return;
+        Object.entries(obj).forEach(([key, value]) => {
+          if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+            flatten(value);
+          } else {
+            flatData[key] = value;
+          }
+        });
+      };
+      
+      flatten(combinedData);
+      
+      // Auto-map everything found in flatData to the unified state
+      Object.entries(flatData).forEach(([key, value]) => {
+        const snakeKey = camelToSnake(key);
+        const camelKey = snakeToCamel(key);
+        
+        // Potential target IDs to check in UNIFIED_FIELD_IDS
+        const targets = [key, snakeKey, camelKey];
+        
+        for (const target of targets) {
+          if (UNIFIED_FIELD_IDS.has(target) && value !== undefined && value !== null && value !== "") {
+            // Only populate if the unified field is currently empty or missing
+            if (!unified[target] || unified[target] === "") {
+              if (typeof value === "boolean") {
+                unified[target] = value ? "Yes" : "No";
+              } else {
+                unified[target] = value;
+              }
+              break; // Found a match, move to next field
+            }
+          }
+        }
+      });
+
+      // 2. Explicit mappings for root and special fields (ensures priority for core identity)
       if (!unified.full_name) unified.full_name = combinedData.fullName;
       if (!unified.display_name) unified.display_name = combinedData.stageName || tp.displayName;
       if (!unified.email) unified.email = combinedData.email;
@@ -1007,6 +1049,7 @@ export default function Profile() {
 
         // Portfolio
         socialLinks: unifiedPayload.social_links || [],
+        unifiedTalentProfile: unifiedPayload,
       };
 
       if (activeTab === "summary") {
@@ -1068,20 +1111,6 @@ export default function Profile() {
                 {getInitials(profileData?.fullName)}
               </AvatarFallback>
             </Avatar>
-            <label
-              htmlFor="profile-photo-upload"
-              className="absolute bottom-1 right-1 h-10 w-10 rounded-full bg-white text-[#009698] flex items-center justify-center cursor-pointer shadow-lg hover:bg-gray-100 transition-all duration-300 hover:scale-110"
-            >
-              <Camera className="h-5 h-5" />
-              <input
-                id="profile-photo-upload"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleProfilePhotoSelect}
-                disabled={isSaving}
-              />
-            </label>
             {pendingProfilePhoto && (
               <Button
                 size="sm"

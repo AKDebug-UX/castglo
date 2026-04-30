@@ -45,6 +45,36 @@ export default function TalentProfile() {
     fetchTalent();
   }, [id]);
 
+  const unifiedSnapshot = useMemo(() => {
+    if (!talent) return null;
+    const utp = talent.unifiedTalentProfile || {};
+    
+    // Helper to merge arrays/comma-separated strings
+    const mergeList = (val1: any, val2: any) => {
+      const arr1 = Array.isArray(val1) ? val1 : (val1 ? String(val1).split(',').map(s => s.trim()) : []);
+      const arr2 = Array.isArray(val2) ? val2 : (val2 ? String(val2).split(',').map(s => s.trim()) : []);
+      return [...new Set([...arr1, ...arr2])].filter(Boolean);
+    };
+
+    return {
+      ...talent,
+      ...utp,
+      fullName: talent.userId?.fullName || talent.fullName || utp.full_name,
+      stageName: talent.stageName || utp.display_name,
+      location: utp.current_city ? `${utp.current_city}${utp.current_country ? `, ${utp.current_country}` : ''}` : (formatLocation(talent.location) || "Global"),
+      bio: utp.short_bio || talent.bio,
+      roles: mergeList(talent.professionalRoles, utp.primary_talent_type),
+      skills: mergeList(talent.skills, utp.skills),
+      instagram: utp.social_instagram || talent.instagramUrl,
+      tiktok: utp.social_tiktok || talent.tiktokUrl,
+      youtube: utp.social_youtube || talent.youtubeUrl,
+      vimeo: utp.vimeo_url || talent.vimeoUrl,
+      isVerified: talent.isVerified || utp.isVerified,
+    };
+  }, [talent]);
+
+  const t = unifiedSnapshot;
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -81,31 +111,35 @@ export default function TalentProfile() {
                     className="w-full aspect-square object-cover" 
                   />
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold">{talent.userId?.fullName}</h1>
+                    <h1 className="text-2xl font-bold">{t.fullName}</h1>
                     <p className="text-sm text-primary font-medium capitalize mt-1">
-                      {talent.professionalRoles?.join(" • ") || talent.userRole}
+                      {t.roles?.join(" • ") || t.userRole}
                     </p>
                     <div className="flex items-center gap-1 text-sm mt-3">
                       <Star className="w-4 h-4 fill-warning text-warning" />
-                      <span className="font-medium">{talent.rating || "0.0"}</span>
-                      <span className="text-muted-foreground">({talent.reviewCount || 0} reviews)</span>
+                      <span className="font-medium">{t.rating || "0.0"}</span>
+                      <span className="text-muted-foreground">({t.reviewCount || 0} reviews)</span>
                     </div>
 
-                    {/* Social Media Links */}
                     <div className="flex gap-3 mt-4">
-                      {talent.instagramUrl && (
-                        <a href={talent.instagramUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors">
+                      {t.instagram && (
+                        <a href={t.instagram} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors">
                           <Instagram className="w-4 h-4 text-primary" />
                         </a>
                       )}
-                      {talent.tiktokUrl && (
-                        <a href={talent.tiktokUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors">
+                      {t.tiktok && (
+                        <a href={t.tiktok} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors">
                           <div className="w-4 h-4 flex items-center justify-center font-bold text-[10px]">TT</div>
                         </a>
                       )}
-                      {talent.youtubeUrl && (
-                        <a href={talent.youtubeUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors">
+                      {t.youtube && (
+                        <a href={t.youtube} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors">
                           <Youtube className="w-4 h-4 text-primary" />
+                        </a>
+                      )}
+                      {t.vimeo && (
+                        <a href={t.vimeo} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors">
+                          <Globe className="w-4 h-4 text-primary" />
                         </a>
                       )}
                     </div>
@@ -132,32 +166,32 @@ export default function TalentProfile() {
                   <CardContent className="p-6 space-y-4">
                     <div className="flex items-center gap-3 text-sm">
                       <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <span>{formatLocation(talent.location) || "Remote / Worldwide"}</span>
+                      <span>{t.location}</span>
                     </div>
-                    {talent.email && (
+                    {t.email && (
                       <div className="flex items-center gap-3 text-sm">
                         <Mail className="w-4 h-4 text-muted-foreground" />
-                        <span className="truncate">{talent.email}</span>
+                        <span className="truncate">{t.email}</span>
                       </div>
                     )}
-                    {talent.isVerified && (
+                    {t.isVerified && (
                       <div className="flex items-center gap-3 text-sm text-success">
                         <ShieldCheck className="w-4 h-4" />
                         <span className="font-medium">Verified Profile</span>
                       </div>
                     )}
-                    {talent.nationality && (
+                    {t.nationality && (
                       <div className="flex items-center gap-3 text-sm pt-2 border-t mt-2">
                         <Globe className="w-4 h-4 text-muted-foreground" />
-                        <span className="capitalize">{talent.nationality}</span>
+                        <span className="capitalize">{t.nationality}</span>
                       </div>
                     )}
-                    {talent.unionStatus && (
+                    {t.unionStatus || t.union_membership ? (
                       <div className="flex items-center gap-3 text-sm mt-2">
                         <BriefcaseIcon className="w-4 h-4 text-muted-foreground" />
-                        <span className="capitalize">{talent.unionStatus}</span>
+                        <span className="capitalize">{t.union_membership || t.unionStatus}</span>
                       </div>
-                    )}
+                    ) : null}
                   </CardContent>
                 </Card>
               </div>
@@ -204,18 +238,18 @@ export default function TalentProfile() {
                         <div className="flex items-center justify-between">
                           <h2 className="font-bold text-2xl">Overview</h2>
                           <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 h-7 px-3 capitalize">
-                            {talent.userRole || "Talent"}
+                            {t.userRole || "Talent"}
                           </Badge>
                         </div>
                         
-                        {talent.highlights && (
+                        {t.highlights && (
                           <p className="text-base font-medium text-[#009698] italic leading-snug">
-                            "{talent.highlights.split('\n')[0]}"
+                            "{t.highlights.split('\n')[0]}"
                           </p>
                         )}
                         
                         <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-sm line-clamp-4">
-                          {talent.bio || "No biography provided."}
+                          {t.bio || "No biography provided."}
                         </p>
                       </div>
                       
@@ -247,7 +281,7 @@ export default function TalentProfile() {
                       </div>
 
                       {/* Physical Stats Quick View */}
-                      {talent.physicalAttributes && (
+                      {t && (
                         <div className="mt-6">
                            <Card className="shadow-none bg-primary/[0.02] border-primary/10">
                              <CardContent className="p-5">
@@ -255,19 +289,19 @@ export default function TalentProfile() {
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                    <div className="space-y-1">
                                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Height</p>
-                                      <p className="text-xs font-medium truncate">{talent.physicalAttributes.height || "N/A"}</p>
+                                      <p className="text-xs font-medium truncate">{t.height || "N/A"}</p>
                                    </div>
                                    <div className="space-y-1">
                                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Eye Color</p>
-                                      <p className="text-xs font-medium truncate">{talent.physicalAttributes.eyeColor || "N/A"}</p>
+                                      <p className="text-xs font-medium truncate">{t.eye_colour || "N/A"}</p>
                                    </div>
                                    <div className="space-y-1">
                                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Hair</p>
-                                      <p className="text-xs font-medium truncate">{talent.physicalAttributes.hairColor || "N/A"}</p>
+                                      <p className="text-xs font-medium truncate">{t.hair_colour || "N/A"}</p>
                                    </div>
                                    <div className="space-y-1">
                                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Build</p>
-                                      <p className="text-xs font-medium truncate">{talent.physicalAttributes.build || "N/A"}</p>
+                                      <p className="text-xs font-medium truncate">{t.build || "N/A"}</p>
                                    </div>
                                 </div>
                              </CardContent>
@@ -281,12 +315,12 @@ export default function TalentProfile() {
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
                       <div className="flex items-center justify-between mb-8">
                         <h2 className="font-bold text-2xl">Headshots</h2>
-                        <span className="text-xs text-muted-foreground font-medium">{talent.talent?.headshots?.length || 0} Images</span>
+                        <span className="text-xs text-muted-foreground font-medium">{t.headshots?.length || 0} Images</span>
                       </div>
 
-                      {talent.talent?.headshots && talent.talent?.headshots.length > 0 ? (
+                      {t.headshots && t.headshots.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                          {talent.talent?.headshots?.map((shot: any) => (
+                          {t.headshots?.map((shot: any) => (
                             <div key={shot._id} className="aspect-square rounded-2xl overflow-hidden border bg-muted shadow-sm group relative cursor-zoom-in">
                               <img
                                 src={shot.url}
@@ -313,9 +347,9 @@ export default function TalentProfile() {
                   <TabsContent value="showreel" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
                       <h2 className="font-bold text-2xl mb-6">Showreel</h2>
-                      {talent.unifiedTalentProfile?.intro_video ? (
+                      {t.intro_video ? (
                         <div className="aspect-video rounded-2xl overflow-hidden bg-black">
-                          <video src={talent.unifiedTalentProfile.intro_video} controls className="w-full h-full object-contain" />
+                          <video src={t.intro_video} controls className="w-full h-full object-contain" />
                         </div>
                       ) : (
                         <div className="py-16 text-center bg-muted/10 rounded-2xl border-2 border-dashed">
@@ -330,15 +364,15 @@ export default function TalentProfile() {
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
                       <h2 className="font-bold text-2xl mb-6">Short Bio</h2>
                       <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                        {talent.unifiedTalentProfile?.short_bio || talent.bio || "No biography provided."}
+                        {t.short_bio || t.bio || "No biography provided."}
                       </p>
-                      {talent.unifiedTalentProfile?.career_goals && (
+                      {t.career_goals && (
                         <div className="mt-8 rounded-2xl border bg-muted/20 p-6">
                           <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
                             <Target className="w-4 h-4 text-primary" />
                             Career Goals
                           </h3>
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{talent.unifiedTalentProfile.career_goals}</p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{t.career_goals}</p>
                         </div>
                       )}
                     </Card>
@@ -347,9 +381,9 @@ export default function TalentProfile() {
                   <TabsContent value="cv_credits" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
                       <h2 className="font-bold text-2xl mb-6">CV / Credits</h2>
-                      {talent.unifiedTalentProfile?.cv_resume ? (
+                      {t.cv_resume ? (
                         <Button asChild className="bg-[#009698] hover:bg-[#009698]/90">
-                          <a href={talent.unifiedTalentProfile.cv_resume} target="_blank" rel="noopener noreferrer">
+                          <a href={t.cv_resume} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="w-4 h-4 mr-2" />
                             View CV / Resume
                           </a>
@@ -367,8 +401,8 @@ export default function TalentProfile() {
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
                       <h2 className="font-bold text-2xl mb-6">Skills</h2>
                       <div className="flex flex-wrap gap-2">
-                        {(talent.skills || talent.unifiedTalentProfile?.skills || []).length > 0 ? (
-                          (talent.skills || talent.unifiedTalentProfile?.skills || []).map((skill: string) => (
+                        {t.skills && t.skills.length > 0 ? (
+                          t.skills.map((skill: string) => (
                             <Badge key={skill} variant="secondary" className="bg-white border text-xs px-3 py-1">
                               {skill}
                             </Badge>
@@ -390,11 +424,11 @@ export default function TalentProfile() {
                             Languages Spoken
                           </h3>
                           <p className="text-sm font-semibold">
-                            {talent.unifiedTalentProfile?.languages_spoken || "Not specified"}
+                            {t.languages_spoken || "Not specified"}
                           </p>
-                          {talent.unifiedTalentProfile?.fluent_languages && (
+                          {t.fluent_languages && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              Fluent: {talent.unifiedTalentProfile.fluent_languages}
+                              Fluent: {t.fluent_languages}
                             </p>
                           )}
                         </div>
@@ -404,7 +438,7 @@ export default function TalentProfile() {
                             Natural Accent
                           </h3>
                           <p className="text-sm font-semibold">
-                            {talent.unifiedTalentProfile?.natural_accent || "Not specified"}
+                            {t.natural_accent || "Not specified"}
                           </p>
                         </div>
                       </div>
@@ -418,19 +452,19 @@ export default function TalentProfile() {
                         <div className="rounded-2xl border bg-muted/20 p-6">
                           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Status</h3>
                           <p className="text-sm font-semibold capitalize">
-                            {talent.unifiedTalentProfile?.representation_status || (talent.agencyName ? "represented" : "self-represented")}
+                            {t.representation_status || (t.agencyName ? "represented" : "self-represented")}
                           </p>
                         </div>
                         <div className="rounded-2xl border bg-muted/20 p-6">
                           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Agency / Manager</h3>
-                          <p className="text-sm font-semibold">{talent.unifiedTalentProfile?.agency_name || talent.agencyName || "Not listed"}</p>
-                          {talent.unifiedTalentProfile?.agency_contact && (
-                            <p className="text-xs text-muted-foreground mt-2">{talent.unifiedTalentProfile.agency_contact}</p>
+                          <p className="text-sm font-semibold">{t.agency_name || t.agencyName || "Not listed"}</p>
+                          {t.agency_contact && (
+                            <p className="text-xs text-muted-foreground mt-2">{t.agency_contact}</p>
                           )}
                         </div>
                         <div className="rounded-2xl border bg-muted/20 p-6 md:col-span-2">
                           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Union / Membership</h3>
-                          <p className="text-sm font-semibold">{talent.unifiedTalentProfile?.union_membership || talent.unionStatus || "Not specified"}</p>
+                          <p className="text-sm font-semibold">{t.union_membership || t.unionStatus || "Not specified"}</p>
                         </div>
                       </div>
                     </Card>
@@ -440,9 +474,9 @@ export default function TalentProfile() {
                   <TabsContent value="services" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
                       <h2 className="font-bold text-2xl mb-6">Booking Options</h2>
-                      {talent.services && talent.services.length > 0 ? (
+                      {t.services && t.services.length > 0 ? (
                         <div className="grid gap-4 sm:grid-cols-2">
-                          {talent.services.map((service: any) => (
+                          {t.services.map((service: any) => (
                             <div key={service._id} className="p-4 rounded-xl border bg-muted/10">
                               <h4 className="font-bold text-sm mb-1">{service.name}</h4>
                               <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{service.description}</p>
@@ -468,12 +502,12 @@ export default function TalentProfile() {
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
                       <div className="flex items-center justify-between mb-8">
                         <h2 className="font-bold text-2xl">Portfolio Gallery</h2>
-                        <span className="text-xs text-muted-foreground font-medium">{talent.talent?.headshots?.length || 0} Images</span>
+                        <span className="text-xs text-muted-foreground font-medium">{t.headshots?.length || 0} Images</span>
                       </div>
                       
-                      {talent.talent?.headshots && talent.talent?.headshots.length > 0 ? (
+                      {t.headshots && t.headshots.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                          {talent.talent?.headshots?.map((shot: any) => (
+                          {t.headshots?.map((shot: any) => (
                             <div key={shot._id} className="aspect-square rounded-2xl overflow-hidden border bg-muted shadow-sm group relative cursor-zoom-in">
                               <img src={shot.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt="Portfolio" />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -505,12 +539,12 @@ export default function TalentProfile() {
                                 <div className="space-y-3">
                                    <div className="flex justify-between items-center pb-2 border-b border-dashed">
                                       <span className="text-sm text-muted-foreground">Base Booking Rate</span>
-                                      <span className="font-bold">{talent.expectedRate || "Discuss with Talent"}</span>
+                                      <span className="font-bold">{t.expectedRate || "Discuss with Talent"}</span>
                                    </div>
-                                   {talent.unionStatus && (
+                                   {t.unionStatus && (
                                      <div className="flex justify-between items-center">
                                         <span className="text-sm text-muted-foreground">Union Terms</span>
-                                        <span className="font-bold text-primary uppercase text-xs">{talent.unionStatus}</span>
+                                        <span className="font-bold text-primary uppercase text-xs">{t.unionStatus}</span>
                                      </div>
                                    )}
                                 </div>
@@ -522,12 +556,12 @@ export default function TalentProfile() {
                                 </h4>
                                 <div className="space-y-2">
                                    <p className="text-xs flex items-center gap-2">
-                                      {talent.openToUnpaid ? <CheckCircle2 className="w-3.5 h-3.5 text-success" /> : <Clock className="w-3.5 h-3.5 text-muted-foreground" />} 
-                                      {talent.openToUnpaid ? "Open to TFP/Collaborations" : "Paid opportunities only"}
+                                      {t.openToUnpaid ? <CheckCircle2 className="w-3.5 h-3.5 text-success" /> : <Clock className="w-3.5 h-3.5 text-muted-foreground" />} 
+                                      {t.openToUnpaid ? "Open to TFP/Collaborations" : "Paid opportunities only"}
                                    </p>
                                    <p className="text-xs flex items-center gap-2">
-                                      {talent.agencyName ? <Shield className="w-3.5 h-3.5 text-primary" /> : <User className="w-3.5 h-3.5 text-muted-foreground" />} 
-                                      {talent.agencyName ? `Represented by ${talent.agencyName}` : "Self-represented talent"}
+                                      {t.agencyName ? <Shield className="w-3.5 h-3.5 text-primary" /> : <User className="w-3.5 h-3.5 text-muted-foreground" />} 
+                                      {t.agencyName ? `Represented by ${t.agencyName}` : "Self-represented talent"}
                                    </p>
                                 </div>
                              </div>
@@ -560,12 +594,12 @@ export default function TalentProfile() {
                         <h2 className="font-bold text-2xl">Client Feedback</h2>
                         <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-full border">
                           <Star className="w-4 h-4 fill-warning text-warning" />
-                          <span className="font-bold">{talent.rating || "0.0"}</span>
-                          <span className="text-muted-foreground text-xs">({talent.reviewCount || 0} reviews)</span>
+                          <span className="font-bold">{t.rating || "0.0"}</span>
+                          <span className="text-muted-foreground text-xs">({t.reviewCount || 0} reviews)</span>
                         </div>
                       </div>
 
-                      {talent.reviews && talent.reviews.length > 0 ? (
+                      {t.reviews && t.reviews.length > 0 ? (
                         <div className="space-y-6">
                            {/* Reviews map would go here */}
                         </div>
@@ -591,7 +625,7 @@ export default function TalentProfile() {
                                 <div className="space-y-3">
                                    <div className="flex justify-between text-sm">
                                       <span className="text-muted-foreground">Base Location</span>
-                                      <span className="font-bold">{formatLocation(talent.location) || "Global"}</span>
+                                      <span className="font-bold">{formatLocation(t.location) || "Global"}</span>
                                    </div>
                                    <div className="flex justify-between text-sm">
                                       <span className="text-muted-foreground">Right to Work</span>
@@ -605,11 +639,11 @@ export default function TalentProfile() {
                                 <div className="space-y-3">
                                    <div className="flex items-center gap-3 text-sm">
                                       <Plane className="w-4 h-4 text-primary" />
-                                      <span>{talent.willing_to_travel ? "Willing to travel for work" : "Local opportunities only"}</span>
+                                      <span>{t.willing_to_travel === "Yes" || t.willing_to_travel === true ? "Willing to travel for work" : "Local opportunities only"}</span>
                                    </div>
                                    <div className="flex items-center gap-3 text-sm">
                                       <Globe className="w-4 h-4 text-primary" />
-                                      <span>Available for international projects</span>
+                                      <span>{t.international_availability === "Yes" || t.international_availability === true ? "Available for international projects" : "Not available for international projects"}</span>
                                    </div>
                                 </div>
                              </div>
@@ -632,35 +666,35 @@ export default function TalentProfile() {
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
                       <h2 className="font-bold text-2xl mb-6">Full Biography</h2>
                       <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
-                         <p className="whitespace-pre-wrap">{talent.bio || "No biography provided."}</p>
+                         <p className="whitespace-pre-wrap">{t.full_bio || t.bio || "No biography provided."}</p>
                       </div>
 
-                      {talent.careerGoals && (
+                      {t.career_goals && (
                         <div className="mt-8 p-6 rounded-2xl bg-primary/[0.02] border border-primary/10">
                            <h4 className="text-xs font-bold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
                               <Star className="w-3.5 h-3.5" /> Career Ambition
                            </h4>
-                           <p className="text-sm text-muted-foreground italic leading-relaxed">"{talent.careerGoals}"</p>
+                           <p className="text-sm text-muted-foreground italic leading-relaxed">"{t.career_goals}"</p>
                         </div>
                       )}
 
                       {/* Specialized Industry Details */}
-                      {talent.specialties && Object.keys(talent.specialties).length > 0 && (
+                      {t.specialties && Object.keys(t.specialties).length > 0 && (
                         <div className="mt-10 pt-8 border-t">
                           <h3 className="font-bold text-xl mb-8">Industry Specializations</h3>
                           <div className="grid gap-8 md:grid-cols-2">
-                            {talent.specialties.actor && (
+                            {t.specialties.actor && (
                               <div className="space-y-4 p-5 rounded-2xl bg-muted/20 border">
                                 <h4 className="text-sm font-bold text-primary flex items-center gap-2">
                                    <VenetianMask className="w-4 h-4" /> Acting Credentials
                                 </h4>
                                 <div className="grid grid-cols-1 gap-3 text-xs">
-                                  {talent.specialties.actor.training && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Training</span>{talent.specialties.actor.training}</div>}
-                                  {talent.specialties.actor.techniques && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Techniques</span>{talent.specialties.actor.techniques}</div>}
-                                  {talent.specialties.actor.accents && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Accents</span>{talent.specialties.actor.accents}</div>}
-                                  {talent.specialties.actor.monologueLink && (
+                                  {t.specialties.actor.training && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Training</span>{t.specialties.actor.training}</div>}
+                                  {t.specialties.actor.techniques && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Techniques</span>{t.specialties.actor.techniques}</div>}
+                                  {t.specialties.actor.accents && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Accents</span>{t.specialties.actor.accents}</div>}
+                                  {t.specialties.actor.monologueLink && (
                                     <div className="pt-1">
-                                       <a href={talent.specialties.actor.monologueLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary hover:underline font-bold">
+                                       <a href={t.specialties.actor.monologueLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary hover:underline font-bold">
                                           Watch Monologue Reel <ExternalLink className="w-3 h-3" />
                                        </a>
                                     </div>
@@ -668,29 +702,29 @@ export default function TalentProfile() {
                                 </div>
                               </div>
                             )}
-                            {talent.specialties.model && (
+                            {t.specialties.model && (
                               <div className="space-y-4 p-5 rounded-2xl bg-muted/20 border">
                                 <h4 className="text-sm font-bold text-primary flex items-center gap-2">
                                    <Camera className="w-4 h-4" /> Modeling Specs
                                 </h4>
                                 <div className="grid grid-cols-1 gap-3 text-xs">
-                                  {talent.specialties.model.categories && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Categories</span>{talent.specialties.model.categories}</div>}
-                                  {talent.specialties.model.measurements && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Measurements</span>{talent.specialties.model.measurements}</div>}
-                                  {talent.specialties.model.shoeSize && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Shoe Size</span>{talent.specialties.model.shoeSize}</div>}
+                                  {t.specialties.model.categories && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Categories</span>{t.specialties.model.categories}</div>}
+                                  {t.specialties.model.measurements && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Measurements</span>{t.specialties.model.measurements}</div>}
+                                  {t.specialties.model.shoeSize && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Shoe Size</span>{t.specialties.model.shoeSize}</div>}
                                 </div>
                               </div>
                             )}
-                            {talent.specialties.singer && (
+                            {t.specialties.singer && (
                               <div className="space-y-4 p-5 rounded-2xl bg-muted/20 border">
                                 <h4 className="text-sm font-bold text-primary flex items-center gap-2">
                                    <Music className="w-4 h-4" /> Musical Profile
                                 </h4>
                                 <div className="grid grid-cols-1 gap-3 text-xs">
-                                  {talent.specialties.singer.voiceType && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Voice/Instruments</span>{talent.specialties.singer.voiceType}</div>}
-                                  {talent.specialties.singer.genres && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Genres</span>{talent.specialties.singer.genres}</div>}
-                                  {talent.specialties.singer.reelLink && (
+                                  {t.specialties.singer.voiceType && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Voice/Instruments</span>{t.specialties.singer.voiceType}</div>}
+                                  {t.specialties.singer.genres && <div><span className="text-muted-foreground font-bold uppercase tracking-tighter block mb-0.5">Genres</span>{t.specialties.singer.genres}</div>}
+                                  {t.specialties.singer.reelLink && (
                                     <div className="pt-1">
-                                       <a href={talent.specialties.singer.reelLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary hover:underline font-bold">
+                                       <a href={t.specialties.singer.reelLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary hover:underline font-bold">
                                           Listen to Vocal Reel <ExternalLink className="w-3 h-3" />
                                        </a>
                                     </div>
@@ -707,7 +741,7 @@ export default function TalentProfile() {
                   {/* 8. Contact Tab */}
                   <TabsContent value="contact" className="mt-4 animate-in fade-in slide-in-from-bottom-2">
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
-                       <h2 className="font-bold text-2xl mb-6">Connect with {talent.userId?.fullName?.split(' ')[0]}</h2>
+                       <h2 className="font-bold text-2xl mb-6">Connect with {t.fullName?.split(' ')[0]}</h2>
                        <div className="grid gap-8 md:grid-cols-2">
                           <div className="space-y-6">
                              <div className="space-y-4">
@@ -723,14 +757,14 @@ export default function TalentProfile() {
                                       </div>
                                    </div>
 
-                                   {talent.email && (
+                                   {t.email && (
                                      <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border group hover:border-primary/30 transition-colors">
                                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                                            <Mail className="w-5 h-5" />
                                         </div>
                                         <div>
                                            <p className="text-[10px] font-bold uppercase text-muted-foreground">Email</p>
-                                           <p className="text-sm font-medium truncate max-w-[180px]">{talent.email}</p>
+                                           <p className="text-sm font-medium truncate max-w-[180px]">{t.email}</p>
                                         </div>
                                      </div>
                                    )}
@@ -740,14 +774,14 @@ export default function TalentProfile() {
                              <div className="space-y-4 pt-4">
                                 <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Social Profiles</h3>
                                 <div className="flex gap-3">
-                                   {talent.instagramUrl && (
+                                   {t.instagram && (
                                      <Button size="icon" variant="outline" className="rounded-full hover:text-primary" asChild>
-                                        <a href={talent.instagramUrl} target="_blank" rel="noopener noreferrer"><Instagram className="w-4 h-4" /></a>
+                                        <a href={t.instagram} target="_blank" rel="noopener noreferrer"><Instagram className="w-4 h-4" /></a>
                                      </Button>
                                    )}
-                                   {talent.youtubeUrl && (
+                                   {t.youtube && (
                                      <Button size="icon" variant="outline" className="rounded-full hover:text-primary" asChild>
-                                        <a href={talent.youtubeUrl} target="_blank" rel="noopener noreferrer"><Youtube className="w-4 h-4" /></a>
+                                        <a href={t.youtube} target="_blank" rel="noopener noreferrer"><Youtube className="w-4 h-4" /></a>
                                      </Button>
                                    )}
                                    <Button size="icon" variant="outline" className="rounded-full hover:text-primary"><Globe className="w-4 h-4" /></Button>
@@ -759,7 +793,7 @@ export default function TalentProfile() {
                              <h3 className="font-bold text-lg mb-4">Quick Booking</h3>
                              <div className="space-y-4">
                                 <p className="text-sm text-muted-foreground leading-relaxed">
-                                   Interested in working with {talent.userId?.fullName?.split(' ')[0]}? 
+                                   Interested in working with {t.fullName?.split(' ')[0]}? 
                                    Click the button below to start the booking process.
                                 </p>
                                 <Button className="w-full bg-primary" onClick={() => setIsBookingOpen(true)}>Book Now</Button>

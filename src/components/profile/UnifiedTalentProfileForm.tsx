@@ -74,7 +74,6 @@ const sectionOrder = [
   "Availability",
   "Appearance",
   "About You",
-  "Media",
   "Social",
   "Actor Profile",
   "Actor Media",
@@ -107,7 +106,13 @@ const sectionOrder = [
   "Guardian Consent",
 ];
 
-const normalizeArray = (value: any): string[] => (Array.isArray(value) ? value : []);
+const normalizeArray = (value: any): string[] => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    return value.split(",").map(v => v.trim()).filter(Boolean);
+  }
+  return [];
+};
 
 const toDisplayValue = (value: any): string => {
   if (value === null || value === undefined) return "";
@@ -318,31 +323,20 @@ export function UnifiedTalentProfileForm({
   const activeTab = externalActiveTab || internalActiveTab;
 
   const handleAutoFill = () => {
-    const activeTabGroup = tabGroups.find(t => t.id === activeTab);
-    if (!activeTabGroup) return;
-
     const dummyData = generateDummyProfileData(UNIFIED_TALENT_PROFILE_FIELD_SPEC);
     
-    // Filter dummyData to only include fields from sections in the active tab
-    const filteredDummy: Record<string, any> = {};
-    UNIFIED_TALENT_PROFILE_FIELD_SPEC.forEach(field => {
-      if (activeTabGroup.sections.includes(field.section) && dummyData[field.id] !== undefined) {
-        filteredDummy[field.id] = dummyData[field.id];
-      }
-    });
-
-    // Auto-derive age group if DOB is present and in active tab
-    if (filteredDummy.dateOfBirth) {
-      const derived = deriveAgeGroupFromDob(filteredDummy.dateOfBirth);
+    // Auto-derive age group if DOB is present
+    if (dummyData.dateOfBirth) {
+      const derived = deriveAgeGroupFromDob(dummyData.dateOfBirth);
       if (derived) {
-        filteredDummy.age_group = derived;
+        dummyData.age_group = derived;
       }
     }
 
-    const nextUnified = { ...unified, ...filteredDummy };
-    const nextRoot = { ...rootData, ...filteredDummy, unifiedTalentProfile: nextUnified };
+    const nextUnified = { ...unified, ...dummyData };
+    const nextRoot = { ...rootData, ...dummyData, unifiedTalentProfile: nextUnified };
     onChange(nextRoot);
-    toast.success(`Form in ${activeTabGroup.label} auto-filled with mock data`);
+    toast.success("Full profile auto-filled with mock data across all sections");
   };
 
   const unified = rootData?.unifiedTalentProfile || {};
@@ -439,7 +433,7 @@ export function UnifiedTalentProfileForm({
     {
       id: "portfolio",
       label: "Portfolio",
-      sections: ["Social", "Media", "Contact / Media"]
+      sections: ["Social", "Contact / Media"]
     },
     {
       id: "summary",
@@ -595,11 +589,18 @@ export function UnifiedTalentProfileForm({
           );
         }
 
-        case "select":
+        case "select": {
           const isBooleanSelect = options.includes("Yes") && options.includes("No");
-          const selectValue = isBooleanSelect 
+          const selectValue = isBooleanSelect
             ? ((value === true || value === "Yes") ? "Yes" : (value === false || value === "No" ? "No" : ""))
             : (value || "");
+
+          // Ensure current value is in options so it displays even if not in spec (migration fallback)
+          const displayOptions = [...options];
+          if (selectValue && !displayOptions.includes(selectValue)) {
+            displayOptions.push(selectValue);
+          }
+
           return (
             <Select
               value={selectValue}
@@ -609,7 +610,7 @@ export function UnifiedTalentProfileForm({
                 <SelectValue placeholder={`Select ${field.label}`} />
               </SelectTrigger>
               <SelectContent>
-                {options.map((option) => (
+                {displayOptions.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
@@ -617,6 +618,7 @@ export function UnifiedTalentProfileForm({
               </SelectContent>
             </Select>
           );
+        }
 
         case "multi-select":
           return (
@@ -819,7 +821,6 @@ export function UnifiedTalentProfileForm({
           <Card key={section} className="border-none shadow-none bg-transparent">
             <CardHeader className="px-0 pb-4 border-b mb-6">
               <CardTitle className="text-xl font-bold tracking-tight text-[#006b6d]">{section}</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">Specific details for your profile in this category.</p>
             </CardHeader>
             <CardContent className="px-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">

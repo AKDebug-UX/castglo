@@ -52,8 +52,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
               fullName: userData.fullName,
               profilePicture: userData.profilePicture,
-            isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-            isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
+            isEmailVerified: userData.emailVerified || userData.isEmailVerified,
+            isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified),
             preferredCurrency: userData.preferredCurrency || "GBP",
           };
           setUser(userObj);
