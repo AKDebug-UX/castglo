@@ -56,7 +56,10 @@ export default function Profile() {
           if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
             flatten(value);
           } else {
-            flatData[key] = value;
+            // Priority: Don't overwrite existing flat data with empty values
+            if (value !== undefined && value !== null && value !== "" && (!flatData[key] || flatData[key] === "")) {
+              flatData[key] = value;
+            }
           }
         });
       };
@@ -129,6 +132,9 @@ export default function Profile() {
       if (!unified.additional_accents) unified.additional_accents = tp.accents || [];
       if (!unified.skills) unified.skills = combinedData.skills || tp.skills;
       if (!unified.equipment) unified.equipment = combinedData.equipment || tp.equipment;
+      if (!unified.portfolio_url) unified.portfolio_url = tp.portfolioUrl || tp.website || combinedData.portfolioUrl || combinedData.website || combinedData.portfolio?.url;
+      if (!unified.social_youtube) unified.social_youtube = tp.youtubeUrl || tp.social_youtube || combinedData.youtubeUrl;
+      if (!unified.vimeo_url) unified.vimeo_url = tp.vimeoUrl || tp.vimeo_url || combinedData.vimeoUrl;
 
       if (tp.actorProfile || tp.actorPerformanceCategory) {
         const ap = tp.actorProfile || {};
@@ -462,8 +468,8 @@ export default function Profile() {
       if (!unified.serves_client_types) unified.serves_client_types = tp.servesClientTypes;
       if (!unified.specific_skills) unified.specific_skills = tp.specificSkills;
       if (unified.testimonials_enabled === undefined && tp.testimonialsEnabled !== undefined) unified.testimonials_enabled = tp.testimonialsEnabled === true || tp.testimonialsEnabled === "Yes" ? "Yes" : "No";
-      if (!unified.instagram_url) unified.instagram_url = tp.instagramUrl;
-      if (!unified.linkedin_url) unified.linkedin_url = tp.linkedinUrl;
+      if (!unified.instagram_url) unified.instagram_url = tp.instagramUrl || tp.social_instagram || combinedData.instagramUrl || combinedData.social_instagram;
+      if (!unified.linkedin_url) unified.linkedin_url = tp.linkedinUrl || tp.social_linkedin || tp.social_tiktok || combinedData.linkedinUrl || combinedData.social_linkedin || combinedData.social_tiktok;
 
       if (tp.appearance) {
         if (!unified.height) unified.height = tp.appearance.height;
@@ -1038,7 +1044,7 @@ export default function Profile() {
         ndaFriendly: !!(unifiedPayload.nda_friendly === "Yes" || unifiedPayload.nda_friendly === true),
         contractRequired: !!(unifiedPayload.contract_required === "Yes" || unifiedPayload.contract_required === true),
         depositPercent: Number(unifiedPayload.deposit_percent) || 0,
-        paymentMethods: unifiedPayload.payment_methods || undefined,
+        paymentMethods: typeof unifiedPayload.payment_methods === 'string' ? [unifiedPayload.payment_methods] : (unifiedPayload.payment_methods || []),
         cancellationPolicy: unifiedPayload.cancellation_policy || undefined,
         refundPolicy: unifiedPayload.refund_policy || undefined,
         servesClientTypes: unifiedPayload.serves_client_types || [],
@@ -1046,18 +1052,43 @@ export default function Profile() {
         testimonialsEnabled: !!(unifiedPayload.testimonials_enabled === "Yes" || unifiedPayload.testimonials_enabled === true),
         instagramUrl: unifiedPayload.instagram_url,
         linkedinUrl: unifiedPayload.linkedin_url,
-
-        // Portfolio
-        socialLinks: unifiedPayload.social_links || [],
-        unifiedTalentProfile: unifiedPayload,
+        portfolioUrl: unifiedPayload.portfolio_url,
       };
+
+      // 2. Sanitize payload: Remove empty arrays and disallowed fields
+      Object.keys(payload).forEach(key => {
+        if (Array.isArray(payload[key]) && payload[key].length === 0) {
+          delete payload[key];
+        }
+        if (payload[key] === undefined || payload[key] === null || payload[key] === "") {
+          delete payload[key];
+        }
+      });
+
+      // These specific fields MUST NOT be empty arrays per backend validation
+      if (!payload.notableClients || payload.notableClients.length === 0) delete payload.notableClients;
+      if (!payload.notableProjects || payload.notableProjects.length === 0) delete payload.notableProjects;
+      
+      // DISALLOWED fields for this specific endpoint (must be updated via /profiles/me or /user/profile)
+      delete (payload as any).socialLinks;
+      delete (payload as any).unifiedTalentProfile; // The backend might not allow the entire snapshot at the root
 
       if (activeTab === "summary") {
         return;
       }
 
-      await profileAPI.updateTalent(payload);
+      // 1. Update Core Profile & Unified Snapshot (Source of Truth)
+      try {
+        await profileAPI.updateMe({
+          unifiedTalentProfile: unifiedPayload,
+          socialLinks: unifiedPayload.social_links || []
+        });
+      } catch (e) {
+        console.warn("Core update failed, proceeding with talent update:", e);
+      }
 
+      // 2. Update Specialized Talent Fields
+      await profileAPI.updateTalent(payload);
 
       await refreshUser();
       await fetchProfileData();

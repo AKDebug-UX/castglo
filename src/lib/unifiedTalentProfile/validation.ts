@@ -53,8 +53,8 @@ export const unifiedTalentProfileSchema = z
     guardian_phone: z.string().min(7, "Guardian phone is too short").max(30, "Guardian phone is too long").optional(),
     guardian_consent_checkbox: z.boolean().optional(),
     portfolio_url: urlOrEmpty,
-    social_instagram: urlOrEmpty,
-    social_tiktok: urlOrEmpty,
+    instagram_url: urlOrEmpty,
+    linkedin_url: urlOrEmpty,
     social_youtube: urlOrEmpty,
   })
   .passthrough()

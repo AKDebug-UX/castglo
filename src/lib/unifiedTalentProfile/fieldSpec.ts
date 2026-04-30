@@ -124,8 +124,8 @@ export const CORE_PROFILE_FIELDS: UnifiedFieldSpec[] = [
   { id: "portfolio_url", label: "Website / Portfolio URL", section: "Contact / Media", type: "url", required: false, searchable: false, validation: "HTTPS preferred" },
   { id: "full_bio", label: "Full About Description", section: "About You", type: "textarea", required: false, searchable: true, validation: "Max 3000 chars" },
   { id: "equipment_summary", label: "Primary Equipment / Gear", section: "About You", type: "textarea", required: false, searchable: true },
-  { id: "social_instagram", label: "Instagram Profile", section: "Social", type: "url", required: false, searchable: false },
-  { id: "social_tiktok", label: "TikTok Profile", section: "Social", type: "url", required: false, searchable: false },
+  { id: "instagram_url", label: "Instagram URL", section: "Social", type: "url", required: false, searchable: false },
+  { id: "linkedin_url", label: "LinkedIn URL", section: "Social", type: "url", required: false, searchable: false },
   { id: "social_youtube", label: "YouTube Profile", section: "Social", type: "url", required: false, searchable: false },
   { id: "vimeo_url", label: "Vimeo URL", section: "Social", type: "url", required: false, searchable: false },
 ];
@@ -431,8 +431,7 @@ export const PROFESSIONAL_CORE_FIELDS: UnifiedFieldSpec[] = [
   { id: "serves_client_types", label: "Client Groups Served", section: "Business & Facilities", type: "multi-select", required: false, searchable: true, options: ["Actors / Performers", "Models", "Musicians / Singers", "Dancers", "Corporate Clients", "Commercial Brands", "Other"] },
   { id: "specific_skills", label: "Specific Professional Skills", section: "Professional Identity", type: "multi-select", required: false, searchable: true, options: ["Consulting", "Management", "Content Creation", "Event Production", "Direction", "Editing", "Styling", "Post-production", "Other"] },
   { id: "testimonials_enabled", label: "Show Testimonials on Profile", section: "Business & Facilities", type: "select", options: ["Yes", "No"], required: false, searchable: false },
-  { id: "instagram_url", label: "Instagram URL", section: "Social", type: "url", required: false, searchable: false },
-  { id: "linkedin_url", label: "LinkedIn URL", section: "Social", type: "url", required: false, searchable: false },
+
 ];
 
 export const UNIFIED_TALENT_PROFILE_FIELD_SPEC: UnifiedFieldSpec[] = [

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -13,7 +13,7 @@ import {
   BadgeCheck, ListChecks, LayoutGrid, Banknote, MessageCircle, 
   MessageSquare, Image as ImageIcon, Calendar, Plane, Monitor, Shield,
   CheckCircle2, DollarSign, Target, FolderOpen, Clock, CheckSquare,
-  VenetianMask, Music, Accessibility, Camera, Info, ExternalLink
+  VenetianMask, Music, Accessibility, Camera, Info, ExternalLink, Linkedin
 } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -65,10 +65,11 @@ export default function TalentProfile() {
       bio: utp.short_bio || talent.bio,
       roles: mergeList(talent.professionalRoles, utp.primary_talent_type),
       skills: mergeList(talent.skills, utp.skills),
-      instagram: utp.social_instagram || talent.instagramUrl,
-      tiktok: utp.social_tiktok || talent.tiktokUrl,
+      instagram: utp.instagram_url || talent.instagramUrl,
+      linkedin: utp.linkedin_url || talent.linkedinUrl,
       youtube: utp.social_youtube || talent.youtubeUrl,
       vimeo: utp.vimeo_url || talent.vimeoUrl,
+      portfolio_url: utp.portfolio_url || talent.portfolioUrl || talent.website,
       isVerified: talent.isVerified || utp.isVerified,
     };
   }, [talent]);
@@ -127,9 +128,9 @@ export default function TalentProfile() {
                           <Instagram className="w-4 h-4 text-primary" />
                         </a>
                       )}
-                      {t.tiktok && (
-                        <a href={t.tiktok} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors">
-                          <div className="w-4 h-4 flex items-center justify-center font-bold text-[10px]">TT</div>
+                      {t.linkedin && (
+                        <a href={t.linkedin} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors">
+                          <Linkedin className="w-4 h-4 text-primary" />
                         </a>
                       )}
                       {t.youtube && (
@@ -140,6 +141,11 @@ export default function TalentProfile() {
                       {t.vimeo && (
                         <a href={t.vimeo} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors">
                           <Globe className="w-4 h-4 text-primary" />
+                        </a>
+                      )}
+                      {t.portfolio_url && (
+                        <a href={t.portfolio_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-secondary/10 rounded-full hover:bg-secondary/20 transition-colors" title="Portfolio">
+                          <ExternalLink className="w-4 h-4 text-primary" />
                         </a>
                       )}
                     </div>
