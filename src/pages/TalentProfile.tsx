@@ -20,11 +20,21 @@ import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { BookingDialog } from "@/components/BookingDialog";
 
+const camelToSnake = (str: string) => str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+const snakeToCamel = (str: string) => str.replace(/(_\w)/g, (m) => m[1].toUpperCase());
+
 export default function TalentProfile() {
   const { id } = useParams();
   const [talent, setTalent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+
+  // Helper to merge arrays/comma-separated strings
+  const mergeList = (val1: any, val2: any) => {
+    const arr1 = Array.isArray(val1) ? val1 : (val1 ? String(val1).split(',').map(s => s.trim()) : []);
+    const arr2 = Array.isArray(val2) ? val2 : (val2 ? String(val2).split(',').map(s => s.trim()) : []);
+    return [...new Set([...arr1, ...arr2])].filter(Boolean);
+  };
 
   useEffect(() => {
     const fetchTalent = async () => {
@@ -47,30 +57,85 @@ export default function TalentProfile() {
 
   const unifiedSnapshot = useMemo(() => {
     if (!talent) return null;
-    const utp = talent.unifiedTalentProfile || {};
     
-    // Helper to merge arrays/comma-separated strings
-    const mergeList = (val1: any, val2: any) => {
-      const arr1 = Array.isArray(val1) ? val1 : (val1 ? String(val1).split(',').map(s => s.trim()) : []);
-      const arr2 = Array.isArray(val2) ? val2 : (val2 ? String(val2).split(',').map(s => s.trim()) : []);
-      return [...new Set([...arr1, ...arr2])].filter(Boolean);
+    const flatData: Record<string, any> = {};
+    const flatten = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return;
+      Object.entries(obj).forEach(([key, value]) => {
+        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+          flatten(value);
+        } else {
+          if (value !== undefined && value !== null && value !== "" && (!flatData[key] || flatData[key] === "")) {
+            const snakeKey = camelToSnake(key);
+            const camelKey = snakeToCamel(key);
+            flatData[key] = value;
+            flatData[snakeKey] = value;
+            flatData[camelKey] = value;
+          }
+        }
+      });
     };
 
+    flatten(talent);
+    const utp = talent.unifiedTalentProfile || {};
+    
+    // Merge everything with flatData as base and utp as priority
+    const base = { ...flatData, ...utp };
+
+
+
+    // Derive specialized sections
+    const specialties: any = {};
+    if (base.actor_performance_category || base.actor_playing_age_range) {
+      specialties.actor = {
+        category: base.actor_performance_category,
+        ageRange: base.actor_playing_age_range,
+        training: base.actor_training_school,
+        techniques: mergeList([], base.actor_techniques),
+        accents: mergeList([], base.actor_accents),
+        skills: mergeList([], base.actor_special_skills),
+      };
+    }
+    if (base.model_primary_category || base.model_height) {
+      specialties.model = {
+        category: base.model_primary_category,
+        height: base.model_height,
+        chest: base.model_chest_bust,
+        waist: base.model_waist,
+        hips: base.model_hips,
+        shoe: base.model_shoe_size,
+      };
+    }
+    if (base.singer_category || base.singer_genres) {
+      specialties.singer = {
+        category: base.singer_category,
+        range: base.singer_vocal_range,
+        genres: mergeList([], base.singer_genres),
+      };
+    }
+    if (base.dancer_primary_style || base.dancer_additional_styles) {
+      specialties.dancer = {
+        style: base.dancer_primary_style,
+        additional: mergeList([], base.dancer_additional_styles),
+        training: base.dancer_training_school,
+      };
+    }
+
     return {
-      ...talent,
-      ...utp,
-      fullName: talent.userId?.fullName || talent.fullName || utp.full_name,
-      stageName: talent.stageName || utp.display_name,
-      location: utp.current_city ? `${utp.current_city}${utp.current_country ? `, ${utp.current_country}` : ''}` : (formatLocation(talent.location) || "Global"),
-      bio: utp.short_bio || talent.bio,
-      roles: mergeList(talent.professionalRoles, utp.primary_talent_type),
-      skills: mergeList(talent.skills, utp.skills),
-      instagram: utp.instagram_url || talent.instagramUrl,
-      linkedin: utp.linkedin_url || talent.linkedinUrl,
-      youtube: utp.social_youtube || talent.youtubeUrl,
-      vimeo: utp.vimeo_url || talent.vimeoUrl,
-      portfolio_url: utp.portfolio_url || talent.portfolioUrl || talent.website,
-      isVerified: talent.isVerified || utp.isVerified,
+      ...base,
+      fullName: talent.userId?.fullName || talent.fullName || base.full_name || base.fullName,
+      stageName: talent.stageName || base.display_name || base.displayName,
+      location: base.current_city ? `${base.current_city}${base.current_country ? `, ${base.current_country}` : ''}` : (formatLocation(talent.location) || "Global"),
+      bio: base.short_bio || base.bio || talent.bio,
+      roles: mergeList(talent.professionalRoles || talent.talentTypes, base.primary_talent_type),
+      skills: mergeList(talent.skills, base.skills || base.specific_skills),
+      instagram: base.instagram_url || base.instagramUrl || base.social_instagram,
+      linkedin: base.linkedin_url || base.linkedinUrl || base.social_linkedin || base.social_tiktok,
+      youtube: base.social_youtube || base.youtubeUrl,
+      vimeo: base.vimeo_url || base.vimeoUrl,
+      portfolio_url: base.portfolio_url || base.portfolioUrl || base.website,
+      isVerified: talent.isVerified || base.isVerified,
+      specialties,
     };
   }, [talent]);
 
@@ -284,18 +349,16 @@ export default function TalentProfile() {
                             )) || <span className="text-xs text-muted-foreground">None specified</span>}
                           </div>
                         </div>
-                      </div>
-
-                      {/* Physical Stats Quick View */}
+                      </div>                      {/* Physical Stats Quick View */}
                       {t && (
-                        <div className="mt-6">
+                        <div className="mt-6 space-y-4">
                            <Card className="shadow-none bg-primary/[0.02] border-primary/10">
                              <CardContent className="p-5">
                                 <h4 className="text-[10px] font-bold uppercase text-primary mb-3 tracking-widest">Physical Attributes</h4>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                    <div className="space-y-1">
                                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Height</p>
-                                      <p className="text-xs font-medium truncate">{t.height || "N/A"}</p>
+                                      <p className="text-xs font-medium truncate">{t.height || t.model_height || "N/A"}</p>
                                    </div>
                                    <div className="space-y-1">
                                       <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Eye Color</p>
@@ -312,6 +375,67 @@ export default function TalentProfile() {
                                 </div>
                              </CardContent>
                            </Card>
+
+                           {/* User Details Grid */}
+                           <Card className="shadow-none bg-muted/10 border-border/50">
+                             <CardContent className="p-5">
+                                <h4 className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">User Details</h4>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                                   <div className="space-y-1">
+                                      <p className="text-[10px] text-muted-foreground uppercase font-bold">Gender</p>
+                                      <p className="text-sm font-semibold">{t.gender || "Not specified"}</p>
+                                   </div>
+                                   <div className="space-y-1">
+                                      <p className="text-[10px] text-muted-foreground uppercase font-bold">Age Group</p>
+                                      <p className="text-sm font-semibold">{t.age_group || t.ageGroup || "Not specified"}</p>
+                                   </div>
+                                   <div className="space-y-1">
+                                      <p className="text-[10px] text-muted-foreground uppercase font-bold">Nationality</p>
+                                      <p className="text-sm font-semibold">{t.nationality || "Not specified"}</p>
+                                   </div>
+                                   <div className="space-y-1 sm:col-span-3">
+                                      <p className="text-[10px] text-muted-foreground uppercase font-bold">Languages</p>
+                                      <div className="flex flex-wrap gap-1.5 mt-1">
+                                        {mergeList(t.languages_spoken || t.languagesSpoken, t.fluent_languages || t.fluentLanguages).map((lang: string) => (
+                                          <Badge key={lang} variant="outline" className="bg-white text-[10px]">{lang}</Badge>
+                                        )) || <span className="text-xs">Not specified</span>}
+                                      </div>
+                                   </div>
+                                </div>
+                             </CardContent>
+                           </Card>
+
+                           {(t.notable_clients || t.notable_projects || t.business_name) && (
+                             <Card className="shadow-none bg-muted/20 border-dashed">
+                               <CardContent className="p-5 space-y-4">
+                                 <h4 className="text-[10px] font-bold uppercase text-muted-foreground mb-3 tracking-widest">Professional Identity</h4>
+                                 <div className="grid gap-4 sm:grid-cols-2">
+                                   {t.business_name && (
+                                     <div className="space-y-1">
+                                       <p className="text-[10px] text-muted-foreground uppercase font-bold">Business Name</p>
+                                       <p className="text-sm font-bold text-primary">{t.business_name}</p>
+                                     </div>
+                                   )}
+                                   {t.professional_title && (
+                                     <div className="space-y-1">
+                                       <p className="text-[10px] text-muted-foreground uppercase font-bold">Role Title</p>
+                                       <p className="text-sm font-semibold">{t.professional_title}</p>
+                                     </div>
+                                   )}
+                                   {t.notable_clients && (
+                                     <div className="space-y-1 sm:col-span-2">
+                                       <p className="text-[10px] text-muted-foreground uppercase font-bold">Notable Clients</p>
+                                       <div className="flex flex-wrap gap-2 mt-1">
+                                         {mergeList([], t.notable_clients).map((client: string) => (
+                                           <Badge key={client} variant="secondary" className="bg-white border text-[10px]">{client}</Badge>
+                                         ))}
+                                       </div>
+                                     </div>
+                                   )}
+                                 </div>
+                               </CardContent>
+                             </Card>
+                           )}
                         </div>
                       )}
                     </Card>
