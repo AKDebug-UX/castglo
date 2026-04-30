@@ -13,7 +13,7 @@ import {
   FileText, Clock, Info, CheckSquare, Target, FolderOpen, DollarSign,
   User, ListChecks, LayoutGrid, Banknote, MessageCircle, MessageSquare, Image as ImageIcon
 } from "lucide-react";
-import { profileAPI } from "@/lib/api";
+import { profileAPI, castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation, getAvatarUrl, cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 const camelToSnake = (str: string) => str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 const snakeToCamel = (str: string) => str.replace(/(_\w)/g, (m) => m[1].toUpperCase());
 
-export default function ProfessionalPublicProfile() {
+export default function DirectorPublicProfile() {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
   const [castingCalls, setCastingCalls] = useState([]);
@@ -238,14 +238,13 @@ export default function ProfessionalPublicProfile() {
                       <TabsTrigger value="overview" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <LayoutGrid className="w-4 h-4" /> Overview
                       </TabsTrigger>
-                      <TabsTrigger value="services" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
-                        <ListChecks className="w-4 h-4" /> Services
+                      <TabsTrigger value="projects" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <FileText className="w-4 h-4" /> Casting Calls
                       </TabsTrigger>
-                      {p.professionalCategory === "casting_director" && (
-                        <TabsTrigger value="projects" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
-                          <FileText className="w-4 h-4" /> Casting Calls
-                        </TabsTrigger>
-                      )}
+                      <TabsTrigger value="services" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <ListChecks className="w-4 h-4" /> Agency Services
+                      </TabsTrigger>
+
                       <TabsTrigger value="portfolio" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <ImageIcon className="w-4 h-4" /> Portfolio
                       </TabsTrigger>
@@ -270,11 +269,8 @@ export default function ProfessionalPublicProfile() {
                       <div className="space-y-6">
                         <div className="flex items-center justify-between">
                           <h2 className="font-bold text-2xl">Overview</h2>
-                          <Badge variant="outline" className={cn(
-                            "h-7 px-3 capitalize",
-                            p.professionalCategory === "casting_director" ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-primary/5 text-primary border-primary/20"
-                          )}>
-                            {p.professionalCategory === "casting_director" ? "Casting Director" : (profile.experience_level || "Professional")}
+                          <Badge variant="outline" className="h-7 px-3 capitalize bg-amber-50 text-amber-600 border-amber-200">
+                            Casting Director
                           </Badge>
                         </div>
                         
@@ -314,30 +310,28 @@ export default function ProfessionalPublicProfile() {
                       </div>
 
                       {/* Director Stats Bar */}
-                      {p.professionalCategory === "casting_director" && (
-                        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-[#009698]/5 border border-[#009698]/10">
-                          <div className="text-center">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Completed</p>
-                            <p className="text-lg font-bold text-[#009698]">{p.completed_castings || 0}</p>
-                            <p className="text-[9px] text-muted-foreground">Castings</p>
-                          </div>
-                          <div className="text-center border-l border-dashed border-[#009698]/20">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active</p>
-                            <p className="text-lg font-bold text-[#009698]">{p.active_calls_count || 0}</p>
-                            <p className="text-[9px] text-muted-foreground">Calls</p>
-                          </div>
-                          <div className="text-center border-l border-dashed border-[#009698]/20">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Experience</p>
-                            <p className="text-lg font-bold text-[#009698]">{p.years_of_experience || "N/A"}</p>
-                            <p className="text-[9px] text-muted-foreground">Years</p>
-                          </div>
-                          <div className="text-center border-l border-dashed border-[#009698]/20">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Response</p>
-                            <p className="text-lg font-bold text-[#009698]">{p.response_time || "48h"}</p>
-                            <p className="text-[9px] text-muted-foreground">Typical</p>
-                          </div>
+                      <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-[#009698]/5 border border-[#009698]/10">
+                        <div className="text-center">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Completed</p>
+                          <p className="text-lg font-bold text-[#009698]">{p.completed_castings || 0}</p>
+                          <p className="text-[9px] text-muted-foreground">Castings</p>
                         </div>
-                      )}
+                        <div className="text-center border-l border-dashed border-[#009698]/20">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active</p>
+                          <p className="text-lg font-bold text-[#009698]">{p.active_calls_count || 0}</p>
+                          <p className="text-[9px] text-muted-foreground">Calls</p>
+                        </div>
+                        <div className="text-center border-l border-dashed border-[#009698]/20">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Experience</p>
+                          <p className="text-lg font-bold text-[#009698]">{p.years_of_experience || "N/A"}</p>
+                          <p className="text-[9px] text-muted-foreground">Years</p>
+                        </div>
+                        <div className="text-center border-l border-dashed border-[#009698]/20">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Response</p>
+                          <p className="text-lg font-bold text-[#009698]">{p.response_time || "48h"}</p>
+                          <p className="text-[9px] text-muted-foreground">Typical</p>
+                        </div>
+                      </div>
 
                       {/* Professional Focus Info */}
                       {p.clientFocus?.length > 0 && (
@@ -410,9 +404,8 @@ export default function ProfessionalPublicProfile() {
                     </Card>
                   </TabsContent>
 
-                  {/* Casting Calls Tab (For Directors) */}
-                  {p.professionalCategory === "casting_director" && (
-                    <TabsContent value="projects" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                  {/* Casting Calls Tab */}
+                  <TabsContent value="projects" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
                       <Card className="rounded-2xl p-8 border shadow-card bg-card">
                          <div className="flex items-center justify-between mb-8">
                             <h2 className="font-bold text-2xl">Active Casting Calls</h2>
@@ -452,7 +445,6 @@ export default function ProfessionalPublicProfile() {
                          )}
                       </Card>
                     </TabsContent>
-                  )}
 
                   {/* 3. Portfolio Tab */}
                   <TabsContent value="portfolio" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">

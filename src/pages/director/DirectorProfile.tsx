@@ -411,7 +411,7 @@ export default function DirectorProfile() {
               className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-md font-bold"
               asChild
             >
-              <Link to={`/professional/${profileData?.userId || profileData?._id || profileData?.id}`}>
+              <Link to={`/director/${profileData?.userId || profileData?._id || profileData?.id}`}>
                 <Eye className="w-5 h-5 mr-2" />
                 View Public Profile
               </Link>

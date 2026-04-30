@@ -600,6 +600,7 @@ export default function TalentProfile() {
                     </Card>
                   </TabsContent>
 
+
                   {/* 2. Services Tab */}
                   <TabsContent value="services" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">

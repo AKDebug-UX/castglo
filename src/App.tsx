@@ -39,6 +39,7 @@ const PublicCasting = lazy(() => import("./pages/PublicCasting"));
 const TalentProfile = lazy(() => import("./pages/TalentProfile"));
 const ProfessionalPublicProfile = lazy(() => import("./pages/ProfessionalPublicProfile"));
 const UnifiedProfile = lazy(() => import("./pages/UnifiedProfile"));
+const DirectorPublicProfile = lazy(() => import("./pages/DirectorPublicProfile"));
 const WhatsNew = lazy(() => import("./pages/WhatsNew"));
 
 // Talent Dashboard
@@ -148,6 +149,7 @@ const App = () => (
               <Route path="/cookies" element={<Cookies />} />
               <Route path="/talent/:id" element={<TalentProfile />} />
               <Route path="/professional/:id" element={<ProfessionalPublicProfile />} />
+              <Route path="/director/:id" element={<DirectorPublicProfile />} />
               <Route path="/browse-cast" element={<PublicCasting />} />
               <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
               <Route path="/cast/:id" element={<PublicCastingDetail />} />
