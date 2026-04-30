@@ -52,55 +52,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
               fullName: userData.fullName,
               profilePicture: userData.profilePicture,
-              isEmailVerified: userData.emailVerified || userData.isEmailVerified || true,
-              isVerified: userData.isVerified || false,
-              preferredCurrency: userData.preferredCurrency || "GBP",
-            };
-            setUser(userObj);
-            localStorage.setItem('userData', JSON.stringify(userObj));
-          }
-        } catch (error) {
-          console.error("Session verification failed:", error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('userData');
-          setUser(null);
+            isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
+            isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
+            preferredCurrency: userData.preferredCurrency || "GBP",
+          };
+          setUser(userObj);
+          localStorage.setItem('userData', JSON.stringify(userObj));
         }
-      } else {
+      } catch (error) {
+        console.error("Session verification failed:", error);
+        localStorage.removeItem('token');
         localStorage.removeItem('userData');
         setUser(null);
       }
-      setIsLoading(false);
-    };
-    verifyUser();
-  }, []);
-
-  const signIn = async (email: string, password: string): Promise<{ error?: string; role?: UserRole }> => {
-    try {
-      const response = await authAPI.login({ email, password });
-      
-      if (response.data.success) {
-        const { token, user: userData } = response.data.data;
-        localStorage.setItem('token', token);
-        
-        const userObj: User = {
-          id: userData._id || userData.id,
-          email: userData.email,
-          role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
-          fullName: userData.fullName,
-          profilePicture: userData.profilePicture,
-          isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-          isVerified: userData.isVerified || false,
-          preferredCurrency: userData.preferredCurrency || "GBP",
-        };
-        setUser(userObj);
-        localStorage.setItem('userData', JSON.stringify(userObj));
-        return { role: userObj.role };
-      }
-      return { error: response.data.message || "Sign in failed" };
-    } catch (error) {
-      return { error: error.response?.data?.message || "An error occurred during sign in" };
+    } else {
+      localStorage.removeItem('userData');
+      setUser(null);
     }
+    setIsLoading(false);
   };
+  verifyUser();
+}, []);
+
+const signIn = async (email: string, password: string): Promise<{ error?: string; role?: UserRole }> => {
+  try {
+    const response = await authAPI.login({ email, password });
+    
+    if (response.data.success) {
+      const { token, user: userData } = response.data.data;
+      localStorage.setItem('token', token);
+      
+      const userObj: User = {
+        id: userData._id || userData.id,
+        email: userData.email,
+        role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
+        fullName: userData.fullName,
+        profilePicture: userData.profilePicture,
+        isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
+        isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
+        preferredCurrency: userData.preferredCurrency || "GBP",
+      };
+      setUser(userObj);
+      localStorage.setItem('userData', JSON.stringify(userObj));
+      return { role: userObj.role };
+    }
+    return { error: response.data.message || "Sign in failed" };
+  } catch (error) {
+    return { error: error.response?.data?.message || "An error occurred during sign in" };
+  }
+};
 
   const signUp = async (data: { email: string, password: string, role: UserRole, fullName: string, phoneNumber?: string }): Promise<{ error?: string }> => {
     try {
@@ -187,7 +187,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             fullName: userData.fullName,
             profilePicture: userData.profilePicture,
             isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-            isVerified: userData.isVerified || false,
+            isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
             preferredCurrency: userData.preferredCurrency || "GBP",
           };
           setUser(userObj);
