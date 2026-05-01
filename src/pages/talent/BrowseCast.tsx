@@ -33,18 +33,55 @@ export default function BrowseCast() {
   const [genre, setGenre] = useState("all");
   const [status, setStatus] = useState("all");
 
-  const fetchCastings = async () => {
+  const fetchCastings = async (pageNumber = 1) => {
     setIsLoading(true);
     try {
-      const response = await castingCallAPI.getAll({ 
-        search, 
-        status: "open", // Use the backend enum status: "open"
-        page: 1 
-      });
-      if (response.data.success && Array.isArray(response.data.data.castingCalls)) {
-        setCastings(response.data.data.castingCalls);
-        if (response.data.data.pagination) {
-          setPagination(response.data.data.pagination);
+      const params: any = { 
+        page: pageNumber,
+        limit: 12
+      };
+      
+      if (search && search.trim()) params.search = search.trim();
+      if (status !== "all") params.status = status;
+      if (location !== "all") params.location = location;
+      if (genre !== "all") params.productionType = genre; // Backend often uses productionType for genre/category
+
+      const response = await castingCallAPI.getAll(params);
+      
+      if (response.data.success) {
+        const data = response.data.data;
+        
+        // Comprehensive data vacuum to find the casting list
+        let castingList = [];
+        if (Array.isArray(data)) {
+          castingList = data;
+        } else if (data && typeof data === 'object') {
+          // Check standard keys used across the project
+          castingList = data.castingCalls || data.listings || data.data || data.results || data.items || [];
+          
+          // Emergency Fallback: If still empty, look for the first non-empty array in the object
+          if (castingList.length === 0) {
+            const firstArrayKey = Object.keys(data).find(key => Array.isArray(data[key]) && data[key].length > 0);
+            if (firstArrayKey) {
+              castingList = data[firstArrayKey];
+            } else {
+              // Last ditch: take any array even if empty
+              const anyArrayKey = Object.keys(data).find(key => Array.isArray(data[key]));
+              if (anyArrayKey) castingList = data[anyArrayKey];
+            }
+          }
+        }
+        
+        setCastings(castingList);
+        
+        if (data.pagination) {
+          setPagination(data.pagination);
+        } else if (data.total !== undefined) {
+          setPagination({
+            page: pageNumber,
+            total: data.total,
+            pages: Math.ceil(data.total / 12)
+          });
         }
       } else {
         setCastings([]);
@@ -59,8 +96,8 @@ export default function BrowseCast() {
   };
 
   useEffect(() => {
-    fetchCastings();
-  }, []);
+    fetchCastings(pagination.page);
+  }, [pagination.page]); // Refetch when page changes
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

@@ -35,18 +35,36 @@ export default function BrowseCast() {
   const [genre, setGenre] = useState("all");
   const [status, setStatus] = useState("all");
 
-  const fetchCastings = async () => {
+  const fetchCastings = async (pageNumber = 1) => {
     setIsLoading(true);
     try {
-      const response = await castingCallAPI.getAll({ 
+      const params: any = { 
         search, 
-        status: "open", // Use the backend enum status: "open"
-        page: 1 
-      });
-      if (response.data.success && Array.isArray(response.data.data.castingCalls)) {
-        setCastings(response.data.data.castingCalls);
-        if (response.data.data.pagination) {
-          setPagination(response.data.data.pagination);
+        page: pageNumber,
+        limit: 12
+      };
+      
+      if (status !== "all") params.status = status;
+      if (location !== "all") params.location = location;
+      if (genre !== "all") params.productionType = genre;
+
+      const response = await castingCallAPI.getAll(params);
+      
+      if (response.data.success) {
+        const data = response.data.data;
+        // Resilient data extraction
+        const castingList = Array.isArray(data) ? data : (data.castingCalls || data.listings || data.data || []);
+        
+        setCastings(castingList);
+        
+        if (data.pagination) {
+          setPagination(data.pagination);
+        } else if (data.total !== undefined) {
+          setPagination({
+            page: pageNumber,
+            total: data.total,
+            pages: Math.ceil(data.total / 12)
+          });
         }
       } else {
         setCastings([]);
