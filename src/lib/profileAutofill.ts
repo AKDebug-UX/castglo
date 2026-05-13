@@ -22,6 +22,20 @@ export const generateDummyProfileData = (
         else if (field.id === "project_title") dummyData[field.id] = "Project Aurora";
         else if (field.id === "role_name") dummyData[field.id] = "Protagonist (Lead)";
         else if (field.id === "preaudition_question_text") dummyData[field.id] = "What is your primary acting experience?";
+        else if (field.id === "height") dummyData[field.id] = "175";
+        else if (field.id === "weight") dummyData[field.id] = "70";
+        else if (field.id === "chest_bust_measurement") dummyData[field.id] = "86";
+        else if (field.id === "waist_measurement") dummyData[field.id] = "86";
+        else if (field.id === "hip_measurement") dummyData[field.id] = "86";
+        else if (field.id === "inside_leg_measurement") dummyData[field.id] = "81";
+        else if (field.id === "model_chest_bust") dummyData[field.id] = "86";
+        else if (field.id === "model_waist") dummyData[field.id] = "86";
+        else if (field.id === "model_hips") dummyData[field.id] = "86";
+        else if (field.id === "model_dress_size") dummyData[field.id] = "8";
+        else if (field.id === "model_shoe_size") dummyData[field.id] = "9";
+        else if (field.id === "model_collar_size") dummyData[field.id] = "15";
+        else if (field.id === "model_inseam") dummyData[field.id] = "32";
+        else if (field.id === "model_suit_size") dummyData[field.id] = "40";
         else dummyData[field.id] = `Mock ${field.label}`;
         break;
       case "email":

@@ -191,144 +191,220 @@ export function PortfolioMediaGallery({
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {/* ── Saved Photos ── */}
             {savedPhotos.map((shot: any) => (
-              <div
-                key={shot._id}
-                className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-gray-100 group transition-all duration-300 hover:border-[#009698]/50 shadow-sm"
-              >
-                <img
-                  src={shot.url}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="h-10 w-10 rounded-full shadow-xl transform scale-0 group-hover:scale-100 transition-transform duration-300"
-                    onClick={async () => {
-                      try {
-                        await profileAPI.deleteHeadshot(shot._id);
-                        setProfileData((prev: any) => ({
-                          ...prev,
-                          talent: {
-                            ...(prev?.talent || {}),
-                            headshots: (prev?.talent?.headshots || []).filter(
-                              (s: any) => s._id !== shot._id
-                            ),
-                          },
-                        }));
-                        toast.success("Image removed");
-                      } catch {
-                        toast.error("Failed to delete image");
-                      }
-                    }}
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
+              <div key={shot._id} className="flex flex-col gap-2">
+                <div
+                  className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-gray-100 group transition-all duration-300 hover:border-[#009698]/50 shadow-sm"
+                >
+                  <img
+                    src={shot.url}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="h-10 w-10 rounded-full shadow-xl transform scale-0 group-hover:scale-100 transition-transform duration-300"
+                      onClick={async () => {
+                        try {
+                          await profileAPI.deleteHeadshot(shot._id);
+                          setProfileData((prev: any) => ({
+                            ...prev,
+                            talent: {
+                              ...(prev?.talent || {}),
+                              headshots: (prev?.talent?.headshots || []).filter(
+                                (s: any) => s._id !== shot._id
+                              ),
+                            },
+                          }));
+                          toast.success("Image removed");
+                        } catch {
+                          toast.error("Failed to delete image");
+                        }
+                      }}
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
                 </div>
+                <Input
+                  type="text"
+                  placeholder="Photo title/caption..."
+                  value={shot.caption || ""}
+                  className="h-8 text-xs text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl"
+                  onChange={(e) => {
+                    const nextHeadshots = (profileData?.talent?.headshots || []).map((s: any) =>
+                      s._id === shot._id ? { ...s, caption: e.target.value } : s
+                    );
+                    setProfileData((prev: any) => ({
+                      ...prev,
+                      talent: {
+                        ...(prev?.talent || {}),
+                        headshots: nextHeadshots,
+                      }
+                    }));
+                  }}
+                />
               </div>
             ))}
 
             {/* ── Saved Portfolio Videos ── */}
-            {savedVideos.map((vid: any, i: number) => (
-              <div
-                key={i}
-                className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-gray-100 group transition-all duration-300 hover:border-[#009698]/50 shadow-sm bg-black"
-              >
-                <video
-                  src={vid.url || vid}
-                  className="w-full h-full object-cover opacity-80"
-                  muted
-                  preload="metadata"
-                />
-                {/* Play badge */}
-                <div className="absolute top-2 left-2">
-                  <div className="w-6 h-6 rounded-full bg-[#009698] flex items-center justify-center shadow-lg">
-                    <Play className="w-3 h-3 text-white fill-white" />
+            {savedVideos.map((vid: any, i: number) => {
+              const videoUrl = typeof vid === "string" ? vid : vid.url;
+              const videoCaption = typeof vid === "string" ? "" : (vid.caption || "");
+              return (
+                <div key={i} className="flex flex-col gap-2">
+                  <div
+                    className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-gray-100 group transition-all duration-300 hover:border-[#009698]/50 shadow-sm bg-black"
+                  >
+                    <video
+                      src={videoUrl}
+                      className="w-full h-full object-cover opacity-80"
+                      muted
+                      preload="metadata"
+                    />
+                    {/* Play badge */}
+                    <div className="absolute top-2 left-2">
+                      <div className="w-6 h-6 rounded-full bg-[#009698] flex items-center justify-center shadow-lg">
+                        <Play className="w-3 h-3 text-white fill-white" />
+                      </div>
+                    </div>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="h-10 w-10 rounded-full shadow-xl transform scale-0 group-hover:scale-100 transition-transform duration-300"
+                        onClick={() => {
+                          setProfileData((prev: any) => ({
+                            ...prev,
+                            talent: {
+                              ...(prev?.talent || {}),
+                              portfolioVideos: (
+                                prev?.talent?.portfolioVideos || []
+                              ).filter((_: any, idx: number) => idx !== i),
+                            },
+                          }));
+                          toast.success("Video removed");
+                        }}
+                      >
+                        <X className="w-5 h-5" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="h-10 w-10 rounded-full shadow-xl transform scale-0 group-hover:scale-100 transition-transform duration-300"
-                    onClick={() => {
+                  <Input
+                    type="text"
+                    placeholder="Video title/caption..."
+                    value={videoCaption}
+                    className="h-8 text-xs text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl"
+                    onChange={(e) => {
+                      const nextVideos = (profileData?.talent?.portfolioVideos || []).map((v: any, idx: number) =>
+                        idx === i
+                          ? (typeof v === "object" ? { ...v, caption: e.target.value } : { url: v, caption: e.target.value })
+                          : v
+                      );
                       setProfileData((prev: any) => ({
                         ...prev,
                         talent: {
                           ...(prev?.talent || {}),
-                          portfolioVideos: (
-                            prev?.talent?.portfolioVideos || []
-                          ).filter((_: any, idx: number) => idx !== i),
-                        },
+                          portfolioVideos: nextVideos,
+                        }
                       }));
-                      toast.success("Video removed");
                     }}
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
+                  />
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* ── Pending Photos (queued for upload) ── */}
             {pendingPortfolioPhotos.map((photo, index) => (
-              <div
-                key={`pp-${index}`}
-                className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-[#009698]/40 bg-[#009698]/5 animate-pulse"
-              >
-                <img
-                  src={photo.preview}
-                  className="w-full h-full object-cover opacity-60"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-8 w-8 rounded-full bg-white text-destructive shadow-lg"
-                    onClick={() => removePendingPortfolioPhoto(index)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+              <div key={`pp-${index}`} className="flex flex-col gap-2">
+                <div
+                  className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-[#009698]/40 bg-[#009698]/5 animate-pulse"
+                >
+                  <img
+                    src={photo.preview}
+                    className="w-full h-full object-cover opacity-60"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-white text-destructive shadow-lg"
+                      onClick={() => removePendingPortfolioPhoto(index)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center">
+                    <Badge variant="secondary" className="text-[8px] bg-white/80">
+                      PENDING PHOTO
+                    </Badge>
+                  </div>
                 </div>
-                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center">
-                  <Badge variant="secondary" className="text-[8px] bg-white/80">
-                    PENDING PHOTO
-                  </Badge>
-                </div>
+                {setPendingPortfolioPhotos && (
+                  <Input
+                    type="text"
+                    placeholder="Pending photo title..."
+                    value={photo.caption || ""}
+                    className="h-8 text-xs text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl"
+                    onChange={(e) => {
+                      setPendingPortfolioPhotos((prev) =>
+                        prev.map((item, idx) =>
+                          idx === index ? { ...item, caption: e.target.value } : item
+                        )
+                      );
+                    }}
+                  />
+                )}
               </div>
             ))}
 
             {/* ── Pending Videos (queued for upload) ── */}
             {pendingPortfolioVideos.map((vid, index) => (
-              <div
-                key={`pv-${index}`}
-                className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-[#009698]/40 bg-[#009698]/5 animate-pulse bg-black"
-              >
-                <video
-                  src={vid.preview}
-                  className="w-full h-full object-cover opacity-50"
-                  muted
-                  preload="metadata"
-                />
-                {/* Video icon overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                    <Video className="w-5 h-5 text-[#009698]" />
+              <div key={`pv-${index}`} className="flex flex-col gap-2">
+                <div
+                  className="relative aspect-square rounded-2xl overflow-hidden border-2 border-dashed border-[#009698]/40 bg-[#009698]/5 animate-pulse bg-black"
+                >
+                  <video
+                    src={vid.preview}
+                    className="w-full h-full object-cover opacity-50"
+                    muted
+                    preload="metadata"
+                  />
+                  {/* Video icon overlay */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                      <Video className="w-5 h-5 text-[#009698]" />
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="h-7 w-7 rounded-full bg-white text-destructive shadow-lg"
+                      onClick={() => removePendingPortfolioVideo(index)}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="h-7 w-7 rounded-full bg-white text-destructive shadow-lg"
-                    onClick={() => removePendingPortfolioVideo(index)}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
+                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center">
+                    <Badge variant="secondary" className="text-[8px] bg-white/80 max-w-full truncate">
+                      {vid.name.length > 16 ? vid.name.slice(0, 14) + "…" : vid.name}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center">
-                  <Badge variant="secondary" className="text-[8px] bg-white/80 max-w-full truncate">
-                    {vid.name.length > 16 ? vid.name.slice(0, 14) + "…" : vid.name}
-                  </Badge>
-                </div>
+                {setPendingPortfolioVideos && (
+                  <Input
+                    type="text"
+                    placeholder="Pending video title..."
+                    value={vid.caption || ""}
+                    className="h-8 text-xs text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl"
+                    onChange={(e) => {
+                      setPendingPortfolioVideos((prev) =>
+                        prev.map((item, idx) =>
+                          idx === index ? { ...item, caption: e.target.value } : item
+                        )
+                      );
+                    }}
+                  />
+                )}
               </div>
             ))}
 

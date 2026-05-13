@@ -337,12 +337,6 @@ export default function ProfessionalProfile() {
         companyName: unifiedPayload.business_name || unifiedPayload.companyName || profileData?.unifiedProfessionalProfile?.companyName,
         fullBio: unifiedPayload.full_bio || unifiedPayload.fullBio || "",
         full_bio: unifiedPayload.full_bio || unifiedPayload.fullBio || "",
-        // General fields
-        businessName: unifiedPayload.business_name || unifiedPayload.businessName || profileData?.unifiedProfessionalProfile?.businessName,
-        business_name: unifiedPayload.business_name || unifiedPayload.businessName || profileData?.unifiedProfessionalProfile?.businessName,
-        companyName: unifiedPayload.business_name || unifiedPayload.companyName || profileData?.unifiedProfessionalProfile?.companyName,
-        fullBio: unifiedPayload.full_bio || unifiedPayload.fullBio || "",
-        full_bio: unifiedPayload.full_bio || unifiedPayload.fullBio || "",
         willingToTravel: unifiedPayload.willing_to_travel || "No",
         willing_to_travel: unifiedPayload.willing_to_travel || "No",
 

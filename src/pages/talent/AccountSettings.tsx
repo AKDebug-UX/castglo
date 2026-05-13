@@ -203,9 +203,16 @@ export default function AccountSettings() {
                 <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Verification</p>
                 <p className="font-medium">{user?.isVerified ? "Verified" : "Not Verified"}</p>
               </div>
-              <div className="p-4 rounded-xl border bg-white">
-                <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Plan</p>
-                <p className="font-medium">{subscriptionInfo?.plan?.name || "Free"}</p>
+              <div className="p-4 rounded-xl border bg-white flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Plan</p>
+                  <p className="font-medium">{subscriptionInfo?.plan?.name || "Free"}</p>
+                </div>
+                {(!subscriptionInfo?.plan?.name || subscriptionInfo?.plan?.name === "Free Plan" || subscriptionInfo?.plan?.name === "Free") && (
+                  <Button size="sm" variant="outline" className="h-7 text-[10px] px-2 bg-pink-50 border-pink-200 text-pink-600 hover:bg-pink-100 hover:text-pink-700 rounded-lg font-bold" asChild>
+                    <a href="/pricing">Upgrade</a>
+                  </Button>
+                )}
               </div>
               <div className="p-4 rounded-xl border bg-white">
                 <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Applications Left</p>
@@ -322,24 +329,74 @@ export default function AccountSettings() {
               <p className="text-sm text-muted-foreground">Manage your subscription and quota</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 rounded-xl border bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-primary">{subscriptionInfo?.plan?.name || "Free Plan"}</Badge>
-                    {subscriptionInfo?.status === "active" && (
-                      <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">Active</Badge>
-                    )}
+              {!subscriptionInfo?.plan?.name || subscriptionInfo?.plan?.name === "Free Plan" || subscriptionInfo?.plan?.name === "Free" ? (
+                <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 p-6 md:p-8 text-white shadow-xl">
+                  {/* Glowing background circles for visual depth */}
+                  <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 rounded-full bg-pink-500/10 blur-3xl pointer-events-none" />
+                  <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+                  
+                  <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                    <div className="space-y-3 max-w-xl">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#D98EB3]/20 text-[#D98EB3] border border-[#D98EB3]/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#D98EB3] animate-pulse" />
+                        Castglo Premium
+                      </span>
+                      <h3 className="text-xl md:text-2xl font-extrabold tracking-tight">Upgrade to Premium & Unlock Unlimited Access</h3>
+                      <p className="text-slate-300 text-sm leading-relaxed">
+                        Take your career to the next level. Apply to unlimited casting calls, stand out to casting directors with a featured badge, and get instant job alerts tailored to your talent type.
+                      </p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 text-xs text-slate-300 font-medium">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Unlimited Casting Submissions
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Featured Talent Profile Badge
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Priority Listing in Searches
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Instant Audition Notifications
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-shrink-0 w-full lg:w-auto">
+                      <Button asChild size="lg" className="w-full lg:w-auto bg-gradient-to-r from-[#D98EB3] to-[#C97EA3] hover:from-[#C97EA3] hover:to-[#B86D92] text-white font-bold rounded-xl shadow-lg shadow-pink-900/30 border-none px-8 py-6 text-sm hover:scale-[1.02] transition-transform">
+                        <a href="/pricing">Upgrade to Premium</a>
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {subscriptionInfo?.status === "active"
-                      ? `Renews on ${new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString()}`
-                      : "Upgrade to unlock premium features"}
-                  </p>
                 </div>
-                <Button variant="outline" asChild>
-                  <a href="/pricing">Manage Plans</a>
-                </Button>
-              </div>
+              ) : (
+                <div className="p-5 rounded-2xl border bg-emerald-50/20 border-emerald-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 font-semibold px-3 py-1 rounded-full">{subscriptionInfo?.plan?.name || "Premium Plan"}</Badge>
+                      <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 font-medium px-2 py-0.5 rounded-full">Active Subscriber</Badge>
+                    </div>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      Thank you for being a premium member! Your subscription is active and will automatically renew on <span className="font-semibold text-slate-800">{new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString()}</span>.
+                    </p>
+                  </div>
+                  <Button variant="outline" asChild className="rounded-xl border-slate-200 hover:bg-slate-50 flex-shrink-0">
+                    <a href="/pricing">Manage / Change Plan</a>
+                  </Button>
+                </div>
+              )}
 
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="p-4 rounded-lg border bg-white">

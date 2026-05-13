@@ -127,7 +127,13 @@ export default function TalentProfile() {
       stageName: talent.stageName || base.display_name || base.displayName,
       location: base.current_city ? `${base.current_city}${base.current_country ? `, ${base.current_country}` : ''}` : (formatLocation(talent.location) || "Global"),
       bio: base.short_bio || base.bio || talent.bio,
-      roles: mergeList(talent.professionalRoles || talent.talentTypes, base.primary_talent_type),
+      roles: (() => {
+        const primaryType = base.primary_talent_type || talent.primaryTalentType || (Array.isArray(talent.talentTypes) ? talent.talentTypes[0] : "");
+        const rawRoles = mergeList(primaryType, base.additional_talent_types || talent.professionalRoles || talent.talentTypes);
+        return primaryType 
+          ? [primaryType, ...rawRoles.filter(r => r !== primaryType)]
+          : rawRoles;
+      })(),
       skills: mergeList(talent.skills, base.skills || base.specific_skills),
       instagram: base.instagram_url || base.instagramUrl || base.social_instagram,
       linkedin: base.linkedin_url || base.linkedinUrl || base.social_linkedin || base.social_tiktok,
@@ -455,12 +461,19 @@ export default function TalentProfile() {
                               <img
                                 src={shot.url}
                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                                alt="Headshot"
+                                alt={shot.caption || "Headshot"}
                               />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                <Button size="sm" variant="secondary" className="h-8 rounded-full text-xs">
-                                  View
-                                </Button>
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex flex-col justify-between p-3 opacity-0 group-hover:opacity-100">
+                                <div className="self-end">
+                                  <Button size="sm" variant="secondary" className="h-8 rounded-full text-xs">
+                                    View
+                                  </Button>
+                                </div>
+                                {shot.caption && (
+                                  <div className="bg-black/70 backdrop-blur-md text-white text-xs px-2.5 py-1.5 rounded-xl text-center shadow-lg truncate max-w-full">
+                                    {shot.caption}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -640,9 +653,16 @@ export default function TalentProfile() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                           {t.headshots?.map((shot: any) => (
                             <div key={shot._id} className="aspect-square rounded-2xl overflow-hidden border bg-muted shadow-sm group relative cursor-zoom-in">
-                              <img src={shot.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt="Portfolio" />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                <Button size="sm" variant="secondary" className="h-8 rounded-full text-xs">View</Button>
+                              <img src={shot.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={shot.caption || "Portfolio"} />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex flex-col justify-between p-3 opacity-0 group-hover:opacity-100">
+                                <div className="self-end">
+                                  <Button size="sm" variant="secondary" className="h-8 rounded-full text-xs">View</Button>
+                                </div>
+                                {shot.caption && (
+                                  <div className="bg-black/70 backdrop-blur-md text-white text-xs px-2.5 py-1.5 rounded-xl text-center shadow-lg truncate max-w-full">
+                                    {shot.caption}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ))}

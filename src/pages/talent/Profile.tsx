@@ -746,6 +746,9 @@ export default function Profile() {
           pendingPortfolioPhotos.map(async (photo) => {
             const formData = new FormData();
             formData.append("headshot", photo.file);
+            if (photo.caption) {
+              formData.append("caption", photo.caption);
+            }
             return profileAPI.addHeadshot(formData);
           })
         );
@@ -776,14 +779,14 @@ export default function Profile() {
 
       if (pendingPortfolioVideos.length > 0) {
         try {
-          const uploadedUrls: string[] = [];
+          const uploadedUrls: any[] = [];
           await Promise.all(
-            pendingPortfolioVideos.map(async ({ file }) => {
+            pendingPortfolioVideos.map(async (vid) => {
               const formData = new FormData();
-              formData.append("showreel", file);
+              formData.append("showreel", vid.file);
               const res = await profileAPI.uploadShowreel(formData);
               const url = res.data?.data?.url || res.data?.data?.showreelUrl || res.data?.data?.showreel;
-              if (url) uploadedUrls.push(url);
+              if (url) uploadedUrls.push({ url, caption: vid.caption || "" });
             })
           );
           setPendingPortfolioVideos([]);
@@ -792,7 +795,7 @@ export default function Profile() {
               ...prev,
               talent: {
                 ...(prev?.talent || {}),
-                portfolioVideos: [...(prev?.talent?.portfolioVideos || []), ...uploadedUrls.map((url) => ({ url }))],
+                portfolioVideos: [...(prev?.talent?.portfolioVideos || []), ...uploadedUrls],
               },
             }));
           }
@@ -860,6 +863,8 @@ export default function Profile() {
         noticeRequired: unifiedPayload.notice_required,
         opportunitiesSought: unifiedPayload.opportunities_sought || [],
         opportunitiesNotAccepted: unifiedPayload.opportunities_not_accepted || [],
+        headshots: profileData?.talent?.headshots,
+        portfolioVideos: profileData?.talent?.portfolioVideos,
 
         // Talent specific details
         actorPerformanceCategory: unifiedPayload.actor_performance_category,
@@ -1081,6 +1086,11 @@ export default function Profile() {
       try {
         await profileAPI.updateMe({
           unifiedTalentProfile: unifiedPayload,
+          talent: {
+            ...(profileData?.talent || {}),
+            headshots: profileData?.talent?.headshots,
+            portfolioVideos: profileData?.talent?.portfolioVideos,
+          },
           socialLinks: unifiedPayload.social_links || []
         });
       } catch (e) {
@@ -1234,9 +1244,11 @@ export default function Profile() {
         pendingProfilePhoto={pendingProfilePhoto}
         setPendingProfilePhoto={setPendingProfilePhoto}
         pendingPortfolioPhotos={pendingPortfolioPhotos}
+        setPendingPortfolioPhotos={setPendingPortfolioPhotos}
         removePendingPortfolioPhoto={removePendingPortfolioPhoto}
         handlePortfolioSelect={handlePortfolioSelect}
         pendingPortfolioVideos={pendingPortfolioVideos}
+        setPendingPortfolioVideos={setPendingPortfolioVideos}
         removePendingPortfolioVideo={removePendingPortfolioVideo}
         handlePortfolioVideoSelect={handlePortfolioVideoSelect}
         pendingIntroVideo={pendingIntroVideo}

@@ -46,7 +46,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, ArrowLeft, ChevronRight, HelpCircle, Rocket, X, Loader2, Trash2, Plus, Video, Image as ImageIcon, Zap, Star, FastForward } from "lucide-react";
+import { ArrowRight, ArrowLeft, ChevronRight, HelpCircle, Rocket, X, Loader2, Trash2, Plus, Video, Image as ImageIcon, Zap, Star, FastForward, Upload } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -64,6 +64,15 @@ export default function CreateCasting() {
   // ── Form State ─────────────────────────────────────────────────────────────
   const [formData, setFormData] = useState({
     // Step 1: Project Details
+    projectName: "",
+    projectType: "film",
+    locationType: "nationwide",
+    location: "",
+    category: "drama",
+    deadline: "",
+    description: "",
+    image: null as string | null,
+    
     project_title: "",
     project_description: "",
     project_type: "",
@@ -86,7 +95,21 @@ export default function CreateCasting() {
     // Step 2 & 3: Roles & Pre-Audition
     roles: [
       {
-        customQuestions: "Tell us why you fit this role" // Mock single question for now
+        id: "role_initial",
+        title: "",
+        description: "",
+        roleType: "supporting",
+        minAge: "18",
+        maxAge: "35",
+        gender: "any",
+        ethnicity: "any",
+        unionStatus: "non-union",
+        payRate: "",
+        requirements: "",
+        requestVideo: false,
+        requestAudio: false,
+        requestCoverLetter: false,
+        customQuestions: "Tell us why you fit this role"
       }
     ],
 
@@ -97,6 +120,59 @@ export default function CreateCasting() {
   });
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  const handleAutoFill = () => {
+    setFormData({
+      projectName: "Project Aurora: Beyond the Horizon",
+      projectType: "film",
+      locationType: "nationwide",
+      location: "London, UK",
+      category: "drama",
+      deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 14 days from now
+      description: "A groundbreaking science fiction feature film exploring human resilience and discovery. Standard cinema production set in various beautiful UK locales.",
+      status: "open",
+      genre: ["Sci-Fi", "Drama"],
+      product_website: "https://projectaurora.com",
+      talent_type_needed: ["actor_performer"],
+      payment_type: "paid",
+      payment_amount: "450",
+      currency: "GBP",
+      submission_deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      audition_date: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      callback_date: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      location_scope: "nationwide",
+      city: "London",
+      country: "UK",
+      address_details: "Pinewood Studios, Iver, Buckinghamshire",
+      audition_type: "in_person",
+      
+      roles: [
+        {
+          id: "role_1",
+          title: "Marcus Vance (Lead)",
+          description: "A charismatic, intense astronaut in his mid-30s who leads the expedition. Must have a strong screen presence and emotional depth.",
+          roleType: "lead",
+          minAge: "28",
+          maxAge: "40",
+          gender: "male",
+          ethnicity: "any",
+          unionStatus: "both",
+          payRate: "450",
+          requirements: "Previous acting experience in feature films or television is required.\nStrong vocal projection and stage combat skills are a plus.",
+          requestVideo: true,
+          requestAudio: false,
+          requestCoverLetter: true,
+          customQuestions: "What is your experience with intense dramatic roles?"
+        }
+      ],
+
+      instantPosting: false,
+      featuredPosting: false,
+      urgentHiringBadge: false,
+    });
+    toast.success("New project basics and role details auto-filled with high-quality mock data!");
+  };
 
   useEffect(() => {
     if (isEditMode) {
@@ -181,6 +257,7 @@ export default function CreateCasting() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
@@ -243,10 +320,34 @@ export default function CreateCasting() {
       };
 
       let response;
+      let requestPayload: any = payload;
+
+      if (imageFile) {
+        const formDataPayload = new FormData();
+        // Append the file under expected keys to support different backend conventions (image/poster/file)
+        formDataPayload.append("image", imageFile);
+        formDataPayload.append("poster", imageFile);
+        formDataPayload.append("file", imageFile);
+
+        // Append all other fields
+        Object.entries(payload).forEach(([key, value]) => {
+          if (key === "image") return; // Skip base64 preview string
+          
+          if (Array.isArray(value)) {
+            formDataPayload.append(key, JSON.stringify(value));
+          } else if (typeof value === "object" && value !== null) {
+            formDataPayload.append(key, JSON.stringify(value));
+          } else if (value !== undefined && value !== null) {
+            formDataPayload.append(key, String(value));
+          }
+        });
+        requestPayload = formDataPayload;
+      }
+
       if (isEditMode) {
-        response = await castingCallAPI.update(id, payload);
+        response = await castingCallAPI.update(id, requestPayload);
       } else {
-        response = await castingCallAPI.create(payload);
+        response = await castingCallAPI.create(requestPayload);
       }
 
       if (response.data.success) {
@@ -270,7 +371,7 @@ export default function CreateCasting() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in pb-20">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <Link 
             to="/director/projects"
@@ -282,6 +383,17 @@ export default function CreateCasting() {
           <h1 className="text-3xl font-bold">{isEditMode ? "Edit Project" : "Post a New Project"}</h1>
           <p className="text-muted-foreground">Find the perfect talent for your upcoming production</p>
         </div>
+        {!isEditMode && (
+          <Button
+            type="button"
+            onClick={handleAutoFill}
+            variant="outline"
+            className="self-start sm:self-center bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100/80 hover:text-teal-800 flex items-center gap-2 font-semibold shadow-sm transition-all duration-200"
+          >
+            <Zap className="w-4 h-4 text-teal-600 fill-teal-600 animate-pulse" />
+            Auto-fill Mock Data
+          </Button>
+        )}
       </div>
 
       {/* Stepper */}

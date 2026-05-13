@@ -42,7 +42,15 @@ export default function BrowseCast() {
       };
       
       if (search && search.trim()) params.search = search.trim();
-      if (status !== "all") params.status = status;
+      if (status !== "all") {
+        if (status === "newest") {
+          params.sort = "-createdAt";
+          params.sortBy = "createdAt";
+          params.order = "desc";
+        } else {
+          params.status = status;
+        }
+      }
       if (location !== "all") params.location = location;
       if (genre !== "all") params.productionType = genre; // Backend often uses productionType for genre/category
 
@@ -190,6 +198,7 @@ export default function BrowseCast() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="newest">Newest</SelectItem>
                   <SelectItem value="open">Open</SelectItem>
                   <SelectItem value="closing">Closing Soon</SelectItem>
                   <SelectItem value="closed">Closed</SelectItem>

@@ -189,12 +189,8 @@ export const EXPERIENCE_LEVELS = ["Beginner", "Intermediate", "Experienced", "Ex
 
 export const COUNTRIES = [
   "United Kingdom",
-  "Nigeria",
   "United States",
   "Canada",
-  "South Africa",
-  "Ghana",
-  "Kenya",
   "France",
   "Germany",
   "India",

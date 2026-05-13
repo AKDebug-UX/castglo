@@ -188,7 +188,7 @@ const ChatView = ({
                         "text-[10px] font-medium px-1",
                         isSelf ? "text-slate-500 text-right" : "text-slate-400 text-left"
                       )}>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(msg.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
                   </div>

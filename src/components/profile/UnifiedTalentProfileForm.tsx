@@ -43,6 +43,8 @@ interface UnifiedTalentProfileFormProps {
   pendingPortfolioVideos?: { file: File; preview: string; name: string }[];
   removePendingPortfolioVideo?: (index: number) => void;
   handlePortfolioVideoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setPendingPortfolioPhotos?: React.Dispatch<React.SetStateAction<any[]>>;
+  setPendingPortfolioVideos?: React.Dispatch<React.SetStateAction<any[]>>;
   pendingIntroVideo?: any;
   setPendingIntroVideo?: any;
   handleIntroVideoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -174,6 +176,10 @@ interface MeasurementInputProps {
 function MeasurementInput({ fieldId, value, unit, onChange, hasError }: MeasurementInputProps) {
   const canonicalNum = parseFloat(value) || 0;
 
+  const inputClass = `[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pr-10 ${
+    hasError ? "border-destructive" : ""
+  }`;
+
   // HEIGHT field: ft/in dual input in imperial
   if (HEIGHT_FIELD_IDS.has(fieldId)) {
     if (unit === "imperial") {
@@ -187,7 +193,7 @@ function MeasurementInput({ fieldId, value, unit, onChange, hasError }: Measurem
               max={9}
               value={canonicalNum > 0 ? ft : ""}
               placeholder="5"
-              className={hasError ? "border-destructive" : ""}
+              className={inputClass}
               onChange={(e) => {
                 const newFt = parseFloat(e.target.value) || 0;
                 onChange(String(ftInToCm(newFt, inches)));
@@ -202,7 +208,7 @@ function MeasurementInput({ fieldId, value, unit, onChange, hasError }: Measurem
               max={11}
               value={canonicalNum > 0 ? inches : ""}
               placeholder="11"
-              className={hasError ? "border-destructive" : ""}
+              className={inputClass}
               onChange={(e) => {
                 const newIn = parseFloat(e.target.value) || 0;
                 onChange(String(ftInToCm(ft, newIn)));
@@ -221,7 +227,7 @@ function MeasurementInput({ fieldId, value, unit, onChange, hasError }: Measurem
           min={0}
           value={canonicalNum > 0 ? canonicalNum : ""}
           placeholder="175"
-          className={hasError ? "border-destructive" : ""}
+          className={inputClass}
           onChange={(e) => onChange(e.target.value)}
         />
         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground pointer-events-none">cm</span>
@@ -242,7 +248,7 @@ function MeasurementInput({ fieldId, value, unit, onChange, hasError }: Measurem
           min={0}
           value={displayVal}
           placeholder={unit === "imperial" ? "154" : "70"}
-          className={hasError ? "border-destructive" : ""}
+          className={inputClass}
           onChange={(e) => {
             const n = parseFloat(e.target.value) || 0;
             onChange(unit === "imperial" ? String(lbsToKg(n)) : e.target.value);
@@ -312,6 +318,8 @@ export function UnifiedTalentProfileForm({
   pendingPortfolioVideos,
   removePendingPortfolioVideo,
   handlePortfolioVideoSelect,
+  setPendingPortfolioPhotos,
+  setPendingPortfolioVideos,
   pendingIntroVideo,
   setPendingIntroVideo,
   handleIntroVideoSelect
@@ -399,48 +407,51 @@ export function UnifiedTalentProfileForm({
     }
   }, []);
 
-  const tabGroups = useMemo(() => [
-    {
-      id: "basic",
-      label: "Basic Profile",
-      sections: ["Basic Profile", "About You", "Availability", "Contact", "Account / Contact", "Emergency Contact", "Guardian Consent"]
-    },
-    {
-      id: "professional",
-      label: "Professional",
-      sections: [
-        "Talent Type",
-        // Metadata / Details
-        "Actor Details", "Model Details", "Singer Details", "Dancer Details",
-        "Voice Artist Details", "Presenter Details", "Extra Details", "Musician Details",
-        "Creator Details", "Comedian Details", "Stunt Details",
-        // Specialized Assets (Renamed from Media)
-        "Actor Profile", "Model Profile", "Singer Profile", "Dancer Profile",
-        "Voice Artist Profile", "Presenter Profile", "Musician Profile", "Creator Profile",
-        "Comedian Profile", "Stunt Profile",
-        // Professional Specialisms
-        "Photography Specialisms", "MUA & Hair Specialisms", "Coaching Specialisms", "Editing Specialisms",
-        "Professional Overview", "Representation", "Booking Preferences",
-        // Professional Identity & Business
-        "Professional Identity", "Business & Facilities", "Business Terms"
-      ]
-    },
-    {
-      id: "appearance",
-      label: "Appearance",
-      sections: ["Appearance", "Model Measurements", "Model Preferences"]
-    },
-    {
-      id: "portfolio",
-      label: "Portfolio",
-      sections: ["Social", "Contact / Media"]
-    },
-    {
-      id: "summary",
-      label: "Summary",
-      sections: []
-    }
-  ], []);
+  const tabGroups = useMemo(() => {
+    const isTalentUser = user?.role === "talent" || rootData?.userRole === "talent";
+    return [
+      {
+        id: "basic",
+        label: "Basic Profile",
+        sections: ["Basic Profile", "About You", "Availability", "Contact", "Account / Contact", "Emergency Contact", "Guardian Consent"]
+      },
+      {
+        id: "professional",
+        label: "Professional",
+        sections: [
+          "Talent Type",
+          // Metadata / Details
+          "Actor Details", "Model Details", "Singer Details", "Dancer Details",
+          "Voice Artist Details", "Presenter Details", "Extra Details", "Musician Details",
+          "Creator Details", "Comedian Details", "Stunt Details",
+          // Specialized Assets (Renamed from Media)
+          "Actor Profile", "Model Profile", "Singer Profile", "Dancer Profile",
+          "Voice Artist Profile", "Presenter Profile", "Musician Profile", "Creator Profile",
+          "Comedian Profile", "Stunt Profile",
+          // Professional Specialisms
+          "Photography Specialisms", "MUA & Hair Specialisms", "Coaching Specialisms", "Editing Specialisms",
+          "Professional Overview", "Representation", "Booking Preferences",
+          // Professional Identity & Business (Hiding for standard Talent users)
+          ...(isTalentUser ? [] : ["Professional Identity", "Business & Facilities", "Business Terms"])
+        ]
+      },
+      {
+        id: "appearance",
+        label: "Appearance",
+        sections: ["Appearance", "Model Measurements", "Model Preferences"]
+      },
+      {
+        id: "portfolio",
+        label: "Portfolio",
+        sections: ["Social", "Contact / Media"]
+      },
+      {
+        id: "summary",
+        label: "Summary",
+        sections: []
+      }
+    ];
+  }, [user, rootData]);
 
   const visibleFields = useMemo(
     () => UNIFIED_TALENT_PROFILE_FIELD_SPEC.filter((field) => shouldShowField(field, values)),
@@ -923,6 +934,8 @@ export function UnifiedTalentProfileForm({
             pendingPortfolioVideos={pendingPortfolioVideos || []}
             removePendingPortfolioVideo={removePendingPortfolioVideo!}
             handlePortfolioVideoSelect={handlePortfolioVideoSelect!}
+            setPendingPortfolioPhotos={setPendingPortfolioPhotos}
+            setPendingPortfolioVideos={setPendingPortfolioVideos}
             pendingIntroVideo={pendingIntroVideo}
             setPendingIntroVideo={setPendingIntroVideo}
             handleIntroVideoSelect={handleIntroVideoSelect!}
@@ -992,6 +1005,8 @@ export function UnifiedTalentProfileForm({
                       pendingPortfolioVideos={pendingPortfolioVideos || []}
                       removePendingPortfolioVideo={removePendingPortfolioVideo!}
                       handlePortfolioVideoSelect={handlePortfolioVideoSelect!}
+                      setPendingPortfolioPhotos={setPendingPortfolioPhotos}
+                      setPendingPortfolioVideos={setPendingPortfolioVideos}
                       pendingIntroVideo={pendingIntroVideo}
                       setPendingIntroVideo={setPendingIntroVideo}
                       handleIntroVideoSelect={handleIntroVideoSelect!}

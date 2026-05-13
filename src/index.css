@@ -251,3 +251,13 @@
 .animate-scroll-vertical-reverse:hover {
   animation-play-state: paused;
 }
+
+/* Suppress number input spinners to prevent overlapping with absolute unit labels (e.g. cm, kg, ft, lbs) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

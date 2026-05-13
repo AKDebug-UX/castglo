@@ -259,10 +259,14 @@ export const profileAPI = {
 // --- CASTING CALL ENDPOINTS ---
 export const castingCallAPI = {
   getAll: (params) => api.get(API_ENDPOINTS.CASTING_CALLS.GET_ALL, { params }),
-  create: (data) => api.post(API_ENDPOINTS.CASTING_CALLS.CREATE, data),
+  create: (data: FormData | any) => api.post(API_ENDPOINTS.CASTING_CALLS.CREATE, data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {}
+  }),
   getMyListings: () => api.get(API_ENDPOINTS.CASTING_CALLS.MY_LISTINGS),
   getOne: (id: string) => api.get(API_ENDPOINTS.CASTING_CALLS.GET_ONE(id)),
-  update: (id: string, data) => api.put(API_ENDPOINTS.CASTING_CALLS.UPDATE(id), data),
+  update: (id: string, data: FormData | any) => api.put(API_ENDPOINTS.CASTING_CALLS.UPDATE(id), data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {}
+  }),
   delete: (id: string) => api.delete(API_ENDPOINTS.CASTING_CALLS.DELETE(id)),
   close: (id: string) => api.put(API_ENDPOINTS.CASTING_CALLS.CLOSE(id)),
 };
