@@ -22,7 +22,7 @@ export default function DirectorProfile() {
   const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
   const [pendingProfilePhoto, setPendingProfilePhoto] = useState<{ file: File; preview: string } | null>(null);
-  
+
   const snakeToCamel = (str: string) => str.replace(/([-_][a-z])/g, group => group.toUpperCase().replace('-', '').replace('_', ''));
   const camelToSnake = (str: string) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 
@@ -68,10 +68,10 @@ export default function DirectorProfile() {
           }
         });
       };
-      
+
       // Flatten root data and the specialized profile object
       flatten(combinedData);
-      
+
       // Auto-map everything found in flatData to the unified state
       Object.entries(flatData).forEach(([key, value]) => {
         const snakeKey = camelToSnake(key);
@@ -99,19 +99,19 @@ export default function DirectorProfile() {
       if (combinedData.professional_title || cp.professionalTitle || combinedData.jobTitle) unified.professional_title = combinedData.professional_title || cp.professionalTitle || combinedData.jobTitle;
       if (combinedData.email) unified.email = combinedData.email;
       if (combinedData.phone || combinedData.phoneNumber) unified.phone_number = combinedData.phone || combinedData.phoneNumber;
-      
+
       const addr = combinedData.address || cp.location || {};
       if (addr.city || combinedData.city) unified.city = addr.city || combinedData.city;
       if (addr.state) unified.state = addr.state;
       if (addr.country || combinedData.country) unified.country = addr.country || combinedData.country;
-      
+
       if (cp.accountType || combinedData.primaryAccountType) unified.primary_account_type = cp.accountType || combinedData.primaryAccountType;
       if (cp.additionalAccountTypes || combinedData.additionalAccountTypes) unified.additional_account_types = cp.additionalAccountTypes || combinedData.additionalAccountTypes;
       if (cp.industryAreas || combinedData.industryAreas) unified.industry_areas = cp.industryAreas || combinedData.industryAreas;
       if (cp.applicantStatuses || combinedData.applicantStatuses) unified.applicant_statuses = cp.applicantStatuses || combinedData.applicantStatuses;
       if (cp.socialLinks || combinedData.socialLinks) unified.social_links = cp.socialLinks || combinedData.socialLinks;
       if (cp.website || combinedData.website) unified.website = cp.website || combinedData.website;
-      
+
       // Ensure booleans are correctly represented as "Yes"/"No" for the UI selects
       const booleanFields = [
         'match_engine_enabled', 'enable_manage_applicants', 'enable_switch_between_roles',
@@ -122,7 +122,7 @@ export default function DirectorProfile() {
         'preaudition_request_custom_audio', 'preaudition_request_additional_media',
         'preaudition_send_message', 'preaudition_questions_enabled', 'preaudition_question_required',
         'remote_option_available', 'audition_required', 'interview_required',
-        'instant_posting', 'featured_posting', 'urgent_hiring_badge', 
+        'instant_posting', 'featured_posting', 'urgent_hiring_badge',
         'priority_matched_applicants', 'extended_visibility', 'featured_role_highlight',
         'social_promotion_boost', 'premium_analytics'
       ];
@@ -131,7 +131,7 @@ export default function DirectorProfile() {
         const camel = snakeToCamel(field);
         // Search in flatData first, then fallback to current unified value
         const val = flatData[camel] !== undefined ? flatData[camel] : (flatData[field] !== undefined ? flatData[field] : unified[field]);
-        
+
         if (val === true || val === "Yes") unified[field] = "Yes";
         else if (val === false || val === "No") unified[field] = "No";
       });
@@ -161,20 +161,20 @@ export default function DirectorProfile() {
       e.stopPropagation();
     }
     if (!pendingProfilePhoto) return;
-    
+
     setIsSaving(true);
     try {
       const formData = new FormData();
       formData.append("headshot", pendingProfilePhoto.file);
-      
+
       const profileFormData = new FormData();
       profileFormData.append("profilePicture", pendingProfilePhoto.file);
-      
+
       await Promise.all([
         profileAPI.addHeadshot(formData),
         userAPI.updateProfilePicture(profileFormData)
       ]);
-      
+
       setPendingProfilePhoto(null);
       await refreshUser();
       await fetchProfileData();
@@ -206,10 +206,10 @@ export default function DirectorProfile() {
       if (pendingProfilePhoto) {
         const formData = new FormData();
         formData.append("headshot", pendingProfilePhoto.file);
-        
+
         const profileFormData = new FormData();
         profileFormData.append("profilePicture", pendingProfilePhoto.file);
-        
+
         await Promise.all([
           profileAPI.addHeadshot(formData),
           userAPI.updateProfilePicture(profileFormData)
@@ -219,9 +219,9 @@ export default function DirectorProfile() {
 
       // 1. Update Specialized Casting Profile Information
       // Robustly map all unified fields to camelCase for backend compatibility
-      
+
       const payload: any = {};
-      
+
       // Auto-map ONLY fields that belong to the Casting Director specification
       // This prevents sending invalid data like empty socialLinks from other profile contexts
       Object.entries(unifiedPayload).forEach(([key, value]) => {
@@ -240,15 +240,15 @@ export default function DirectorProfile() {
       payload.companyName = unifiedPayload.company_name || profileData?.companyName || "";
       payload.city = unifiedPayload.city || profileData?.city || "";
       payload.country = unifiedPayload.country || profileData?.country || "";
-      
+
       // Handle boolean conversions and sanitize social links
       Object.keys(payload).forEach(key => {
         if (payload[key] === "Yes") payload[key] = true;
         if (payload[key] === "No") payload[key] = false;
-        
+
         // Ensure socialLinks only contains valid URIs (strings starting with http/https)
         if (key === "socialLinks" && Array.isArray(payload[key])) {
-          payload[key] = payload[key].filter((link: any) => 
+          payload[key] = payload[key].filter((link: any) =>
             typeof link === "string" && link.trim() !== "" && (link.startsWith("http://") || link.startsWith("https://"))
           );
           // If the array is empty after filtering, we might want to remove it entirely or send empty array
@@ -317,8 +317,8 @@ export default function DirectorProfile() {
               />
             </label>
             {pendingProfilePhoto && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="secondary"
                 className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-white text-[#009698] hover:bg-gray-100 shadow-xl border-none h-8 px-3 text-xs font-bold animate-in zoom-in-50 duration-300"
                 onClick={handleSaveProfilePhoto}
@@ -335,47 +335,47 @@ export default function DirectorProfile() {
           </div>
 
           <div className="flex-1 text-center md:text-left space-y-4">
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">{profileData?.fullName || "Director Profile"}</h1>
-                {profileData?.isVerified && (
-                  <Badge className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-md px-3 py-1">
-                    Verified Director
-                  </Badge>
-                )}
-                <Badge variant="secondary" className="bg-white/10 text-white border-white/20 backdrop-blur-md">
-                  {profileData?.unifiedCastingDirectorProfile?.experience_level || profileData?.experienceLevel || "Professional"}
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+              <h1 className="text-3xl font-bold tracking-tight">{profileData?.fullName || "Director Profile"}</h1>
+              {profileData?.isVerified && (
+                <Badge className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-md px-3 py-1">
+                  Verified Director
                 </Badge>
-              </div>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2 text-[#e0f1f1] text-lg opacity-90">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-semibold">{profileData?.unifiedCastingDirectorProfile?.professional_title || profileData?.professionalTitle || "Casting Director"}</span>
-                  {profileData?.unifiedCastingDirectorProfile?.company_name && (
-                    <>
-                      <span className="opacity-50">•</span>
-                      <span>{profileData.unifiedCastingDirectorProfile.company_name}</span>
-                    </>
-                  )}
-                </div>
-                {(profileData?.unifiedCastingDirectorProfile?.city || profileData?.unifiedCastingDirectorProfile?.country) && (
-                  <div className="flex items-center gap-1.5 text-sm opacity-80">
-                    <span className="opacity-50">|</span>
-                    <span>{[profileData?.unifiedCastingDirectorProfile?.city, profileData?.unifiedCastingDirectorProfile?.country].filter(Boolean).join(", ")}</span>
-                  </div>
+              )}
+              <Badge variant="secondary" className="bg-white/10 text-white border-white/20 backdrop-blur-md">
+                {profileData?.unifiedCastingDirectorProfile?.experience_level || profileData?.experienceLevel || "Professional"}
+              </Badge>
+            </div>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2 text-[#e0f1f1] text-lg opacity-90">
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold">{profileData?.unifiedCastingDirectorProfile?.professional_title || profileData?.professionalTitle || "Casting Director"}</span>
+                {profileData?.unifiedCastingDirectorProfile?.company_name && (
+                  <>
+                    <span className="opacity-50">•</span>
+                    <span>{profileData.unifiedCastingDirectorProfile.company_name}</span>
+                  </>
                 )}
               </div>
-              
-              {(profileData?.unifiedCastingDirectorProfile?.industry_areas?.length > 0) && (
-                <div className="flex flex-wrap gap-2 pt-2 justify-center md:justify-start">
-                  {profileData.unifiedCastingDirectorProfile.industry_areas.slice(0, 3).map((area: string) => (
-                    <span key={area} className="text-xs bg-black/20 px-2 py-0.5 rounded-full border border-white/10">
-                      {area}
-                    </span>
-                  ))}
-                  {profileData.unifiedCastingDirectorProfile.industry_areas.length > 3 && (
-                    <span className="text-xs opacity-60">+{profileData.unifiedCastingDirectorProfile.industry_areas.length - 3} more</span>
-                  )}
+              {(profileData?.unifiedCastingDirectorProfile?.city || profileData?.unifiedCastingDirectorProfile?.country) && (
+                <div className="flex items-center gap-1.5 text-sm opacity-80">
+                  <span className="opacity-50">|</span>
+                  <span>{[profileData?.unifiedCastingDirectorProfile?.city, profileData?.unifiedCastingDirectorProfile?.country].filter(Boolean).join(", ")}</span>
                 </div>
               )}
+            </div>
+
+            {(profileData?.unifiedCastingDirectorProfile?.industry_areas?.length > 0) && (
+              <div className="flex flex-wrap gap-2 pt-2 justify-center md:justify-start">
+                {profileData.unifiedCastingDirectorProfile.industry_areas.slice(0, 3).map((area: string) => (
+                  <span key={area} className="text-xs bg-black/20 px-2 py-0.5 rounded-full border border-white/10">
+                    {area}
+                  </span>
+                ))}
+                {profileData.unifiedCastingDirectorProfile.industry_areas.length > 3 && (
+                  <span className="text-xs opacity-60">+{profileData.unifiedCastingDirectorProfile.industry_areas.length - 3} more</span>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2 max-w-md mx-auto md:mx-0">
               <div className="flex justify-between text-sm font-medium">
@@ -440,14 +440,14 @@ export default function DirectorProfile() {
         ))}
 
         <TabsContent value="summary" className="mt-6 space-y-6">
-          <ProfileSummaryView 
-            fields={UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC} 
-            values={{...profileData, ...(profileData?.unifiedCastingDirectorProfile || {})}} 
-            title="Casting Director Profile Summary" 
+          <ProfileSummaryView
+            fields={UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC}
+            values={{ ...profileData, ...(profileData?.unifiedCastingDirectorProfile || {}) }}
+            title="Casting Director Profile Summary"
           />
           <div className="flex justify-end pt-4">
-            <Button 
-              onClick={() => handleSave(false)} 
+            <Button
+              onClick={() => handleSave(false)}
               disabled={isSaving}
               className="bg-[#009698] hover:bg-[#009698]/90 text-white font-bold px-8 py-6 rounded-2xl shadow-lg"
             >

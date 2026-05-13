@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { authAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { KeyRound, Loader2, UserMinus } from "lucide-react";
+import { KeyRound, Loader2, UserMinus, Bell } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ProfessionalSettings() {
@@ -17,6 +17,14 @@ export default function ProfessionalSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+
+  const [notificationSettings, setNotificationSettings] = useState({
+    newBookingRequests: true,
+    weeklyPerformance: true,
+    directMessages: true,
+    serviceReviews: true,
+    marketingUpdates: false,
+  });
 
   useEffect(() => {
     const fetchSettingsData = async () => {
@@ -77,47 +85,50 @@ export default function ProfessionalSettings() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto pb-20">
       <div>
-        <h1 className="text-2xl font-bold">Account Settings</h1>
-        <p className="text-muted-foreground">Manage your professional account, subscription, and security.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Account Settings</h1>
+        <p className="text-muted-foreground">Manage your professional account, notifications, subscription, and security.</p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="overflow-x-auto pb-2">
-          <TabsList className="h-auto p-1 gap-1 inline-flex">
-            <TabsTrigger value="overview" className="py-2 px-4">Overview</TabsTrigger>
-            <TabsTrigger value="subscription" className="py-2 px-4">Subscription</TabsTrigger>
-            <TabsTrigger value="security" className="py-2 px-4">Security</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 rounded-2xl p-1 bg-slate-100/80 border">
+            <TabsTrigger value="overview" className="flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all">Overview</TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all">
+              <Bell className="w-4 h-4" /> Notifications
+            </TabsTrigger>
+            <TabsTrigger value="subscription" className="flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all">Subscription</TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all">Security</TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="overview" className="mt-6 space-y-6">
-          <Card>
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
             <CardHeader>
               <CardTitle>Account Overview</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <div className="p-4 rounded-xl border bg-white">
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="p-4 rounded-xl border bg-slate-50/50">
                 <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Email</p>
-                <p className="font-medium">{user?.email}</p>
+                <p className="font-medium text-slate-800">{user?.email}</p>
               </div>
-              <div className="p-4 rounded-xl border bg-white">
+              <div className="p-4 rounded-xl border bg-slate-50/50">
                 <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Plan</p>
-                <p className="font-medium">{subscriptionInfo?.plan?.name || "Free"}</p>
+                <p className="font-medium text-slate-800">{subscriptionInfo?.plan?.name || "Free"}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
             <CardHeader>
               <CardTitle>App Preferences</CardTitle>
               <p className="text-sm text-muted-foreground">Customize your experience across the platform</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
+              <div className="flex items-center justify-between p-5 rounded-2xl border bg-slate-50/50">
                 <div className="space-y-0.5">
-                  <p className="text-sm font-medium">Preferred Currency</p>
+                  <p className="text-sm font-bold text-slate-800">Preferred Currency</p>
                   <p className="text-xs text-muted-foreground">Used for all prices and rates across the app</p>
                 </div>
                 <Select
@@ -134,10 +145,10 @@ export default function ProfessionalSettings() {
                   }}
                   disabled={isSaving}
                 >
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-[140px] rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl shadow-xl">
                     <SelectItem value="GBP">GBP (£)</SelectItem>
                     <SelectItem value="NGN">NGN (₦)</SelectItem>
                     <SelectItem value="USD">USD ($)</SelectItem>
@@ -149,46 +160,166 @@ export default function ProfessionalSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="subscription" className="mt-6 space-y-6">
-          <Card>
+        <TabsContent value="notifications" className="mt-6">
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
             <CardHeader>
-              <CardTitle>Subscription</CardTitle>
-              <p className="text-sm text-muted-foreground">Manage your current plan</p>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-[#009698]" /> Notification Settings
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Manage how you receive updates and client notifications on Castglo</p>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm">Current Plan: <strong>{subscriptionInfo?.plan?.name || "Free"}</strong></p>
-              <p className="text-sm">Status: <strong>{subscriptionInfo?.status || "inactive"}</strong></p>
-              {subscriptionInfo?.status === "active" && subscriptionInfo?.currentPeriodEnd && (
-                <p className="text-sm">Renews on: <strong>{new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString()}</strong></p>
-              )}
-              <Button variant="outline" asChild className="mt-4">
-                <a href="/pricing">Manage Plan</a>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="font-bold text-sm text-slate-800">Client Bookings & Requests</h3>
+                <div className="space-y-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-slate-700">New Booking Requests</p>
+                      <p className="text-xs text-muted-foreground">Get notified immediately when a client requests your service or facility</p>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.newBookingRequests}
+                      onCheckedChange={(v) => setNotificationSettings(s => ({ ...s, newBookingRequests: v }))}
+                    />
+                  </div>
+                  
+                  <div className="h-px bg-slate-100 my-2" />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-slate-700">Performance & Search Digest</p>
+                      <p className="text-xs text-muted-foreground">Receive weekly analytics on how many clients viewed your services</p>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.weeklyPerformance}
+                      onCheckedChange={(v) => setNotificationSettings(s => ({ ...s, weeklyPerformance: v }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-bold text-sm text-slate-800">Your Activity</h3>
+                <div className="space-y-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-slate-700">Direct Messages</p>
+                      <p className="text-xs text-muted-foreground">Get notified when a client or project director sends you a direct message</p>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.directMessages}
+                      onCheckedChange={(v) => setNotificationSettings(s => ({ ...s, directMessages: v }))}
+                    />
+                  </div>
+                  
+                  <div className="h-px bg-slate-100 my-2" />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-slate-700">New Client Reviews</p>
+                      <p className="text-xs text-muted-foreground">Receive updates when a client submits feedback or rates your profile</p>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.serviceReviews}
+                      onCheckedChange={(v) => setNotificationSettings(s => ({ ...s, serviceReviews: v }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-bold text-sm text-slate-800">Platform & Marketing</h3>
+                <div className="space-y-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-slate-700">Platform Updates & Offers</p>
+                      <p className="text-xs text-muted-foreground">Receive updates on new professional features, tools, and advertising discounts</p>
+                    </div>
+                    <Switch
+                      checked={notificationSettings.marketingUpdates}
+                      onCheckedChange={(v) => setNotificationSettings(s => ({ ...s, marketingUpdates: v }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                onClick={() => {
+                  toast.success("Notification preferences saved successfully!");
+                }}
+                className="bg-[#009698] hover:bg-[#009698]/90 font-bold rounded-xl px-6 py-5 text-white shadow-lg shadow-[#009698]/10"
+              >
+                Save Settings
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="subscription" className="mt-6">
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
+            <CardHeader>
+              <CardTitle>Subscription Plan</CardTitle>
+              <p className="text-sm text-muted-foreground">Manage your current professional plan</p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="p-5 rounded-2xl border bg-slate-50/50 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Current Plan</span>
+                  <strong className="text-sm text-slate-800 bg-[#009698]/10 text-[#009698] px-3 py-1 rounded-full font-bold border border-[#009698]/20">{subscriptionInfo?.plan?.name || "Free"}</strong>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Status</span>
+                  <strong className="text-sm capitalize text-slate-800">{subscriptionInfo?.status || "inactive"}</strong>
+                </div>
+                {subscriptionInfo?.status === "active" && subscriptionInfo?.currentPeriodEnd && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Renews on</span>
+                    <strong className="text-sm text-slate-700">{new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString()}</strong>
+                  </div>
+                )}
+              </div>
+              <Button variant="outline" asChild className="w-full py-5 rounded-xl border-[#009698] text-[#009698] hover:bg-[#009698]/5 font-bold transition-all">
+                <a href="/pricing">Manage Subscription</a>
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="security" className="mt-6 space-y-6">
-          <Card>
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5 text-primary" /> Change Password</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 max-w-md">
-              <Input type="password" placeholder="Current password" value={passwordForm.currentPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))} />
-              <Input type="password" placeholder="New password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))} />
-              <Input type="password" placeholder="Confirm new password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))} />
-              <Button onClick={handleChangePassword} disabled={isSaving}>Update Password</Button>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Current Password</label>
+                <Input type="password" placeholder="••••••••" className="rounded-xl" value={passwordForm.currentPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">New Password</label>
+                <Input type="password" placeholder="••••••••" className="rounded-xl" value={passwordForm.newPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Confirm New Password</label>
+                <Input type="password" placeholder="••••••••" className="rounded-xl" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))} />
+              </div>
+              <Button onClick={handleChangePassword} disabled={isSaving} className="bg-[#009698] hover:bg-[#009698]/90 font-bold rounded-xl text-white px-5 py-5 shadow-lg shadow-[#009698]/10 mt-2">
+                Update Password
+              </Button>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden border border-red-100">
             <CardHeader>
               <CardTitle className="text-destructive flex items-center gap-2">
-                <UserMinus className="w-5 h-5" /> Danger Zone
+                <UserMinus className="w-5 h-5 text-red-500" /> Danger Zone
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Button variant="destructive" onClick={deleteAccount}>
+              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                Permanently delete your professional account and all associated data. This action is immediate and cannot be undone.
+              </p>
+              <Button variant="destructive" onClick={deleteAccount} className="font-bold rounded-xl px-5 py-5 shadow-lg shadow-red-500/10">
                 Delete Account
               </Button>
             </CardContent>

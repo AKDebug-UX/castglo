@@ -140,7 +140,7 @@ export default function MatchedTalent() {
       try {
         const [listingsRes, profilesRes] = await Promise.all([
           castingCallAPI.getMyListings(),
-          profileAPI.search({ limit: 100 }).catch(() => null),
+          profileAPI.search({ limit: 100, userRole: "talent" }).catch(() => null),
         ]);
         const myProjects: Project[] = listingsRes.data?.success
           ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.castingCalls || [])
@@ -150,7 +150,10 @@ export default function MatchedTalent() {
         const talents: TalentProfile[] = profilesRes?.data?.success
           ? (Array.isArray(profilesRes.data.data) ? profilesRes.data.data : profilesRes.data.data?.profiles || [])
           : [];
-        setAllTalents(talents);
+        
+        // Filter strictly to 'talent' (btalent) profiles
+        const onlyBtalents = talents.filter((t: any) => t.userRole === "talent");
+        setAllTalents(onlyBtalents);
       } catch {
         toast.error("Failed to load talent data.");
       } finally {
