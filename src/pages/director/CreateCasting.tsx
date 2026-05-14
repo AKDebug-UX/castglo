@@ -47,7 +47,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ArrowLeft, ChevronRight, HelpCircle, Rocket, X, Loader2, Trash2, Plus, Video, Image as ImageIcon, Zap, Star, FastForward, Upload } from "lucide-react";
-import { castingCallAPI } from "@/lib/api";
+import { castingCallAPI, profileAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -311,7 +311,7 @@ export default function CreateCasting() {
       // Assemble payload matching current backend needs but including our new data where possible
       // Existing backend expects 'title', 'requirements' array, so we try to format gracefully.
       const firstRole = formData.roles[0];
-      const payload = {
+      let payload = {
         ...formData,
         title: firstRole ? firstRole.title : formData.projectName, // Fallback for backwards compatibility
         requirements: firstRole ? firstRole.requirements.split('\n') : [],
@@ -319,35 +319,40 @@ export default function CreateCasting() {
         status: statusOverride || formData.status,
       };
 
-      let response;
-      let requestPayload: any = payload;
-
       if (imageFile) {
-        const formDataPayload = new FormData();
-        // Append the file under expected keys to support different backend conventions (image/poster/file)
-        formDataPayload.append("image", imageFile);
-        formDataPayload.append("poster", imageFile);
-        formDataPayload.append("file", imageFile);
+        try {
+          const uploadFormData = new FormData();
+          // To be maximally robust across all upload endpoints, append under multiple common field names
+          uploadFormData.append("headshot", imageFile);
+          uploadFormData.append("showreel", imageFile);
+          uploadFormData.append("file", imageFile);
+          uploadFormData.append("image", imageFile);
 
-        // Append all other fields
-        Object.entries(payload).forEach(([key, value]) => {
-          if (key === "image") return; // Skip base64 preview string
-          
-          if (Array.isArray(value)) {
-            formDataPayload.append(key, JSON.stringify(value));
-          } else if (typeof value === "object" && value !== null) {
-            formDataPayload.append(key, JSON.stringify(value));
-          } else if (value !== undefined && value !== null) {
-            formDataPayload.append(key, String(value));
+          // Try uploading via addHeadshot first, fallback to uploadShowreel if needed
+          let uploadRes;
+          try {
+            uploadRes = await profileAPI.addHeadshot(uploadFormData);
+          } catch (headshotErr) {
+            uploadRes = await profileAPI.uploadShowreel(uploadFormData);
           }
-        });
-        requestPayload = formDataPayload;
+
+          const imageUrl = uploadRes.data?.data?.url || uploadRes.data?.data?.imageUrl || uploadRes.data?.data?.image || uploadRes.data?.data?.headshotUrl || uploadRes.data?.data?.headshot || uploadRes.data?.data?.showreelUrl || uploadRes.data?.data?.showreel;
+
+          if (imageUrl) {
+            payload.image = imageUrl;
+            payload.media = [imageUrl];
+          }
+        } catch (uploadErr: any) {
+          console.error("Image upload failed:", uploadErr);
+          toast.error(uploadErr.response?.data?.message || "Failed to upload project image. Proceeding with submission...");
+        }
       }
 
+      let response;
       if (isEditMode) {
-        response = await castingCallAPI.update(id, requestPayload);
+        response = await castingCallAPI.update(id as string, payload);
       } else {
-        response = await castingCallAPI.create(requestPayload);
+        response = await castingCallAPI.create(payload);
       }
 
       if (response.data.success) {
