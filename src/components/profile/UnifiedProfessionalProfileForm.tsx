@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { detectCountry } from "@/lib/locationUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Save, Wand2 } from "lucide-react";
@@ -21,6 +21,7 @@ import {
 import { getProfessionalReferenceOptions } from "@/lib/unifiedProfessionalProfile/referenceTables";
 import { MultiSelectChecklist } from "./fields/MultiSelectChecklist";
 import { CombinedCurrencyRateInput } from "./fields/CombinedCurrencyRateInput";
+import { PortfolioMediaGallery } from "./fields/PortfolioMediaGallery";
 
 type FormTab = "general" | "professional" | "business" | "media";
 
@@ -31,6 +32,14 @@ interface UnifiedProfessionalProfileFormProps {
   isSaving?: boolean;
   activeTab?: FormTab;
   showTabs?: boolean;
+  pendingPortfolioPhotos?: { file: File; preview: string; caption?: string }[];
+  setPendingPortfolioPhotos?: React.Dispatch<React.SetStateAction<{ file: File; preview: string; caption?: string }[]>>;
+  removePendingPortfolioPhoto?: (index: number) => void;
+  handlePortfolioSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  pendingPortfolioVideos?: { file: File; preview: string; name: string; caption?: string }[];
+  setPendingPortfolioVideos?: React.Dispatch<React.SetStateAction<{ file: File; preview: string; name: string; caption?: string }[]>>;
+  removePendingPortfolioVideo?: (index: number) => void;
+  handlePortfolioVideoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const sectionOrder = [
@@ -50,7 +59,15 @@ export function UnifiedProfessionalProfileForm({
   onSave,
   isSaving = false,
   activeTab,
-  showTabs = false,
+  showTabs = true,
+  pendingPortfolioPhotos,
+  setPendingPortfolioPhotos,
+  removePendingPortfolioPhoto,
+  handlePortfolioSelect,
+  pendingPortfolioVideos,
+  setPendingPortfolioVideos,
+  removePendingPortfolioVideo,
+  handlePortfolioVideoSelect,
 }: UnifiedProfessionalProfileFormProps) {
   const { user } = useAuth();
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -106,15 +123,39 @@ export function UnifiedProfessionalProfileForm({
       grouped[field.section].push(field);
     }
 
+    const primaryType = values.primary_professional_type;
+    const dynamicSectionOrder = [...sectionOrder];
+    
+    // Prioritize primary professional type's specialized section
+    if (primaryType) {
+      const typeToSection: Record<string, string> = {
+        "Photographer": "Photographer Profile",
+        "Makeup Artist": "Makeup Artist Profile",
+        "Acting Coach": "Acting Coach Profile",
+        "Video Editor": "Editor Profile",
+        "Showreel Editor": "Editor Profile",
+      };
+      
+      const primarySection = typeToSection[primaryType];
+      if (primarySection) {
+        const idx = dynamicSectionOrder.indexOf(primarySection);
+        if (idx > -1) {
+          // Move primary section to right after "Professional Identity" (which is at index 0)
+          dynamicSectionOrder.splice(idx, 1);
+          dynamicSectionOrder.splice(1, 0, primarySection);
+        }
+      }
+    }
+
     return Object.entries(grouped).sort(([a], [b]) => {
-      const ai = sectionOrder.indexOf(a);
-      const bi = sectionOrder.indexOf(b);
+      const ai = dynamicSectionOrder.indexOf(a);
+      const bi = dynamicSectionOrder.indexOf(b);
       if (ai === -1 && bi === -1) return a.localeCompare(b);
       if (ai === -1) return 1;
       if (bi === -1) return -1;
       return ai - bi;
     });
-  }, [visibleFields]);
+  }, [visibleFields, values.primary_professional_type]);
 
   const setFieldValue = (fieldId: string, value: any) => {
     onChange({
@@ -204,7 +245,7 @@ export function UnifiedProfessionalProfileForm({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex justify-end">
         <Button
           type="button"
@@ -217,12 +258,30 @@ export function UnifiedProfessionalProfileForm({
           Auto-fill Mock Data
         </Button>
       </div>
-      {showTabs && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Castglo Industry Professional Profile</CardTitle>
-            <p className="text-sm text-muted-foreground">All field groups are generated from the developer-ready field specification.</p>
-          </CardHeader>
+
+      {activeTab === "media" && (
+        <Card className="rounded-[2rem] border shadow-card overflow-hidden">
+          <CardContent className="p-8 md:p-12">
+            <PortfolioMediaGallery
+              profileData={rootData}
+              setProfileData={onChange}
+              pendingProfilePhoto={null}
+              setPendingProfilePhoto={() => {}}
+              pendingPortfolioPhotos={pendingPortfolioPhotos || []}
+              setPendingPortfolioPhotos={setPendingPortfolioPhotos}
+              removePendingPortfolioPhoto={removePendingPortfolioPhoto!}
+              handlePortfolioSelect={handlePortfolioSelect!}
+              pendingPortfolioVideos={pendingPortfolioVideos || []}
+              setPendingPortfolioVideos={setPendingPortfolioVideos}
+              removePendingPortfolioVideo={removePendingPortfolioVideo!}
+              handlePortfolioVideoSelect={handlePortfolioVideoSelect!}
+              pendingIntroVideo={null}
+              setPendingIntroVideo={() => {}}
+              handleIntroVideoSelect={() => {}}
+              handleSave={onSave || (() => {})}
+              isSaving={isSaving}
+            />
+          </CardContent>
         </Card>
       )}
 

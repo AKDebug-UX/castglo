@@ -26,7 +26,9 @@ export default function ProfessionalProfile() {
   const [activeSubTab, setActiveSubTab] = useState("general");
   const [profileData, setProfileData] = useState<any>(null);
   const [pendingProfilePhoto, setPendingProfilePhoto] = useState<{ file: File; preview: string } | null>(null);
-  const [pendingPortfolioPhotos, setPendingPortfolioPhotos] = useState<{ file: File; preview: string }[]>([]);
+  const [pendingPortfolioPhotos, setPendingPortfolioPhotos] = useState<{ file: File; preview: string; caption?: string }[]>([]);
+  const [pendingPortfolioVideos, setPendingPortfolioVideos] = useState<{ file: File; preview: string; name: string; caption?: string }[]>([]);
+  const [pendingIntroVideo, setPendingIntroVideo] = useState<File | null>(null);
 
 
   const completionPercentage = useMemo(() => {
@@ -228,7 +230,7 @@ export default function ProfessionalProfile() {
 
   const handlePortfolioSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const next = Array.from(e.target.files).map((file) => ({ file, preview: URL.createObjectURL(file) }));
+    const next = Array.from(e.target.files).map((file) => ({ file, preview: URL.createObjectURL(file), caption: "" }));
     setPendingPortfolioPhotos((prev) => [...prev, ...next]);
   };
 
@@ -239,6 +241,32 @@ export default function ProfessionalProfile() {
       copy.splice(index, 1);
       return copy;
     });
+  };
+
+  const handlePortfolioVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    const newVideos = files.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      name: file.name,
+      caption: "",
+    }));
+    setPendingPortfolioVideos((prev) => [...prev, ...newVideos]);
+  };
+
+  const removePendingPortfolioVideo = (index: number) => {
+    setPendingPortfolioVideos((prev) => {
+      const next = [...prev];
+      URL.revokeObjectURL(next[index].preview);
+      next.splice(index, 1);
+      return next;
+    });
+  };
+
+  const handleIntroVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0]) return;
+    setPendingIntroVideo(e.target.files[0]);
   };
 
   const handleSaveProfilePhoto = async (e?: React.MouseEvent) => {
@@ -309,11 +337,62 @@ export default function ProfessionalProfile() {
           pendingPortfolioPhotos.map((photo) => {
             const formData = new FormData();
             formData.append("portfolio", photo.file);
-            formData.append("title", "Portfolio Image");
+            formData.append("title", photo.caption || "Portfolio Image");
             return profileAPI.addPortfolio(formData);
           })
         );
         setPendingPortfolioPhotos([]);
+        // Re-fetch to get newly added portfolio items
+        const updatedProfileRes = await profileAPI.getMe();
+        if (updatedProfileRes.data?.success) {
+          profileData.professional.portfolioItems = updatedProfileRes.data.data.professionalProfile?.portfolioItems || [];
+        }
+      }
+
+      if (pendingPortfolioVideos.length > 0) {
+        try {
+          const uploadedUrls: any[] = [];
+          await Promise.all(
+            pendingPortfolioVideos.map(async (vid) => {
+              const formData = new FormData();
+              formData.append("showreel", vid.file);
+              const res = await profileAPI.uploadShowreel(formData);
+              const url = res.data?.data?.url || res.data?.data?.showreelUrl || res.data?.data?.showreel;
+              if (url) uploadedUrls.push({ url, caption: vid.caption || "" });
+            })
+          );
+          setPendingPortfolioVideos([]);
+          if (uploadedUrls.length > 0) {
+            // Update local state for subsequent payload
+            if (!profileData.professional) profileData.professional = {};
+            profileData.professional.portfolioVideos = [...(profileData?.professional?.portfolioVideos || []), ...uploadedUrls];
+          }
+        } catch (e: any) {
+          console.error("Portfolio video upload error:", e);
+          toast.error("Failed to upload one or more portfolio videos");
+        }
+      }
+
+      if (pendingIntroVideo) {
+        try {
+          const formData = new FormData();
+          formData.append("showreel", pendingIntroVideo);
+          const uploadRes = await profileAPI.uploadShowreel(formData);
+          const url = uploadRes.data?.data?.url || uploadRes.data?.data?.showreelUrl || uploadRes.data?.data?.showreel;
+          if (url) {
+            unifiedPayload.intro_video = url;
+            setProfileData((prev: any) => ({
+              ...prev,
+              unifiedProfessionalProfile: { ...(prev?.unifiedProfessionalProfile || {}), intro_video: url },
+            }));
+          }
+          setPendingIntroVideo(null);
+        } catch (e: any) {
+          console.error("Video upload error:", e);
+          toast.error(e?.response?.data?.message || "Failed to upload introduction video");
+          setIsSaving(false);
+          return;
+        }
       }
 
       // 1. Update Specialized Professional Information FIRST
@@ -576,68 +655,51 @@ export default function ProfessionalProfile() {
         </div>
 
         <TabsContent value="general" className="mt-4">
-          <UnifiedProfessionalProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab="general" />
+          <UnifiedProfessionalProfileForm 
+            rootData={profileData} 
+            onChange={setProfileData} 
+            onSave={handleSave} 
+            isSaving={isSaving} 
+            activeTab="general" 
+          />
         </TabsContent>
 
         <TabsContent value="professional" className="mt-4">
-          <UnifiedProfessionalProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab="professional" />
+          <UnifiedProfessionalProfileForm 
+            rootData={profileData} 
+            onChange={setProfileData} 
+            onSave={handleSave} 
+            isSaving={isSaving} 
+            activeTab="professional" 
+          />
         </TabsContent>
 
         <TabsContent value="business" className="mt-4 space-y-6">
-          <UnifiedProfessionalProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab="business" />
+          <UnifiedProfessionalProfileForm 
+            rootData={profileData} 
+            onChange={setProfileData} 
+            onSave={handleSave} 
+            isSaving={isSaving} 
+            activeTab="business" 
+          />
         </TabsContent>
 
         <TabsContent value="media" className="mt-4 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Portfolio Gallery</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {(profileData?.headshots || []).map((shot: any) => (
-                  <div key={shot._id} className="relative aspect-square rounded-xl overflow-hidden border group bg-muted/30">
-                    <img src={shot.url} alt="portfolio" className="w-full h-full object-cover" />
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={async () => {
-                        try {
-                          await profileAPI.deleteHeadshot(shot._id);
-                          setProfileData((prev: any) => ({ ...prev, headshots: (prev.headshots || []).filter((s: any) => s._id !== shot._id) }));
-                          toast.success("Image removed");
-                        } catch {
-                          toast.error("Delete failed");
-                        }
-                      }}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                ))}
-
-                {pendingPortfolioPhotos.map((photo, index) => (
-                  <div key={`${photo.file.name}-${index}`} className="relative aspect-square rounded-xl overflow-hidden border border-primary/30 group">
-                    <img src={photo.preview} alt="pending" className="w-full h-full object-cover opacity-80" />
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                      <Badge className="bg-primary hover:bg-primary">Pending</Badge>
-                    </div>
-                    <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => removePendingPortfolioPhoto(index)}>
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
-                ))}
-
-                <label className="aspect-square rounded-xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors">
-                  <Upload className="w-5 h-5 text-muted-foreground mb-1" />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Add Media</span>
-                  <input type="file" multiple className="hidden" accept="image/*" onChange={handlePortfolioSelect} />
-                </label>
-              </div>
-            </CardContent>
-          </Card>
-
-          <UnifiedProfessionalProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab="media" />
+          <UnifiedProfessionalProfileForm
+            rootData={profileData}
+            onChange={setProfileData}
+            onSave={handleSave}
+            isSaving={isSaving}
+            activeTab="media"
+            pendingPortfolioPhotos={pendingPortfolioPhotos}
+            setPendingPortfolioPhotos={setPendingPortfolioPhotos}
+            removePendingPortfolioPhoto={removePendingPortfolioPhoto}
+            handlePortfolioSelect={handlePortfolioSelect}
+            pendingPortfolioVideos={pendingPortfolioVideos}
+            setPendingPortfolioVideos={setPendingPortfolioVideos}
+            removePendingPortfolioVideo={removePendingPortfolioVideo}
+            handlePortfolioVideoSelect={handlePortfolioVideoSelect}
+          />
         </TabsContent>
 
         <TabsContent value="summary" className="mt-4 space-y-6">

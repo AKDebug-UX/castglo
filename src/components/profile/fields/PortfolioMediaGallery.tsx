@@ -19,14 +19,16 @@ import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export interface PortfolioMediaGalleryProps {
-  profileData: any;
+  profileData: never;
   setProfileData: any;
-  pendingProfilePhoto: any;
+  pendingProfilePhoto: never;
   setPendingProfilePhoto: any;
   pendingPortfolioPhotos: any[];
+  setPendingPortfolioPhotos?: React.Dispatch<React.SetStateAction<any[]>>;
   removePendingPortfolioPhoto: (index: number) => void;
   handlePortfolioSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  pendingPortfolioVideos: { file: File; preview: string; name: string }[];
+  pendingPortfolioVideos: any[];
+  setPendingPortfolioVideos?: React.Dispatch<React.SetStateAction<any[]>>;
   removePendingPortfolioVideo: (index: number) => void;
   handlePortfolioVideoSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   pendingIntroVideo: any;
@@ -42,9 +44,11 @@ export function PortfolioMediaGallery({
   pendingProfilePhoto,
   setPendingProfilePhoto,
   pendingPortfolioPhotos,
+  setPendingPortfolioPhotos,
   removePendingPortfolioPhoto,
   handlePortfolioSelect,
   pendingPortfolioVideos,
+  setPendingPortfolioVideos,
   removePendingPortfolioVideo,
   handlePortfolioVideoSelect,
   pendingIntroVideo,
@@ -141,35 +145,51 @@ export function PortfolioMediaGallery({
             </p>
           </div>
 
-          {/* Upload action buttons — shown at top for discoverability */}
-          {totalMedia < 10 && (
-            <div className="flex items-center gap-2">
-              <label className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#009698] text-[#009698] text-sm font-bold cursor-pointer hover:bg-[#009698]/5 transition-colors">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePortfolioSelect}
-                  disabled={isSaving}
-                />
-                <ImagePlus className="w-4 h-4" />
-                Add Photos
-              </label>
-              <label className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#009698] text-[#009698] text-sm font-bold cursor-pointer hover:bg-[#009698]/5 transition-colors">
-                <input
-                  type="file"
-                  multiple
-                  accept="video/*"
-                  className="hidden"
-                  onChange={handlePortfolioVideoSelect}
-                  disabled={isSaving}
-                />
-                <Film className="w-4 h-4" />
-                Add Videos
-              </label>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {(pendingPortfolioPhotos.length > 0 || pendingPortfolioVideos.length > 0) && (
+              <Button
+                onClick={() => handleSave(true)}
+                disabled={isSaving}
+                className="bg-[#009698] hover:bg-[#009698]/90 font-bold px-6 rounded-xl shadow-lg shadow-[#009698]/20 animate-in zoom-in-95 mr-2"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4 mr-2" />
+                )}
+                Upload Pending ({pendingPortfolioPhotos.length + pendingPortfolioVideos.length})
+              </Button>
+            )}
+
+            {totalMedia < 10 && (
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#009698] text-[#009698] text-sm font-bold cursor-pointer hover:bg-[#009698]/5 transition-colors">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePortfolioSelect}
+                    disabled={isSaving}
+                  />
+                  <ImagePlus className="w-4 h-4" />
+                  Add Photos
+                </label>
+                <label className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#009698] text-[#009698] text-sm font-bold cursor-pointer hover:bg-[#009698]/5 transition-colors">
+                  <input
+                    type="file"
+                    multiple
+                    accept="video/*"
+                    className="hidden"
+                    onChange={handlePortfolioVideoSelect}
+                    disabled={isSaving}
+                  />
+                  <Film className="w-4 h-4" />
+                  Add Videos
+                </label>
+              </div>
+            )}
+          </div>
         </div>
 
         {totalMedia === 0 ? (
@@ -212,7 +232,7 @@ export function PortfolioMediaGallery({
                             talent: {
                               ...(prev?.talent || {}),
                               headshots: (prev?.talent?.headshots || []).filter(
-                                (s: any) => s._id !== shot._id
+                                (s: never) => s._id !== shot._id
                               ),
                             },
                           }));
@@ -228,9 +248,9 @@ export function PortfolioMediaGallery({
                 </div>
                 <Input
                   type="text"
-                  placeholder="Photo title/caption..."
+                  placeholder="Image title (e.g. Commercial Headshot)"
                   value={shot.caption || ""}
-                  className="h-8 text-xs text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl"
+                  className="h-9 text-sm text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl bg-white shadow-sm"
                   onChange={(e) => {
                     const nextHeadshots = (profileData?.talent?.headshots || []).map((s: any) =>
                       s._id === shot._id ? { ...s, caption: e.target.value } : s
@@ -292,9 +312,9 @@ export function PortfolioMediaGallery({
                   </div>
                   <Input
                     type="text"
-                    placeholder="Video title/caption..."
+                    placeholder="Video title (e.g. Acting Showreel)"
                     value={videoCaption}
-                    className="h-8 text-xs text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl"
+                    className="h-9 text-sm text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl bg-white shadow-sm"
                     onChange={(e) => {
                       const nextVideos = (profileData?.talent?.portfolioVideos || []).map((v: any, idx: number) =>
                         idx === i
@@ -343,9 +363,9 @@ export function PortfolioMediaGallery({
                 {setPendingPortfolioPhotos && (
                   <Input
                     type="text"
-                    placeholder="Pending photo title..."
+                    placeholder="Enter image title..."
                     value={photo.caption || ""}
-                    className="h-8 text-xs text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl"
+                    className="h-9 text-sm text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl bg-white shadow-sm"
                     onChange={(e) => {
                       setPendingPortfolioPhotos((prev) =>
                         prev.map((item, idx) =>
@@ -393,9 +413,9 @@ export function PortfolioMediaGallery({
                 {setPendingPortfolioVideos && (
                   <Input
                     type="text"
-                    placeholder="Pending video title..."
+                    placeholder="Enter video title..."
                     value={vid.caption || ""}
-                    className="h-8 text-xs text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl"
+                    className="h-9 text-sm text-center border-gray-200 focus-visible:ring-[#009698] rounded-xl bg-white shadow-sm"
                     onChange={(e) => {
                       setPendingPortfolioVideos((prev) =>
                         prev.map((item, idx) =>
