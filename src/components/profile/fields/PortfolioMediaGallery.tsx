@@ -146,21 +146,6 @@ export function PortfolioMediaGallery({
           </div>
 
           <div className="flex items-center gap-2">
-            {(pendingPortfolioPhotos.length > 0 || pendingPortfolioVideos.length > 0) && (
-              <Button
-                onClick={() => handleSave(true)}
-                disabled={isSaving}
-                className="bg-[#009698] hover:bg-[#009698]/90 font-bold px-6 rounded-xl shadow-lg shadow-[#009698]/20 animate-in zoom-in-95 mr-2"
-              >
-                {isSaving ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Upload className="w-4 h-4 mr-2" />
-                )}
-                Upload Pending ({pendingPortfolioPhotos.length + pendingPortfolioVideos.length})
-              </Button>
-            )}
-
             {totalMedia < 10 && (
               <div className="flex items-center gap-2">
                 <label className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#009698] text-[#009698] text-sm font-bold cursor-pointer hover:bg-[#009698]/5 transition-colors">
@@ -468,6 +453,24 @@ export function PortfolioMediaGallery({
                 </span>
               </label>
             )}
+          </div>
+        )}
+
+        {/* Bottom Upload Action Button */}
+        {(pendingPortfolioPhotos.length > 0 || pendingPortfolioVideos.length > 0) && (
+          <div className="flex justify-center sm:justify-end pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <Button
+              onClick={() => handleSave(true)}
+              disabled={isSaving}
+              className="w-full sm:w-auto bg-[#009698] hover:bg-[#009698]/90 font-bold px-8 py-6 rounded-2xl shadow-xl shadow-[#009698]/20 flex items-center gap-3 text-lg"
+            >
+              {isSaving ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Upload className="w-5 h-5" />
+              )}
+              Upload {pendingPortfolioPhotos.length + pendingPortfolioVideos.length} Pending {pendingPortfolioPhotos.length + pendingPortfolioVideos.length === 1 ? 'Item' : 'Items'}
+            </Button>
           </div>
         )}
       </div>
