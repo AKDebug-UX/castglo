@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ShieldCheck, Upload, CreditCard, Bell, KeyRound, UserMinus, History } from "lucide-react";
+import { Loader2, ShieldCheck, Upload, CreditCard, Bell, KeyRound, UserMinus, History, Trash2, Download } from "lucide-react";
 import { authAPI, profileAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,7 +19,6 @@ type SettingsTab =
   | "subscriptions"
   | "payments"
   | "payment-history"
-  | "plans"
   | "notifications";
 
 export default function AccountSettings() {
@@ -39,6 +38,7 @@ export default function AccountSettings() {
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [subscriptionQuota, setSubscriptionQuota] = useState<any>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
 
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -64,12 +64,13 @@ export default function AccountSettings() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [authRes, profileRes, subRes, quotaRes, pmRes] = await Promise.all([
+        const [authRes, profileRes, subRes, quotaRes, pmRes, invRes] = await Promise.all([
           authAPI.getMe().catch(() => ({ data: { success: false } })),
           profileAPI.getMe().catch(() => ({ data: { success: false } })),
           subscriptionAPI.getStatus().catch(() => ({ data: { success: false } })),
           subscriptionAPI.getQuota().catch(() => ({ data: { success: false } })),
           subscriptionAPI.getPaymentMethods().catch(() => ({ data: { success: false } })),
+          subscriptionAPI.getInvoices().catch(() => ({ data: { success: false } })),
         ]);
 
         if (authRes.data?.success) {
@@ -91,6 +92,10 @@ export default function AccountSettings() {
 
         if (pmRes.data?.success) {
           setPaymentMethods(pmRes.data.data.paymentMethods || []);
+        }
+
+        if (invRes.data?.success) {
+          setInvoices(invRes.data.data.invoices || []);
         }
       } catch (e) {
         toast.error("Failed to load account settings");
@@ -152,7 +157,19 @@ export default function AccountSettings() {
     }
   };
 
-
+  const handleDeletePaymentMethod = async (id: string) => {
+    if (!confirm("Are you sure you want to remove this payment method?")) return;
+    setIsSaving(true);
+    try {
+      await subscriptionAPI.deletePaymentMethod(id);
+      toast.success("Payment method removed");
+      setPaymentMethods(prev => prev.filter(pm => pm.id !== id));
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to remove payment method");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -187,7 +204,6 @@ export default function AccountSettings() {
             <TabsTrigger value="subscriptions" className="py-2 px-4">Subscriptions</TabsTrigger>
             <TabsTrigger value="payments" className="py-2 px-4">Payment Settings</TabsTrigger>
             <TabsTrigger value="payment-history" className="py-2 px-4">Payment History</TabsTrigger>
-            <TabsTrigger value="plans" className="py-2 px-4">Plans</TabsTrigger>
             <TabsTrigger value="notifications" className="py-2 px-4">Notifications</TabsTrigger>
           </TabsList>
         </div>
@@ -430,26 +446,31 @@ export default function AccountSettings() {
               <p className="text-sm text-muted-foreground">Manage saved cards and billing</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              {paymentMethods.length > 0 ? (
-                <div className="grid gap-3">
-                  {paymentMethods.map((card, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-6 bg-slate-200 rounded flex items-center justify-center">
-                          <CreditCard className="w-5 h-5 text-slate-500" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">•••• •••• •••• {card.last4}</p>
-                          <p className="text-xs text-muted-foreground">Expires {card.expMonth}/{card.expYear}</p>
-                        </div>
+            {paymentMethods.length > 0 ? (
+              <div className="grid gap-3">
+                {paymentMethods.map((card, i) => (
+                  <div key={i} className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-6 bg-slate-200 rounded flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-slate-500" />
                       </div>
+                      <div>
+                        <p className="text-sm font-medium">{card.brand ? card.brand.toUpperCase() : "CARD"} •••• {card.last4}</p>
+                        <p className="text-xs text-muted-foreground">Expires {card.expMonth}/{card.expYear}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeletePaymentMethod(card.id)} disabled={isSaving}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                       <Button variant="outline" size="sm" asChild>
                         <a href="/pricing">Update</a>
                       </Button>
                     </div>
-                  ))}
-                </div>
-              ) : (
+                  </div>
+                ))}
+              </div>
+            ) : (
                 <div className="p-8 border-2 border-dashed rounded-xl text-center">
                   <CreditCard className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
                   <p className="text-sm text-muted-foreground mb-4">No payment cards added yet</p>
@@ -471,26 +492,49 @@ export default function AccountSettings() {
               </CardTitle>
               <p className="text-sm text-muted-foreground">Receipts and invoice history</p>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground text-center py-8">
-              Payment history will appear here once Stripe invoices are enabled.
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="plans" className="mt-6 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Plans</CardTitle>
-              <p className="text-sm text-muted-foreground">Compare plans and upgrade</p>
-            </CardHeader>
-            <CardContent className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold">Current Plan</p>
-                <p className="text-sm text-muted-foreground">{subscriptionInfo?.plan?.name || "Free Plan"}</p>
-              </div>
-              <Button asChild>
-                <a href="/pricing">View Plans</a>
-              </Button>
+            <CardContent>
+              {invoices.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-muted-foreground uppercase bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Date</th>
+                        <th className="px-4 py-3 font-medium">Description</th>
+                        <th className="px-4 py-3 font-medium">Amount</th>
+                        <th className="px-4 py-3 font-medium">Status</th>
+                        <th className="px-4 py-3 font-medium text-right">Receipt</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {invoices.map((inv, i) => (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3">{new Date(inv.date * 1000).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 font-medium">{inv.description || "Subscription"}</td>
+                          <td className="px-4 py-3">{formatPrice(inv.amount / 100)}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant={inv.status === "paid" ? "default" : "outline"} className={inv.status === "paid" ? "bg-emerald-500" : ""}>
+                              {inv.status}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {inv.receiptUrl && (
+                              <Button variant="ghost" size="sm" asChild>
+                                <a href={inv.receiptUrl} target="_blank" rel="noreferrer">
+                                  <Download className="w-4 h-4" />
+                                </a>
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground text-center py-8">
+                  No payment history found.
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

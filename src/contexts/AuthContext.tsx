@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { authAPI } from "@/lib/api";
+import { authAPI, userAPI } from "@/lib/api";
 
 export type UserRole = "talent" | "casting_director" | "industry_professional" | "admin";
 
@@ -52,14 +52,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
               fullName: userData.fullName,
               profilePicture: userData.profilePicture,
-            isEmailVerified: userData.emailVerified || userData.isEmailVerified,
-            isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified),
-            preferredCurrency: userData.preferredCurrency || "GBP",
-          };
-          setUser(userObj);
-          localStorage.setItem('userData', JSON.stringify(userObj));
-        }
-      } catch (error) {
+              isEmailVerified: userData.emailVerified || userData.isEmailVerified,
+              isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified),
+              preferredCurrency: userData.preferredCurrency || "GBP",
+            };
+            setUser(userObj);
+            localStorage.setItem('userData', JSON.stringify(userObj));
+          }
+        } catch (error) {
         console.error("Session verification failed:", error);
         localStorage.removeItem('token');
         localStorage.removeItem('userData');
@@ -223,7 +223,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
           return { error: e?.response?.data?.message || "An error occurred" };
         }
       },
-      formatPrice: (amount: number | string) => {
+      formatPrice: (amount: number | string | null | undefined) => {
         const currency = user?.preferredCurrency || "GBP";
         const symbolMap: Record<string, string> = {
           "GBP": "£",
@@ -232,6 +232,8 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
           "EUR": "€"
         };
         const symbol = symbolMap[currency] || symbolMap["GBP"];
+        
+        if (amount === null || amount === undefined) return `${symbol}0`;
         
         const numericAmount = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.]/g, '')) : amount;
         if (isNaN(numericAmount)) return amount.toString();

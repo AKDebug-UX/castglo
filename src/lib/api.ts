@@ -120,6 +120,9 @@ export const API_ENDPOINTS = {
     PLANS: '/subscriptions/plans',
     QUOTA: '/subscriptions/quota',
     PAYMENT_METHODS: '/subscriptions/payment-methods',
+    INVOICES: '/subscriptions/payment-methods',
+    CREATE_PORTAL_SESSION: '/subscriptions/customer-portal',
+    DELETE_PAYMENT_METHOD: (id: string) => `/subscriptions/payment-methods/${id}`,
   },
   USERS: {
     UPDATE_PROFILE: '/user/profile',
@@ -308,6 +311,9 @@ export const subscriptionAPI = {
   getStatus: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.STATUS),
   getQuota: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.QUOTA),
   getPaymentMethods: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.PAYMENT_METHODS),
+  getInvoices: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.INVOICES),
+  createPortalSession: () => api.post(API_ENDPOINTS.SUBSCRIPTIONS.CREATE_PORTAL_SESSION),
+  deletePaymentMethod: (id: string) => api.delete(API_ENDPOINTS.SUBSCRIPTIONS.DELETE_PAYMENT_METHOD(id)),
 };
 
 // --- ADMIN ENDPOINTS ---

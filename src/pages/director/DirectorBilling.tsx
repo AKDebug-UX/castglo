@@ -11,20 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { subscriptionAPI } from "@/lib/api";
-
-interface Transaction {
-  id: string;
-  date: string;
-  item: string;
-  amount: string;
-  status: "paid" | "pending";
-}
-
-const HISTORY: Transaction[] = [
-  { id: "TX-9021", date: "Mar 15, 2026", item: "Featured Project: 'Neon Nights'", amount: "$29.00", status: "paid" },
-  { id: "TX-8842", date: "Feb 01, 2026", item: "Director Pro - Monthly", amount: "$49.00", status: "paid" },
-  { id: "TX-8501", date: "Jan 01, 2026", item: "Director Pro - Monthly", amount: "$49.00", status: "paid" },
-];
+import { useAuth } from "@/contexts/AuthContext";
 
 const PLAN_DETAILS: Record<string, { name: string; price: string; cycle: string; features: string[] }> = {
   free: {
@@ -90,23 +77,34 @@ const PLAN_DETAILS: Record<string, { name: string; price: string; cycle: string;
 
 export default function DirectorBilling() {
   const navigate = useNavigate();
+  const { formatPrice } = useAuth();
   const [subStatus, setSubStatus] = useState<any>(null);
   const [isLoadingSub, setIsLoadingSub] = useState(true);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const fetchSubStatus = async () => {
+    const fetchBillingData = async () => {
       try {
-        const response = await subscriptionAPI.getStatus();
-        if (response.data.success && response.data.data) {
-          setSubStatus(response.data.data);
+        const [subRes, invRes] = await Promise.all([
+          subscriptionAPI.getStatus().catch(() => ({ data: { success: false } })),
+          subscriptionAPI.getInvoices().catch(() => ({ data: { success: false } })),
+        ]);
+
+        if (subRes.data?.success && subRes.data?.data) {
+          setSubStatus(subRes.data.data);
+        }
+
+        if (invRes.data?.success) {
+          setInvoices(invRes.data.data.invoices || []);
         }
       } catch (error) {
-        console.error("Failed to load subscription status:", error);
+        console.error("Failed to load billing data:", error);
       } finally {
         setIsLoadingSub(false);
       }
     };
-    fetchSubStatus();
+    fetchBillingData();
   }, []);
 
   const handleManageSubscription = () => {
@@ -263,23 +261,35 @@ export default function DirectorBilling() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {HISTORY.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-medium">{tx.date}</td>
-                    <td className="px-6 py-4">{tx.item}</td>
-                    <td className="px-6 py-4">
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-semibold text-xs rounded-full">
-                         {tx.status}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 font-bold text-slate-900">{tx.amount}</td>
-                    <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
-                        <Download className="w-4 h-4" />
-                      </Button>
+                {invoices.length > 0 ? (
+                  invoices.map((tx, i) => (
+                    <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4 font-medium">{new Date(tx.date * 1000).toLocaleDateString()}</td>
+                      <td className="px-6 py-4">{tx.description || "Subscription"}</td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className={tx.status === "paid" ? "bg-green-50 text-green-700 border-green-200 font-semibold text-xs rounded-full" : "bg-yellow-50 text-yellow-700 border-yellow-200 font-semibold text-xs rounded-full"}>
+                           {tx.status}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-900">{formatPrice(tx.amount / 100)}</td>
+                      <td className="px-6 py-4 text-right">
+                        {tx.receiptUrl && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg" asChild>
+                            <a href={tx.receiptUrl} target="_blank" rel="noreferrer">
+                              <Download className="w-4 h-4" />
+                            </a>
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                      No transaction history found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

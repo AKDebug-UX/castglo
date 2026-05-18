@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { authAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { KeyRound, Loader2, UserMinus, Bell } from "lucide-react";
+import { KeyRound, Loader2, UserMinus, Bell, CreditCard, History, Download, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -16,6 +16,8 @@ export default function ProfessionalSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -29,8 +31,15 @@ export default function ProfessionalSettings() {
   useEffect(() => {
     const fetchSettingsData = async () => {
       try {
-        const subRes = await subscriptionAPI.getStatus().catch(() => ({ data: { success: false } }));
+        const [subRes, pmRes, invRes] = await Promise.all([
+          subscriptionAPI.getStatus().catch(() => ({ data: { success: false } })),
+          subscriptionAPI.getPaymentMethods().catch(() => ({ data: { success: false } })),
+          subscriptionAPI.getInvoices().catch(() => ({ data: { success: false } })),
+        ]);
+
         if (subRes.data?.success) setSubscriptionInfo(subRes.data.data);
+        if (pmRes.data?.success) setPaymentMethods(pmRes.data.data.paymentMethods || []);
+        if (invRes.data?.success) setInvoices(invRes.data.data.invoices || []);
       } catch (error) {
         console.error(error);
       } finally {
@@ -76,6 +85,20 @@ export default function ProfessionalSettings() {
     }
   };
 
+  const handleDeletePaymentMethod = async (id: string) => {
+    if (!confirm("Are you sure you want to remove this payment method?")) return;
+    setIsSaving(true);
+    try {
+      await subscriptionAPI.deletePaymentMethod(id);
+      toast.success("Payment method removed");
+      setPaymentMethods(prev => prev.filter(pm => pm.id !== id));
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to remove payment method");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
@@ -93,13 +116,13 @@ export default function ProfessionalSettings() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="overflow-x-auto pb-2">
-          <TabsList className="grid w-full grid-cols-4 rounded-2xl p-1 bg-slate-100/80 border">
-            <TabsTrigger value="overview" className="flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all">Overview</TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all">
-              <Bell className="w-4 h-4" /> Notifications
-            </TabsTrigger>
-            <TabsTrigger value="subscription" className="flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all">Subscription</TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all">Security</TabsTrigger>
+          <TabsList className="flex w-full min-w-[600px] rounded-2xl p-1 bg-slate-100/80 border">
+            <TabsTrigger value="overview" className="flex-1 rounded-xl text-sm font-semibold transition-all">Overview</TabsTrigger>
+            <TabsTrigger value="notifications" className="flex-1 rounded-xl text-sm font-semibold transition-all">Notifications</TabsTrigger>
+            <TabsTrigger value="subscription" className="flex-1 rounded-xl text-sm font-semibold transition-all">Subscription</TabsTrigger>
+            <TabsTrigger value="payments" className="flex-1 rounded-xl text-sm font-semibold transition-all">Payments</TabsTrigger>
+            <TabsTrigger value="history" className="flex-1 rounded-xl text-sm font-semibold transition-all">History</TabsTrigger>
+            <TabsTrigger value="security" className="flex-1 rounded-xl text-sm font-semibold transition-all">Security</TabsTrigger>
           </TabsList>
         </div>
 
@@ -281,6 +304,109 @@ export default function ProfessionalSettings() {
               <Button variant="outline" asChild className="w-full py-5 rounded-xl border-[#009698] text-[#009698] hover:bg-[#009698]/5 font-bold transition-all">
                 <a href="/pricing">Manage Subscription</a>
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payments" className="mt-6">
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-primary" />
+                Payment Methods
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Manage your saved cards and billing information</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {paymentMethods.length > 0 ? (
+                <div className="grid gap-3">
+                  {paymentMethods.map((card, i) => (
+                    <div key={i} className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-6 bg-slate-200 rounded flex items-center justify-center">
+                          <CreditCard className="w-5 h-5 text-slate-500" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{card.brand ? card.brand.toUpperCase() : "CARD"} •••• {card.last4}</p>
+                          <p className="text-xs text-muted-foreground">Expires {card.expMonth}/{card.expYear}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeletePaymentMethod(card.id)} disabled={isSaving}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <a href="/pricing">Update</a>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 border-2 border-dashed rounded-xl text-center">
+                  <CreditCard className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+                  <p className="text-sm text-muted-foreground mb-4">No payment cards added yet</p>
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="/pricing">Add Card</a>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-6">
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="w-5 h-5 text-primary" />
+                Payment History
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Your past receipts and invoices</p>
+            </CardHeader>
+            <CardContent>
+              {invoices.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-muted-foreground uppercase bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Date</th>
+                        <th className="px-4 py-3 font-medium">Description</th>
+                        <th className="px-4 py-3 font-medium">Amount</th>
+                        <th className="px-4 py-3 font-medium">Status</th>
+                        <th className="px-4 py-3 font-medium text-right">Receipt</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {invoices.map((inv, i) => (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3">{new Date(inv.date * 1000).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 font-medium">{inv.description || "Subscription"}</td>
+                          <td className="px-4 py-3">{formatPrice(inv.amount / 100)}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant={inv.status === "paid" ? "default" : "outline"} className={inv.status === "paid" ? "bg-emerald-500" : ""}>
+                              {inv.status}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {inv.receiptUrl && (
+                              <Button variant="ghost" size="sm" asChild>
+                                <a href={inv.receiptUrl} target="_blank" rel="noreferrer">
+                                  <Download className="w-4 h-4" />
+                                </a>
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground text-center py-8">
+                  No payment history found.
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

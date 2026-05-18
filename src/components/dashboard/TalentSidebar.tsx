@@ -43,7 +43,6 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
       { title: "Subscriptions", href: "/talent/account-settings?tab=subscriptions", Icon: BadgeCheck },
       { title: "Payment Settings", href: "/talent/account-settings?tab=payments", Icon: CreditCard },
       { title: "Payment History", href: "/talent/account-settings?tab=payment-history", Icon: CreditCard },
-      { title: "Plans", href: "/talent/account-settings?tab=plans", Icon: BadgeCheck },
       { title: "Notification Settings", href: "/talent/account-settings?tab=notifications", Icon: Bell },
     ],
     []
@@ -55,7 +54,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
         <Logo />
       </div>
       
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {mainNavItems.map((item) => {
           const isActive = location.pathname === item.href || 
             (item.href !== "/talent" && location.pathname.startsWith(item.href));
