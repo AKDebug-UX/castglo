@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Loader2, Save, User, Briefcase, Sparkles,
-  Camera, Eye, Layers, Share2, X, Ruler, ClipboardList, Wand2
+  Camera, Eye, Layers, Share2, X, Ruler, ClipboardList, Wand2,
+  ChevronDown, ChevronUp
 } from "lucide-react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { generateDummyProfileData } from "@/lib/profileAutofill";
 import { ProfileSummaryView } from "./ProfileSummaryView";
@@ -50,6 +52,20 @@ interface UnifiedTalentProfileFormProps {
   handleIntroVideoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
+
+const TALENT_TYPE_SECTIONS: Record<string, string[]> = {
+  "Actor / Performer": ["Actor Details", "Actor Profile"],
+  "Model": ["Model Details", "Model Measurements", "Model Preferences", "Model Profile"],
+  "Singer": ["Singer Details", "Singer Profile"],
+  "Dancer": ["Dancer Details", "Dancer Profile"],
+  "Voice Artist": ["Voice Artist Details", "Voice Artist Profile"],
+  "Presenter / Host": ["Presenter Details", "Presenter Profile"],
+  "Extra / Supporting Artist": ["Extra Details", "Extra Profile"],
+  "Musician": ["Musician Details", "Musician Profile"],
+  "Content Creator": ["Creator Details", "Creator Profile"],
+  "Comedian": ["Comedian Details", "Comedian Profile"],
+  "Stunt Performer": ["Stunt Details", "Stunt Profile"],
+};
 
 const sectionOrder = [
   "Basic Profile",
@@ -328,24 +344,8 @@ export function UnifiedTalentProfileForm({
   const [internalActiveTab, setInternalActiveTab] = useState("basic");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>("metric");
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const activeTab = externalActiveTab || internalActiveTab;
-
-  const handleAutoFill = () => {
-    const dummyData = generateDummyProfileData(UNIFIED_TALENT_PROFILE_FIELD_SPEC);
-    
-    // Auto-derive age group if DOB is present
-    if (dummyData.dateOfBirth) {
-      const derived = deriveAgeGroupFromDob(dummyData.dateOfBirth);
-      if (derived) {
-        dummyData.age_group = derived;
-      }
-    }
-
-    const nextUnified = { ...unified, ...dummyData };
-    const nextRoot = { ...rootData, ...dummyData, unifiedTalentProfile: nextUnified };
-    onChange(nextRoot);
-    toast.success("Full profile auto-filled with mock data across all sections");
-  };
 
   const unified = rootData?.unifiedTalentProfile || {};
   const values = { ...rootData, ...unified };
@@ -365,6 +365,46 @@ export function UnifiedTalentProfileForm({
     if (age <= 44) return "35-44";
     if (age <= 54) return "45-54";
     return "55+";
+  };
+
+  // Initialize expanded sections with primary talent type sections
+  useEffect(() => {
+    if (values.primary_talent_type && TALENT_TYPE_SECTIONS[values.primary_talent_type]) {
+      setExpandedSections(prev => {
+        const primarySections = TALENT_TYPE_SECTIONS[values.primary_talent_type as string];
+        // Only add if not already present
+        const toAdd = primarySections.filter(s => !prev.includes(s));
+        if (toAdd.length > 0) {
+          return [...prev, ...toAdd];
+        }
+        return prev;
+      });
+    }
+  }, [values.primary_talent_type]);
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => 
+      prev.includes(section) 
+        ? prev.filter(s => s !== section) 
+        : [...prev, section]
+    );
+  };
+
+  const handleAutoFill = () => {
+    const dummyData = generateDummyProfileData(UNIFIED_TALENT_PROFILE_FIELD_SPEC);
+    
+    // Auto-derive age group if DOB is present
+    if (dummyData.dateOfBirth) {
+      const derived = deriveAgeGroupFromDob(dummyData.dateOfBirth);
+      if (derived) {
+        dummyData.age_group = derived;
+      }
+    }
+
+    const nextUnified = { ...unified, ...dummyData };
+    const nextRoot = { ...rootData, ...dummyData, unifiedTalentProfile: nextUnified };
+    onChange(nextRoot);
+    toast.success("Full profile auto-filled with mock data across all sections");
   };
 
   useEffect(() => {
@@ -468,16 +508,60 @@ export function UnifiedTalentProfileForm({
     const result: Record<string, { section: string; fields: UnifiedFieldSpec[] }[]> = {};
 
     tabGroups.forEach(tab => {
-      result[tab.id] = tab.sections
-        .map(sectionName => ({
-          section: sectionName,
-          fields: bucket[sectionName] || []
-        }))
-        .filter(s => s.fields.length > 0);
+      let orderedSections: { section: string; fields: UnifiedFieldSpec[] }[] = [];
+
+      if (tab.id === "professional") {
+        const primaryType = values.primary_talent_type;
+        const additionalTypes = normalizeArray(values.additional_talent_types);
+
+        const otherSections = tab.sections.filter(s => s !== "Talent Type" && !Object.values(TALENT_TYPE_SECTIONS).flat().includes(s));
+        const talentTypeSections = tab.sections.filter(s => Object.values(TALENT_TYPE_SECTIONS).flat().includes(s));
+
+        orderedSections = [];
+
+        if (bucket["Talent Type"]?.length) {
+          orderedSections.push({ section: "Talent Type", fields: bucket["Talent Type"] });
+        }
+
+        const orderedTalentSections: string[] = [];
+        if (primaryType && TALENT_TYPE_SECTIONS[primaryType]) {
+          orderedTalentSections.push(...TALENT_TYPE_SECTIONS[primaryType]);
+        }
+        additionalTypes.forEach(t => {
+          if (TALENT_TYPE_SECTIONS[t]) {
+            TALENT_TYPE_SECTIONS[t].forEach(s => {
+              if (!orderedTalentSections.includes(s)) {
+                orderedTalentSections.push(s);
+              }
+            });
+          }
+        });
+
+        orderedTalentSections.forEach(sectionName => {
+          if (bucket[sectionName]?.length) {
+            orderedSections.push({ section: sectionName, fields: bucket[sectionName] });
+          }
+        });
+
+        otherSections.forEach(sectionName => {
+          if (bucket[sectionName]?.length) {
+            orderedSections.push({ section: sectionName, fields: bucket[sectionName] });
+          }
+        });
+
+        result[tab.id] = orderedSections;
+      } else {
+        result[tab.id] = tab.sections
+          .map(sectionName => ({
+            section: sectionName,
+            fields: bucket[sectionName] || []
+          }))
+          .filter(s => s.fields.length > 0);
+      }
     });
 
     return result;
-  }, [visibleFields, tabGroups]);
+  }, [visibleFields, tabGroups, values.primary_talent_type, values.additional_talent_types]);
 
   const setFieldValue = (fieldId: string, value: any) => {
     // Clear error for this field when changed
@@ -828,61 +912,90 @@ export function UnifiedTalentProfileForm({
           </div>
         )}
 
-        {sections.map(({ section, fields }) => (
-          <Card key={section} className="border-none shadow-none bg-transparent">
-            <CardHeader className="px-0 pb-4 border-b mb-6">
-              <CardTitle className="text-xl font-bold tracking-tight text-[#006b6d]">{section}</CardTitle>
-            </CardHeader>
-            <CardContent className="px-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                {fields.reduce((acc: JSX.Element[], field, idx, arr) => {
-                  // Skip if this field was already handled as part of a group (expected_rate_range follows currency)
-                  if (field.id === 'expected_rate_range' && arr[idx - 1]?.id === 'currency') return acc;
+        {sections.map(({ section, fields }) => {
+          const isCollapsible = Object.values(TALENT_TYPE_SECTIONS).flat().includes(section);
+          const isExpanded = expandedSections.includes(section);
 
-                  const isCurrencyGroup = field.id === 'currency' && arr[idx + 1]?.id === 'expected_rate_range';
-
-                  if (isCurrencyGroup) {
-                    acc.push(
-                      <div key="currency-rate-group" className="md:col-span-2 space-y-2">
-                        <div className="flex items-center gap-1">
-                          <label className="text-sm font-semibold text-foreground/70">Expected Rate / Fee Range</label>
-                          {(field.required || arr[idx + 1].required) && <span className="text-destructive font-bold">*</span>}
-                        </div>
-                        <CombinedCurrencyRateInput
-                          currencyValue={values.currency}
-                          rateValue={values.expected_rate_range}
-                          onCurrencyChange={(v) => setFieldValue('currency', v)}
-                          onRateChange={(v) => setFieldValue('expected_rate_range', v)}
-                          currencyOptions={getOptions(field)}
-                          rateOptions={getOptions(arr[idx + 1])}
-                          errors={errors}
-                        />
-                      </div>
-                    );
-                  } else {
-                    acc.push(
-                      <div
-                        key={field.id}
-                        id={`field-${field.id}`}
-                        data-testid={`field-${field.id}`}
-                        className={`space-y-2 ${field.type === 'credits-list' ? 'md:col-span-2' : ''}`}
+          return (
+            <Collapsible
+              key={section}
+              open={!isCollapsible || isExpanded}
+              onOpenChange={() => isCollapsible && toggleSection(section)}
+              className="w-full"
+            >
+              <Card className="border-none shadow-none bg-transparent">
+                <CardHeader className="px-0 pb-4 border-b mb-6 flex flex-row items-center justify-between space-y-0">
+                  <CardTitle className="text-xl font-bold tracking-tight text-[#006b6d]">{section}</CardTitle>
+                  {isCollapsible && (
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-[#006b6d] hover:bg-[#006b6d]/5 h-8 w-8 p-0"
                       >
-                        <div className="flex items-center gap-1">
-                          <label className="text-sm font-semibold text-foreground/70">{field.label}</label>
-                          {field.required && <span className="text-destructive font-bold">*</span>}
-                        </div>
-                        <div className="transition-all duration-200 focus-within:ring-2 focus-within:ring-[#009698]/20 focus-within:ring-offset-2 rounded-md">
-                          {renderField(field)}
-                        </div>
-                      </div>
-                    );
-                  }
-                  return acc;
-                }, [])}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                        {isExpanded ? (
+                          <ChevronUp className="h-5 w-5" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                  )}
+                </CardHeader>
+                <CollapsibleContent className="animate-in fade-in slide-in-from-top-1 duration-200">
+                  <CardContent className="px-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                      {fields.reduce((acc: JSX.Element[], field, idx, arr) => {
+                        // Skip if this field was already handled as part of a group (expected_rate_range follows currency)
+                        if (field.id === 'expected_rate_range' && arr[idx - 1]?.id === 'currency') return acc;
+
+                        const isCurrencyGroup = field.id === 'currency' && arr[idx + 1]?.id === 'expected_rate_range';
+
+                        if (isCurrencyGroup) {
+                          acc.push(
+                            <div key="currency-rate-group" className="md:col-span-2 space-y-2">
+                              <div className="flex items-center gap-1">
+                                <label className="text-sm font-semibold text-foreground/70">Expected Rate / Fee Range</label>
+                                {(field.required || arr[idx + 1].required) && <span className="text-destructive font-bold">*</span>}
+                              </div>
+                              <CombinedCurrencyRateInput
+                                currencyValue={values.currency}
+                                rateValue={values.expected_rate_range}
+                                onCurrencyChange={(v) => setFieldValue('currency', v)}
+                                onRateChange={(v) => setFieldValue('expected_rate_range', v)}
+                                currencyOptions={getOptions(field)}
+                                rateOptions={getOptions(arr[idx + 1])}
+                                errors={errors}
+                              />
+                            </div>
+                          );
+                        } else {
+                          acc.push(
+                            <div
+                              key={field.id}
+                              id={`field-${field.id}`}
+                              data-testid={`field-${field.id}`}
+                              className={`space-y-2 ${field.type === 'credits-list' ? 'md:col-span-2' : ''}`}
+                            >
+                              <div className="flex items-center gap-1">
+                                <label className="text-sm font-semibold text-foreground/70">{field.label}</label>
+                                {field.required && <span className="text-destructive font-bold">*</span>}
+                              </div>
+                              <div className="transition-all duration-200 focus-within:ring-2 focus-within:ring-[#009698]/20 focus-within:ring-offset-2 rounded-md">
+                                {renderField(field)}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return acc;
+                      }, [])}
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+          );
+        })}
 
         {onSave && (
           <div className="flex justify-end pt-8 border-t">
