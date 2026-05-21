@@ -382,6 +382,26 @@ export default function CreateCasting() {
           const response = await castingCallAPI.getOne(id as string);
           if (response.data.success) {
             const data = response.data.data;
+            
+            // Safely map roles to ensure all required array fields exist
+            const safeRoles = (data.roles || []).map((r: any) => ({
+              ...r,
+              id: r.id || r._id || Math.random().toString(),
+              role_name: r.role_name || r.title || "",
+              role_type: Array.isArray(r.role_type) ? r.role_type : (r.roleType ? [r.roleType] : []),
+              role_status: r.role_status || "Open",
+              character_role_summary: r.character_role_summary || r.description || "",
+              full_role_description: r.full_role_description || r.requirements || "",
+              gender: Array.isArray(r.gender) ? r.gender : (r.gender ? [r.gender] : []),
+              ethnicity: Array.isArray(r.ethnicity) ? r.ethnicity : (r.ethnicity ? [r.ethnicity] : []),
+              role_talent_types_needed: Array.isArray(r.role_talent_types_needed) ? r.role_talent_types_needed : [],
+              build_physical_type: Array.isArray(r.build_physical_type) ? r.build_physical_type : [],
+              languages_required: Array.isArray(r.languages_required) ? r.languages_required : [],
+              accents_required: Array.isArray(r.accents_required) ? r.accents_required : [],
+              skills_required: Array.isArray(r.skills_required) ? r.skills_required : [],
+              preferred_skills: Array.isArray(r.preferred_skills) ? r.preferred_skills : [],
+            }));
+
             setFormData(prev => ({
               ...prev,
               ...data,
@@ -390,6 +410,10 @@ export default function CreateCasting() {
               full_project_description: data.full_project_description || data.description || "",
               project_status: data.project_status || data.status || "Open for Applications",
               application_deadline: data.application_deadline || data.deadline || "",
+              genre: Array.isArray(data.genre) ? data.genre : [],
+              industry_areas: Array.isArray(data.industry_areas) ? data.industry_areas : [],
+              talent_types_needed: Array.isArray(data.talent_types_needed) ? data.talent_types_needed : [],
+              roles: safeRoles.length > 0 ? safeRoles : prev.roles,
             }));
           }
         } catch (error) {
@@ -563,22 +587,57 @@ export default function CreateCasting() {
 
     setIsSubmitting(true);
     try {
-      let payload = {
+      const firstRole = formData.roles[0];
+      
+      // Map new roles to legacy format for backend compatibility
+      const mappedRoles = formData.roles.map(r => ({
+        ...r,
+        title: r.role_name,
+        description: r.full_role_description || r.character_role_summary,
+        roleType: r.role_type?.[0] || "supporting",
+        minAge: r.minimum_age,
+        maxAge: r.maximum_age,
+        gender: r.gender?.[0]?.toLowerCase() || "any",
+        ethnicity: r.ethnicity?.[0]?.toLowerCase() || "any",
+        unionStatus: r.union_status_required?.toLowerCase()?.includes('non') ? "non-union" : (r.union_status_required?.toLowerCase()?.includes('union') ? "union" : "both"),
+        payRate: r.payment_amount,
+        requirements: (r.character_role_summary + "\n" + (r.full_role_description || "")).split('\n').filter(Boolean).join('\n'),
+         requestVideo: formData.media_required?.includes("Reel"),
+         requestAudio: formData.media_required?.includes("Voice Reel"),
+         requestCoverLetter: formData.media_required?.includes("Cover Letter"),
+         customQuestions: formData.custom_upload_description || ""
+       }));
+
+      let payload: any = {
         ...formData,
-        title: formData.project_title, // For legacy compatibility
-        description: formData.full_project_description,
+        // Legacy fields for backward compatibility
+        title: formData.project_title || (firstRole ? firstRole.role_name : ""),
+        projectName: formData.project_title,
+        projectType: formData.project_type?.toLowerCase(),
+        description: formData.full_project_description || formData.short_project_summary,
         deadline: formData.application_deadline,
-        status: statusOverride || formData.project_status,
+        status: statusOverride || (formData.project_status?.toLowerCase().includes('open') ? "open" : (formData.project_status?.toLowerCase().includes('draft') ? "draft" : "open")),
+        location: formData.preferred_talent_base || formData.talent_location_scope,
+        category: formData.genre?.[0] || "other",
+        requirements: firstRole ? (firstRole.character_role_summary + "\n" + (firstRole.full_role_description || "")).split('\n').filter(Boolean) : [],
+        roles: mappedRoles,
+        // Add-ons legacy names
+        featuredPosting: formData.featured_project,
+        urgentHiringBadge: formData.instant_posting_addon,
+        instantPosting: formData.instant_posting_addon
       };
 
       if (imageFile) {
         try {
           const uploadFormData = new FormData();
-          uploadFormData.append("image", imageFile);
+          // The backend addHeadshot endpoint specifically expects "headshot" field
+          uploadFormData.append("headshot", imageFile);
+          
           const uploadRes = await profileAPI.addHeadshot(uploadFormData);
-          const imageUrl = uploadRes.data?.data?.url || uploadRes.data?.data?.imageUrl;
+          const imageUrl = uploadRes.data?.data?.url || uploadRes.data?.data?.imageUrl || uploadRes.data?.data?.image;
           if (imageUrl) {
             payload.project_cover_image = imageUrl;
+            payload.image = imageUrl; // Legacy field
           }
         } catch (uploadErr) {
           console.error("Image upload failed:", uploadErr);
@@ -749,12 +808,12 @@ export default function CreateCasting() {
                   {GENRES.map(g => (
                     <Badge 
                       key={g} 
-                      variant={formData.genre.includes(g) ? "default" : "outline"}
+                      variant={formData.genre?.includes(g) ? "default" : "outline"}
                       className="cursor-pointer"
                       onClick={() => {
-                        const newGenre = formData.genre.includes(g) 
+                        const newGenre = formData.genre?.includes(g) 
                           ? formData.genre.filter(i => i !== g)
-                          : [...formData.genre, g];
+                          : [...(formData.genre || []), g];
                         handleSelectChange("genre", newGenre);
                       }}
                     >
@@ -857,12 +916,12 @@ export default function CreateCasting() {
                   {INDUSTRY_AREAS.map(a => (
                     <Badge 
                       key={a} 
-                      variant={formData.industry_areas.includes(a) ? "default" : "outline"}
+                      variant={formData.industry_areas?.includes(a) ? "default" : "outline"}
                       className="cursor-pointer"
                       onClick={() => {
-                        const newAreas = formData.industry_areas.includes(a) 
+                        const newAreas = formData.industry_areas?.includes(a) 
                           ? formData.industry_areas.filter(i => i !== a)
-                          : [...formData.industry_areas, a];
+                          : [...(formData.industry_areas || []), a];
                         handleSelectChange("industry_areas", newAreas);
                       }}
                     >
@@ -899,12 +958,12 @@ export default function CreateCasting() {
                   {TALENT_TYPES.map(t => (
                     <Badge 
                       key={t} 
-                      variant={formData.talent_types_needed.includes(t) ? "default" : "outline"}
+                      variant={formData.talent_types_needed?.includes(t) ? "default" : "outline"}
                       className="cursor-pointer"
                       onClick={() => {
-                        const newTypes = formData.talent_types_needed.includes(t) 
+                        const newTypes = formData.talent_types_needed?.includes(t) 
                           ? formData.talent_types_needed.filter(i => i !== t)
-                          : [...formData.talent_types_needed, t];
+                          : [...(formData.talent_types_needed || []), t];
                         handleSelectChange("talent_types_needed", newTypes);
                       }}
                     >
@@ -1054,10 +1113,10 @@ export default function CreateCasting() {
                         {["Male", "Female", "Non-binary", "Any"].map(g => (
                           <Badge 
                             key={g} 
-                            variant={role.gender.includes(g) ? "default" : "outline"}
+                            variant={role.gender?.includes(g) ? "default" : "outline"}
                             className="cursor-pointer text-[10px]"
                             onClick={() => {
-                              const newG = role.gender.includes(g) ? role.gender.filter(i => i !== g) : [...role.gender, g];
+                              const newG = role.gender?.includes(g) ? role.gender.filter(i => i !== g) : [...(role.gender || []), g];
                               handleRoleChange(role.id, 'gender', newG);
                             }}
                           >
@@ -1423,12 +1482,12 @@ export default function CreateCasting() {
                   {["Headshot", "Reel", "Voice Reel", "Portfolio", "Cover Letter"].map(m => (
                     <Badge 
                       key={m} 
-                      variant={formData.media_required.includes(m) ? "default" : "outline"}
+                      variant={formData.media_required?.includes(m) ? "default" : "outline"}
                       className="cursor-pointer"
                       onClick={() => {
-                        const newM = formData.media_required.includes(m) 
+                        const newM = formData.media_required?.includes(m) 
                           ? formData.media_required.filter(i => i !== m)
-                          : [...formData.media_required, m];
+                          : [...(formData.media_required || []), m];
                         handleSelectChange("media_required", newM);
                       }}
                     >

@@ -7,7 +7,7 @@ import {
   CreditCard, Check, Zap, Sparkles, 
   History, ArrowRight, Download, 
   LayoutGrid, Rocket, Megaphone,
-  AlertCircle, Loader2
+  AlertCircle, Loader2, Shield
 } from "lucide-react";
 import { toast } from "sonner";
 import { subscriptionAPI } from "@/lib/api";
@@ -145,9 +145,9 @@ export default function DirectorBilling() {
 
                 <Button 
                   onClick={handleManageSubscription} 
-                  className="w-full bg-[#009698] hover:bg-[#009698]/90 text-white font-semibold rounded-xl h-11 active:scale-[0.98] transition-all shadow-sm"
+                  className="w-full bg-[#009698] hover:bg-[#009698]/90 text-sm text-white font-semibold rounded-xl h-11 active:scale-[0.98] transition-all shadow-sm"
                 >
-                  Upgrade & Manage Subscription
+                  Upgrade Subscription
                 </Button>
               </CardContent>
             </>
