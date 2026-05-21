@@ -17,7 +17,7 @@ import {
   Copy,
   MoreVertical
 } from "lucide-react";
-import { castingCallAPI } from "@/lib/api";
+import { castingCallAPI, subscriptionAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { 
@@ -34,6 +34,7 @@ export default function MyProjects() {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState<string | null>(null);
 
   const fetchProjects = async () => {
     setIsLoading(true);
@@ -103,6 +104,34 @@ export default function MyProjects() {
       toast.error("Failed to duplicate project");
     } finally {
       setIsDuplicating(null);
+    }
+  };
+
+  const handlePayAndPublish = async (project: any) => {
+    setIsProcessingPayment(project._id);
+    try {
+      const boosts = [];
+      if (project.featuredPosting) boosts.push("featured_casting");
+      if (project.urgentHiringBadge || project.instantPosting) boosts.push("urgent_boost");
+
+      const response = await subscriptionAPI.createCheckoutSession({
+        type: "casting_boost",
+        projectId: project._id,
+        boosts: boosts,
+        successUrl: `${window.location.origin}/payment-success?type=boost&id=${project._id}`,
+        cancelUrl: `${window.location.origin}/director/projects`
+      });
+
+      if (response.data.success && response.data.data.url) {
+        window.location.href = response.data.data.url;
+      } else {
+        toast.error("Could not initiate payment. Please try again.");
+      }
+    } catch (error) {
+      console.error("Payment initiation failed:", error);
+      toast.error("Failed to initiate payment");
+    } finally {
+      setIsProcessingPayment(null);
     }
   };
 
@@ -205,12 +234,29 @@ export default function MyProjects() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" asChild>
-                    <Link to={`/director/submissions/${project._id}`}>
-                      <Users className="w-3 h-3 mr-1" />
-                      Submissions
-                    </Link>
-                  </Button>
+                  {project.status === "draft" && (project.featuredPosting || project.urgentHiringBadge || project.instantPosting) ? (
+                    <Button 
+                      variant="default" 
+                      size="sm" 
+                      className="flex-1 bg-amber-600 hover:bg-amber-700 text-white border-none"
+                      onClick={() => handlePayAndPublish(project)}
+                      disabled={isProcessingPayment === project._id}
+                    >
+                      {isProcessingPayment === project._id ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <Zap className="w-3 h-3 mr-1 fill-white" />
+                      )}
+                      Pay & Publish
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" className="flex-1" asChild>
+                      <Link to={`/director/submissions/${project._id}`}>
+                        <Users className="w-3 h-3 mr-1" />
+                        Submissions
+                      </Link>
+                    </Button>
+                  )}
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -286,12 +332,29 @@ export default function MyProjects() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/director/submissions/${project._id}`}>
-                        <Users className="w-3 h-3 mr-1" />
-                        Submissions
-                      </Link>
-                    </Button>
+                    {project.status === "draft" && (project.featuredPosting || project.urgentHiringBadge || project.instantPosting) ? (
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="bg-amber-600 hover:bg-amber-700 text-white border-none"
+                        onClick={() => handlePayAndPublish(project)}
+                        disabled={isProcessingPayment === project._id}
+                      >
+                        {isProcessingPayment === project._id ? (
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        ) : (
+                          <Zap className="w-3 h-3 mr-1 fill-white" />
+                        )}
+                        Pay & Publish
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/director/submissions/${project._id}`}>
+                          <Users className="w-3 h-3 mr-1" />
+                          Submissions
+                        </Link>
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/director/projects/${project._id}/edit`}>
                         <Pencil className="w-3 h-3 mr-1" />

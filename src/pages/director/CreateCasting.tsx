@@ -625,6 +625,8 @@ export default function CreateCasting() {
          customQuestions: formData.custom_upload_description || ""
        }));
 
+      const isBoosted = formData.featured_project || formData.instant_posting_addon;
+
       let payload: any = {
         ...formData,
         // Legacy fields for backward compatibility
@@ -633,7 +635,8 @@ export default function CreateCasting() {
         projectType: formData.project_type?.toLowerCase(),
         description: formData.full_project_description || formData.short_project_summary,
         deadline: formData.application_deadline,
-        status: statusOverride || (formData.project_status?.toLowerCase().includes('open') ? "open" : (formData.project_status?.toLowerCase().includes('draft') ? "draft" : "open")),
+        // Force draft status if boosts are selected or explicitly requested as draft
+        status: (statusOverride === "draft" || isBoosted) ? "draft" : (formData.project_status?.toLowerCase().includes('open') ? "open" : "draft"),
         location: formData.preferred_talent_base || formData.talent_location_scope,
         category: formData.genre?.[0] || "other",
         requirements: firstRole ? (firstRole.character_role_summary + "\n" + (firstRole.full_role_description || "")).split('\n').filter(Boolean) : [],
@@ -669,6 +672,40 @@ export default function CreateCasting() {
       }
 
       if (response.data.success) {
+        const projectData = response.data.data;
+        const projectId = projectData?.id || projectData?._id || id;
+
+        // If any boost is selected, redirect to checkout
+        if ((formData.featured_project || formData.instant_posting_addon) && statusOverride !== "draft") {
+          try {
+            const boosts = [];
+            if (formData.featured_project) boosts.push("featured_casting");
+            if (formData.instant_posting_addon) boosts.push("urgent_boost");
+
+            const checkoutRes = await subscriptionAPI.createCheckoutSession({
+              type: "casting_boost",
+              projectId: projectId,
+              boosts: boosts,
+              successUrl: `${window.location.origin}/payment-success?type=boost&id=${projectId}`,
+              cancelUrl: `${window.location.origin}/director/projects`
+            });
+
+            if (checkoutRes.data.success && checkoutRes.data.data.url) {
+              window.location.href = checkoutRes.data.data.url;
+              return;
+            } else {
+              toast.error("Could not initiate payment. Project saved as draft.");
+              navigate("/director/projects");
+              return;
+            }
+          } catch (checkoutErr) {
+            console.error("Checkout initiation failed:", checkoutErr);
+            toast.error("Failed to initiate payment. Project saved.");
+            navigate("/director/projects");
+            return;
+          }
+        }
+
         toast.success(isEditMode ? "Project updated successfully!" : "Project created successfully!");
         navigate("/director/projects");
       }
