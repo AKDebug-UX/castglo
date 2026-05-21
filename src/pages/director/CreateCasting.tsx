@@ -560,6 +560,12 @@ export default function CreateCasting() {
         return false;
       }
     }
+    if (currentStep === 5) {
+      if (formData.media_required.length === 0) {
+        toast.error("Please select at least one media requirement.");
+        return false;
+      }
+    }
     if (currentStep === 6) {
       if (!formData.confirm_information_accurate || !formData.confirm_right_to_post || !formData.confirm_legal_safeguarding_compliance || !formData.confirm_platform_policy) {
         toast.error("Please confirm all compliance requirements.");
@@ -583,7 +589,18 @@ export default function CreateCasting() {
 
   const handleSubmit = async (e: React.FormEvent, statusOverride?: string) => {
     e.preventDefault();
-    if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4) || !validateStep(6)) return;
+    
+    // Only allow final submission if on the last step
+    if (statusOverride !== "draft" && step !== totalSteps) {
+      return;
+    }
+
+    // For final submission, validate all steps. For draft, only validate the basics (Step 1).
+    if (statusOverride === "draft") {
+      if (!validateStep(1)) return;
+    } else {
+      if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4) || !validateStep(5) || !validateStep(6)) return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -662,6 +679,15 @@ export default function CreateCasting() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      if (step < totalSteps) {
+        nextStep();
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
@@ -724,7 +750,7 @@ export default function CreateCasting() {
         ))}
       </div>
 
-      <form onSubmit={(e) => handleSubmit(e)}>
+      <form onSubmit={(e) => handleSubmit(e)} onKeyDown={handleKeyDown}>
         {/* STEP 1: PROJECT BASICS & PRODUCTION DETAILS */}
         <div className={step === 1 ? "block space-y-6 animate-fade-in" : "hidden"}>
           <Card>
@@ -1615,11 +1641,11 @@ export default function CreateCasting() {
             )}
             
             {step < totalSteps ? (
-              <Button type="button" onClick={nextStep} className="gap-2">
+              <Button key="next-step-button" type="button" onClick={nextStep} className="gap-2">
                 Continue <ChevronRight className="w-4 h-4" />
               </Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting} size="lg" className="min-w-32">
+              <Button key="submit-form-button" type="submit" disabled={isSubmitting} size="lg" className="min-w-32">
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (formData.featured_project || formData.instant_posting_addon ? "Pay & Publish" : "Publish Project")}
               </Button>
             )}
