@@ -11,14 +11,16 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
+import { SUBSCRIPTION_PLANS, ADD_ONS, LAUNCHING_OFFERS } from "@/config/subscriptionPlans";
+
 export default function Pricing() {
   const { user, formatPrice } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const categoryParam = searchParams.get("category");
   
-  const [plans, setPlans] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [plans, setPlans] = useState(SUBSCRIPTION_PLANS);
+  const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
   const [activeTab, setActiveTab] = useState(categoryParam || "talent");
@@ -27,14 +29,12 @@ export default function Pricing() {
     const fetchPlans = async () => {
       try {
         const response = await subscriptionAPI.getPlans();
-        if (response.data.success) {
-          setPlans(response.data.data.plans || []);
+        if (response.data.success && response.data.data.plans?.length > 0) {
+          setPlans(response.data.data.plans);
         }
       } catch (error) {
         console.error("Error fetching plans:", error);
-        toast.error("Failed to load subscription plans");
-      } finally {
-        setIsLoading(false);
+        // Fallback to local plans if API fails
       }
     };
     fetchPlans();
@@ -67,16 +67,17 @@ export default function Pricing() {
   };
 
   const categories = [
-    { id: "talent", label: "For Talent", icon: Sparkles },
-    { id: "casting_director", label: "For Casting Directors", icon: Zap },
-    { id: "industry_professional", label: "For Agencies & Enterprise", icon: Shield }
+    { id: "talent", label: "Talent", icon: Sparkles },
+    { id: "casting_director", label: "Casting Director / Agency", icon: Zap },
+    { id: "industry_professional", label: "Industry Professional", icon: Shield }
   ];
 
   const getIcon = (planName: string) => {
-    if (planName.toLowerCase().includes("basic")) return <Zap className="w-5 h-5 text-blue-500" />;
-    if (planName.toLowerCase().includes("standard")) return <Sparkles className="w-5 h-5 text-purple-500" />;
-    if (planName.toLowerCase().includes("professional")) return <Rocket className="w-5 h-5 text-orange-500" />;
-    return <Zap className="w-5 h-5 text-slate-500" />;
+    const name = planName.toLowerCase();
+    if (name.includes("free")) return <Zap className="w-5 h-5 text-slate-400" />;
+    if (name.includes("basic")) return <Sparkles className="w-5 h-5 text-blue-500" />;
+    if (name.includes("pro")) return <Rocket className="w-5 h-5 text-orange-500" />;
+    return <Zap className="w-5 h-5 text-primary" />;
   };
 
   const activeTabDetails = categories.find(c => c.id === activeTab);
@@ -94,11 +95,10 @@ export default function Pricing() {
             <div className="mt-1 bg-green-100 rounded-full p-0.5">
               <Check className="w-3 h-3 text-green-600" />
             </div>
-            <span className="text-slate-600 leading-tight">
-              {typeof value === 'boolean' 
-                ? key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()) 
-                : `${value} ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">{key}</span>
+              <span className="text-slate-900 font-medium leading-tight">{value}</span>
+            </div>
           </div>
         ))}
         
@@ -173,17 +173,12 @@ export default function Pricing() {
 
             {categories.map((cat) => (
               <TabsContent key={cat.id} value={cat.id} className="animate-in fade-in-50 duration-500">
-                <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4 justify-center">
+                <div className="grid gap-8 md:grid-cols-3 justify-center">
                   {plans
-                    .filter((p) => {
-                      if (cat.id === "industry_professional") {
-                        return p.category === "agency" || p.category === "enterprise" || p.category === "industry_professional";
-                      }
-                      return p.category === cat.id;
-                    })
+                    .filter((p) => p.category === cat.id)
                     .map((plan) => (
-                      <Card key={plan.planKey} className={`relative flex flex-col border-none shadow-xl rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] ${plan.name === 'Standard' ? 'ring-2 ring-primary ring-offset-4 ring-offset-[#DEFCFE]' : ''}`}>
-                        {plan.name === 'Standard' && (
+                      <Card key={plan.planKey} className={`relative flex flex-col border-none shadow-xl rounded-3xl overflow-hidden transition-all duration-300 hover:scale-[1.02] ${plan.name === 'Pro' ? 'ring-2 ring-primary ring-offset-4 ring-offset-[#DEFCFE]' : ''}`}>
+                        {plan.name === 'Pro' && (
                           <div className="absolute top-0 right-0">
                             <Badge className="rounded-none rounded-bl-xl bg-primary text-primary-foreground px-4 py-1">Most Popular</Badge>
                           </div>
@@ -209,16 +204,16 @@ export default function Pricing() {
                         </CardContent>
                         <CardFooter className="pt-8">
                           <Button 
-                            className={`w-full h-12 rounded-2xl font-bold text-lg transition-all ${plan.name === 'Standard' ? 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20' : 'bg-slate-900 hover:bg-slate-800'}`}
+                            className={`w-full h-12 rounded-2xl font-bold text-lg transition-all ${plan.name === 'Pro' ? 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20' : 'bg-slate-900 hover:bg-slate-800'}`}
                             onClick={() => handleSubscribe(plan)}
                             disabled={isProcessing === plan.planKey}
                           >
                             {isProcessing === plan.planKey ? (
                               <Loader2 className="w-5 h-5 animate-spin" />
                             ) : plan.pricing[billingCycle] === 0 ? (
-                              "Get Started"
+                              "Join for Free"
                             ) : (
-                              "Subscribe Now"
+                              "Get Started"
                             )}
                           </Button>
                         </CardFooter>
@@ -228,6 +223,56 @@ export default function Pricing() {
               </TabsContent>
             ))}
           </Tabs>
+
+          {/* Launching Offers Section */}
+          <div className="mt-24 max-w-6xl mx-auto space-y-10">
+            <div className="text-center space-y-4">
+              <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none px-4 py-1 text-sm font-bold uppercase tracking-wider">Limited Time Offer</Badge>
+              <h2 className="text-3xl md:text-4xl font-black">Launching <span className="text-[#009698]">Offers</span></h2>
+              <p className="text-slate-600 max-w-2xl mx-auto">Rapid adoption deals for the first 3 months. Get premium features at a fraction of the cost.</p>
+            </div>
+            
+            <div className="grid gap-6 md:grid-cols-3">
+              {LAUNCHING_OFFERS.map((offer, idx) => (
+                <Card key={idx} className="bg-white/60 backdrop-blur border-none shadow-lg rounded-[32px] p-6 text-center hover:scale-[1.03] transition-transform duration-300">
+                  <p className="text-sm font-bold text-slate-500 uppercase mb-2">{offer.role}</p>
+                  <h3 className="text-xl font-black text-slate-900">{offer.offer}</h3>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Add-ons Section */}
+          <div className="mt-24 max-w-5xl mx-auto space-y-12">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl md:text-4xl font-black">Power Up with <span className="text-[#009698]">Add-ons</span></h2>
+              <p className="text-slate-600">Customize your experience with specific upgrades tailored to your needs.</p>
+            </div>
+
+            <div className="bg-white/40 backdrop-blur-md rounded-[40px] p-8 md:p-12 border border-white/60 shadow-2xl">
+              <div className="grid gap-6 md:grid-cols-2">
+                {ADD_ONS.filter(addon => addon.roles.includes(activeTab)).map((addon, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-6 bg-white/80 rounded-3xl shadow-sm hover:shadow-md transition-shadow group">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-[#009698]/10 flex items-center justify-center text-[#009698] group-hover:bg-[#009698] group-hover:text-white transition-colors">
+                        <Zap className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900">{addon.name}</h4>
+                        <p className="text-xs text-slate-500">Boost your presence</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-black text-[#009698]">{addon.price}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-center mt-10 text-sm text-slate-500 font-medium">
+                * All add-ons can be purchased from your profile dashboard after joining.
+              </p>
+            </div>
+          </div>
 
           <div className="mt-24 max-w-4xl mx-auto text-center space-y-8 bg-white/40 backdrop-blur-sm rounded-[40px] p-12 border border-white/50">
             <h2 className="text-3xl font-bold">Frequently Asked Questions</h2>

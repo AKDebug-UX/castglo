@@ -14,63 +14,37 @@ import { subscriptionAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 const PLAN_DETAILS: Record<string, { name: string; price: string; cycle: string; features: string[] }> = {
-  free: {
-    name: "Free Trial",
+  director_free: {
+    name: "Free",
     price: "£0",
     cycle: "/month",
     features: [
-      "1 Active Project",
+      "1 Free Trial Project",
       "1 Team Member",
-      "Standard Talent Search",
-      "Email Support"
+      "Full Talent Search",
+      "Help Centre Support"
     ]
   },
-  cd_payg: {
-    name: "Pay As You Go",
-    price: "£9",
-    cycle: "/listing",
-    features: [
-      "Single Project Listing",
-      "Standard Talent Search",
-      "Basic Applicant Tracking",
-      "Email Support"
-    ]
-  },
-  cd_basic: {
-    name: "Director Basic",
-    price: "£19",
+  director_basic: {
+    name: "Basic",
+    price: "£29",
     cycle: "/month",
     features: [
-      "3 Active Projects",
-      "1 Team Member",
-      "Standard Talent Search",
-      "Basic Applicant Tracking",
+      "Up to 5 Projects",
+      "Up to 3 Team Members",
+      "Standard AI Matching",
       "Email Support"
     ]
   },
-  cd_standard: {
-    name: "Director Standard",
-    price: "£39",
+  director_pro: {
+    name: "Pro",
+    price: "£79",
     cycle: "/month",
     features: [
-      "10 Active Projects",
-      "3 Team Collaborators",
-      "Advanced Match Engine",
-      "Virtual Audition Access",
+      "Unlimited Projects",
+      "Up to 10 Team Members",
+      "Priority AI Matching",
       "Priority Support"
-    ]
-  },
-  cd_professional: {
-    name: "Director Professional",
-    price: "£69",
-    cycle: "/month",
-    features: [
-      "Unlimited Active Projects",
-      "10 Team Collaborators",
-      "Custom Applicant Pipelines",
-      "Full Video Audition Rooms",
-      "24/7 Dedicated Support",
-      "CSV Data Exports"
     ]
   }
 };
@@ -111,8 +85,8 @@ export default function DirectorBilling() {
     navigate("/pricing?category=casting_director");
   };
 
-  const currentPlanKey = subStatus?.plan?.key || "free";
-  const planInfo = PLAN_DETAILS[currentPlanKey] || PLAN_DETAILS.free;
+  const currentPlanKey = subStatus?.plan?.key || "director_free";
+  const planInfo = PLAN_DETAILS[currentPlanKey] || PLAN_DETAILS.director_free;
   const planName = subStatus?.plan?.name || planInfo.name;
   const planPrice = subStatus?.plan?.price !== undefined ? `£${subStatus.plan.price}` : planInfo.price;
   const planCycle = subStatus?.billingCycle ? `/${subStatus.billingCycle.replace('ly', '')}` : planInfo.cycle;
@@ -192,9 +166,9 @@ export default function DirectorBilling() {
                   <Megaphone className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-slate-800">Featured Project</h3>
+                  <h3 className="font-bold text-sm text-slate-800">Featured Casting Call</h3>
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">Get 5x more applicants by pinning your project to the top of the talent feed.</p>
-                  <p className="text-sm font-bold mt-3 text-[#009698]">$29.00 / project</p>
+                  <p className="text-sm font-bold mt-3 text-[#009698]">£9.99 for 7 days</p>
                 </div>
               </CardContent>
             </Card>
@@ -205,9 +179,9 @@ export default function DirectorBilling() {
                   <Zap className="w-5 h-5 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-slate-800">Urgent Hiring</h3>
+                  <h3 className="font-bold text-sm text-slate-800">Urgent Casting Boost</h3>
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">Add a priority badge and get instant notifications to the most active talent.</p>
-                  <p className="text-sm font-bold mt-3 text-[#009698]">$15.00 / project</p>
+                  <p className="text-sm font-bold mt-3 text-[#009698]">£14.99</p>
                 </div>
               </CardContent>
             </Card>
@@ -215,12 +189,12 @@ export default function DirectorBilling() {
             <Card className="group hover:border-[#009698]/40 transition-all cursor-pointer bg-white border-slate-100 rounded-xl shadow-sm" onClick={handleManageSubscription}>
               <CardContent className="p-5 flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                  <LayoutGrid className="w-5 h-5 text-purple-600" />
+                  <Shield className="w-5 h-5 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-slate-800">Extra Project Slot</h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">Found a new project? Add a single project slot without upgrading your whole plan.</p>
-                  <p className="text-sm font-bold mt-3 text-[#009698]">$10.00 / month</p>
+                  <h3 className="font-bold text-sm text-slate-800">Verified Badge</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">Add trust and credibility to your company profile with a verified badge.</p>
+                  <p className="text-sm font-bold mt-3 text-[#009698]">£9.99 one-off</p>
                 </div>
               </CardContent>
             </Card>
@@ -231,9 +205,9 @@ export default function DirectorBilling() {
                   <Rocket className="w-5 h-5 text-teal-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-slate-800">Social Media Blast</h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">We'll promote your casting call on the Castglo Instagram & TikTok pages.</p>
-                  <p className="text-sm font-bold mt-3 text-[#009698]">$45.00 / blast</p>
+                  <h3 className="font-bold text-sm text-slate-800">AI Video Feedback</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">Get detailed AI-driven analysis reports on your casting call submissions.</p>
+                  <p className="text-sm font-bold mt-3 text-[#009698]">£2.99 / report</p>
                 </div>
               </CardContent>
             </Card>
