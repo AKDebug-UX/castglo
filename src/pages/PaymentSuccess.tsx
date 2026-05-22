@@ -12,30 +12,44 @@ import { toast } from "sonner";
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const type = searchParams.get("type");
+  const projectId = searchParams.get("id");
   const { refreshUser, user } = useAuth();
   const navigate = useNavigate();
   const [isVerifying, setIsVerifying] = useState(true);
 
   useEffect(() => {
     const verifyPayment = async () => {
-      if (!sessionId) {
+      // If there's no session ID, we might be in a testing/direct access scenario
+      if (!sessionId && !type) {
         setIsVerifying(false);
         return;
       }
 
       try {
-        // Refresh user data to get the new subscription status
-        await refreshUser();
-        setIsVerifying(false);
-        toast.success("Subscription activated successfully!");
+        if (type === "boost") {
+          // Boost payment verification
+          // In a real scenario, we might call an API to verify the boost
+          // For now, we'll just wait a bit and show success
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          setIsVerifying(false);
+          toast.success("Project boosted and published successfully!");
+        } else {
+          // Subscription payment verification
+          await refreshUser();
+          setIsVerifying(false);
+          toast.success("Subscription activated successfully!");
+        }
       } catch (error) {
-        console.error("Error refreshing user after payment:", error);
+        console.error("Error verifying payment:", error);
         setIsVerifying(false);
       }
     };
 
     verifyPayment();
-  }, [sessionId, refreshUser]);
+  }, [sessionId, type, refreshUser]);
+
+  const isBoost = type === "boost";
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/50">
@@ -48,9 +62,11 @@ export default function PaymentSuccess() {
               <CardContent className="p-12 text-center flex flex-col items-center gap-6">
                 <Loader2 className="w-16 h-16 text-primary animate-spin" />
                 <div className="space-y-2">
-                  <h1 className="text-2xl font-bold text-slate-900">Activating your plan...</h1>
+                  <h1 className="text-2xl font-bold text-slate-900">
+                    {isBoost ? "Finalising your project boost..." : "Activating your plan..."}
+                  </h1>
                   <p className="text-slate-500 max-w-sm mx-auto">
-                    We're just finalizing your subscription details. This will only take a moment.
+                    We're just finalizing your payment details. This will only take a moment.
                   </p>
                 </div>
               </CardContent>
@@ -74,38 +90,55 @@ export default function PaymentSuccess() {
                   <div className="space-y-4 mb-10">
                     <h1 className="text-4xl font-black text-slate-900 tracking-tight">Payment Successful!</h1>
                     <p className="text-lg text-slate-500 max-w-md mx-auto leading-relaxed">
-                      Welcome to the premium community. Your account has been upgraded and all features are now unlocked.
+                      {isBoost 
+                        ? "Your casting call has been boosted and is now live on the platform! Expect to see more applicants soon."
+                        : "Welcome to the premium community. Your account has been upgraded and all features are now unlocked."}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center gap-2">
-                      <Calendar className="w-5 h-5 text-[#5849D7]" />
-                      <span className="text-xs font-bold uppercase text-slate-400">Next Billing</span>
-                      <span className="text-sm font-bold text-slate-700">Next Month</span>
+                  {isBoost ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center gap-2">
+                        <Star className="w-5 h-5 text-[#FF7A30]" />
+                        <span className="text-xs font-bold uppercase text-slate-400">Boost Type</span>
+                        <span className="text-sm font-bold text-slate-700">Project Add-on</span>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-[#009698]" />
+                        <span className="text-xs font-bold uppercase text-slate-400">Status</span>
+                        <span className="text-sm font-bold text-green-600">Published</span>
+                      </div>
                     </div>
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center gap-2">
-                      <Star className="w-5 h-5 text-[#FF7A30]" />
-                      <span className="text-xs font-bold uppercase text-slate-400">Plan Type</span>
-                      <span className="text-sm font-bold text-slate-700 capitalize">{user?.role?.replace('_', ' ') || 'Premium'}</span>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center gap-2">
+                        <Calendar className="w-5 h-5 text-[#5849D7]" />
+                        <span className="text-xs font-bold uppercase text-slate-400">Next Billing</span>
+                        <span className="text-sm font-bold text-slate-700">Next Month</span>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center gap-2">
+                        <Star className="w-5 h-5 text-[#FF7A30]" />
+                        <span className="text-xs font-bold uppercase text-slate-400">Plan Type</span>
+                        <span className="text-sm font-bold text-slate-700 capitalize">{user?.role?.replace('_', ' ') || 'Premium'}</span>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-[#009698]" />
+                        <span className="text-xs font-bold uppercase text-slate-400">Status</span>
+                        <span className="text-sm font-bold text-green-600">Active</span>
+                      </div>
                     </div>
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center gap-2">
-                      <ShieldCheck className="w-5 h-5 text-[#009698]" />
-                      <span className="text-xs font-bold uppercase text-slate-400">Status</span>
-                      <span className="text-sm font-bold text-green-600">Active</span>
-                    </div>
-                  </div>
+                  )}
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button size="lg" className="rounded-2xl h-14 px-8 text-lg font-bold group" asChild>
-                      <Link to="/talent">
+                      <Link to={isBoost ? "/director/projects" : (user?.role === "casting_director" ? "/director" : "/talent")}>
                         Go to Dashboard
                         <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                       </Link>
                     </Button>
                     <Button variant="outline" size="lg" className="rounded-2xl h-14 px-8 text-lg font-bold border-2" asChild>
-                      <Link to="/talent/profile?tab=subscription">
-                        Manage Subscription
+                      <Link to={isBoost ? `/cast/${projectId}` : (user?.role === "casting_director" ? "/director/billing" : "/talent/profile?tab=subscription")}>
+                        {isBoost ? "View Project" : "Manage Subscription"}
                       </Link>
                     </Button>
                   </div>

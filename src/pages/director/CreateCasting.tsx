@@ -68,9 +68,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ArrowLeft, ChevronRight, HelpCircle, Rocket, X, Loader2, Trash2, Plus, Video, Image as ImageIcon, Zap, Star, FastForward, Upload } from "lucide-react";
-import { castingCallAPI, profileAPI } from "@/lib/api";
+import { castingCallAPI, profileAPI, subscriptionAPI, uploadAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { getStripe } from "@/lib/stripe";
 
 export default function CreateCasting() {
   const { formatPrice } = useAuth();
@@ -636,6 +637,7 @@ export default function CreateCasting() {
         description: formData.full_project_description || formData.short_project_summary,
         deadline: formData.application_deadline,
         // Force draft status if boosts are selected or explicitly requested as draft
+        // They can only be published after successful payment
         status: (statusOverride === "draft" || isBoosted) ? "draft" : (formData.project_status?.toLowerCase().includes('open') ? "open" : "draft"),
         location: formData.preferred_talent_base || formData.talent_location_scope,
         category: formData.genre?.[0] || "other",
@@ -650,17 +652,18 @@ export default function CreateCasting() {
       if (imageFile) {
         try {
           const uploadFormData = new FormData();
-          // The backend addHeadshot endpoint specifically expects "headshot" field
-          uploadFormData.append("headshot", imageFile);
+          // Use the new /upload/image endpoint which expects "image" field
+          uploadFormData.append("image", imageFile);
           
-          const uploadRes = await profileAPI.addHeadshot(uploadFormData);
-          const imageUrl = uploadRes.data?.data?.url || uploadRes.data?.data?.imageUrl || uploadRes.data?.data?.image;
+          const uploadRes = await uploadAPI.uploadImage(uploadFormData);
+          const imageUrl = uploadRes.data?.data?.url || uploadRes.data?.url;
           if (imageUrl) {
             payload.project_cover_image = imageUrl;
             payload.image = imageUrl; // Legacy field
           }
         } catch (uploadErr) {
           console.error("Image upload failed:", uploadErr);
+          toast.error("Image upload failed. Project saved without cover image.");
         }
       }
 
@@ -690,8 +693,20 @@ export default function CreateCasting() {
               cancelUrl: `${window.location.origin}/director/projects`
             });
 
-            if (checkoutRes.data.success && checkoutRes.data.data.url) {
-              window.location.href = checkoutRes.data.data.url;
+            if (checkoutRes.data.success) {
+              const { url, sessionId } = checkoutRes.data.data;
+              
+              // Use Stripe SDK for redirection if sessionId is available
+              const stripe = await getStripe();
+              if (stripe && sessionId) {
+                const { error } = await stripe.redirectToCheckout({ sessionId });
+                if (error) {
+                  console.error("Stripe SDK redirect error:", error);
+                  window.location.href = url; // Fallback to URL
+                }
+              } else if (url) {
+                window.location.href = url; // Fallback to direct URL
+              }
               return;
             } else {
               toast.error("Could not initiate payment. Project saved as draft.");

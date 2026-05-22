@@ -20,6 +20,7 @@ import {
 import { castingCallAPI, subscriptionAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
+import { getStripe } from "@/lib/stripe";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -122,8 +123,20 @@ export default function MyProjects() {
         cancelUrl: `${window.location.origin}/director/projects`
       });
 
-      if (response.data.success && response.data.data.url) {
-        window.location.href = response.data.data.url;
+      if (response.data.success) {
+        const { url, sessionId } = response.data.data;
+        
+        // Use Stripe SDK for redirection if sessionId is available
+        const stripe = await getStripe();
+        if (stripe && sessionId) {
+          const { error } = await stripe.redirectToCheckout({ sessionId });
+          if (error) {
+            console.error("Stripe SDK redirect error:", error);
+            window.location.href = url; // Fallback to URL
+          }
+        } else if (url) {
+          window.location.href = url; // Fallback to direct URL
+        }
       } else {
         toast.error("Could not initiate payment. Please try again.");
       }
@@ -234,21 +247,35 @@ export default function MyProjects() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {project.status === "draft" && (project.featuredPosting || project.urgentHiringBadge || project.instantPosting) ? (
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      className="flex-1 bg-amber-600 hover:bg-amber-700 text-white border-none"
-                      onClick={() => handlePayAndPublish(project)}
-                      disabled={isProcessingPayment === project._id}
-                    >
-                      {isProcessingPayment === project._id ? (
-                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      ) : (
-                        <Zap className="w-3 h-3 mr-1 fill-white" />
-                      )}
-                      Pay & Publish
-                    </Button>
+                  {project.status === "draft" ? (
+                    (project.featuredPosting || project.urgentHiringBadge || project.instantPosting) ? (
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="flex-1 bg-amber-600 hover:bg-amber-700 text-white border-none shadow-sm"
+                        onClick={() => handlePayAndPublish(project)}
+                        disabled={isProcessingPayment === project._id}
+                      >
+                        {isProcessingPayment === project._id ? (
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                        ) : (
+                          <Zap className="w-3 h-3 mr-1 fill-white" />
+                        )}
+                        Pay & Publish
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="flex-1 bg-[#009698] hover:bg-[#009698]/90 text-white border-none shadow-sm"
+                        asChild
+                      >
+                        <Link to={`/director/projects/${project._id}/edit`}>
+                          <Rocket className="w-3 h-3 mr-1" />
+                          Publish Project
+                        </Link>
+                      </Button>
+                    )
                   ) : (
                     <Button variant="outline" size="sm" className="flex-1" asChild>
                       <Link to={`/director/submissions/${project._id}`}>
@@ -332,21 +359,35 @@ export default function MyProjects() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
-                    {project.status === "draft" && (project.featuredPosting || project.urgentHiringBadge || project.instantPosting) ? (
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="bg-amber-600 hover:bg-amber-700 text-white border-none"
-                        onClick={() => handlePayAndPublish(project)}
-                        disabled={isProcessingPayment === project._id}
-                      >
-                        {isProcessingPayment === project._id ? (
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                        ) : (
-                          <Zap className="w-3 h-3 mr-1 fill-white" />
-                        )}
-                        Pay & Publish
-                      </Button>
+                    {project.status === "draft" ? (
+                      (project.featuredPosting || project.urgentHiringBadge || project.instantPosting) ? (
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="bg-amber-600 hover:bg-amber-700 text-white border-none shadow-sm"
+                          onClick={() => handlePayAndPublish(project)}
+                          disabled={isProcessingPayment === project._id}
+                        >
+                          {isProcessingPayment === project._id ? (
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          ) : (
+                            <Zap className="w-3 h-3 mr-1 fill-white" />
+                          )}
+                          Pay & Publish
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="bg-[#009698] hover:bg-[#009698]/90 text-white border-none shadow-sm"
+                          asChild
+                        >
+                          <Link to={`/director/projects/${project._id}/edit`}>
+                            <Rocket className="w-3 h-3 mr-1" />
+                            Publish
+                          </Link>
+                        </Button>
+                      )
                     ) : (
                       <Button variant="outline" size="sm" asChild>
                         <Link to={`/director/submissions/${project._id}`}>

@@ -131,6 +131,9 @@ export const API_ENDPOINTS = {
     SEARCH: '/users/search',
     GET_ONE: (userId: string) => `/users/${userId}`,
   },
+  UPLOAD: {
+    IMAGE: '/upload/image',
+  },
 };
 
 // Axios instance
@@ -347,6 +350,13 @@ export const adminAPI = {
 // --- LEAD ENDPOINTS ---
 export const leadAPI = {
   create: (data) => api.post(API_ENDPOINTS.LEADS.CREATE, data),
+};
+
+// --- UPLOAD ENDPOINTS ---
+export const uploadAPI = {
+  uploadImage: (formData: FormData) => api.post(API_ENDPOINTS.UPLOAD.IMAGE, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export default api;
