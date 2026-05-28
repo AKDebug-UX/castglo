@@ -159,10 +159,10 @@ const App = () => (
               <Route path="/safety-guidelines" element={<SafetyGuidelines />} />
               <Route path="/copyright-policy" element={<CopyrightPolicy />} />
               <Route path="/anti-scam-guidelines" element={<AntiScamGuidelines />} />
-              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/subscription/success" element={<PaymentSuccess />} />
               <Route path="/profile/:id" element={<UnifiedProfile />} />
               <Route path="/profile/me" element={<UnifiedProfile />} />
-              <Route path="/payment/cancel" element={<PaymentCancel />} />
+              <Route path="/subscription/cancel" element={<PaymentCancel />} />
               {/* Talent Dashboard Routes */}
               <Route
                 path="/talent"
