@@ -192,9 +192,9 @@ export default function Pricing() {
                           </div>
                           <div className="flex items-baseline gap-1">
                             <span className="text-4xl font-black">
-                              {plan.pricing[billingCycle] === 0 ? "Free" : formatPrice(plan.pricing[billingCycle])}
+                              {plan.pricing[billingCycle] === -1 ? "Custom" : plan.pricing[billingCycle] === 0 ? "Free" : formatPrice(plan.pricing[billingCycle])}
                             </span>
-                            {plan.pricing[billingCycle] !== 0 && (
+                            {plan.pricing[billingCycle] > 0 && (
                               <span className="text-muted-foreground font-medium">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
                             )}
                           </div>
@@ -205,11 +205,19 @@ export default function Pricing() {
                         <CardFooter className="pt-8">
                           <Button 
                             className={`w-full h-12 rounded-2xl font-bold text-lg transition-all ${plan.name === 'Pro' ? 'bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20' : 'bg-slate-900 hover:bg-slate-800'}`}
-                            onClick={() => handleSubscribe(plan)}
+                            onClick={() => {
+                              if (plan.pricing[billingCycle] === -1) {
+                                window.location.href = "mailto:sales@castglo.com";
+                              } else {
+                                handleSubscribe(plan);
+                              }
+                            }}
                             disabled={isProcessing === plan.planKey}
                           >
                             {isProcessing === plan.planKey ? (
                               <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : plan.pricing[billingCycle] === -1 ? (
+                              "Contact Sales"
                             ) : plan.pricing[billingCycle] === 0 ? (
                               "Join for Free"
                             ) : (

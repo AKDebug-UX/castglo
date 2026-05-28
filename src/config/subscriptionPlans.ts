@@ -152,6 +152,57 @@ export const SUBSCRIPTION_PLANS = [
       "Support": "Priority Support"
     }
   },
+  {
+    planKey: "director_agency",
+    name: "Agency",
+    category: "casting_director",
+    description: "Best for large casting agencies and networks needing maximum volume.",
+    pricing: {
+      monthly: 99,
+      yearly: 990
+    },
+    features: {
+      "Company Profile": "Premium Agency Profile",
+      "Post Casting Calls": "Unlimited",
+      "Additional Listings": "Included",
+      "Access to Talent Database": "Full Database Access",
+      "AI Talent Matching": "Priority AI Matching",
+      "Applicant Management": "Enterprise Applicant pipeline",
+      "Pre - Audition": "Advanced Question Types",
+      "Shortlisting Tools": "Advanced Shortlist Folders",
+      "In-App Messaging": "Priority Messaging",
+      "Collaborators / Team Members": "Up to 25 users",
+      "Casting Call Visibility": "Featured Placement",
+      "Verified Badge": "Included",
+      "Analytics": "Advanced Insights",
+      "Support": "Dedicated Support"
+    }
+  },
+  {
+    planKey: "director_enterprise",
+    name: "Enterprise",
+    category: "casting_director",
+    description: "Custom solutions for major studios, networks, and high-volume productions.",
+    pricing: {
+      monthly: -1,
+      yearly: -1
+    },
+    features: {
+      "Company Profile": "Custom Profile",
+      "Post Casting Calls": "Unlimited",
+      "Access to Talent Database": "Full Access + API",
+      "AI Talent Matching": "Custom AI Models",
+      "Applicant Management": "Custom Workflows",
+      "Pre - Audition": "Custom Tools",
+      "In-App Messaging": "Unlimited Priority",
+      "Collaborators / Team Members": "Unlimited",
+      "Casting Call Visibility": "Premium Placement",
+      "Verified Badge": "Included",
+      "Analytics": "Custom Reporting",
+      "Support": "Dedicated Account Manager",
+      "Custom Integrations": "Available"
+    }
+  },
 
   // INDUSTRY PROFESSIONAL PLANS
   {
