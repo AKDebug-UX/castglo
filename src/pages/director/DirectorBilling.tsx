@@ -46,6 +46,28 @@ const PLAN_DETAILS: Record<string, { name: string; price: string; cycle: string;
       "Priority AI Matching",
       "Priority Support"
     ]
+  },
+  director_agency: {
+    name: "Agency",
+    price: "£99",
+    cycle: "/month",
+    features: [
+      "Unlimited Projects",
+      "Up to 25 Team Members",
+      "Priority AI Matching",
+      "Dedicated Support"
+    ]
+  },
+  director_enterprise: {
+    name: "Enterprise",
+    price: "Custom",
+    cycle: "",
+    features: [
+      "Custom Workflows",
+      "Unlimited Team Members",
+      "Custom Integrations",
+      "Dedicated Account Manager"
+    ]
   }
 };
 

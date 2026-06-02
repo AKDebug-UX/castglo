@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,18 +33,19 @@ export default function BrowseCast() {
   const [genre, setGenre] = useState("all");
   const [status, setStatus] = useState("all");
 
-  const fetchCastings = async (pageNumber = 1) => {
+  const fetchCastings = useCallback(async (pageNumber = 1) => {
     setIsLoading(true);
     try {
       const params: any = { 
         page: pageNumber,
-        limit: 12
+        limit: 12,
+        sortBy: "createdAt",
+        order: "desc",
       };
       
       if (search && search.trim()) params.search = search.trim();
       if (status !== "all") {
         if (status === "newest") {
-          params.sort = "-createdAt";
           params.sortBy = "createdAt";
           params.order = "desc";
         } else {
@@ -101,15 +102,35 @@ export default function BrowseCast() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [genre, location, search, status]);
 
   useEffect(() => {
     fetchCastings(pagination.page);
-  }, [pagination.page]); // Refetch when page changes
+  }, [fetchCastings, pagination.page]); // Refetch when page changes
+
+  const hasInitializedFiltersRef = useRef(false);
+  useEffect(() => {
+    if (!hasInitializedFiltersRef.current) {
+      hasInitializedFiltersRef.current = true;
+      return;
+    }
+    setPagination((p) => ({ ...p, page: 1 }));
+    fetchCastings(1);
+  }, [fetchCastings, genre, location, status]);
+
+  useEffect(() => {
+    const onFocus = () => {
+      setPagination((p) => ({ ...p, page: 1 }));
+      fetchCastings(1);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [fetchCastings]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchCastings();
+    setPagination((p) => ({ ...p, page: 1 }));
+    fetchCastings(1);
   };
 
   return (
