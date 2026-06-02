@@ -13,7 +13,7 @@ import {
   FileText, Clock, Info, CheckSquare, Target, FolderOpen, DollarSign,
   User, ListChecks, LayoutGrid, Banknote, MessageCircle, MessageSquare, Image as ImageIcon
 } from "lucide-react";
-import { profileAPI } from "@/lib/api";
+import { API_BASE_URL, castingCallAPI, profileAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation, getAvatarUrl, cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -116,6 +116,99 @@ export default function ProfessionalPublicProfile() {
   }, [profile]);
 
   const p = unifiedSnapshot;
+  const fullName = (p as any)?.fullName || (p as any)?.displayName || (profile as any)?.userId?.fullName || (profile as any)?.fullName || "Unknown";
+  const displayName = (p as any)?.display_name || (p as any)?.displayName;
+
+  const apiOrigin = useMemo(() => {
+    try {
+      return new URL(API_BASE_URL).origin;
+    } catch {
+      return "";
+    }
+  }, []);
+
+  const resolveMediaUrl = (value: unknown) => {
+    if (!value) return "";
+    const raw = typeof value === "string" ? value : typeof value === "object" && (value as any)?.url ? String((value as any).url) : "";
+    const url = raw.trim();
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith("//")) return `https:${url}`;
+    if (url.startsWith("/")) return apiOrigin ? `${apiOrigin}${url}` : url;
+    return apiOrigin ? `${apiOrigin}/${url}` : url;
+  };
+
+  const normalizeExternalUrl = (value: unknown) => {
+    const url = typeof value === "string" ? value.trim() : "";
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url) || url.startsWith("mailto:")) return url;
+    return `https://${url}`;
+  };
+
+  const portfolioItems = useMemo(() => {
+    const items: Array<{ id: string; url: string }> = [];
+    const pushItem = (idValue: unknown, urlValue: unknown) => {
+      const url = resolveMediaUrl(urlValue);
+      if (!url) return;
+      const id = typeof idValue === "string" && idValue ? idValue : url;
+      items.push({ id, url });
+    };
+
+    const headshots = (p as any)?.headshots || (profile as any)?.headshots;
+    if (Array.isArray(headshots)) {
+      headshots.forEach((s: any, idx: number) => pushItem(s?._id || `headshot-${idx}`, s?.url || s));
+    }
+
+    const mediaPhotos = (profile as any)?.media?.additionalPhotos;
+    if (Array.isArray(mediaPhotos)) {
+      mediaPhotos.forEach((s: any, idx: number) => pushItem(s?._id || `media-${idx}`, s?.url || s));
+    }
+
+    const unique = new Map<string, { id: string; url: string }>();
+    items.forEach((it) => unique.set(it.url, it));
+    return Array.from(unique.values());
+  }, [p, profile, apiOrigin]);
+
+  const roleLabel = useMemo(() => {
+    const raw =
+      (p as any)?.professional_title ||
+      (p as any)?.professionalCategory ||
+      (profile as any)?.professionalCategory ||
+      "industry_professional";
+
+    const titleCase = (value: string) =>
+      value
+        .replace(/_/g, " ")
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+
+    return titleCase(String(raw));
+  }, [p, profile]);
+
+  const initialAvatarSrc = useMemo(() => {
+    const possible =
+      (profile as any)?.profilePicture ||
+      (profile as any)?.avatar ||
+      (profile as any)?.userId?.profilePicture ||
+      (profile as any)?.userId?.avatar ||
+      (profile as any)?.headshots?.[0]?.url ||
+      (profile as any)?.media?.additionalPhotos?.[0]?.url ||
+      (p as any)?.headshots?.[0]?.url ||
+      (p as any)?.profilePicture ||
+      (p as any)?.avatar ||
+      "/avatar-placeholder.png";
+
+    const resolved = resolveMediaUrl(possible);
+    if (resolved) return resolved;
+    return getAvatarUrl(fullName, id);
+  }, [fullName, id, p, profile, apiOrigin]);
+
+  const [avatarSrc, setAvatarSrc] = useState<string>(initialAvatarSrc);
+  useEffect(() => {
+    setAvatarSrc(initialAvatarSrc);
+  }, [initialAvatarSrc]);
 
   if (isLoading) {
     return (
@@ -148,21 +241,22 @@ export default function ProfessionalPublicProfile() {
               <div className="space-y-6">
                 <div className="rounded-2xl bg-card overflow-hidden shadow-card border">
                   <img 
-                    src={p.userId?.profilePicture || getAvatarUrl(p.userId?.fullName)} 
-                    alt={p.userId?.fullName} 
+                    src={avatarSrc || "/avatar-placeholder.png"} 
+                    alt={fullName} 
                     className="w-full aspect-square object-cover" 
+                    onError={() => setAvatarSrc(getAvatarUrl(fullName, id))}
                   />
                   <div className="p-6">
-                    <div className="flex items-center justify-between mb-1">
-                       <h1 className="text-2xl font-bold">{p.userId?.fullName}</h1>
-                       {p.isVerified && <ShieldCheck className="w-5 h-5 text-success" />}
+                    <div className="flex items-start justify-between gap-3">
+                      <h1 className="text-3xl font-semibold leading-tight">{fullName}</h1>
+                      {p?.isVerified && <ShieldCheck className="w-5 h-5 text-success mt-1 shrink-0" />}
                     </div>
-                     <p className="text-sm font-bold text-primary tracking-wide uppercase mt-1">
-                        {p.professional_title || p.professionalCategory?.replace(/_/g, ' ') || "Industry Professional"}
-                     </p>
-                     {p.display_name && (
-                       <p className="text-xs text-muted-foreground mt-0.5">By {p.display_name}</p>
-                     )}
+                    <p className="text-sm font-semibold text-slate-600 mt-2">
+                      {roleLabel || "Industry Professional"}
+                    </p>
+                    {displayName && (
+                      <p className="text-xs text-muted-foreground mt-1">By {displayName}</p>
+                    )}
                     <div className="flex items-center gap-1 text-sm mt-3">
                       <Star className="w-4 h-4 fill-warning text-warning" />
                       <span className="font-medium">{p.rating || "0.0"}</span>
@@ -171,7 +265,7 @@ export default function ProfessionalPublicProfile() {
                     
                     <div className="mt-6 flex flex-col gap-2">
                       <Button variant="hero" className="w-full" asChild>
-                        <Link to={`/professional/messages?recipientId=${p.userId?._id}`}>Message Professional</Link>
+                        <Link to={`/professional/messages?recipientId=${(profile as any)?.userId?._id || (profile as any)?.userId?.id || id}`}>Message Professional</Link>
                       </Button>
                       <Button variant="outline" className="w-full">Book Service</Button>
                     </div>
@@ -206,9 +300,9 @@ export default function ProfessionalPublicProfile() {
                       <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Online Presence</h4>
                       
                       {p.website && (
-                        <a href={p.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-primary hover:underline">
+                        <a href={normalizeExternalUrl(p.website)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-primary hover:underline">
                           <Globe className="w-4 h-4" />
-                          <span className="truncate">{p.website.replace(/^https?:\/\//, '')}</span>
+                          <span className="truncate">{String(p.website).replace(/^https?:\/\//, '')}</span>
                         </a>
                       )}
 
@@ -290,7 +384,7 @@ export default function ProfessionalPublicProfile() {
                             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Expertise & Experience</span>
                           </div>
                           <div className="space-y-1">
-                            <p className="text-sm font-bold">{p.professional_title || p.professionalCategory?.replace(/_/g, ' ')}</p>
+                            <p className="text-sm font-bold">{roleLabel}</p>
                             {p.professionalTypes?.length > 0 && (
                               <p className="text-[10px] text-muted-foreground">Focus: {p.professionalTypes.join(", ")}</p>
                             )}
@@ -304,11 +398,15 @@ export default function ProfessionalPublicProfile() {
                             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Top Skills</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
-                            {p.skills?.slice(0, 12).map((tag: string) => (
-                              <Badge key={tag} variant="secondary" className="bg-white border text-[9px] px-2 py-0">
-                                {tag}
-                              </Badge>
-                            )) || <span className="text-xs text-muted-foreground">None specified</span>}
+                            {Array.isArray(p.skills) && p.skills.length > 0 ? (
+                              p.skills.slice(0, 12).map((tag: string) => (
+                                <Badge key={tag} variant="secondary" className="bg-white border text-[9px] px-2 py-0">
+                                  {tag}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">None specified</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -459,14 +557,21 @@ export default function ProfessionalPublicProfile() {
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
                       <div className="flex items-center justify-between mb-8">
                         <h2 className="font-bold text-2xl">Work Portfolio</h2>
-                        <span className="text-xs text-muted-foreground font-medium">{p.headshots?.length || 0} Items</span>
+                        <span className="text-xs text-muted-foreground font-medium">{portfolioItems.length} Items</span>
                       </div>
                       
-                      {p.headshots && p.headshots.length > 0 ? (
+                      {portfolioItems.length > 0 ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                          {p.headshots.map((shot: any) => (
-                            <div key={shot._id} className="aspect-[3/4] rounded-2xl overflow-hidden border bg-muted shadow-sm group relative cursor-zoom-in">
-                              <img src={shot.url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt="Portfolio" />
+                          {portfolioItems.map((shot, idx) => (
+                            <div key={shot.id} className="aspect-[3/4] rounded-2xl overflow-hidden border bg-muted shadow-sm group relative cursor-zoom-in">
+                              <img
+                                src={shot.url}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                                alt="Portfolio"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src = getAvatarUrl(fullName, `${id || "user"}-${idx}`);
+                                }}
+                              />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                                 <Button size="sm" variant="secondary" className="h-8 rounded-full text-xs">Expand</Button>
                               </div>

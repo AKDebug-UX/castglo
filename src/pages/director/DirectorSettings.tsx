@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,12 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
+import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 
 export default function DirectorSettings() {
-  const { user, updatePreferredCurrency } = useAuth();
+  const { user, updatePreferredCurrency, formatPrice } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("preferences");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -41,6 +44,67 @@ export default function DirectorSettings() {
   useEffect(() => {
     fetchSettingsData();
   }, []);
+
+  const resolvedPlan = useMemo(() => {
+    const rawKeyOrName =
+      subscriptionInfo?.plan?.planKey ||
+      subscriptionInfo?.plan?.key ||
+      subscriptionInfo?.plan?.name ||
+      "";
+
+    const aliasMap: Record<string, string> = {
+      cd_free: "director_free",
+      cd_basic: "director_basic",
+      cd_professional: "director_pro",
+      cd_pro: "director_pro",
+      cd_agency: "director_agency",
+      cd_enterprise: "director_enterprise",
+      ip_free: "professional_free",
+      ip_basic: "professional_basic",
+      ip_pro: "professional_pro",
+      freemium: "talent_free",
+      premium: "talent_pro",
+      professional: "professional_pro",
+    };
+
+    const planKey = aliasMap[rawKeyOrName] || rawKeyOrName;
+    const plan = (SUBSCRIPTION_PLANS as any[]).find((p) => p?.planKey === planKey);
+    const planName =
+      plan?.name ||
+      (typeof subscriptionInfo?.plan?.name === "string" && subscriptionInfo.plan.name.trim()
+        ? subscriptionInfo.plan.name
+        : "Free");
+    const category = plan?.category || subscriptionInfo?.plan?.category;
+
+    const titleCase = (s: string) =>
+      s
+        .split(/[\s_-]+/)
+        .filter(Boolean)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+
+    const friendlyName =
+      plan?.name ||
+      (typeof subscriptionInfo?.plan?.name === "string" && subscriptionInfo.plan.name.includes("_")
+        ? titleCase(subscriptionInfo.plan.name.replace(/^cd_/, "casting_director_").replace(/^ip_/, "industry_professional_"))
+        : planName);
+
+    const billingCycle = subscriptionInfo?.billingCycle === "yearly" || subscriptionInfo?.billingCycle === "annual" ? "yearly" : "monthly";
+    const price =
+      typeof subscriptionInfo?.plan?.price === "number"
+        ? subscriptionInfo.plan.price
+        : typeof plan?.pricing?.[billingCycle] === "number"
+          ? plan.pricing[billingCycle]
+          : null;
+
+    return {
+      planKey: plan?.planKey || planKey,
+      name: friendlyName,
+      category,
+      billingCycle,
+      price,
+    };
+  }, [subscriptionInfo]);
 
   const handleChangePassword = async () => {
     if (!passwordForm.currentPassword || !passwordForm.newPassword) {
@@ -242,15 +306,32 @@ export default function DirectorSettings() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Current Plan</span>
                   <Badge variant="secondary" className="bg-[#009698]/10 text-[#009698] border-[#009698]/20 font-bold rounded-full">
-                    {subscriptionInfo?.plan?.name || "Free"}
+                    {resolvedPlan.name || "Free"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Status</span>
                   <span className="text-sm capitalize font-bold text-slate-700">{subscriptionInfo?.status || "inactive"}</span>
                 </div>
+                {resolvedPlan.price !== null && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Price</span>
+                    <span className="text-sm font-bold text-slate-700">
+                      {formatPrice(resolvedPlan.price)}/{resolvedPlan.billingCycle === "yearly" ? "yr" : "mo"}
+                    </span>
+                  </div>
+                )}
+                {subscriptionInfo?.status === "active" && subscriptionInfo?.currentPeriodEnd && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Renews on</span>
+                    <span className="text-sm font-bold text-slate-700">{new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString()}</span>
+                  </div>
+                )}
               </div>
-              <Button className="w-full bg-[#009698] hover:bg-[#009698]/90 text-white font-bold rounded-xl py-5 shadow-lg shadow-[#009698]/10">
+              <Button
+                className="w-full bg-[#009698] hover:bg-[#009698]/90 text-white font-bold rounded-xl py-5 shadow-lg shadow-[#009698]/10"
+                onClick={() => navigate("/pricing?category=casting_director")}
+              >
                 Upgrade Plan
               </Button>
             </CardContent>

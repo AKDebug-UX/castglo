@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { KeyRound, Loader2, UserMinus, Bell, CreditCard, History, Download, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 
 export default function ProfessionalSettings() {
   const { user, updatePreferredCurrency, formatPrice } = useAuth();
@@ -48,6 +49,55 @@ export default function ProfessionalSettings() {
     };
     fetchSettingsData();
   }, []);
+
+  const resolvedPlan = useMemo(() => {
+    const rawKeyOrName =
+      subscriptionInfo?.plan?.planKey ||
+      subscriptionInfo?.plan?.key ||
+      subscriptionInfo?.plan?.name ||
+      "";
+
+    const aliasMap: Record<string, string> = {
+      cd_free: "director_free",
+      cd_basic: "director_basic",
+      cd_professional: "director_pro",
+      cd_pro: "director_pro",
+      cd_agency: "director_agency",
+      cd_enterprise: "director_enterprise",
+      ip_free: "professional_free",
+      ip_basic: "professional_basic",
+      ip_pro: "professional_pro",
+      freemium: "talent_free",
+      premium: "talent_pro",
+      professional: "professional_pro",
+    };
+
+    const planKey = aliasMap[rawKeyOrName] || rawKeyOrName;
+    const plan = (SUBSCRIPTION_PLANS as any[]).find((p) => p?.planKey === planKey);
+
+    const titleCase = (s: string) =>
+      s
+        .split(/[\s_-]+/)
+        .filter(Boolean)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+
+    const friendlyName =
+      plan?.name ||
+      (typeof subscriptionInfo?.plan?.name === "string" && subscriptionInfo.plan.name.includes("_")
+        ? titleCase(subscriptionInfo.plan.name.replace(/^cd_/, "casting_director_").replace(/^ip_/, "industry_professional_"))
+        : subscriptionInfo?.plan?.name || "Free");
+
+    const billingCycle = subscriptionInfo?.billingCycle === "yearly" || subscriptionInfo?.billingCycle === "annual" ? "yearly" : "monthly";
+    const price =
+      typeof subscriptionInfo?.plan?.price === "number"
+        ? subscriptionInfo.plan.price
+        : typeof plan?.pricing?.[billingCycle] === "number"
+          ? plan.pricing[billingCycle]
+          : null;
+
+    return { name: friendlyName, billingCycle, price };
+  }, [subscriptionInfo]);
 
   const handleChangePassword = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -288,12 +338,18 @@ export default function ProfessionalSettings() {
               <div className="p-5 rounded-2xl border bg-slate-50/50 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Current Plan</span>
-                  <strong className="text-sm text-slate-800 bg-[#009698]/10 text-[#009698] px-3 py-1 rounded-full font-bold border border-[#009698]/20">{subscriptionInfo?.plan?.name || "Free"}</strong>
+                  <strong className="text-sm text-slate-800 bg-[#009698]/10 text-[#009698] px-3 py-1 rounded-full font-bold border border-[#009698]/20">{resolvedPlan.name || "Free"}</strong>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Status</span>
                   <strong className="text-sm capitalize text-slate-800">{subscriptionInfo?.status || "inactive"}</strong>
                 </div>
+                {resolvedPlan.price !== null && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Price</span>
+                    <strong className="text-sm text-slate-700">{formatPrice(resolvedPlan.price)}/{resolvedPlan.billingCycle === "yearly" ? "yr" : "mo"}</strong>
+                  </div>
+                )}
                 {subscriptionInfo?.status === "active" && subscriptionInfo?.currentPeriodEnd && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Renews on</span>

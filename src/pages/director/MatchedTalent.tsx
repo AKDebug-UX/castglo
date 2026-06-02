@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +16,9 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger
 } from "@/components/ui/collapsible";
-import { castingCallAPI, profileAPI } from "@/lib/api";
+import { API_BASE_URL, castingCallAPI, messagingAPI, profileAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { getAvatarUrl } from "@/lib/utils";
 
 interface TalentProfile {
   _id: string;
@@ -59,17 +60,27 @@ interface Project {
 
 // ── Naive client-side match scoring ──────────────────────────────────────────
 const scoreMatch = (talent: any, role: any): number => {
+  const roleGender = role?.gender ?? role?.role_gender ?? role?.gender_identity;
+  const roleMinAge = role?.age_range_min ?? role?.minAge ?? role?.min_age ?? role?.ageMin;
+  const roleMaxAge = role?.age_range_max ?? role?.maxAge ?? role?.max_age ?? role?.ageMax;
+  const roleHair = role?.hair_color ?? role?.hairColor ?? role?.hair_colour;
+  const roleEye = role?.eye_color ?? role?.eyeColor ?? role?.eye_colour;
+  const roleHeightMin = role?.height_min ?? role?.heightMin;
+  const roleHeightMax = role?.height_max ?? role?.heightMax;
+  const roleEthnicities = role?.ethnicities ?? role?.ethnicity ?? role?.ethnicity_options;
+  const roleSkills = role?.role_skills ?? role?.skills ?? role?.skill_tags;
+
   let score = 0;
   
   // Basic Demographic (50%)
-  if (role.gender && role.gender.length > 0 && !role.gender.includes("any")) {
-    if (role.gender.includes(talent.gender)) score += 25;
+  if (roleGender && String(roleGender).length > 0 && !String(roleGender).toLowerCase().includes("any")) {
+    if (String(roleGender).toLowerCase().includes(String(talent.gender || "").toLowerCase())) score += 25;
   } else {
     score += 25; // open to all
   }
 
-  if (role.age_range_min && role.age_range_max && talent.age) {
-    const min = parseInt(role.age_range_min), max = parseInt(role.age_range_max);
+  if (roleMinAge && roleMaxAge && talent.age) {
+    const min = parseInt(String(roleMinAge)), max = parseInt(String(roleMaxAge));
     if (talent.age >= min && talent.age <= max) score += 25;
     else if (talent.age >= min - 5 && talent.age <= max + 5) score += 15; // close match
   } else {
@@ -77,31 +88,32 @@ const scoreMatch = (talent: any, role: any): number => {
   }
 
   // Appearance (25%)
-  if (role.hair_color?.length > 0 && talent.hairColor) {
-    if (role.hair_color.includes(talent.hairColor)) score += 10;
+  if (Array.isArray(roleHair) && roleHair.length > 0 && talent.hairColor) {
+    if (roleHair.map(String).includes(String(talent.hairColor))) score += 10;
   } else score += 10;
 
-  if (role.eye_color?.length > 0 && talent.eyeColor) {
-    if (role.eye_color.includes(talent.eyeColor)) score += 5;
+  if (Array.isArray(roleEye) && roleEye.length > 0 && talent.eyeColor) {
+    if (roleEye.map(String).includes(String(talent.eyeColor))) score += 5;
   } else score += 5;
 
-  if (role.height_min && talent.height) {
+  if (roleHeightMin && talent.height) {
     const tHeight = parseInt(talent.height);
-    const rMin = parseInt(role.height_min);
-    const rMax = parseInt(role.height_max || "999");
+    const rMin = parseInt(String(roleHeightMin));
+    const rMax = parseInt(String(roleHeightMax || "999"));
     if (tHeight >= rMin && tHeight <= rMax) score += 10;
   } else score += 10;
 
   // Skills & Ethnicity (25%)
-  if (role.ethnicities?.length > 0 && talent.ethnicity) {
-    if (role.ethnicities.includes(talent.ethnicity) || role.ethnicities.includes("open_to_all")) score += 15;
+  if (Array.isArray(roleEthnicities) && roleEthnicities.length > 0 && talent.ethnicity) {
+    const normalized = roleEthnicities.map((e: any) => String(e));
+    if (normalized.includes(String(talent.ethnicity)) || normalized.includes("open_to_all")) score += 15;
   } else score += 15;
 
   const talentSkills = talent.skills || [];
-  const roleSkills = role.role_skills || [];
-  if (roleSkills.length > 0) {
-    const overlap = roleSkills.filter((s: string) => talentSkills.includes(s));
-    score += Math.round((overlap.length / roleSkills.length) * 10);
+  const roleSkillsArr = Array.isArray(roleSkills) ? roleSkills : [];
+  if (roleSkillsArr.length > 0) {
+    const overlap = roleSkillsArr.map(String).filter((s: string) => talentSkills.map(String).includes(s));
+    score += Math.round((overlap.length / roleSkillsArr.length) * 10);
   } else {
     score += 10;
   }
@@ -118,6 +130,7 @@ const getMatchColor = (score: number) => {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function MatchedTalent() {
+  const navigate = useNavigate();
   const [projects, setProjects]         = useState<Project[]>([]);
   const [allTalents, setAllTalents]     = useState<TalentProfile[]>([]);
   const [isLoading, setIsLoading]       = useState(true);
@@ -125,6 +138,26 @@ export default function MatchedTalent() {
   const [selectedRole, setSelectedRole] = useState<string>("all");
   const [searchQuery, setSearchQuery]   = useState("");
   const [filtersOpen, setFiltersOpen]   = useState(false);
+  const [invitingTalentId, setInvitingTalentId] = useState<string>("");
+
+  const apiOrigin = useMemo(() => {
+    try {
+      return new URL(API_BASE_URL).origin;
+    } catch {
+      return "";
+    }
+  }, []);
+
+  const resolveMediaUrl = (value: unknown) => {
+    if (!value) return "";
+    const raw = typeof value === "string" ? value : typeof value === "object" && (value as any)?.url ? String((value as any).url) : "";
+    const url = raw.trim();
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith("//")) return `https:${url}`;
+    if (url.startsWith("/")) return apiOrigin ? `${apiOrigin}${url}` : url;
+    return apiOrigin ? `${apiOrigin}/${url}` : url;
+  };
 
   // Filters
   const [filterGender, setFilterGender]     = useState("any");
@@ -151,9 +184,46 @@ export default function MatchedTalent() {
           ? (Array.isArray(profilesRes.data.data) ? profilesRes.data.data : profilesRes.data.data?.profiles || [])
           : [];
         
-        // Filter strictly to 'talent' (btalent) profiles
-        const onlyBtalents = talents.filter((t: any) => t.userRole === "talent");
-        setAllTalents(onlyBtalents);
+        const normalizeTalent = (raw: any): TalentProfile => {
+          const userObj = raw?.userId && typeof raw.userId === "object" ? raw.userId : null;
+          const userId = userObj?._id || userObj?.id || (typeof raw?.userId === "string" ? raw.userId : undefined);
+          const fullName = userObj?.fullName || raw?.fullName || raw?.displayName || raw?.display_name;
+          const city = raw?.location?.city || raw?.city || raw?.current_city || raw?.unifiedTalentProfile?.city;
+          const country = raw?.location?.country || raw?.country || raw?.current_country || raw?.unifiedTalentProfile?.country;
+          const skills = raw?.skills || raw?.unifiedTalentProfile?.skills || raw?.talent?.skills || [];
+          const headshots = raw?.talent?.headshots || raw?.headshots || raw?.media?.additionalPhotos || [];
+          const profilePicture =
+            raw?.profilePicture ||
+            userObj?.profilePicture ||
+            raw?.talent?.headshots?.[0]?.url ||
+            raw?.headshots?.[0]?.url ||
+            raw?.media?.additionalPhotos?.[0]?.url;
+
+          return {
+            _id: raw?._id || userId || crypto.randomUUID(),
+            userId,
+            fullName,
+            city,
+            country,
+            gender: raw?.gender || raw?.talent?.gender || raw?.talent?.appearance?.gender,
+            age: raw?.age || raw?.talent?.age,
+            ethnicity: raw?.ethnicity || raw?.talent?.ethnicity || raw?.talent?.appearance?.ethnicity,
+            skills: Array.isArray(skills) ? skills : [],
+            languages: raw?.languages || raw?.talent?.languages,
+            accents: raw?.accents || raw?.talent?.accents,
+            showreelUrl: raw?.showreelUrl || raw?.showreel || raw?.media?.showreel?.url,
+            headshots: Array.isArray(headshots) ? headshots : [],
+            profilePicture: resolveMediaUrl(profilePicture),
+            unionStatus: raw?.unionStatus || raw?.talent?.unionStatus,
+          };
+        };
+
+        const onlyTalents = talents
+          .filter((t: any) => (t?.userRole || t?.userId?.userRole) === "talent")
+          .map(normalizeTalent)
+          .filter((t) => t.userId || t.fullName);
+
+        setAllTalents(onlyTalents);
       } catch {
         toast.error("Failed to load talent data.");
       } finally {
@@ -165,7 +235,9 @@ export default function MatchedTalent() {
 
   // Derive active role object
   const currentProject  = projects.find(p => p._id === selectedProject);
-  const currentRoleObj  = currentProject?.roles?.find(r => r.id === selectedRole);
+  const getRoleId = (r: any) => String(r?.id || r?._id || r?.roleId || r?.role_id || r?.uuid || "");
+  const getRoleTitle = (r: any) => String(r?.title || r?.role_name || r?.roleName || r?.name || "Role");
+  const currentRoleObj  = currentProject?.roles?.find((r: any) => getRoleId(r) === selectedRole);
   const activeRoles     = currentProject?.roles || [];
 
   // Compute ranked matches
@@ -188,6 +260,26 @@ export default function MatchedTalent() {
       return true;
     }).sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
   }, [rankedTalents, searchQuery, filterGender, filterAgeMin, filterAgeMax, filterEthnicity, filterUnion, minScore]);
+
+  const inviteTalent = async (talent: TalentProfile) => {
+    const talentId = String(talent.userId || talent._id || "");
+    if (!talentId) {
+      toast.error("Talent ID not found.");
+      return;
+    }
+
+    setInvitingTalentId(talentId);
+    try {
+      const castingCallId = selectedProject !== "all" ? selectedProject : undefined;
+      await messagingAPI.getOrCreateConversation(talentId, castingCallId);
+      toast.success("Invite ready. Send your message to the talent.");
+      navigate(`/director/messages?talentId=${encodeURIComponent(talentId)}`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to invite talent.");
+    } finally {
+      setInvitingTalentId("");
+    }
+  };
 
   const resetFilters = () => {
     setSearchQuery("");
@@ -250,7 +342,7 @@ export default function MatchedTalent() {
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
               {activeRoles.map(r => (
-                <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>
+                <SelectItem key={getRoleId(r)} value={getRoleId(r)}>{getRoleTitle(r)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -326,10 +418,7 @@ export default function MatchedTalent() {
         <div className="flex items-center gap-3 p-3 bg-primary/5 border border-primary/20 rounded-xl text-sm">
           <Sparkles className="w-4 h-4 text-primary shrink-0" />
           <span>
-            Matching talent for role <strong>"{currentRoleObj.title}"</strong>
-            {currentRoleObj.gender !== "any" && ` · ${currentRoleObj.gender}`}
-            {currentRoleObj.minAge && ` · Age ${currentRoleObj.minAge}–${currentRoleObj.maxAge}`}
-            {currentRoleObj.ethnicity !== "any" && ` · ${currentRoleObj.ethnicity}`}
+            Matching talent for role <strong>"{getRoleTitle(currentRoleObj)}"</strong>
           </span>
         </div>
       )}
@@ -358,7 +447,13 @@ export default function MatchedTalent() {
 
                 <CardContent className="px-4 pb-4 -mt-10">
                   <Avatar className="h-16 w-16 border-4 border-background shadow-md mb-3">
-                    <AvatarImage src={talent.headshots?.[0]?.url || talent.profilePicture} />
+                    <AvatarImage
+                      src={
+                        resolveMediaUrl((talent as any)?.talent?.headshots?.[0]?.url) ||
+                        resolveMediaUrl((talent.headshots as any)?.[0]?.url) ||
+                        talent.profilePicture
+                      }
+                    />
                     <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
                       {(talent.fullName || "?").slice(0, 2).toUpperCase()}
                     </AvatarFallback>
@@ -397,8 +492,18 @@ export default function MatchedTalent() {
                         <ExternalLink className="w-3 h-3" /> Profile
                       </Link>
                     </Button>
-                    <Button size="sm" className="flex-1 gap-1 text-xs h-8">
-                      <ArrowRight className="w-3 h-3" /> Invite
+                    <Button
+                      size="sm"
+                      className="flex-1 gap-1 text-xs h-8"
+                      onClick={() => inviteTalent(talent)}
+                      disabled={!!invitingTalentId && invitingTalentId === String(talent.userId || talent._id || "")}
+                    >
+                      {invitingTalentId && invitingTalentId === String(talent.userId || talent._id || "") ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <ArrowRight className="w-3 h-3" />
+                      )}{" "}
+                      Invite
                     </Button>
                   </div>
                 </CardContent>

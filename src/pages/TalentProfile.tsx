@@ -178,7 +178,7 @@ export default function TalentProfile() {
               <div className="space-y-6">
                 <div className="rounded-2xl bg-card overflow-hidden shadow-card">
                   <img 
-                    src={talent.talent?.headshots?.[0]?.url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
+                    src={talent.talent?.headshots?.[0]?.url || talent.userId?.profilePicture || "/avatar-placeholder.png"} 
                     alt={talent.userId?.fullName} 
                     className="w-full aspect-square object-cover" 
                   />

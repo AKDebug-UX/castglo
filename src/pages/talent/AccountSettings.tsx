@@ -12,6 +12,7 @@ import { Loader2, ShieldCheck, Upload, CreditCard, Bell, KeyRound, UserMinus, Hi
 import { authAPI, profileAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 
 type SettingsTab =
   | "overview"
@@ -39,6 +40,62 @@ export default function AccountSettings() {
   const [subscriptionQuota, setSubscriptionQuota] = useState<any>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
+
+  const resolvedPlan = useMemo(() => {
+    const rawKeyOrName =
+      subscriptionInfo?.plan?.planKey ||
+      subscriptionInfo?.plan?.key ||
+      subscriptionInfo?.plan?.name ||
+      "";
+
+    const aliasMap: Record<string, string> = {
+      cd_free: "director_free",
+      cd_basic: "director_basic",
+      cd_professional: "director_pro",
+      cd_pro: "director_pro",
+      cd_agency: "director_agency",
+      cd_enterprise: "director_enterprise",
+      ip_free: "professional_free",
+      ip_basic: "professional_basic",
+      ip_pro: "professional_pro",
+      freemium: "talent_free",
+      premium: "talent_pro",
+      professional: "professional_pro",
+    };
+
+    const planKey = aliasMap[rawKeyOrName] || rawKeyOrName;
+    const plan = (SUBSCRIPTION_PLANS as any[]).find((p) => p?.planKey === planKey);
+
+    const titleCase = (s: string) =>
+      s
+        .split(/[\s_-]+/)
+        .filter(Boolean)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+
+    const name =
+      plan?.name ||
+      (typeof subscriptionInfo?.plan?.name === "string" && subscriptionInfo.plan.name.includes("_")
+        ? titleCase(subscriptionInfo.plan.name.replace(/^cd_/, "casting_director_").replace(/^ip_/, "industry_professional_"))
+        : subscriptionInfo?.plan?.name || "Free");
+
+    const billingCycle = subscriptionInfo?.billingCycle === "yearly" || subscriptionInfo?.billingCycle === "annual" ? "yearly" : "monthly";
+    const price =
+      typeof subscriptionInfo?.plan?.price === "number"
+        ? subscriptionInfo.plan.price
+        : typeof plan?.pricing?.[billingCycle] === "number"
+          ? plan.pricing[billingCycle]
+          : null;
+
+    const isFree =
+      plan?.planKey?.endsWith("_free") ||
+      planKey === "talent_free" ||
+      name === "Free" ||
+      name === "Free Plan" ||
+      !subscriptionInfo?.plan;
+
+    return { name, billingCycle, price, isFree };
+  }, [subscriptionInfo]);
 
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -345,7 +402,7 @@ export default function AccountSettings() {
               <p className="text-sm text-muted-foreground">Manage your subscription and quota</p>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!subscriptionInfo?.plan?.name || subscriptionInfo?.plan?.name === "Free Plan" || subscriptionInfo?.plan?.name === "Free" ? (
+              {resolvedPlan.isFree ? (
                 <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 p-6 md:p-8 text-white shadow-xl">
                   {/* Glowing background circles for visual depth */}
                   <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 rounded-full bg-pink-500/10 blur-3xl pointer-events-none" />
@@ -392,7 +449,7 @@ export default function AccountSettings() {
                     
                     <div className="flex-shrink-0 w-full lg:w-auto">
                       <Button asChild size="lg" className="w-full lg:w-auto bg-gradient-to-r from-[#D98EB3] to-[#C97EA3] hover:from-[#C97EA3] hover:to-[#B86D92] text-white font-bold rounded-xl shadow-lg shadow-pink-900/30 border-none px-8 py-6 text-sm hover:scale-[1.02] transition-transform">
-                        <a href="/pricing">Upgrade to Premium</a>
+                        <a href="/pricing?category=talent">Upgrade to Premium</a>
                       </Button>
                     </div>
                   </div>
@@ -401,7 +458,7 @@ export default function AccountSettings() {
                 <div className="p-5 rounded-2xl border bg-emerald-50/20 border-emerald-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 font-semibold px-3 py-1 rounded-full">{subscriptionInfo?.plan?.name || "Premium Plan"}</Badge>
+                      <Badge className="bg-emerald-600 text-white hover:bg-emerald-700 font-semibold px-3 py-1 rounded-full">{resolvedPlan.name || "Premium Plan"}</Badge>
                       <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 font-medium px-2 py-0.5 rounded-full">Active Subscriber</Badge>
                     </div>
                     <p className="text-sm text-slate-600 leading-relaxed">
@@ -409,7 +466,7 @@ export default function AccountSettings() {
                     </p>
                   </div>
                   <Button variant="outline" asChild className="rounded-xl border-slate-200 hover:bg-slate-50 flex-shrink-0">
-                    <a href="/pricing">Manage / Change Plan</a>
+                    <a href="/pricing?category=talent">Manage / Change Plan</a>
                   </Button>
                 </div>
               )}
@@ -429,7 +486,9 @@ export default function AccountSettings() {
                 </div>
                 <div className="p-4 rounded-lg border bg-white">
                   <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Price</p>
-                  <p className="font-medium">{subscriptionInfo?.plan?.price ? `${formatPrice(subscriptionInfo.plan.price)}/mo` : formatPrice(0)}</p>
+                  <p className="font-medium">
+                    {resolvedPlan.price !== null ? `${formatPrice(resolvedPlan.price)}/${resolvedPlan.billingCycle === "yearly" ? "yr" : "mo"}` : formatPrice(0)}
+                  </p>
                 </div>
               </div>
             </CardContent>

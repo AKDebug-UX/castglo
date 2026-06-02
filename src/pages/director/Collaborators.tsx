@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,7 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { castingCallAPI } from "@/lib/api";
+import { castingCallAPI, messagingAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 interface Teammate {
@@ -31,14 +31,31 @@ interface Teammate {
   assignedProject?: string;
 }
 
-const INITIAL_TEAM: Teammate[] = [
-  { id: "1", name: "Sarah Jenkins", email: "sarah.j@production.com", role: "admin", status: "active", lastActive: "2 hours ago", assignedProject: "Project Aurora: Beyond the Horizon" },
-  { id: "2", name: "Michael Chen", email: "m.chen@casting.net", role: "editor", status: "active", lastActive: "1 day ago", assignedProject: "The Silent Echo (Short Film)" },
-  { id: "3", name: "David Miller", email: "d.miller@freelance.com", role: "viewer", status: "pending", assignedProject: "Project Aurora: Beyond the Horizon" },
-];
+const getInitials = (name: string) =>
+  name
+    .split(" ")
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+
+const timeAgo = (dateInput: string | Date | undefined) => {
+  if (!dateInput) return undefined;
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  const ms = Date.now() - date.getTime();
+  if (!Number.isFinite(ms) || ms < 0) return undefined;
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+};
 
 export default function Collaborators() {
-  const [team, setTeam] = useState<Teammate[]>(INITIAL_TEAM);
+  const [team, setTeam] = useState<Teammate[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState<"admin" | "editor" | "viewer">("editor");
   const [projects, setProjects] = useState<any[]>([]);
@@ -70,44 +87,109 @@ export default function Collaborators() {
     fetchMyProjects();
   }, []);
 
-  const handleInvite = (e: React.FormEvent) => {
+  const assignedProjName = useMemo(() => {
+    if (customProjectName) return customProjectName;
+    if (selectedProjectId) {
+      const selectedProj = projects.find((p) => (p._id || p.id) === selectedProjectId);
+      if (selectedProj) return selectedProj.projectName || selectedProj.title;
+    }
+    return "All Projects";
+  }, [customProjectName, projects, selectedProjectId]);
+
+  useEffect(() => {
+    const fetchCollaborators = async () => {
+      try {
+        const res = await messagingAPI.getMyConversations();
+        const conversations = res.data?.success
+          ? (Array.isArray(res.data.data) ? res.data.data : res.data.data?.conversations || [])
+          : [];
+
+        const byId = new Map<string, Teammate>();
+        conversations.forEach((conv: any) => {
+          const participants = conv.participants || [];
+          const other = participants.find((p: any) => p?._id && p?._id !== conv?.createdBy);
+          const fallback = participants[0];
+          const user = other || fallback;
+          if (!user?._id) return;
+
+          const name = user.fullName || user.name || user.email || "Unknown";
+          const email = user.email || "";
+          const lastActive = timeAgo(conv.lastMessage?.createdAt || conv.updatedAt || conv.createdAt);
+
+          byId.set(user._id, {
+            id: user._id,
+            name,
+            email,
+            role: "viewer",
+            status: "active",
+            lastActive,
+            assignedProject: "All Projects",
+            avatar: user.profilePicture,
+          });
+        });
+
+        setTeam(Array.from(byId.values()));
+      } catch (e) {
+        setTeam([]);
+      }
+    };
+
+    fetchCollaborators();
+  }, []);
+
+  const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail) {
+    const email = inviteEmail.trim();
+    if (!email) {
       toast.error("Please enter an email address.");
       return;
     }
+    try {
+      const searchRes = await userAPI.search({ query: email, limit: 10 });
+      const results = searchRes.data?.success ? (searchRes.data.data?.users || searchRes.data.data || []) : [];
+      const match = Array.isArray(results)
+        ? results.find((u: any) => String(u.email || "").toLowerCase() === email.toLowerCase()) || results[0]
+        : null;
 
-    // Find assigned project name
-    let assignedProjName = customProjectName;
-    if (selectedProjectId) {
-      const selectedProj = projects.find(p => (p._id || p.id) === selectedProjectId);
-      if (selectedProj) {
-        assignedProjName = selectedProj.projectName || selectedProj.title;
+      const userId = match?._id || match?.id;
+      if (!userId) {
+        toast.error("User not found for that email.");
+        return;
       }
+
+      await messagingAPI.getOrCreateConversation(userId);
+
+      const name = match?.fullName || match?.name || email.split("@")[0];
+      setTeam((prev) => {
+        const exists = prev.some((t) => t.id === userId);
+        if (exists) return prev;
+        return [
+          ...prev,
+          {
+            id: userId,
+            name,
+            email: match?.email || email,
+            role: selectedRole,
+            status: "pending",
+            assignedProject: assignedProjName,
+            avatar: match?.profilePicture,
+          },
+        ];
+      });
+
+      setInviteEmail("");
+      toast.success(`Invitation sent to ${email}`);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to send invitation.");
     }
-
-    const newTeammate: Teammate = {
-      id: crypto.randomUUID(),
-      name: inviteEmail.split("@")[0],
-      email: inviteEmail,
-      role: selectedRole,
-      status: "pending",
-      assignedProject: assignedProjName || "All Projects"
-    };
-
-    setTeam([...team, newTeammate]);
-    setInviteEmail("");
-    toast.success(`Invitation to collaborate on "${assignedProjName || 'All Projects'}" sent to ${inviteEmail}`);
   };
 
   const removeTeammate = (id: string) => {
-    setTeam(team.filter(t => t.id !== id));
-    toast.success("Teammate removed.");
+    toast.message("Remove collaborator is not available yet.");
   };
 
   const updateRole = (id: string, newRole: "admin" | "editor" | "viewer") => {
-    setTeam(team.map(t => t.id === id ? { ...t, role: newRole } : t));
-    toast.success("Role updated.");
+    toast.message("Role management is not available yet.");
   };
 
   const getRoleIcon = (role: string) => {
@@ -149,7 +231,7 @@ export default function Collaborators() {
                         <Avatar className="h-10 w-10 shrink-0">
                           <AvatarImage src={member.avatar} />
                           <AvatarFallback className="bg-[#DEFCFE] text-[#009698] font-bold text-sm">
-                            {member.name.split(" ").map(n => n[0]).join("").toUpperCase()}
+                            {getInitials(member.name)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
