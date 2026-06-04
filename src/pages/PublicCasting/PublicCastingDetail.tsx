@@ -184,7 +184,6 @@ export default function PublicCastingDetail() {
                       )}
                     </div>
                   </div>
-                  </div>
                 )}
 
                 {casting.roles && casting.roles.length > 0 && (
