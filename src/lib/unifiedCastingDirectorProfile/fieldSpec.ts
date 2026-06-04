@@ -204,14 +204,14 @@ export const UNIFIED_CASTING_DIRECTOR_FIELD_IDS = new Set(
   UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC.map((field) => field.id)
 );
 
-export const castingDirectorSectionTabMap: Record<string, "overview" | "hiring" | "projects" | "roles" | "audition" | "commercial" | "navigation"> = {
+export const castingDirectorSectionTabMap: Record<string, "overview" | "hiring" | "audition" | "commercial" | "navigation"> = {
   "Basic Information": "overview",
   "Professional Identity": "overview",
   "Credibility / Trust": "overview",
   "Hiring Manager Tools": "hiring",
   "Applicant Management": "hiring",
-  "Project / Casting Call": "projects",
-  "Role Management": "roles",
+  "Project / Casting Call": "overview",
+  "Role Management": "overview",
   "Pre-Audition Workflow": "audition",
   "Pre-Audition Form": "audition",
   "Marketplace / Commercial": "commercial",

@@ -34,7 +34,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { serviceAPI } from "@/lib/api";
+import { serviceAPI, uploadAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -46,6 +46,7 @@ export default function ProfessionalServices() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -94,6 +95,7 @@ export default function ProfessionalServices() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setSelectedImage(reader.result as string);
@@ -110,17 +112,38 @@ export default function ProfessionalServices() {
 
     setIsSubmitting(true);
     try {
+      let imageUrl: string | undefined;
+      if (imageFile) {
+        const uploadFormData = new FormData();
+        uploadFormData.append("image", imageFile);
+        const uploadRes = await uploadAPI.uploadImage(uploadFormData);
+        imageUrl = uploadRes.data?.data?.url || uploadRes.data?.url;
+      }
+
       const response = await serviceAPI.create({
         ...formData,
         price: Number(formData.price),
-        image: selectedImage // Backend should handle base64 or you might need FormData
+        image: imageUrl || undefined,
       });
 
       if (response.data.success) {
         toast.success("Service created successfully!");
         setIsDialogOpen(false);
-        setFormData({ title: "", description: "", price: "", duration: "" });
+        setFormData({
+          title: "",
+          description: "",
+          category: "",
+          pricing_model: "fixed",
+          price: "",
+          duration: "",
+          target_clients: [],
+          industry_areas: [],
+          availability_type: "project_based",
+          working_days: ["mon", "tue", "wed", "thu", "fri"],
+          lead_time: "1_week",
+        });
         setSelectedImage(null);
+        setImageFile(null);
         fetchServices();
       }
     } catch (error) {

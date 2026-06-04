@@ -117,6 +117,7 @@ export default function MyProjects() {
 
       const response = await subscriptionAPI.createCheckoutSession({
         type: "casting_boost",
+        planName: boosts.length > 0 ? boosts[0] : "casting_boost",
         projectId: project._id,
         boosts: boosts,
         successUrl: `${window.location.origin}/payment-success?type=boost&id=${project._id}`,
@@ -153,6 +154,7 @@ export default function MyProjects() {
     if (activeTab === "open") return project.status === "open";
     if (activeTab === "closed") return project.status === "closed";
     if (activeTab === "drafts") return project.status === "draft";
+    if (activeTab === "pending") return project.status === "pending";
     return true;
   });
 
@@ -185,6 +187,7 @@ export default function MyProjects() {
           <TabsList>
             <TabsTrigger value="all">All Projects</TabsTrigger>
             <TabsTrigger value="open">Open</TabsTrigger>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
             <TabsTrigger value="closed">Closed</TabsTrigger>
             <TabsTrigger value="drafts">Drafts</TabsTrigger>
           </TabsList>
@@ -221,6 +224,7 @@ export default function MyProjects() {
                   <Badge 
                     className={
                       project.status === "open" ? "bg-success text-success-foreground" :
+                      project.status === "pending" ? "bg-blue-500 hover:bg-blue-600 text-white" :
                       project.status === "draft" ? "bg-warning text-warning-foreground" :
                       "bg-muted text-muted-foreground"
                     }
@@ -293,6 +297,11 @@ export default function MyProjects() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
+                        <Link to={`/director/projects/${project._id}`}>
+                          <Eye className="w-4 h-4 mr-2" /> Preview
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
                         <Link to={`/director/projects/${project._id}/edit`}>
                           <Pencil className="w-4 h-4 mr-2" /> Edit Project
                         </Link>
@@ -338,6 +347,7 @@ export default function MyProjects() {
                       <Badge 
                         className={
                           project.status === "open" ? "bg-success text-success-foreground" :
+                          project.status === "pending" ? "bg-blue-500 hover:bg-blue-600 text-white" :
                           project.status === "draft" ? "bg-warning text-warning-foreground" :
                           "bg-muted text-muted-foreground"
                         }
@@ -400,6 +410,12 @@ export default function MyProjects() {
                       <Link to={`/director/projects/${project._id}/edit`}>
                         <Pencil className="w-3 h-3 mr-1" />
                         Edit
+                      </Link>
+                    </Button>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/director/projects/${project._id}`}>
+                        <Eye className="w-3 h-3 mr-1" />
+                        Preview
                       </Link>
                     </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(project._id)}>

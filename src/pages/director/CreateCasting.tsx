@@ -382,7 +382,72 @@ export default function CreateCasting() {
         try {
           const response = await castingCallAPI.getOne(id as string);
           if (response.data.success) {
-            const data = response.data.data;
+            const raw = response.data.data;
+            const data = raw?.castingCall || raw?.project || raw;
+
+            const toDateInput = (value: any) => {
+              if (!value) return "";
+              const str = String(value);
+              if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+              const d = new Date(str);
+              if (Number.isNaN(d.getTime())) return "";
+              const yyyy = d.getFullYear();
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              const dd = String(d.getDate()).padStart(2, "0");
+              return `${yyyy}-${mm}-${dd}`;
+            };
+
+            const toStringArray = (value: any) => {
+              if (Array.isArray(value)) return value.filter(Boolean).map(String);
+              if (typeof value === "string" && value.trim()) return [value.trim()];
+              return [];
+            };
+
+            const toProjectTypeLabel = (value: any) => {
+              const v = String(value || "").trim();
+              if (!v) return "";
+              const normalized = v.toLowerCase();
+              const map: Record<string, string> = {
+                film: "Film",
+                tv: "TV",
+                theatre: "Theatre",
+                theater: "Theatre",
+                commercial: "Commercial",
+                voiceover: "Voiceover",
+                voice_over: "Voiceover",
+                voice: "Voiceover",
+                musicvideo: "Music Video",
+                music_video: "Music Video",
+              };
+              return map[normalized] || v.charAt(0).toUpperCase() + v.slice(1);
+            };
+
+            const toProjectStatusLabel = (value: any) => {
+              const v = String(value || "").trim();
+              if (!v) return "";
+              const normalized = v.toLowerCase();
+              if (normalized === "open") return "Open for Applications";
+              if (normalized === "draft") return "Draft";
+              if (normalized === "closed") return "Closed";
+              if (normalized === "filled") return "Role Filled";
+              return v;
+            };
+
+            // Extract metadata if exists to restore all form fields
+            let parsedMeta: any = null;
+            const reqs = Array.isArray(data.requirements) ? data.requirements : (typeof data.requirements === "string" ? data.requirements.split("\n") : []);
+            reqs.forEach((r: string) => {
+              if (typeof r === 'string' && r.trim().startsWith('__META__:')) {
+                try {
+                  parsedMeta = JSON.parse(r.trim().substring(9));
+                } catch(e) {}
+              }
+            });
+
+            if (parsedMeta) {
+              Object.assign(data, parsedMeta);
+            }
+            
             
             // Safely map roles to ensure all required array fields exist
             const safeRoles = (data.roles || []).map((r: any) => ({
@@ -395,6 +460,16 @@ export default function CreateCasting() {
               full_role_description: r.full_role_description || r.requirements || "",
               gender: Array.isArray(r.gender) ? r.gender : (r.gender ? [r.gender] : []),
               ethnicity: Array.isArray(r.ethnicity) ? r.ethnicity : (r.ethnicity ? [r.ethnicity] : []),
+              number_of_talents_needed: r.number_of_talents_needed || r.numberOfTalentsNeeded || r.totalNeeded || "1",
+              playing_age_range: r.playing_age_range || r.playingAgeRange || "",
+              minimum_age: r.minimum_age || r.minAge || r.min_age || "18",
+              maximum_age: r.maximum_age || r.maxAge || r.max_age || "35",
+              role_city: r.role_city || r.city || "",
+              role_country: r.role_country || r.country || "UK",
+              union_status_required: r.union_status_required || r.unionStatus || "Open to All",
+              payment_amount: r.payment_amount || r.payRate || r.pay_rate || "",
+              payment_type: r.payment_type || r.paymentType || "Fixed Fee",
+              currency: r.currency || "GBP",
               role_talent_types_needed: Array.isArray(r.role_talent_types_needed) ? r.role_talent_types_needed : [],
               build_physical_type: Array.isArray(r.build_physical_type) ? r.build_physical_type : [],
               languages_required: Array.isArray(r.languages_required) ? r.languages_required : [],
@@ -407,13 +482,31 @@ export default function CreateCasting() {
               ...prev,
               ...data,
               project_title: data.project_title || data.projectName || data.title || "",
-              project_type: data.project_type || data.projectType || "Film",
+              project_type: toProjectTypeLabel(data.project_type || data.projectType) || "Film",
               full_project_description: data.full_project_description || data.description || "",
-              project_status: data.project_status || data.status || "Open for Applications",
-              application_deadline: data.application_deadline || data.deadline || "",
-              genre: Array.isArray(data.genre) ? data.genre : [],
-              industry_areas: Array.isArray(data.industry_areas) ? data.industry_areas : [],
-              talent_types_needed: Array.isArray(data.talent_types_needed) ? data.talent_types_needed : [],
+              project_status: toProjectStatusLabel(data.project_status || data.status) || "Open for Applications",
+              short_project_summary: data.short_project_summary || data.shortSummary || data.summary || "",
+              internal_project_reference: data.internal_project_reference || data.internalReference || "",
+              casting_company_name: data.casting_company_name || data.castingCompanyName || "",
+              production_company_name: data.production_company_name || data.productionCompanyName || "",
+              project_website: data.project_website || data.projectWebsite || "",
+              director_name: data.director_name || data.directorName || "",
+              producer_name: data.producer_name || data.producerName || "",
+              writer_name: data.writer_name || data.writerName || "",
+              casting_director_name: data.casting_director_name || data.castingDirectorName || "",
+              application_deadline: toDateInput(data.application_deadline || data.deadline),
+              self_tape_deadline: toDateInput(data.self_tape_deadline || data.selfTapeDeadline),
+              audition_date: toDateInput(data.audition_date || data.auditionDate),
+              callback_date: toDateInput(data.callback_date || data.callbackDate),
+              genre: toStringArray(data.genre || data.category),
+              industry_areas: toStringArray(data.industry_areas),
+              talent_types_needed: toStringArray(data.talent_types_needed || data.talentTypesNeeded || data.talentTypes),
+              talent_location_scope: data.talent_location_scope || data.locationScope || prev.talent_location_scope,
+              preferred_talent_base: data.preferred_talent_base || data.preferredTalentBase || (typeof data.location === "string" ? data.location : prev.preferred_talent_base),
+              project_cover_image: data.project_cover_image || data.image || data.coverImage || prev.project_cover_image,
+              additional_images: Array.isArray(data.additional_images) ? data.additional_images : (Array.isArray(data.additionalImages) ? data.additionalImages : prev.additional_images),
+              moodboard_references: Array.isArray(data.moodboard_references) ? data.moodboard_references : (Array.isArray(data.moodboardReferences) ? data.moodboardReferences : prev.moodboard_references),
+              pre_audition_questions: Array.isArray(data.pre_audition_questions) ? data.pre_audition_questions : prev.pre_audition_questions,
               roles: safeRoles.length > 0 ? safeRoles : prev.roles,
             }));
           }
@@ -628,6 +721,13 @@ export default function CreateCasting() {
 
       const isBoosted = formData.featured_project || formData.instant_posting_addon;
 
+      // Inject full form state as a META string in requirements to bypass strict backend schema
+      const formStateMeta = { ...formData };
+      delete (formStateMeta as any).project_cover_image; // Handled separately
+      const metaString = `__META__:${JSON.stringify(formStateMeta)}`;
+      const reqs = firstRole ? (firstRole.character_role_summary + "\n" + (firstRole.full_role_description || "")).split('\n').filter(Boolean) : [];
+      reqs.push(metaString);
+
       let payload: any = {
         ...formData,
         // Legacy fields for backward compatibility
@@ -641,7 +741,7 @@ export default function CreateCasting() {
         status: (statusOverride === "draft" || isBoosted) ? "draft" : (formData.project_status?.toLowerCase().includes('open') ? "open" : "draft"),
         location: formData.preferred_talent_base || formData.talent_location_scope,
         category: formData.genre?.[0] || "other",
-        requirements: firstRole ? (firstRole.character_role_summary + "\n" + (firstRole.full_role_description || "")).split('\n').filter(Boolean) : [],
+        requirements: reqs,
         roles: mappedRoles,
         // Add-ons legacy names
         featuredPosting: formData.featured_project,
@@ -687,6 +787,7 @@ export default function CreateCasting() {
 
             const checkoutRes = await subscriptionAPI.createCheckoutSession({
               type: "casting_boost",
+              planName: boosts.length > 0 ? boosts[0] : "casting_boost",
               projectId: projectId,
               boosts: boosts,
               successUrl: `${window.location.origin}/payment-success?type=boost&id=${projectId}`,
@@ -762,17 +863,15 @@ export default function CreateCasting() {
           <h1 className="text-3xl font-bold">{isEditMode ? "Edit Project" : "Post a New Project"}</h1>
           <p className="text-muted-foreground">Find the perfect talent for your upcoming production</p>
         </div>
-        {!isEditMode && (
-          <Button
-            type="button"
-            onClick={handleAutoFill}
-            variant="outline"
-            className="self-start sm:self-center bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100/80 hover:text-teal-800 flex items-center gap-2 font-semibold shadow-sm transition-all duration-200"
-          >
-            <Zap className="w-4 h-4 text-teal-600 fill-teal-600 animate-pulse" />
-            Auto-fill Mock Data
-          </Button>
-        )}
+        <Button
+          type="button"
+          onClick={handleAutoFill}
+          variant="outline"
+          className="self-start sm:self-center bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100/80 hover:text-teal-800 flex items-center gap-2 font-semibold shadow-sm transition-all duration-200"
+        >
+          <Zap className="w-4 h-4 text-teal-600 fill-teal-600 animate-pulse" />
+          Auto-fill Mock Data
+        </Button>
       </div>
 
       {/* Stepper */}

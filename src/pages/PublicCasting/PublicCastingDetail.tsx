@@ -20,8 +20,9 @@ import { formatLocation, formatBudget } from "@/lib/utils";
 export default function PublicCastingDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [casting, setCasting] = useState(null);
+  const [casting, setCasting] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [metaData, setMetaData] = useState<any>(null);
 
   useEffect(() => {
     const fetchCasting = async () => {
@@ -31,7 +32,23 @@ export default function PublicCastingDetail() {
       try {
         const response = await castingCallAPI.getOne(id);
         if (response.data.success) {
-          setCasting(response.data.data);
+          const data = response.data.data;
+          
+          let parsedMeta = null;
+          if (data.requirements && Array.isArray(data.requirements)) {
+            const cleanReqs = [];
+            data.requirements.forEach((r: string) => {
+              if (typeof r === 'string' && r.startsWith('__META__:')) {
+                try { parsedMeta = JSON.parse(r.substring(9)); } catch(e){}
+              } else {
+                cleanReqs.push(r);
+              }
+            });
+            data.requirements = cleanReqs;
+          }
+
+          setCasting(data);
+          setMetaData(parsedMeta);
         }
       } catch (error) {
         toast.error(error.response?.data?.message || "Failed to load casting details");
@@ -88,7 +105,9 @@ export default function PublicCastingDetail() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-8 md:p-12">
                     <div className="mb-4">
                       <Badge className={`px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-wider ${
-                        casting.status?.toLowerCase() === 'open' ? 'bg-emerald-500 text-white' : 'bg-slate-500 text-white'
+                        casting.status?.toLowerCase() === 'open' ? 'bg-emerald-500 text-white' :
+                        casting.status?.toLowerCase() === 'pending' ? 'bg-blue-500 text-white' :
+                        'bg-slate-500 text-white'
                       }`}>
                         {casting.status}
                       </Badge>
@@ -97,7 +116,7 @@ export default function PublicCastingDetail() {
                       {casting.title}
                     </h1>
                     <p className="text-lg md:text-xl text-white/90 font-medium">
-                      {casting.postedBy?.fullName || "Mock Casting Agency"}
+                      {metaData?.casting_company_name || metaData?.production_company_name || casting.postedBy?.fullName || "Casting Agency"}
                     </p>
                   </div>
                 </div>
@@ -120,6 +139,130 @@ export default function PublicCastingDetail() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {metaData && (
+                  <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+                    <h2 className="text-2xl font-bold text-slate-900 mb-6">Additional Information</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {metaData.director_name && (
+                        <div>
+                          <div className="text-slate-500 text-sm font-medium mb-1">Director</div>
+                          <div className="text-slate-900 font-semibold">{metaData.director_name}</div>
+                        </div>
+                      )}
+                      {metaData.producer_name && (
+                        <div>
+                          <div className="text-slate-500 text-sm font-medium mb-1">Producer</div>
+                          <div className="text-slate-900 font-semibold">{metaData.producer_name}</div>
+                        </div>
+                      )}
+                      {metaData.industry_areas?.length > 0 && (
+                        <div>
+                          <div className="text-slate-500 text-sm font-medium mb-1">Industry Areas</div>
+                          <div className="text-slate-900 font-semibold">{metaData.industry_areas.join(', ')}</div>
+                        </div>
+                      )}
+                      {metaData.talent_types_needed?.length > 0 && (
+                        <div>
+                          <div className="text-slate-500 text-sm font-medium mb-1">Talent Types Needed</div>
+                          <div className="text-slate-900 font-semibold">{metaData.talent_types_needed.join(', ').replace(/_/g, ' ')}</div>
+                        </div>
+                      )}
+                      {metaData.audition_type && (
+                        <div>
+                          <div className="text-slate-500 text-sm font-medium mb-1">Audition Type</div>
+                          <div className="text-slate-900 font-semibold">{metaData.audition_type}</div>
+                        </div>
+                      )}
+                      {metaData.media_required?.length > 0 && (
+                        <div>
+                          <div className="text-slate-500 text-sm font-medium mb-1">Media Required</div>
+                          <div className="text-slate-900 font-semibold">{metaData.media_required.join(', ')}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  </div>
+                )}
+
+                {casting.roles && casting.roles.length > 0 && (
+                  <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+                    <h2 className="text-2xl font-bold text-slate-900 mb-6">Roles</h2>
+                    <div className="space-y-6">
+                      {casting.roles.map((r: any) => {
+                        const roleId = String(r?._id || r?.id || r?.role_id || Math.random());
+                        const metaRole = (metaData?.roles || []).find((mr: any) => String(mr.id) === roleId) || {};
+                        const type = Array.isArray(r.role_type || r.roleType) ? (r.role_type || r.roleType).join(', ') : (r.role_type || r.roleType || 'Role');
+                        const skills = metaRole.skills_required || [];
+                        const union = metaRole.union_status_required || "";
+                        
+                        return (
+                          <div key={roleId} className="border border-slate-100 rounded-xl p-6 hover:shadow-md transition-shadow">
+                            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                              <div>
+                                <h3 className="text-xl font-bold text-slate-900">{r.role_name || r.title || r.roleName}</h3>
+                                <div className="text-slate-500 font-medium mt-1">{type}</div>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {metaRole.intimacy_scene && <Badge className="bg-red-50 text-red-600 border-red-200">Intimacy Required</Badge>}
+                                {metaRole.nudity_required && <Badge className="bg-red-50 text-red-600 border-red-200">Nudity Required</Badge>}
+                                {metaRole.speaking_role === false && <Badge variant="secondary" className="bg-slate-100 text-slate-600">Non-Speaking</Badge>}
+                              </div>
+                            </div>
+                            
+                            {(r.character_role_summary || r.description) && (
+                              <p className="text-slate-600 mb-6 leading-relaxed">
+                                {r.character_role_summary || r.description}
+                              </p>
+                            )}
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <span className="block text-slate-400 font-medium mb-1">Age Range</span>
+                                <span className="font-semibold text-slate-700">{(r.minimum_age || r.minAge || "Any")} - {(r.maximum_age || r.maxAge || "Any")}</span>
+                              </div>
+                              <div>
+                                <span className="block text-slate-400 font-medium mb-1">Gender</span>
+                                <span className="font-semibold text-slate-700">{Array.isArray(r.gender) ? r.gender.join(', ') : (r.gender || "Any")}</span>
+                              </div>
+                              <div>
+                                <span className="block text-slate-400 font-medium mb-1">Ethnicity</span>
+                                <span className="font-semibold text-slate-700">{Array.isArray(r.ethnicity) ? r.ethnicity.join(', ') : (r.ethnicity || "Any")}</span>
+                              </div>
+                              <div>
+                                <span className="block text-slate-400 font-medium mb-1">Pay</span>
+                                <span className="font-semibold text-slate-700">{formatBudget(r.payment_amount || r.payRate || r.pay_rate ? `${r.currency || 'GBP'} ${r.payment_amount || r.payRate || r.pay_rate}` : "") || "—"}</span>
+                              </div>
+                            </div>
+                            
+                            {(skills.length > 0 || union || metaRole.shoot_dates) && (
+                              <div className="mt-4 pt-4 border-t border-slate-50 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                {skills.length > 0 && (
+                                  <div>
+                                    <span className="block text-slate-400 font-medium mb-1">Skills Required</span>
+                                    <span className="font-semibold text-slate-700">{skills.join(', ').replace(/_/g, ' ')}</span>
+                                  </div>
+                                )}
+                                {union && (
+                                  <div>
+                                    <span className="block text-slate-400 font-medium mb-1">Union Status</span>
+                                    <span className="font-semibold text-slate-700">{union}</span>
+                                  </div>
+                                )}
+                                {metaRole.shoot_dates && (
+                                  <div className="md:col-span-2">
+                                    <span className="block text-slate-400 font-medium mb-1">Shoot Dates</span>
+                                    <span className="font-semibold text-slate-700">{metaRole.shoot_dates}</span>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>

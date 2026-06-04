@@ -21,7 +21,7 @@ import { getCastingDirectorReferenceOptions } from "@/lib/unifiedCastingDirector
 import { MultiSelectChecklist } from "./fields/MultiSelectChecklist";
 import { CombinedCurrencyRateInput } from "./fields/CombinedCurrencyRateInput";
 
-type CastingProfileTab = "overview" | "hiring" | "projects" | "roles" | "audition" | "commercial" | "navigation";
+type CastingProfileTab = "overview" | "hiring" | "audition" | "commercial" | "navigation";
 
 interface UnifiedCastingDirectorProfileFormProps {
   rootData: any;

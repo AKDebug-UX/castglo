@@ -64,6 +64,7 @@ const DirectorDashboard = lazy(() => import("./pages/director/DirectorDashboard"
 const DirectorSettings = lazy(() => import("./pages/director/DirectorSettings"));
 const MyProjects = lazy(() => import("./pages/director/MyProjects"));
 const CreateCasting = lazy(() => import("./pages/director/CreateCasting"));
+const DirectorProjectPreview = lazy(() => import("./pages/director/DirectorProjectPreview"));
 const DirectorSubmissions = lazy(() => import("./pages/director/DirectorSubmissions"));
 const DirectorMessages = lazy(() => import("./pages/director/DirectorMessages"));
 const ApplicantsManagement = lazy(() => import("./pages/director/ApplicantsManagement"));
@@ -200,6 +201,7 @@ const App = () => (
                 <Route path="profile" element={<DirectorProfile />} />
                 <Route path="settings" element={<DirectorSettings />} />
                 <Route path="projects" element={<MyProjects />} />
+                <Route path="projects/:id" element={<DirectorProjectPreview />} />
                 <Route path="projects/:id/edit" element={<CreateCasting />} />
                 <Route path="create" element={<CreateCasting />} />
                 <Route path="submissions" element={<DirectorSubmissions />} />

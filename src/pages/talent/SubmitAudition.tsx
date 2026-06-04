@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Video, Upload, Loader2 } from "lucide-react";
-import { castingCallAPI, applicationAPI } from "@/lib/api";
+import { castingCallAPI, applicationAPI, uploadAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 
@@ -47,12 +47,22 @@ export default function SubmitAudition() {
     setIsSubmitting(true);
 
     try {
-      const formData = new FormData();
-      formData.append("castingCallId", id);
-      formData.append("notes", notes);
-      formData.append("auditionVideo", videoFile);
+      const uploadFormData = new FormData();
+      uploadFormData.append("image", videoFile);
+      const uploadRes = await uploadAPI.uploadImage(uploadFormData);
+      const auditionVideoUrl = uploadRes.data?.data?.url || uploadRes.data?.url;
+      if (!auditionVideoUrl) {
+        toast.error("Video upload failed. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
 
-      const response = await applicationAPI.create(formData);
+      const response = await applicationAPI.create({
+        castingCallId: id,
+        notes,
+        auditionVideo: auditionVideoUrl,
+        auditionVideoUrl,
+      });
       if (response.data.success) {
         toast.success("Audition submitted successfully!");
         navigate("/talent/submissions");
