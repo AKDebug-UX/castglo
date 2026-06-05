@@ -433,80 +433,172 @@ export default function CreateCasting() {
               return v;
             };
 
-            // Extract metadata if exists to restore all form fields
+            // ── Extract __META__ blob ────────────────────────────────────
+            // The meta blob stores every form field that the backend doesn't have
+            // native schema columns for. We parse it separately and then use it
+            // to fill in any gaps — but we do NOT blindly overwrite the backend
+            // roles array, because the backend is the source of truth for role IDs.
             let parsedMeta: any = null;
-            const reqs = Array.isArray(data.requirements) ? data.requirements : (typeof data.requirements === "string" ? data.requirements.split("\n") : []);
-            reqs.forEach((r: string) => {
-              if (typeof r === 'string' && r.trim().startsWith('__META__:')) {
-                try {
-                  parsedMeta = JSON.parse(r.trim().substring(9));
-                } catch(e) {}
+            const reqsArr = Array.isArray(data.requirements)
+              ? data.requirements
+              : typeof data.requirements === "string"
+                ? data.requirements.split("\n")
+                : [];
+            for (const r of reqsArr) {
+              if (typeof r === "string" && r.trim().startsWith("__META__:")) {
+                try { parsedMeta = JSON.parse(r.trim().substring(9)); } catch (e) {}
+                break;
               }
+            }
+
+            // Meta roles keyed by ID — used to fill gaps in backend role objects
+            const metaRolesById: Record<string, any> = {};
+            if (Array.isArray(parsedMeta?.roles)) {
+              for (const mr of parsedMeta.roles) {
+                const key = String(mr.id || mr._id || "");
+                if (key) metaRolesById[key] = mr;
+              }
+            }
+
+            // ── Normalise roles ──────────────────────────────────────────
+            const rawRoles = Array.isArray(data.roles) ? data.roles : [];
+            const safeRoles = rawRoles.map((r: any) => {
+              const roleId = String(r.id || r._id || r.role_id || "");
+              const meta = metaRolesById[roleId] || {};
+              // Merge: start with meta (has all original fields), then overlay backend values
+              const merged = { ...meta, ...r };
+
+              return {
+                ...merged,
+                id: roleId || Math.random().toString(),
+                role_name: merged.role_name || merged.title || "",
+                // role_type must always be an array
+                role_type: Array.isArray(merged.role_type)
+                  ? merged.role_type
+                  : Array.isArray(merged.roleType)
+                    ? merged.roleType
+                    : merged.roleType
+                      ? [String(merged.roleType)]
+                      : [],
+                role_status: merged.role_status || "Open",
+                character_role_summary: merged.character_role_summary || merged.description || "",
+                full_role_description: merged.full_role_description || "",
+                // gender must always be an array
+                gender: Array.isArray(merged.gender)
+                  ? merged.gender
+                  : merged.gender && merged.gender !== "any"
+                    ? [String(merged.gender)]
+                    : [],
+                // ethnicity must always be an array
+                ethnicity: Array.isArray(merged.ethnicity)
+                  ? merged.ethnicity
+                  : merged.ethnicity && merged.ethnicity !== "any"
+                    ? [String(merged.ethnicity)]
+                    : [],
+                minimum_age: merged.minimum_age || merged.minAge || merged.min_age || "18",
+                maximum_age: merged.maximum_age || merged.maxAge || merged.max_age || "35",
+                number_of_talents_needed: merged.number_of_talents_needed || merged.numberOfTalentsNeeded || "1",
+                playing_age_range: merged.playing_age_range || merged.playingAgeRange || "",
+                role_city: merged.role_city || merged.city || "",
+                role_country: merged.role_country || merged.country || "UK",
+                union_status_required: merged.union_status_required || merged.unionStatus || "Open to All",
+                payment_amount: merged.payment_amount || merged.payRate || merged.pay_rate || "",
+                payment_type: merged.payment_type || merged.paymentType || "Fixed Fee",
+                currency: merged.currency || "GBP",
+                is_paid_role: merged.is_paid_role ?? true,
+                // All array fields
+                role_talent_types_needed: Array.isArray(merged.role_talent_types_needed) ? merged.role_talent_types_needed : [],
+                build_physical_type: Array.isArray(merged.build_physical_type) ? merged.build_physical_type : [],
+                languages_required: Array.isArray(merged.languages_required) ? merged.languages_required : [],
+                accents_required: Array.isArray(merged.accents_required) ? merged.accents_required : [],
+                skills_required: Array.isArray(merged.skills_required) ? merged.skills_required : [],
+                preferred_skills: Array.isArray(merged.preferred_skills) ? merged.preferred_skills : [],
+                // Boolean flags
+                speaking_role: merged.speaking_role ?? true,
+                singing_required: merged.singing_required ?? false,
+                dancing_required: merged.dancing_required ?? false,
+                stunts_required: merged.stunts_required ?? false,
+                intimacy_scene: merged.intimacy_scene ?? false,
+                nudity_required: merged.nudity_required ?? false,
+                travel_required: merged.travel_required ?? false,
+                remote_option_available: merged.remote_option_available ?? false,
+                featured_role: merged.featured_role ?? false,
+                expenses_covered: merged.expenses_covered ?? false,
+                accommodation_covered: merged.accommodation_covered ?? false,
+                travel_covered: merged.travel_covered ?? false,
+                // Date fields
+                shoot_dates: merged.shoot_dates || "",
+                rehearsal_dates: merged.rehearsal_dates || "",
+                performance_dates: merged.performance_dates || "",
+                availability_requirement: merged.availability_requirement || "",
+                compensation_notes: merged.compensation_notes || "",
+                height_range: merged.height_range || "",
+                role_shoot_performance_location: merged.role_shoot_performance_location || "",
+              };
             });
 
-            if (parsedMeta) {
-              Object.assign(data, parsedMeta);
-            }
-            
-            
-            // Safely map roles to ensure all required array fields exist
-            const safeRoles = (data.roles || []).map((r: any) => ({
-              ...r,
-              id: r.id || r._id || Math.random().toString(),
-              role_name: r.role_name || r.title || "",
-              role_type: Array.isArray(r.role_type) ? r.role_type : (r.roleType ? [r.roleType] : []),
-              role_status: r.role_status || "Open",
-              character_role_summary: r.character_role_summary || r.description || "",
-              full_role_description: r.full_role_description || r.requirements || "",
-              gender: Array.isArray(r.gender) ? r.gender : (r.gender ? [r.gender] : []),
-              ethnicity: Array.isArray(r.ethnicity) ? r.ethnicity : (r.ethnicity ? [r.ethnicity] : []),
-              number_of_talents_needed: r.number_of_talents_needed || r.numberOfTalentsNeeded || r.totalNeeded || "1",
-              playing_age_range: r.playing_age_range || r.playingAgeRange || "",
-              minimum_age: r.minimum_age || r.minAge || r.min_age || "18",
-              maximum_age: r.maximum_age || r.maxAge || r.max_age || "35",
-              role_city: r.role_city || r.city || "",
-              role_country: r.role_country || r.country || "UK",
-              union_status_required: r.union_status_required || r.unionStatus || "Open to All",
-              payment_amount: r.payment_amount || r.payRate || r.pay_rate || "",
-              payment_type: r.payment_type || r.paymentType || "Fixed Fee",
-              currency: r.currency || "GBP",
-              role_talent_types_needed: Array.isArray(r.role_talent_types_needed) ? r.role_talent_types_needed : [],
-              build_physical_type: Array.isArray(r.build_physical_type) ? r.build_physical_type : [],
-              languages_required: Array.isArray(r.languages_required) ? r.languages_required : [],
-              accents_required: Array.isArray(r.accents_required) ? r.accents_required : [],
-              skills_required: Array.isArray(r.skills_required) ? r.skills_required : [],
-              preferred_skills: Array.isArray(r.preferred_skills) ? r.preferred_skills : [],
-            }));
+            // ── Build the merged top-level form state ────────────────────
+            // Prefer parsedMeta for fields the backend doesn't natively store,
+            // then override with live backend values where they exist.
+            const metaTop = parsedMeta || {};
 
             setFormData(prev => ({
               ...prev,
-              ...data,
-              project_title: data.project_title || data.projectName || data.title || "",
-              project_type: toProjectTypeLabel(data.project_type || data.projectType) || "Film",
-              full_project_description: data.full_project_description || data.description || "",
-              project_status: toProjectStatusLabel(data.project_status || data.status) || "Open for Applications",
-              short_project_summary: data.short_project_summary || data.shortSummary || data.summary || "",
-              internal_project_reference: data.internal_project_reference || data.internalReference || "",
-              casting_company_name: data.casting_company_name || data.castingCompanyName || "",
-              production_company_name: data.production_company_name || data.productionCompanyName || "",
-              project_website: data.project_website || data.projectWebsite || "",
-              director_name: data.director_name || data.directorName || "",
-              producer_name: data.producer_name || data.producerName || "",
-              writer_name: data.writer_name || data.writerName || "",
-              casting_director_name: data.casting_director_name || data.castingDirectorName || "",
-              application_deadline: toDateInput(data.application_deadline || data.deadline),
-              self_tape_deadline: toDateInput(data.self_tape_deadline || data.selfTapeDeadline),
-              audition_date: toDateInput(data.audition_date || data.auditionDate),
-              callback_date: toDateInput(data.callback_date || data.callbackDate),
-              genre: toStringArray(data.genre || data.category),
-              industry_areas: toStringArray(data.industry_areas),
-              talent_types_needed: toStringArray(data.talent_types_needed || data.talentTypesNeeded || data.talentTypes),
-              talent_location_scope: data.talent_location_scope || data.locationScope || prev.talent_location_scope,
-              preferred_talent_base: data.preferred_talent_base || data.preferredTalentBase || (typeof data.location === "string" ? data.location : prev.preferred_talent_base),
-              project_cover_image: data.project_cover_image || data.image || data.coverImage || prev.project_cover_image,
-              additional_images: Array.isArray(data.additional_images) ? data.additional_images : (Array.isArray(data.additionalImages) ? data.additionalImages : prev.additional_images),
-              moodboard_references: Array.isArray(data.moodboard_references) ? data.moodboard_references : (Array.isArray(data.moodboardReferences) ? data.moodboardReferences : prev.moodboard_references),
-              pre_audition_questions: Array.isArray(data.pre_audition_questions) ? data.pre_audition_questions : prev.pre_audition_questions,
+              ...metaTop,      // fill in all meta fields first
+              // Then explicitly override with reliable backend/meta values:
+              project_title: data.project_title || data.projectName || data.title || metaTop.project_title || "",
+              project_type: toProjectTypeLabel(data.project_type || data.projectType || metaTop.project_type) || "Film",
+              full_project_description: data.full_project_description || data.description || metaTop.full_project_description || "",
+              project_status: toProjectStatusLabel(data.project_status || data.status || metaTop.project_status) || "Open for Applications",
+              short_project_summary: data.short_project_summary || metaTop.short_project_summary || "",
+              internal_project_reference: data.internal_project_reference || metaTop.internal_project_reference || "",
+              casting_company_name: data.casting_company_name || metaTop.casting_company_name || "",
+              production_company_name: data.production_company_name || metaTop.production_company_name || "",
+              project_website: data.project_website || metaTop.project_website || "",
+              director_name: data.director_name || metaTop.director_name || "",
+              producer_name: data.producer_name || metaTop.producer_name || "",
+              writer_name: data.writer_name || metaTop.writer_name || "",
+              casting_director_name: data.casting_director_name || metaTop.casting_director_name || "",
+              production_notes: data.production_notes || metaTop.production_notes || "",
+              intended_audience_market: data.intended_audience_market || metaTop.intended_audience_market || "",
+              // Dates
+              application_deadline: toDateInput(data.application_deadline || data.deadline || metaTop.application_deadline),
+              self_tape_deadline: toDateInput(data.self_tape_deadline || metaTop.self_tape_deadline),
+              audition_date: toDateInput(data.audition_date || metaTop.audition_date),
+              callback_date: toDateInput(data.callback_date || metaTop.callback_date),
+              // Arrays
+              genre: toStringArray(data.genre || metaTop.genre || data.category),
+              industry_areas: toStringArray(data.industry_areas || metaTop.industry_areas),
+              talent_types_needed: toStringArray(data.talent_types_needed || metaTop.talent_types_needed || data.talentTypes),
+              media_required: Array.isArray(data.media_required) && data.media_required.length > 0
+                ? data.media_required
+                : Array.isArray(metaTop.media_required) && metaTop.media_required.length > 0
+                  ? metaTop.media_required
+                  : prev.media_required,
+              pre_audition_questions: Array.isArray(data.pre_audition_questions)
+                ? data.pre_audition_questions
+                : Array.isArray(metaTop.pre_audition_questions)
+                  ? metaTop.pre_audition_questions
+                  : prev.pre_audition_questions,
+              // Location
+              talent_location_scope: data.talent_location_scope || metaTop.talent_location_scope || prev.talent_location_scope,
+              preferred_talent_base: data.preferred_talent_base || metaTop.preferred_talent_base || (typeof data.location === "string" ? data.location : prev.preferred_talent_base),
+              // Images
+              project_cover_image: data.project_cover_image || data.image || data.coverImage || metaTop.project_cover_image || prev.project_cover_image,
+              additional_images: Array.isArray(data.additional_images) ? data.additional_images : (Array.isArray(metaTop.additional_images) ? metaTop.additional_images : prev.additional_images),
+              moodboard_references: Array.isArray(data.moodboard_references) ? data.moodboard_references : (Array.isArray(metaTop.moodboard_references) ? metaTop.moodboard_references : prev.moodboard_references),
+              // Audition settings
+              audition_type: data.audition_type || metaTop.audition_type || prev.audition_type,
+              audition_instructions: data.audition_instructions || metaTop.audition_instructions || "",
+              audition_location: data.audition_location || metaTop.audition_location || "",
+              self_tape_accepted: data.self_tape_accepted ?? metaTop.self_tape_accepted ?? prev.self_tape_accepted,
+              live_online_audition_available: data.live_online_audition_available ?? metaTop.live_online_audition_available ?? false,
+              interview_required: data.interview_required ?? metaTop.interview_required ?? false,
+              interview_format: data.interview_format || metaTop.interview_format || "Online",
+              // Publish settings
+              visibility_level: data.visibility_level || metaTop.visibility_level || prev.visibility_level,
+              featured_project: data.featured_project ?? metaTop.featured_project ?? false,
+              // Roles — use our fully normalised safeRoles
               roles: safeRoles.length > 0 ? safeRoles : prev.roles,
             }));
           }
@@ -700,53 +792,72 @@ export default function CreateCasting() {
     try {
       const firstRole = formData.roles[0];
       
-      // Map new roles to legacy format for backend compatibility
+      // Map roles: keep ALL original fields, add legacy aliases for backend compat.
+      // CRITICAL: Do NOT collapse gender/ethnicity/role_type arrays to strings —
+      // the backend stores what we send, and we need arrays back on edit/preview.
       const mappedRoles = formData.roles.map(r => ({
-        ...r,
+        ...r,                                                         // all original form fields preserved
+        // --- Legacy aliases the old backend schema may read ---
         title: r.role_name,
         description: r.full_role_description || r.character_role_summary,
-        roleType: r.role_type?.[0] || "supporting",
+        roleType: r.role_type,                                        // keep as array
         minAge: r.minimum_age,
         maxAge: r.maximum_age,
-        gender: r.gender?.[0]?.toLowerCase() || "any",
-        ethnicity: r.ethnicity?.[0]?.toLowerCase() || "any",
-        unionStatus: r.union_status_required?.toLowerCase()?.includes('non') ? "non-union" : (r.union_status_required?.toLowerCase()?.includes('union') ? "union" : "both"),
+        // Keep gender & ethnicity as arrays; add singular alias for any legacy reads
+        genderSingle: r.gender?.[0]?.toLowerCase() || "any",
+        ethnicitySingle: r.ethnicity?.[0]?.toLowerCase() || "any",
+        unionStatus: r.union_status_required?.toLowerCase()?.includes('non')
+          ? "non-union"
+          : r.union_status_required?.toLowerCase()?.includes('union')
+            ? "union"
+            : "both",
         payRate: r.payment_amount,
-        requirements: (r.character_role_summary + "\n" + (r.full_role_description || "")).split('\n').filter(Boolean).join('\n'),
-         requestVideo: formData.media_required?.includes("Reel"),
-         requestAudio: formData.media_required?.includes("Voice Reel"),
-         requestCoverLetter: formData.media_required?.includes("Cover Letter"),
-         customQuestions: formData.custom_upload_description || ""
-       }));
+        requestVideo: formData.media_required?.includes("Reel"),
+        requestAudio: formData.media_required?.includes("Voice Reel"),
+        requestCoverLetter: formData.media_required?.includes("Cover Letter"),
+        customQuestions: formData.custom_upload_description || "",
+      }));
 
       const isBoosted = formData.featured_project || formData.instant_posting_addon;
 
-      // Inject full form state as a META string in requirements to bypass strict backend schema
-      const formStateMeta = { ...formData };
-      delete (formStateMeta as any).project_cover_image; // Handled separately
+      // Embed the full formData as a hidden __META__ string inside requirements.
+      // This guarantees that every form field survives the round-trip even if the
+      // backend doesn't have a matching schema column.
+      const formStateMeta = { 
+        ...formData,
+        roles: mappedRoles,               // store the full mapped roles in meta too
+      };
+      delete (formStateMeta as any).project_cover_image; // image handled separately
       const metaString = `__META__:${JSON.stringify(formStateMeta)}`;
-      const reqs = firstRole ? (firstRole.character_role_summary + "\n" + (firstRole.full_role_description || "")).split('\n').filter(Boolean) : [];
-      reqs.push(metaString);
+
+      // Build a clean requirements list: only real requirement lines (not summary)
+      // followed by the meta blob. We no longer embed the role description here
+      // to avoid duplication — it's already on each role object.
+      const visibleReqs: string[] = [];
+      // (future: you could add project-level requirements lines here)
+      visibleReqs.push(metaString);
 
       let payload: any = {
         ...formData,
-        // Legacy fields for backward compatibility
+        // Legacy top-level fields
         title: formData.project_title || (firstRole ? firstRole.role_name : ""),
         projectName: formData.project_title,
         projectType: formData.project_type?.toLowerCase(),
         description: formData.full_project_description || formData.short_project_summary,
         deadline: formData.application_deadline,
-        // Force draft status if boosts are selected or explicitly requested as draft
-        // They can only be published after successful payment
-        status: (statusOverride === "draft" || isBoosted) ? "draft" : (formData.project_status?.toLowerCase().includes('open') ? "open" : "draft"),
+        status: (statusOverride === "draft" || isBoosted)
+          ? "draft"
+          : formData.project_status?.toLowerCase().includes("open")
+            ? "open"
+            : "draft",
         location: formData.preferred_talent_base || formData.talent_location_scope,
         category: formData.genre?.[0] || "other",
-        requirements: reqs,
+        requirements: visibleReqs,
         roles: mappedRoles,
-        // Add-ons legacy names
+        // Add-on legacy names
         featuredPosting: formData.featured_project,
         urgentHiringBadge: formData.instant_posting_addon,
-        instantPosting: formData.instant_posting_addon
+        instantPosting: formData.instant_posting_addon,
       };
 
       if (imageFile) {
