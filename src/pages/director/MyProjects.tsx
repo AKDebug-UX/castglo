@@ -118,6 +118,7 @@ export default function MyProjects() {
       const response = await subscriptionAPI.createCheckoutSession({
         type: "casting_boost",
         planName: boosts.length > 0 ? boosts[0] : "casting_boost",
+        billingCycle: "monthly",
         projectId: project._id,
         boosts: boosts,
         successUrl: `${window.location.origin}/payment-success?type=boost&id=${project._id}`,

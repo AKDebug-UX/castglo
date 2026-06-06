@@ -747,6 +747,10 @@ export default function CreateCasting() {
       }
     }
     if (currentStep === 5) {
+      if (!formData.project_cover_image && !selectedImage && !imageFile) {
+        toast.error("Please upload a Project Poster / Cover Image.");
+        return false;
+      }
       if (formData.media_required.length === 0) {
         toast.error("Please select at least one media requirement.");
         return false;
@@ -899,6 +903,7 @@ export default function CreateCasting() {
             const checkoutRes = await subscriptionAPI.createCheckoutSession({
               type: "casting_boost",
               planName: boosts.length > 0 ? boosts[0] : "casting_boost",
+              billingCycle: "monthly",
               projectId: projectId,
               boosts: boosts,
               successUrl: `${window.location.origin}/payment-success?type=boost&id=${projectId}`,
@@ -1722,7 +1727,7 @@ export default function CreateCasting() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label>Project Poster / Cover Image</Label>
+                <Label>Project Poster / Cover Image *</Label>
                 <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-8 hover:bg-slate-50 transition-colors cursor-pointer relative group">
                   <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageChange} accept="image/*" />
                   {selectedImage || formData.project_cover_image ? (
