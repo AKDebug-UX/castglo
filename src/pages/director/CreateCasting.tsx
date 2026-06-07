@@ -74,7 +74,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getStripe } from "@/lib/stripe";
 
 export default function CreateCasting() {
-  const { formatPrice } = useAuth();
+  const { formatPrice, user } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = !!id;
@@ -1016,6 +1016,24 @@ export default function CreateCasting() {
           </div>
         ))}
       </div>
+
+      {/* Director Profile Info */}
+      {user && (
+        <Card className="bg-muted/30 border-dashed mb-8">
+          <CardContent className="p-4 flex items-center gap-4">
+            <img 
+              src={user.profilePicture || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.fullName)} 
+              alt={user.fullName}
+              className="w-12 h-12 rounded-full object-cover border bg-background"
+            />
+            <div>
+              <p className="text-sm text-muted-foreground mb-0.5">Posting as</p>
+              <h3 className="font-semibold text-base leading-none">{user.fullName}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{user.email}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <form onSubmit={(e) => handleSubmit(e)} onKeyDown={handleKeyDown}>
         {/* STEP 1: PROJECT BASICS & PRODUCTION DETAILS */}

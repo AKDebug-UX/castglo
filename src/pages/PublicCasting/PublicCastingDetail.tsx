@@ -94,7 +94,7 @@ export default function PublicCastingDetail() {
     <Card className="rounded-2xl border-none shadow-lg overflow-hidden bg-white mt-6">
       <CardHeader className="pb-6">
         <CardTitle className="text-xl font-bold text-slate-900">Ready to Apply?</CardTitle>
-        <p className="text-sm text-slate-500 font-medium">Create an account to submit your audition</p>
+        <p className="text-sm text-slate-500 font-medium">Create an account to submit your application</p>
       </CardHeader>
       <CardContent className="pt-2">
         <Button 

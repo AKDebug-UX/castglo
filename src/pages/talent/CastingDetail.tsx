@@ -74,12 +74,12 @@ export default function CastingDetail() {
     <Card>
       <CardHeader>
         <CardTitle>Ready to Apply?</CardTitle>
-        <p className="text-sm text-muted-foreground">Submit your audition for this role</p>
+        <p className="text-sm text-muted-foreground">Submit your application for this casting call</p>
       </CardHeader>
       <CardContent>
         <Button className="w-full" size="lg" asChild disabled={casting.status !== 'open'}>
           <Link to={`/talent/browse-cast/${id}/submit`}>
-            {casting.status === 'open' ? 'Submit Audition' : 'Casting Closed'}
+            {casting.status === 'open' ? 'Apply Now' : 'Casting Closed'}
           </Link>
         </Button>
       </CardContent>
