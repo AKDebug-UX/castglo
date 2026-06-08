@@ -16,7 +16,7 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger
 } from "@/components/ui/collapsible";
-import { API_BASE_URL, castingCallAPI, messagingAPI, profileAPI } from "@/lib/api";
+import { API_BASE_URL, castingCallAPI, messagingAPI, profileAPI, applicationAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { getAvatarUrl } from "@/lib/utils";
 
@@ -38,6 +38,8 @@ interface TalentProfile {
   profilePicture?: string;
   unionStatus?: string;
   matchScore?: number; // computed client-side
+  appliedProjects: string[];
+  appliedRoles: string[];
 }
 
 interface Role {
@@ -171,20 +173,21 @@ export default function MatchedTalent() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const [listingsRes, profilesRes] = await Promise.all([
-          castingCallAPI.getMyListings(),
-          profileAPI.search({ limit: 100, userRole: "talent" }).catch(() => null),
-        ]);
+        const listingsRes = await castingCallAPI.getMyListings();
         const myProjects: Project[] = listingsRes.data?.success
           ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.castingCalls || [])
           : [];
         setProjects(myProjects);
 
-        const talents: TalentProfile[] = profilesRes?.data?.success
-          ? (Array.isArray(profilesRes.data.data) ? profilesRes.data.data : profilesRes.data.data?.profiles || [])
-          : [];
+        // Fetch applications for ALL my projects
+        const allAppsPromises = myProjects.map(p => applicationAPI.getByCastingCall(p._id).catch(() => null));
+        const appsResults = await Promise.all(allAppsPromises);
         
-        const normalizeTalent = (raw: any): TalentProfile => {
+        const allApps = appsResults.flatMap(res => 
+          (res?.data?.success && Array.isArray(res.data.data)) ? res.data.data : []
+        );
+        
+        const normalizeTalent = (raw: any): Omit<TalentProfile, 'appliedProjects' | 'appliedRoles'> => {
           const userObj = raw?.userId && typeof raw.userId === "object" ? raw.userId : null;
           const userId = userObj?._id || userObj?.id || (typeof raw?.userId === "string" ? raw.userId : undefined);
           const fullName = userObj?.fullName || raw?.fullName || raw?.displayName || raw?.display_name;
@@ -218,10 +221,30 @@ export default function MatchedTalent() {
           };
         };
 
-        const onlyTalents = talents
-          .filter((t: any) => (t?.userRole || t?.userId?.userRole) === "talent")
-          .map(normalizeTalent)
-          .filter((t) => t.userId || t.fullName);
+        const talentMap = new Map<string, TalentProfile>();
+        
+        allApps.forEach(app => {
+           if (!app.talent) return;
+           const tId = String(app.talent.userId?._id || app.talent.userId || app.talent._id || "");
+           if (!tId) return;
+
+           const projId = String(app.castingCall?._id || app.castingCall || "");
+           const rId = String(app.roleId || "");
+
+           if (!talentMap.has(tId)) {
+             talentMap.set(tId, {
+               ...normalizeTalent(app.talent),
+               appliedProjects: [],
+               appliedRoles: []
+             });
+           }
+
+           const talent = talentMap.get(tId)!;
+           if (projId && !talent.appliedProjects.includes(projId)) talent.appliedProjects.push(projId);
+           if (rId && !talent.appliedRoles.includes(rId)) talent.appliedRoles.push(rId);
+        });
+
+        const onlyTalents = Array.from(talentMap.values());
 
         setAllTalents(onlyTalents);
       } catch {
@@ -242,11 +265,21 @@ export default function MatchedTalent() {
 
   // Compute ranked matches
   const rankedTalents = useMemo(() => {
-    return allTalents.map(t => ({
+    let filtered = allTalents;
+    
+    if (selectedProject !== "all") {
+      filtered = filtered.filter(t => (t.appliedProjects || []).includes(selectedProject));
+    }
+    
+    if (selectedRole !== "all") {
+      filtered = filtered.filter(t => (t.appliedRoles || []).includes(selectedRole));
+    }
+
+    return filtered.map(t => ({
       ...t,
       matchScore: currentRoleObj ? scoreMatch(t, currentRoleObj) : 50,
     }));
-  }, [allTalents, currentRoleObj]);
+  }, [allTalents, currentRoleObj, selectedProject, selectedRole]);
 
   // Apply filters
   const displayedTalents = useMemo(() => {
