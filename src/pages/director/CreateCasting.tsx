@@ -898,40 +898,24 @@ export default function CreateCasting() {
         // If any boost is selected, redirect to checkout
         if ((formData.featured_project || formData.instant_posting_addon) && statusOverride !== "draft") {
           try {
-            const boosts = [];
-            if (formData.featured_project) boosts.push("featured_casting");
-            if (formData.instant_posting_addon) boosts.push("urgent_boost");
-
-            const checkoutRes = await subscriptionAPI.createCheckoutSession({
-              type: "casting_boost",
-              planName: boosts.length > 0 ? boosts[0] : "casting_boost",
-              billingCycle: "monthly",
-              projectId: projectId,
-              boosts: boosts,
-              successUrl: `${window.location.origin}/payment-success?type=boost&id=${projectId}`,
-              cancelUrl: `${window.location.origin}/director/projects`
-            });
-
-            if (checkoutRes.data.success) {
-              const { url, sessionId } = checkoutRes.data.data;
-              
-              // Use Stripe SDK for redirection if sessionId is available
-              const stripe = await getStripe();
-              if (stripe && sessionId) {
-                const { error } = await stripe.redirectToCheckout({ sessionId });
-                if (error) {
-                  console.error("Stripe SDK redirect error:", error);
-                  window.location.href = url; // Fallback to URL
-                }
-              } else if (url) {
-                window.location.href = url; // Fallback to direct URL
-              }
-              return;
-            } else {
-              toast.error("Could not initiate payment. Project saved as draft.");
-              navigate("/director/projects");
-              return;
+            let response;
+            if (formData.featured_project) {
+              response = await castingCallAPI.boost(projectId);
+            } else if (formData.instant_posting_addon) {
+              response = await castingCallAPI.instantPost(projectId);
             }
+
+            if (response?.data?.success) {
+              const { url } = response.data.data;
+              if (url) {
+                window.location.href = url;
+                return;
+              }
+            }
+            
+            toast.error("Could not initiate payment. Project saved as draft.");
+            navigate("/director/projects");
+            return;
           } catch (checkoutErr) {
             console.error("Checkout initiation failed:", checkoutErr);
             toast.error("Failed to initiate payment. Project saved.");

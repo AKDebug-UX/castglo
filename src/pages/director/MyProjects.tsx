@@ -15,7 +15,9 @@ import {
   Trash2,
   Loader2,
   Copy,
-  MoreVertical
+  MoreVertical,
+  Rocket,
+  Zap
 } from "lucide-react";
 import { castingCallAPI, subscriptionAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -127,38 +129,25 @@ export default function MyProjects() {
   const handlePayAndPublish = async (project: any) => {
     setIsProcessingPayment(project._id);
     try {
-      const boosts = [];
-      if (project.featuredPosting) boosts.push("featured_casting");
-      if (project.urgentHiringBadge || project.instantPosting) boosts.push("urgent_boost");
-
-      let paymentType = "boost";
-      if (!project.featuredPosting && project.instantPosting) {
-        paymentType = "instant-post";
+      let response;
+      
+      // We determine which endpoint to call based on the flags
+      if (project.featuredPosting) {
+        response = await castingCallAPI.boost(project._id);
+      } else if (project.urgentHiringBadge || project.instantPosting) {
+        response = await castingCallAPI.instantPost(project._id);
+      } else {
+        toast.error("No valid boost selected.");
+        setIsProcessingPayment(null);
+        return;
       }
 
-      const response = await subscriptionAPI.createCheckoutSession({
-        type: "casting_boost",
-        planName: boosts.length > 0 ? boosts[0] : "casting_boost",
-        billingCycle: "monthly",
-        projectId: project._id,
-        boosts: boosts,
-        successUrl: `${window.location.origin}/payment-success?type=${paymentType}&id=${project._id}`,
-        cancelUrl: `${window.location.origin}/director/projects`
-      });
-
       if (response.data.success) {
-        const { url, sessionId } = response.data.data;
-        
-        // Use Stripe SDK for redirection if sessionId is available
-        const stripe = await getStripe();
-        if (stripe && sessionId) {
-          const { error } = await stripe.redirectToCheckout({ sessionId });
-          if (error) {
-            console.error("Stripe SDK redirect error:", error);
-            window.location.href = url; // Fallback to URL
-          }
-        } else if (url) {
-          window.location.href = url; // Fallback to direct URL
+        const { url } = response.data.data;
+        if (url) {
+          window.location.href = url;
+        } else {
+          toast.error("Invalid response from server.");
         }
       } else {
         toast.error("Could not initiate payment. Please try again.");

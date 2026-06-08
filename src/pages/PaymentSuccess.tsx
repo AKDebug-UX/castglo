@@ -28,21 +28,13 @@ export default function PaymentSuccess() {
 
       try {
         if (type === "boost") {
-          // Boost payment verification
-          if (projectId) {
-            await castingCallAPI.boost(projectId);
-          } else {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-          }
+          // Boost payment verification handled by webhook
+          await new Promise(resolve => setTimeout(resolve, 1500));
           setIsVerifying(false);
           toast.success("Project boosted and published successfully!");
         } else if (type === "instant-post") {
-          // Instant post payment verification
-          if (projectId) {
-            await castingCallAPI.instantPost(projectId);
-          } else {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-          }
+          // Instant post payment verification handled by webhook
+          await new Promise(resolve => setTimeout(resolve, 1500));
           setIsVerifying(false);
           toast.success("Project published instantly!");
         } else {
