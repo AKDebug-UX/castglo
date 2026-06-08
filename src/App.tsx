@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -154,6 +154,7 @@ const App = () => (
               <Route path="/browse-cast" element={<PublicCasting />} />
               <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
               <Route path="/cast/:id" element={<PublicCastingDetail />} />
+              <Route path="/casting-calls/:id" element={<Navigate to="/cast/:id" replace />} />
               <Route path="/livestream/:id" element={<Livestream />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/community-guidelines" element={<CommunityGuidelines />} />
