@@ -49,6 +49,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
 
 export default function DirectorSubmissions() {
   const { id } = useParams(); // castingCallId
@@ -65,6 +66,9 @@ export default function DirectorSubmissions() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [reviewScore, setReviewScore] = useState(0);
   const [isReviewSaving, setIsReviewSaving] = useState(false);
+  
+  // Application Details Modal State
+  const [detailsModalAppId, setDetailsModalAppId] = useState<string | null>(null);
 
   // Bulk Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -388,6 +392,9 @@ export default function DirectorSubmissions() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setDetailsModalAppId(submission._id)}>
+                        <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleAction(submission._id, 'shortlist')}>
                         <Star className="w-4 h-4 mr-2" /> Shortlist
                       </DropdownMenuItem>
@@ -477,6 +484,9 @@ export default function DirectorSubmissions() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setDetailsModalAppId(submission._id)}>
+                          <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleAction(submission._id, 'shortlist')}>
                           <Star className="w-4 h-4 mr-2" /> Shortlist
                         </DropdownMenuItem>
@@ -658,6 +668,12 @@ export default function DirectorSubmissions() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ApplicationDetailsModal 
+        applicationId={detailsModalAppId} 
+        isOpen={!!detailsModalAppId} 
+        onClose={() => setDetailsModalAppId(null)} 
+      />
     </div>
   );
 }

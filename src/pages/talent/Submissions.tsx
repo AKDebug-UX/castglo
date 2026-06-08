@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileText, Eye, Star, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, Eye, Star, Loader2, Info, Trash2 } from "lucide-react";
 import { applicationAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
 
 const statusColors: Record<string, string> = {
   "submitted": "bg-slate-500 text-white hover:bg-slate-600 capitalize",
@@ -19,6 +21,10 @@ export default function Submissions() {
   const [submissions, setSubmissions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState([]);
+  
+  // Modal state
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -61,6 +67,28 @@ export default function Submissions() {
     };
     fetchSubmissions();
   }, []);
+
+  const handleWithdraw = async (applicationId: string) => {
+    if (!window.confirm("Are you sure you want to withdraw this application? This action cannot be undone.")) return;
+    
+    try {
+      const res = await applicationAPI.withdraw(applicationId);
+      if (res.data?.success) {
+        toast.success("Application withdrawn successfully");
+        setSubmissions(prev => prev.map(sub => sub._id === applicationId ? { ...sub, status: "withdrawn" } : sub));
+      } else {
+        toast.error("Failed to withdraw application");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred while withdrawing");
+    }
+  };
+
+  const handleViewDetails = (applicationId: string) => {
+    setSelectedApplicationId(applicationId);
+    setIsModalOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -113,6 +141,7 @@ export default function Submissions() {
                   <TableHead>Role</TableHead>
                   <TableHead>Submission Date</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -127,10 +156,22 @@ export default function Submissions() {
                         {submission.status}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(submission._id)}>
+                          <Info className="w-4 h-4 mr-1" /> Details
+                        </Button>
+                        {["submitted", "viewed"].includes(submission.status) && (
+                          <Button variant="destructive" size="sm" onClick={() => handleWithdraw(submission._id)}>
+                            <Trash2 className="w-4 h-4 mr-1" /> Withdraw
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 )) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       No submissions found.
                     </TableCell>
                   </TableRow>
@@ -140,6 +181,12 @@ export default function Submissions() {
           </div>
         </CardContent>
       </Card>
+
+      <ApplicationDetailsModal 
+        applicationId={selectedApplicationId} 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+      />
     </div>
   );
 }

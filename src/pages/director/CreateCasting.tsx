@@ -67,6 +67,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowRight, ArrowLeft, ChevronRight, HelpCircle, Rocket, X, Loader2, Trash2, Plus, Video, Image as ImageIcon, Zap, Star, FastForward, Upload } from "lucide-react";
 import { castingCallAPI, profileAPI, subscriptionAPI, uploadAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -82,6 +83,7 @@ export default function CreateCasting() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
 
   // ── Form State ─────────────────────────────────────────────────────────────
   const [formData, setFormData] = useState({
@@ -942,7 +944,12 @@ export default function CreateCasting() {
         navigate("/director/projects");
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to save project");
+      const errorMsg = error.response?.data?.message || "";
+      if (errorMsg.toLowerCase().includes("limit") || errorMsg.toLowerCase().includes("upgrade")) {
+        setShowLimitModal(true);
+      } else {
+        toast.error(errorMsg || "Failed to save project");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -1938,6 +1945,24 @@ export default function CreateCasting() {
         </div>
 
       </form>
+
+      <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Limit Reached</DialogTitle>
+            <DialogDescription>
+              You have reached your limit for creating casting calls. Please upgrade your plan to continue posting new projects and discovering top talent.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setShowLimitModal(false)}>Cancel</Button>
+            <Button onClick={() => navigate("/pricing")} className="gap-2">
+              <Zap className="w-4 h-4 fill-current" />
+              Upgrade Plan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

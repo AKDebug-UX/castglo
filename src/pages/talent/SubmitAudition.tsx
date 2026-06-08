@@ -165,6 +165,7 @@ export default function SubmitAudition() {
       const finalNotes = formData.additional_notes + "\n__META__:" + JSON.stringify(metaData);
 
       const response = await applicationAPI.create({
+        ...metaData,
         castingCallId: id,
         notes: finalNotes,
         auditionVideo: mediaUrl,

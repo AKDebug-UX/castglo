@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
-import { subscriptionAPI } from "@/lib/api";
+import { subscriptionAPI, castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export default function PaymentSuccess() {
@@ -29,11 +29,22 @@ export default function PaymentSuccess() {
       try {
         if (type === "boost") {
           // Boost payment verification
-          // In a real scenario, we might call an API to verify the boost
-          // For now, we'll just wait a bit and show success
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          if (projectId) {
+            await castingCallAPI.boost(projectId);
+          } else {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+          }
           setIsVerifying(false);
           toast.success("Project boosted and published successfully!");
+        } else if (type === "instant-post") {
+          // Instant post payment verification
+          if (projectId) {
+            await castingCallAPI.instantPost(projectId);
+          } else {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+          }
+          setIsVerifying(false);
+          toast.success("Project published instantly!");
         } else {
           // Subscription payment verification
           await refreshUser();
@@ -47,9 +58,9 @@ export default function PaymentSuccess() {
     };
 
     verifyPayment();
-  }, [sessionId, type, refreshUser]);
+  }, [sessionId, type, projectId, refreshUser]);
 
-  const isBoost = type === "boost";
+  const isBoost = type === "boost" || type === "instant-post";
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/50">
@@ -100,8 +111,8 @@ export default function PaymentSuccess() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
                       <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center gap-2">
                         <Star className="w-5 h-5 text-[#FF7A30]" />
-                        <span className="text-xs font-bold uppercase text-slate-400">Boost Type</span>
-                        <span className="text-sm font-bold text-slate-700">Project Add-on</span>
+                        <span className="text-xs font-bold uppercase text-slate-400">Type</span>
+                        <span className="text-sm font-bold text-slate-700">{type === "instant-post" ? "Instant Post" : "Project Add-on"}</span>
                       </div>
                       <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center gap-2">
                         <ShieldCheck className="w-5 h-5 text-[#009698]" />

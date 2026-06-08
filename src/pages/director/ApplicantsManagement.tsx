@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Textarea } from "@/components/ui/textarea";
 import { castingCallAPI, applicationAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type PipelineStage =
@@ -107,6 +108,9 @@ export default function ApplicantsManagement() {
   const [activeApplicant, setActiveApplicant] = useState<Applicant | null>(null);
   const [noteText, setNoteText]         = useState("");
   const [noteLoading, setNoteLoading]   = useState(false);
+  
+  // Application Details Modal State
+  const [detailsModalAppId, setDetailsModalAppId] = useState<string | null>(null);
 
   // ── Load data ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -277,6 +281,9 @@ export default function ApplicantsManagement() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openNote(app)}>
                 <FileText className="w-4 h-4 mr-2" /> Add / View Note
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDetailsModalAppId(app._id)}>
+                <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <p className="text-[11px] text-muted-foreground px-2 py-1 font-semibold uppercase tracking-wider">Move to</p>
@@ -538,6 +545,9 @@ export default function ApplicantsManagement() {
                                 <ExternalLink className="w-4 h-4 mr-2" /> View Profile
                               </Link>
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDetailsModalAppId(app._id)}>
+                              <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
                               <DropdownMenuItem key={opt.value} onClick={() => updateStatus(app._id, opt.value)}>
@@ -582,6 +592,12 @@ export default function ApplicantsManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ApplicationDetailsModal 
+        applicationId={detailsModalAppId} 
+        isOpen={!!detailsModalAppId} 
+        onClose={() => setDetailsModalAppId(null)} 
+      />
     </div>
   );
 }

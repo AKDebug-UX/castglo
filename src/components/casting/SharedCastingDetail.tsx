@@ -131,10 +131,12 @@ export default function SharedCastingDetail({
 
   // ── Status badge color ──────────────────────────────────────────
   const statusClass =
-    status === "open" ? "bg-success text-success-foreground" :
+    status === "open" || status === "open_for_applications" ? "bg-success text-success-foreground" :
     status === "pending" ? "bg-blue-500 hover:bg-blue-600 text-white" :
     status === "draft" ? "bg-warning text-warning-foreground" :
     "bg-muted text-muted-foreground";
+
+  const displayStatus = status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 
   const toLocalDate = (v: any) => {
     if (!v) return "—";
@@ -150,7 +152,7 @@ export default function SharedCastingDetail({
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl sm:text-3xl font-bold truncate">{title}</h1>
-              <Badge className={statusClass}>{status}</Badge>
+              <Badge className={statusClass}>{displayStatus}</Badge>
               {info.project_type && (
                 <Badge variant="outline" className="text-xs">{info.project_type}</Badge>
               )}

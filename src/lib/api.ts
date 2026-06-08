@@ -11,9 +11,16 @@ export const API_ENDPOINTS = {
     ACTION_LOGS: '/admin/action-logs',
     ANALYTICS: '/admin/analytics',
     MODERATION: '/admin/moderation',
+    UPDATE_MODERATION: (id: string) => `/admin/moderation/${id}`,
     SETTINGS: '/admin/settings',
     SET_FREE_TIER: '/admin/settings/free-tier',
     GRANT_TRIAL: (userId: string) => `/admin/users/${userId}/grant-trial`,
+    UNSUSPEND_USER: (userId: string) => `/admin/users/${userId}/unsuspend`,
+    LEADS: '/admin/leads',
+    SUBSCRIPTIONS: '/admin/subscriptions',
+    CASTING_CALLS_PENDING: '/admin/casting-calls/pending',
+    APPROVE_CASTING_CALL: (id: string) => `/admin/casting-calls/${id}/approve`,
+    REJECT_CASTING_CALL: (id: string) => `/admin/casting-calls/${id}/reject`,
   },
   VERIFICATIONS: {
     SUBMIT: '/blockchain/verify',
@@ -56,6 +63,8 @@ export const API_ENDPOINTS = {
     ME: '/auth/me',
     RESEND_VERIFICATION: '/auth/resend-verification-email',
     LOGOUT: '/auth/logout',
+    GOOGLE: '/auth/google',
+    SET_PASSWORD: '/auth/set-password',
   },
   LIVESTREAM: {
     CREATE: '/livestream',
@@ -83,6 +92,8 @@ export const API_ENDPOINTS = {
     GET_ALL: '/notifications',
     READ_ALL: '/notifications/read-all',
     MARK_READ: (id: string) => `/notifications/${id}/read`,
+    REGISTER_DEVICE: '/notifications/register-device',
+    SEND: '/notifications/send',
   },
   CASTING_CALLS: {
     GET_ALL: '/casting-calls',
@@ -92,6 +103,8 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/casting-calls/${id}`,
     DELETE: (id: string) => `/casting-calls/${id}`,
     CLOSE: (id: string) => `/casting-calls/${id}/close`,
+    BOOST: (id: string) => `/casting-calls/${id}/boost`,
+    INSTANT_POST: (id: string) => `/casting-calls/${id}/instant-post`,
   },
   LEADS: {
     CREATE: '/leads',
@@ -108,6 +121,42 @@ export const API_ENDPOINTS = {
     ADD_PORTFOLIO: '/portfolio',
     SEARCH: '/profiles/search',
     GET_ONE: (userId: string) => `/profiles/${userId}`,
+    COMPLETENESS: '/profiles/me/completeness',
+    ACCOUNT: '/profiles/me/account',
+    COVER_IMAGE: '/profiles/me/cover-image',
+    INTRO_VIDEO: '/profiles/me/intro-video',
+    CV: '/profiles/me/cv',
+    PORTFOLIO_ME: '/profiles/me/portfolio',
+    DELETE_PORTFOLIO_ITEM: (itemId: string) => `/profiles/me/portfolio/${itemId}`,
+    PHOTOS: '/profiles/me/photos',
+    DELETE_PHOTO: (photoId: string) => `/profiles/me/photos/${photoId}`,
+  },
+  PORTFOLIO: {
+    CREATE: '/portfolio',
+    ME: '/portfolio/me',
+    UPDATE: (id: string) => `/portfolio/${id}`,
+    DELETE: (id: string) => `/portfolio/${id}`,
+  },
+  PROJECTS: {
+    CREATE: '/projects',
+    ME: '/projects/me',
+    GET_ONE: (id: string) => `/projects/${id}`,
+    UPDATE: (id: string) => `/projects/${id}`,
+    DELETE: (id: string) => `/projects/${id}`,
+    ROLES: (id: string) => `/projects/${id}/roles`,
+    ROLE_UPDATE: (id: string, roleId: string) => `/projects/${id}/roles/${roleId}`,
+    ROLE_DELETE: (id: string, roleId: string) => `/projects/${id}/roles/${roleId}`,
+    ROLE_APPLICANTS: (id: string, roleId: string) => `/projects/${id}/roles/${roleId}/applicants`,
+    ROLE_APPLICANT_STATUS: (id: string, roleId: string, applicantId: string) => `/projects/${id}/roles/${roleId}/applicants/${applicantId}/status`,
+    ROLE_BULK_ACTION: (id: string, roleId: string) => `/projects/${id}/roles/${roleId}/applicants/bulk-action`,
+    ROLE_MATCHES: (id: string, roleId: string) => `/projects/${id}/roles/${roleId}/matches`,
+  },
+  REFERENCE: {
+    ALL: '/reference',
+    BY_TYPE: (type: string) => `/reference/${type}`,
+  },
+  REPORTS: {
+    CREATE: '/reports',
   },
   SERVICES: {
     GET_MY_SERVICES: '/services/me',
@@ -123,6 +172,20 @@ export const API_ENDPOINTS = {
     INVOICES: '/subscriptions/payment-methods',
     CREATE_PORTAL_SESSION: '/subscriptions/customer-portal',
     DELETE_PAYMENT_METHOD: (id: string) => `/subscriptions/payment-methods/${id}`,
+    WEBHOOK: '/subscriptions/webhook',
+    DETAILS: '/subscriptions/details',
+    UPGRADE: '/subscriptions/upgrade',
+    CANCEL: '/subscriptions/cancel',
+  },
+  BLOCKCHAIN: {
+    HISTORY: '/blockchain/history',
+    VALIDATE: (hash: string) => `/blockchain/validate/${hash}`,
+  },
+  LEADS_ADMIN: {
+    GET_ALL: '/leads/admin/leads',
+    GET_ONE: (id: string) => `/leads/admin/leads/${id}`,
+    DELETE: (id: string) => `/leads/admin/leads/${id}`,
+    CONVERT: (id: string) => `/leads/admin/leads/${id}/convert`,
   },
   USERS: {
     UPDATE_PROFILE: '/user/profile',
@@ -191,6 +254,8 @@ export const authAPI = {
   getMe: () => api.get(API_ENDPOINTS.AUTH.ME),
   resendVerification: (email: string) => api.post(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, { email }),
   logout: () => api.post(API_ENDPOINTS.AUTH.LOGOUT),
+  google: (data) => api.post(API_ENDPOINTS.AUTH.GOOGLE, data),
+  setPassword: (data) => api.post(API_ENDPOINTS.AUTH.SET_PASSWORD, data),
 };
 
 // --- VERIFICATION ENDPOINTS ---
@@ -239,6 +304,8 @@ export const notificationAPI = {
   getAll: (params) => api.get(API_ENDPOINTS.NOTIFICATIONS.GET_ALL, { params }),
   readAll: () => api.patch(API_ENDPOINTS.NOTIFICATIONS.READ_ALL),
   markRead: (id: string) => api.patch(API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id)),
+  registerDevice: (data) => api.post(API_ENDPOINTS.NOTIFICATIONS.REGISTER_DEVICE, data),
+  send: (data) => api.post(API_ENDPOINTS.NOTIFICATIONS.SEND, data),
 };
 
 // --- PROFILE ENDPOINTS ---
@@ -260,6 +327,25 @@ export const profileAPI = {
   }),
   search: (params) => api.get(API_ENDPOINTS.PROFILES.SEARCH, { params }),
   getOne: (userId: string) => api.get(API_ENDPOINTS.PROFILES.GET_ONE(userId)),
+  getCompleteness: () => api.get(API_ENDPOINTS.PROFILES.COMPLETENESS),
+  updateAccount: (data) => api.patch(API_ENDPOINTS.PROFILES.ACCOUNT, data),
+  uploadCoverImage: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.COVER_IMAGE, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  uploadIntroVideo: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.INTRO_VIDEO, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  uploadCv: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.CV, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  addPortfolioItem: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.PORTFOLIO_ME, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deletePortfolioItem: (id: string) => api.delete(API_ENDPOINTS.PROFILES.DELETE_PORTFOLIO_ITEM(id)),
+  addPhotos: (formData: FormData) => api.post(API_ENDPOINTS.PROFILES.PHOTOS, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deletePhoto: (id: string) => api.delete(API_ENDPOINTS.PROFILES.DELETE_PHOTO(id)),
 };
 
 // --- CASTING CALL ENDPOINTS ---
@@ -275,6 +361,8 @@ export const castingCallAPI = {
   }),
   delete: (id: string) => api.delete(API_ENDPOINTS.CASTING_CALLS.DELETE(id)),
   close: (id: string) => api.put(API_ENDPOINTS.CASTING_CALLS.CLOSE(id)),
+  boost: (id: string) => api.post(API_ENDPOINTS.CASTING_CALLS.BOOST(id)),
+  instantPost: (id: string) => api.post(API_ENDPOINTS.CASTING_CALLS.INSTANT_POST(id)),
 };
 
 // --- APPLICATION ENDPOINTS ---
@@ -317,6 +405,10 @@ export const subscriptionAPI = {
   getInvoices: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.INVOICES),
   createPortalSession: () => api.post(API_ENDPOINTS.SUBSCRIPTIONS.CREATE_PORTAL_SESSION),
   deletePaymentMethod: (id: string) => api.delete(API_ENDPOINTS.SUBSCRIPTIONS.DELETE_PAYMENT_METHOD(id)),
+  webhook: (data) => api.post(API_ENDPOINTS.SUBSCRIPTIONS.WEBHOOK, data),
+  getDetails: () => api.get(API_ENDPOINTS.SUBSCRIPTIONS.DETAILS),
+  upgrade: (data) => api.post(API_ENDPOINTS.SUBSCRIPTIONS.UPGRADE, data),
+  cancel: () => api.post(API_ENDPOINTS.SUBSCRIPTIONS.CANCEL),
 };
 
 // --- ADMIN ENDPOINTS ---
@@ -345,6 +437,12 @@ export const adminAPI = {
   getAdminBookingStats: () => api.get(API_ENDPOINTS.BOOKINGS.ADMIN_STATS),
   grantTrial: (userId: string, days: number) => 
     api.post(API_ENDPOINTS.ADMIN.GRANT_TRIAL(userId), { days }),
+  unsuspendUser: (id: string) => api.put(API_ENDPOINTS.ADMIN.UNSUSPEND_USER(id)),
+  getLeads: (params?) => api.get(API_ENDPOINTS.ADMIN.LEADS, { params }),
+  getSubscriptions: (params?) => api.get(API_ENDPOINTS.ADMIN.SUBSCRIPTIONS, { params }),
+  getPendingCastingCalls: (params?) => api.get(API_ENDPOINTS.ADMIN.CASTING_CALLS_PENDING, { params }),
+  approveCastingCall: (id: string) => api.patch(API_ENDPOINTS.ADMIN.APPROVE_CASTING_CALL(id)),
+  rejectCastingCall: (id: string) => api.patch(API_ENDPOINTS.ADMIN.REJECT_CASTING_CALL(id)),
 };
 
 // --- LEAD ENDPOINTS ---
@@ -357,6 +455,56 @@ export const uploadAPI = {
   uploadImage: (formData: FormData) => api.post(API_ENDPOINTS.UPLOAD.IMAGE, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+};
+
+// --- PORTFOLIO ENDPOINTS ---
+export const portfolioAPI = {
+  create: (data) => api.post(API_ENDPOINTS.PORTFOLIO.CREATE, data),
+  getMe: () => api.get(API_ENDPOINTS.PORTFOLIO.ME),
+  update: (id: string, data) => api.patch(API_ENDPOINTS.PORTFOLIO.UPDATE(id), data),
+  delete: (id: string) => api.delete(API_ENDPOINTS.PORTFOLIO.DELETE(id)),
+};
+
+// --- PROJECT ENDPOINTS ---
+export const projectAPI = {
+  create: (data) => api.post(API_ENDPOINTS.PROJECTS.CREATE, data),
+  getMe: (params?) => api.get(API_ENDPOINTS.PROJECTS.ME, { params }),
+  getOne: (id: string) => api.get(API_ENDPOINTS.PROJECTS.GET_ONE(id)),
+  update: (id: string, data) => api.patch(API_ENDPOINTS.PROJECTS.UPDATE(id), data),
+  delete: (id: string) => api.delete(API_ENDPOINTS.PROJECTS.DELETE(id)),
+  getRoles: (id: string) => api.get(API_ENDPOINTS.PROJECTS.ROLES(id)),
+  createRole: (id: string, data) => api.post(API_ENDPOINTS.PROJECTS.ROLES(id), data),
+  updateRole: (id: string, roleId: string, data) => api.patch(API_ENDPOINTS.PROJECTS.ROLE_UPDATE(id, roleId), data),
+  deleteRole: (id: string, roleId: string) => api.delete(API_ENDPOINTS.PROJECTS.ROLE_DELETE(id, roleId)),
+  getApplicants: (id: string, roleId: string, params?) => api.get(API_ENDPOINTS.PROJECTS.ROLE_APPLICANTS(id, roleId), { params }),
+  updateApplicantStatus: (id: string, roleId: string, applicantId: string, data) => api.patch(API_ENDPOINTS.PROJECTS.ROLE_APPLICANT_STATUS(id, roleId, applicantId), data),
+  bulkAction: (id: string, roleId: string, data) => api.post(API_ENDPOINTS.PROJECTS.ROLE_BULK_ACTION(id, roleId), data),
+  getMatches: (id: string, roleId: string, params?) => api.get(API_ENDPOINTS.PROJECTS.ROLE_MATCHES(id, roleId), { params }),
+};
+
+// --- REFERENCE ENDPOINTS ---
+export const referenceAPI = {
+  getAll: () => api.get(API_ENDPOINTS.REFERENCE.ALL),
+  getByType: (type: string) => api.get(API_ENDPOINTS.REFERENCE.BY_TYPE(type)),
+};
+
+// --- REPORTS ENDPOINTS ---
+export const reportsAPI = {
+  create: (data) => api.post(API_ENDPOINTS.REPORTS.CREATE, data),
+};
+
+// --- BLOCKCHAIN ENDPOINTS ---
+export const blockchainAPI = {
+  getHistory: (params?) => api.get(API_ENDPOINTS.BLOCKCHAIN.HISTORY, { params }),
+  validate: (hash: string) => api.get(API_ENDPOINTS.BLOCKCHAIN.VALIDATE(hash)),
+};
+
+// --- ADMIN LEADS ENDPOINTS ---
+export const adminLeadsAPI = {
+  getAll: (params?) => api.get(API_ENDPOINTS.LEADS_ADMIN.GET_ALL, { params }),
+  getOne: (id: string) => api.get(API_ENDPOINTS.LEADS_ADMIN.GET_ONE(id)),
+  delete: (id: string) => api.delete(API_ENDPOINTS.LEADS_ADMIN.DELETE(id)),
+  convert: (id: string) => api.put(API_ENDPOINTS.LEADS_ADMIN.CONVERT(id)),
 };
 
 export default api;

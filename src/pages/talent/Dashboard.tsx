@@ -210,9 +210,14 @@ export default function Dashboard() {
 
       {/* Recent Submissions */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Submissions</CardTitle>
-          <p className="text-sm text-muted-foreground">Track the status of your latest applications</p>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <div>
+            <CardTitle className="text-lg">Recent Submissions</CardTitle>
+            <p className="text-sm text-muted-foreground">Track the status of your latest applications</p>
+          </div>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/talent/submissions">View All</Link>
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">

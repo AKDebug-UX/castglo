@@ -75,6 +75,22 @@ export default function MyProjects() {
     }
   };
 
+  const handleCloseProject = async (id: string) => {
+    if (!confirm("Are you sure you want to close this casting call? No new submissions will be accepted.")) return;
+    try {
+      const response = await castingCallAPI.close(id);
+      if (response.data.success) {
+        toast.success("Project closed successfully");
+        fetchProjects(); // Refresh to get the updated status
+      } else {
+        toast.error(response.data.message || "Failed to close project");
+      }
+    } catch (error) {
+      toast.error("An error occurred while closing the project");
+      console.error(error);
+    }
+  };
+
   const handleDuplicate = async (project: any) => {
     setIsDuplicating(project._id);
     try {
@@ -115,13 +131,18 @@ export default function MyProjects() {
       if (project.featuredPosting) boosts.push("featured_casting");
       if (project.urgentHiringBadge || project.instantPosting) boosts.push("urgent_boost");
 
+      let paymentType = "boost";
+      if (!project.featuredPosting && project.instantPosting) {
+        paymentType = "instant-post";
+      }
+
       const response = await subscriptionAPI.createCheckoutSession({
         type: "casting_boost",
         planName: boosts.length > 0 ? boosts[0] : "casting_boost",
         billingCycle: "monthly",
         projectId: project._id,
         boosts: boosts,
-        successUrl: `${window.location.origin}/payment-success?type=boost&id=${project._id}`,
+        successUrl: `${window.location.origin}/payment-success?type=${paymentType}&id=${project._id}`,
         cancelUrl: `${window.location.origin}/director/projects`
       });
 
@@ -324,6 +345,13 @@ export default function MyProjects() {
                       >
                         <Trash2 className="w-4 h-4 mr-2" /> Delete Project
                       </DropdownMenuItem>
+                      {project.status === "open" && (
+                        <DropdownMenuItem 
+                          onClick={() => handleCloseProject(project._id)}
+                        >
+                          <MoreVertical className="w-4 h-4 mr-2" /> Close Project
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -419,6 +447,12 @@ export default function MyProjects() {
                         Preview
                       </Link>
                     </Button>
+                    {project.status === "open" && (
+                      <Button variant="outline" size="sm" className="text-warning" onClick={() => handleCloseProject(project._id)}>
+                        <MoreVertical className="w-3 h-3 mr-1" />
+                        Close
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(project._id)}>
                       <Trash2 className="w-4 h-4" />
                     </Button>
