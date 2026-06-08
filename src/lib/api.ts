@@ -146,6 +146,7 @@ export const API_ENDPOINTS = {
     ROLES: (id: string) => `/projects/${id}/roles`,
     ROLE_UPDATE: (id: string, roleId: string) => `/projects/${id}/roles/${roleId}`,
     ROLE_DELETE: (id: string, roleId: string) => `/projects/${id}/roles/${roleId}`,
+    ROLE_APPLY: (id: string, roleId: string) => `/projects/${id}/roles/${roleId}/apply`,
     ROLE_APPLICANTS: (id: string, roleId: string) => `/projects/${id}/roles/${roleId}/applicants`,
     ROLE_APPLICANT_STATUS: (id: string, roleId: string, applicantId: string) => `/projects/${id}/roles/${roleId}/applicants/${applicantId}/status`,
     ROLE_BULK_ACTION: (id: string, roleId: string) => `/projects/${id}/roles/${roleId}/applicants/bulk-action`,
@@ -476,6 +477,9 @@ export const projectAPI = {
   createRole: (id: string, data) => api.post(API_ENDPOINTS.PROJECTS.ROLES(id), data),
   updateRole: (id: string, roleId: string, data) => api.patch(API_ENDPOINTS.PROJECTS.ROLE_UPDATE(id, roleId), data),
   deleteRole: (id: string, roleId: string) => api.delete(API_ENDPOINTS.PROJECTS.ROLE_DELETE(id, roleId)),
+  applyToRole: (id: string, roleId: string, data) => api.post(API_ENDPOINTS.PROJECTS.ROLE_APPLY(id, roleId), data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {}
+  }),
   getApplicants: (id: string, roleId: string, params?) => api.get(API_ENDPOINTS.PROJECTS.ROLE_APPLICANTS(id, roleId), { params }),
   updateApplicantStatus: (id: string, roleId: string, applicantId: string, data) => api.patch(API_ENDPOINTS.PROJECTS.ROLE_APPLICANT_STATUS(id, roleId, applicantId), data),
   bulkAction: (id: string, roleId: string, data) => api.post(API_ENDPOINTS.PROJECTS.ROLE_BULK_ACTION(id, roleId), data),

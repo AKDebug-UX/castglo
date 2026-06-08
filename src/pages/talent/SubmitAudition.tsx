@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Upload, Loader2, File, Image as ImageIcon, Video, Zap } from "lucide-react";
-import { castingCallAPI, applicationAPI, uploadAPI } from "@/lib/api";
+import { castingCallAPI, applicationAPI, uploadAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +28,9 @@ export default function SubmitAudition() {
   const [casting, setCasting] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchParams] = useSearchParams();
+  const initialRoleId = searchParams.get("roleId") || "";
+  const [selectedRoleId, setSelectedRoleId] = useState(initialRoleId);
 
   const [formData, setFormData] = useState({
     cover_message: "",
@@ -47,6 +51,7 @@ export default function SubmitAudition() {
   });
 
   const [headshotFile, setHeadshotFile] = useState<File | null>(null);
+  const [useProfileHeadshot, setUseProfileHeadshot] = useState(false);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -57,7 +62,12 @@ export default function SubmitAudition() {
       try {
         const response = await castingCallAPI.getOne(id);
         if (response.data.success) {
-          setCasting(response.data.data);
+          const data = response.data.data;
+          setCasting(data);
+          // If no roleId in URL but there's exactly one role, auto-select it
+          if (!initialRoleId && data.roles && data.roles.length === 1) {
+            setSelectedRoleId(data.roles[0].id || data.roles[0].roleId || data.roles[0]._id);
+          }
         }
       } catch (error: any) {
         toast.error("Failed to load casting details");
@@ -130,19 +140,33 @@ export default function SubmitAudition() {
     if (!formData.why_suitable.trim()) return toast.error("Please explain why you are suitable");
     if (!formData.relevant_experience.trim()) return toast.error("Relevant Experience is required");
     if (formData.skills.length === 0) return toast.error("Please select at least one skill");
-    if (!headshotFile) return toast.error("Please upload a headshot");
+    if (!headshotFile && !useProfileHeadshot) return toast.error("Please upload a headshot or select your profile picture");
+    
+    const isProjectPipeline = !!(casting?.roles && casting.roles.length > 0);
+    if (isProjectPipeline && !selectedRoleId) {
+      return toast.error("Please select a role to apply for");
+    }
+
     if (!formData.legal_consent) return toast.error("You must agree to the application terms");
 
     setIsSubmitting(true);
 
     try {
-      // Upload Headshot
-      const headshotData = new FormData();
-      headshotData.append("image", headshotFile);
-      const headshotRes = await uploadAPI.uploadImage(headshotData);
-      const headshotUrl = headshotRes.data?.data?.url || headshotRes.data?.url;
+      // Upload Headshot or use Profile Picture
+      let headshotUrl = "";
+      if (useProfileHeadshot && user?.profilePicture) {
+        headshotUrl = user.profilePicture;
+      } else if (headshotFile) {
+        const headshotData = new FormData();
+        headshotData.append("image", headshotFile);
+        const headshotRes = await uploadAPI.uploadImage(headshotData);
+        headshotUrl = headshotRes.data?.data?.url || headshotRes.data?.url;
+      }
 
-      if (!headshotUrl) {
+      if (!headshotUrl && useProfileHeadshot) {
+        // Fallback to placeholder if they checked it but somehow it's empty (though shouldn't happen)
+        headshotUrl = "https://ui-avatars.com/api/?name=" + encodeURIComponent(user?.fullName || "User");
+      } else if (!headshotUrl) {
         setIsSubmitting(false);
         return toast.error("Headshot upload failed. Please try again.");
       }
@@ -164,13 +188,23 @@ export default function SubmitAudition() {
 
       const finalNotes = formData.additional_notes + "\n__META__:" + JSON.stringify(metaData);
 
-      const response = await applicationAPI.create({
-        ...metaData,
-        castingCallId: id,
-        notes: finalNotes,
-        auditionVideo: mediaUrl,
-        auditionVideoUrl: mediaUrl,
-      });
+      let response;
+      if (isProjectPipeline && selectedRoleId) {
+        response = await projectAPI.applyToRole(id, selectedRoleId, {
+          ...metaData,
+          notes: finalNotes,
+          auditionVideo: mediaUrl,
+          auditionVideoUrl: mediaUrl,
+        });
+      } else {
+        response = await applicationAPI.create({
+          ...metaData,
+          castingCallId: id,
+          notes: finalNotes,
+          auditionVideo: mediaUrl,
+          auditionVideoUrl: mediaUrl,
+        });
+      }
 
       if (response.data.success) {
         toast.success("Application submitted successfully!");
@@ -246,6 +280,27 @@ export default function SubmitAudition() {
               </div>
             </div>
           </div>
+
+          {casting.roles && casting.roles.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <Label className="text-base mb-3 block">Which role are you applying for? <span className="text-red-500">*</span></Label>
+              <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+                <SelectTrigger className="w-full sm:w-[400px]">
+                  <SelectValue placeholder="Select a role..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {casting.roles.map((role: any) => {
+                    const roleIdentifier = role.id || role.roleId || role._id;
+                    return (
+                      <SelectItem key={roleIdentifier} value={roleIdentifier}>
+                        {role.role_name || role.name || role.title || "Unnamed Role"}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -348,22 +403,56 @@ export default function SubmitAudition() {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label>Headshot <span className="text-red-500">*</span></Label>
-            <div className="border-2 border-dashed border-border rounded-xl p-6 text-center bg-muted/20">
-              {headshotFile ? (
-                <div className="space-y-2">
-                  <ImageIcon className="w-8 h-8 mx-auto text-success" />
-                  <p className="font-medium text-sm">{headshotFile.name}</p>
-                  <Button variant="outline" size="sm" onClick={() => setHeadshotFile(null)}>Change</Button>
-                </div>
-              ) : (
-                <label className="cursor-pointer block">
-                  <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="font-medium text-sm">Upload Headshot</p>
-                  <p className="text-xs text-muted-foreground mt-1">JPG or PNG</p>
-                  <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleHeadshotChange} />
+            
+            {user && (
+              <div className="flex items-center space-x-2 mt-2 mb-4">
+                <Checkbox 
+                  id="use-profile-headshot" 
+                  checked={useProfileHeadshot}
+                  onCheckedChange={(checked) => {
+                    setUseProfileHeadshot(!!checked);
+                    if (checked) setHeadshotFile(null);
+                  }}
+                />
+                <label
+                  htmlFor="use-profile-headshot"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Use my profile picture as headshot
                 </label>
-              )}
-            </div>
+              </div>
+            )}
+
+            {useProfileHeadshot ? (
+              <div className="border border-border rounded-xl p-4 flex items-center gap-4 bg-muted/20">
+                <img 
+                  src={user?.profilePicture || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user?.fullName || "User")} 
+                  alt="Profile" 
+                  className="w-16 h-16 rounded-lg object-cover" 
+                />
+                <div>
+                  <p className="font-medium text-sm">Using Profile Picture</p>
+                  <p className="text-xs text-muted-foreground">This image will be submitted as your headshot.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-border rounded-xl p-6 text-center bg-muted/20">
+                {headshotFile ? (
+                  <div className="space-y-2">
+                    <ImageIcon className="w-8 h-8 mx-auto text-success" />
+                    <p className="font-medium text-sm">{headshotFile.name}</p>
+                    <Button variant="outline" size="sm" onClick={() => setHeadshotFile(null)}>Change</Button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer block">
+                    <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="font-medium text-sm">Upload Headshot</p>
+                    <p className="text-xs text-muted-foreground mt-1">JPG or PNG</p>
+                    <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleHeadshotChange} />
+                  </label>
+                )}
+              </div>
+            )}
           </div>
 
           <Separator />
