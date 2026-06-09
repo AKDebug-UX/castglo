@@ -1,45 +1,20 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Calendar, 
-  DollarSign,
-  Users,
-  Clock,
-  Loader2
-} from "lucide-react";
-import { castingCallAPI } from "@/lib/api";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { formatLocation, formatBudget } from "@/lib/utils";
 import SharedCastingDetail from "@/components/casting/SharedCastingDetail";
+import { useProjectWithRoles } from "@/hooks/useProjectWithRoles";
+import { isOpenStatus } from "@/lib/project.utils";
 
 export default function CastingDetail() {
   const { id } = useParams();
-  const [casting, setCasting] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { project, isLoading, error } = useProjectWithRoles(id);
 
   useEffect(() => {
-    const fetchCasting = async () => {
-      if (!id) return;
-      setIsLoading(true);
-
-      try {
-        const response = await castingCallAPI.getOne(id);
-        if (response.data.success) {
-          setCasting(response.data.data);
-        }
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to load casting details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCasting();
-  }, [id]);
+    if (error) toast.error(error);
+  }, [error]);
 
   if (isLoading) {
     return (
@@ -49,7 +24,7 @@ export default function CastingDetail() {
     );
   }
 
-  if (!casting) {
+  if (!project) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">Casting call not found.</p>
@@ -61,8 +36,8 @@ export default function CastingDetail() {
   }
 
   const backLink = (
-    <Link 
-      to="/talent/browse-cast" 
+    <Link
+      to="/talent/browse-cast"
       className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
     >
       <ArrowLeft className="w-4 h-4" />
@@ -70,16 +45,20 @@ export default function CastingDetail() {
     </Link>
   );
 
+  const canApply = isOpenStatus(project.status);
+
   const sidebarActions = (
     <Card>
       <CardHeader>
         <CardTitle>Ready to Apply?</CardTitle>
-        <p className="text-sm text-muted-foreground">Submit your application for this casting call</p>
+        <p className="text-sm text-muted-foreground">
+          Submit your application for this casting call
+        </p>
       </CardHeader>
       <CardContent>
-        <Button className="w-full" size="lg" asChild disabled={casting.status !== 'open'}>
+        <Button className="w-full" size="lg" asChild disabled={!canApply}>
           <Link to={`/talent/browse-cast/${id}/submit`}>
-            {casting.status === 'open' ? 'Apply Now' : 'Casting Closed'}
+            {canApply ? "Apply Now" : "Casting Closed"}
           </Link>
         </Button>
       </CardContent>
@@ -88,7 +67,7 @@ export default function CastingDetail() {
 
   return (
     <SharedCastingDetail
-      casting={casting}
+      casting={project}
       backLink={backLink}
       sidebarActions={sidebarActions}
       isInternal={false}

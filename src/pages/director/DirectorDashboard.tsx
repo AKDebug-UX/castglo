@@ -10,7 +10,7 @@ import {
   Sparkles, ArrowRight, Plus, UserCheck,
   TrendingUp, BarChart2
 } from "lucide-react";
-import { castingCallAPI, applicationAPI, livestreamAPI } from "@/lib/api";
+import { castingCallAPI, applicationAPI, livestreamAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -29,7 +29,7 @@ export default function DirectorDashboard() {
     const fetchData = async () => {
       try {
         const [listingsRes, streamsRes] = await Promise.all([
-          castingCallAPI.getMyListings(),
+          projectAPI.getMe(),
           livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
         ]);
 
@@ -40,7 +40,7 @@ export default function DirectorDashboard() {
         if (listingsRes.data.success) {
           const myCastings = Array.isArray(listingsRes.data.data)
             ? listingsRes.data.data
-            : listingsRes.data.data?.castingCalls || [];
+            : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [];
           setListings(myCastings.slice(0, 5));
 
           const activeCount       = myCastings.filter((c: any) => c.status === "open").length;

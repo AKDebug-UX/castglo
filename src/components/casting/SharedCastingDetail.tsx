@@ -32,9 +32,17 @@ export default function SharedCastingDetail({
   , [casting]);
 
   // ── Cover Image ────────────────────────────────────────────────
-  const coverImage = useMemo(() =>
-    casting?.project_cover_image || casting?.image || casting?.coverImage || ""
-  , [casting]);
+  const coverImage = useMemo(() => {
+    if (casting?.project_cover_image || casting?.image || casting?.coverImage) {
+      return casting?.project_cover_image || casting?.image || casting?.coverImage;
+    }
+    // Also check projectAttachments for a URL that isn't META
+    if (Array.isArray(casting?.projectAttachments)) {
+      const url = casting.projectAttachments.find((a: string) => typeof a === "string" && !a.startsWith("__META__:"));
+      if (url) return url;
+    }
+    return "";
+  }, [casting]);
 
   // ── Location ───────────────────────────────────────────────────
   const location = useMemo(() =>
@@ -43,7 +51,7 @@ export default function SharedCastingDetail({
 
   // ── Deadline ───────────────────────────────────────────────────
   const deadline = useMemo(() =>
-    casting?.application_deadline || casting?.deadline || ""
+    casting?.dates?.submission || casting?.application_deadline || casting?.deadline || ""
   , [casting]);
 
   // ── Description ────────────────────────────────────────────────
@@ -56,14 +64,31 @@ export default function SharedCastingDetail({
   // We use it to restore fields that the backend schema doesn't have native columns for.
   const metaData = useMemo(() => {
     let meta: any = null;
-    const reqs = Array.isArray(casting?.requirements)
-      ? casting.requirements
-      : typeof casting?.requirements === "string"
-        ? casting.requirements.split("\n")
-        : [];
-    for (const r of reqs) {
-      if (typeof r === "string" && r.startsWith("__META__:")) {
-        try { meta = JSON.parse(r.substring(9)); } catch (e) {}
+    const reqs = Array.isArray(casting?.requirements) ? casting.requirements : [];
+    const attachments = Array.isArray(casting?.projectAttachments) ? casting.projectAttachments : [];
+    
+    const searchArray = [...reqs, ...attachments];
+    
+    for (const r of searchArray) {
+      if (typeof r === "string" && r.trim().startsWith("__META__:机")) {
+        try {
+          const metaStr = r.trim().substring(9);
+          try {
+            meta = JSON.parse(decodeURIComponent(metaStr));
+          } catch(e) {
+            meta = JSON.parse(metaStr);
+          }
+        } catch (e) {}
+        break;
+      } else if (typeof r === "string" && r.trim().startsWith("__META__:")) {
+        try {
+          const metaStr = r.trim().substring(9);
+          try {
+            meta = JSON.parse(decodeURIComponent(metaStr));
+          } catch(e) {
+            meta = JSON.parse(metaStr);
+          }
+        } catch (e) {}
         break;
       }
     }
@@ -140,7 +165,13 @@ export default function SharedCastingDetail({
 
   const toLocalDate = (v: any) => {
     if (!v) return "—";
-    try { return new Date(v).toLocaleDateString(); } catch { return String(v); }
+    try {
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return String(v) || "—";
+      return d.toLocaleDateString();
+    } catch {
+      return String(v);
+    }
   };
 
   return (

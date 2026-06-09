@@ -60,7 +60,7 @@ export default function SubmitAudition() {
       setIsLoading(true);
 
       try {
-        const response = await castingCallAPI.getOne(id);
+        const response = await projectAPI.getOne(id);
         if (response.data.success) {
           const data = response.data.data;
           setCasting(data);

@@ -173,9 +173,9 @@ export default function MatchedTalent() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const listingsRes = await castingCallAPI.getMyListings();
+        const listingsRes = await projectAPI.getMe();
         const myProjects: Project[] = listingsRes.data?.success
-          ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.castingCalls || [])
+          ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [])
           : [];
         setProjects(myProjects);
 

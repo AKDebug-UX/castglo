@@ -17,7 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { castingCallAPI, messagingAPI, userAPI } from "@/lib/api";
+import { castingCallAPI, messagingAPI, userAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 interface Teammate {
@@ -67,11 +67,11 @@ export default function Collaborators() {
     const fetchMyProjects = async () => {
       setIsLoadingProjects(true);
       try {
-        const response = await castingCallAPI.getMyListings();
+        const response = await projectAPI.getMe();
         if (response.data.success && response.data.data) {
           const projectData = Array.isArray(response.data.data) 
             ? response.data.data 
-            : response.data.data.castingCalls || [];
+            : response.data.data.projects || response.data.data.castingCalls || [];
           setProjects(projectData);
           if (projectData.length > 0) {
             setSelectedProjectId(projectData[0]._id || projectData[0].id);

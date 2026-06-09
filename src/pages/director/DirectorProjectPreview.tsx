@@ -1,38 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { castingCallAPI } from "@/lib/api";
-import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Pencil, Users, Eye } from "lucide-react";
 import SharedCastingDetail from "@/components/casting/SharedCastingDetail";
-
-type CastingCall = any;
+import { useProjectWithRoles } from "@/hooks/useProjectWithRoles";
+import { toast } from "sonner";
+import { useEffect } from "react";
 
 export default function DirectorProjectPreview() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [casting, setCasting] = useState<CastingCall | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { project, isLoading, error } = useProjectWithRoles(id);
 
   useEffect(() => {
-    const fetchCasting = async () => {
-      if (!id) return;
-      setIsLoading(true);
-      try {
-        const response = await castingCallAPI.getOne(id);
-        if (response.data.success) {
-          setCasting(response.data.data);
-        }
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Failed to load casting details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCasting();
-  }, [id]);
+    if (error) toast.error(error);
+  }, [error]);
 
   if (isLoading) {
     return (
@@ -42,7 +24,7 @@ export default function DirectorProjectPreview() {
     );
   }
 
-  if (!casting) {
+  if (!project) {
     return (
       <div className="space-y-4">
         <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2 px-0">
@@ -95,13 +77,12 @@ export default function DirectorProjectPreview() {
   );
 
   return (
-    <SharedCastingDetail 
-      casting={casting} 
+    <SharedCastingDetail
+      casting={project}
       backLink={backLink}
       headerActions={headerActions}
       sidebarActions={sidebarActions}
-      isInternal={true}
+      isInternal
     />
   );
 }
-

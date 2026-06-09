@@ -28,7 +28,7 @@ import {
   Pencil,
   Eye
 } from "lucide-react";
-import { applicationAPI, castingCallAPI } from "@/lib/api";
+import { applicationAPI, castingCallAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -80,7 +80,7 @@ export default function DirectorSubmissions() {
         // Fetch submissions for a specific casting call
         const [subsRes, castingRes] = await Promise.all([
           applicationAPI.getByCastingCall(id),
-          castingCallAPI.getOne(id)
+          projectAPI.getOne(id)
         ]);
 
         if (subsRes.data.success && Array.isArray(subsRes.data.data)) {
@@ -93,7 +93,7 @@ export default function DirectorSubmissions() {
         }
       } else {
         // Fetch all submissions for all director's projects
-        const listingsRes = await castingCallAPI.getMyListings();
+        const listingsRes = await projectAPI.getMe();
         if (listingsRes.data.success && Array.isArray(listingsRes.data.data)) {
           const myCastings = listingsRes.data.data;
           

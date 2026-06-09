@@ -19,10 +19,11 @@ import {
   Rocket,
   Zap
 } from "lucide-react";
-import { castingCallAPI, subscriptionAPI } from "@/lib/api";
+import { castingCallAPI, subscriptionAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { getStripe } from "@/lib/stripe";
+import { getStatusLabel, getStatusClass, isOpenStatus, isDraftStatus, getProjectDeadline } from "@/lib/project.utils";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -42,12 +43,12 @@ export default function MyProjects() {
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      const response = await castingCallAPI.getMyListings();
+      const response = await projectAPI.getMe();
       if (response.data.success && response.data.data) {
         // Handle both direct array and nested structure
         const projectData = Array.isArray(response.data.data) 
           ? response.data.data 
-          : response.data.data.castingCalls || [];
+          : response.data.data.projects || response.data.data.castingCalls || [];
         setProjects(projectData);
       } else {
         setProjects([]);
@@ -107,15 +108,19 @@ export default function MyProjects() {
         deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 30 days from now
         status: "draft",
         image: project.image,
-        roles: project.roles || [{
+      };
+
+      const response = await projectAPI.create(payload);
+      if (response.data.success) {
+        const projectId = response.data.data?.id || response.data.data?._id || response.data.data;
+        const rolesToDuplicate = project.roles || [{
           roleName: project.title,
           description: project.description,
           requirements: project.requirements
-        }]
-      };
-
-      const response = await castingCallAPI.create(payload);
-      if (response.data.success) {
+        }];
+        if (rolesToDuplicate.length > 0) {
+           await Promise.all(rolesToDuplicate.map((r: any) => projectAPI.createRole(projectId, r)));
+        }
         toast.success("Project duplicated as draft");
         fetchProjects();
       }
@@ -162,10 +167,10 @@ export default function MyProjects() {
 
   const filteredProjects = projects.filter((project) => {
     if (activeTab === "all") return true;
-    if (activeTab === "open") return project.status === "open";
-    if (activeTab === "closed") return project.status === "closed";
-    if (activeTab === "drafts") return project.status === "draft";
-    if (activeTab === "pending") return project.status === "pending";
+    if (activeTab === "open") return isOpenStatus(project.status);
+    if (activeTab === "closed") return ["closed", "cancelled", "filled"].includes((project.status || "").toLowerCase());
+    if (activeTab === "drafts") return isDraftStatus(project.status);
+    if (activeTab === "pending") return (project.status || "").toLowerCase() === "pending";
     return true;
   });
 
@@ -224,23 +229,16 @@ export default function MyProjects() {
       {/* Grid View */}
       {viewMode === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.length > 0 ? filteredProjects.map((project) => (
-            <Card key={project._id} className="card-elevated">
+          {filteredProjects.length > 0 ? filteredProjects.map((project: any) => (
+            <Card key={project.id || project._id} className="card-elevated">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h3 className="font-semibold truncate max-w-[150px]">{project.title}</h3>
                     <p className="text-sm text-muted-foreground">{project.category}</p>
                   </div>
-                  <Badge 
-                    className={
-                      project.status === "open" ? "bg-success text-success-foreground" :
-                      project.status === "pending" ? "bg-blue-500 hover:bg-blue-600 text-white" :
-                      project.status === "draft" ? "bg-warning text-warning-foreground" :
-                      "bg-muted text-muted-foreground"
-                    }
-                  >
-                    {project.status}
+                  <Badge className={getStatusClass(project.status)}>
+                    {getStatusLabel(project.status)}
                   </Badge>
                 </div>
 
@@ -253,7 +251,7 @@ export default function MyProjects() {
                   </div>
                   <div className="flex justify-between">
                     <span>Deadline:</span>
-                    <span className="font-medium text-foreground">{new Date(project.deadline).toLocaleDateString()}</span>
+                    <span className="font-medium text-foreground">{getProjectDeadline(project)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Location:</span>
@@ -262,7 +260,7 @@ export default function MyProjects() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {project.status === "draft" ? (
+                  {isDraftStatus(project.status) ? (
                     (project.featuredPosting || project.urgentHiringBadge || project.instantPosting) ? (
                       <Button 
                         variant="default" 
@@ -308,20 +306,19 @@ export default function MyProjects() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link to={`/director/projects/${project._id}`}>
+                        <Link to={`/director/projects/${project.id || project._id}`}>
                           <Eye className="w-4 h-4 mr-2" /> Preview
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to={`/director/projects/${project._id}/edit`}>
-                          <Pencil className="w-4 h-4 mr-2" /> Edit Project
-                        </Link>
+                      <DropdownMenuItem onClick={() => navigate(`/director/projects/${project.id || project._id}/edit`)}>
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Edit Project
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={() => handleDuplicate(project)}
-                        disabled={isDuplicating === project._id}
+                        disabled={isDuplicating === (project.id || project._id)}
                       >
-                        {isDuplicating === project._id ? (
+                        {isDuplicating === (project.id || project._id) ? (
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         ) : (
                           <Copy className="w-4 h-4 mr-2" />
@@ -330,13 +327,13 @@ export default function MyProjects() {
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         className="text-destructive" 
-                        onClick={() => handleDelete(project._id)}
+                        onClick={() => handleDelete(project.id || project._id)}
                       >
                         <Trash2 className="w-4 h-4 mr-2" /> Delete Project
                       </DropdownMenuItem>
-                      {project.status === "open" && (
+                      {isOpenStatus(project.status) && (
                         <DropdownMenuItem 
-                          onClick={() => handleCloseProject(project._id)}
+                          onClick={() => handleCloseProject(project.id || project._id)}
                         >
                           <MoreVertical className="w-4 h-4 mr-2" /> Close Project
                         </DropdownMenuItem>
@@ -364,13 +361,10 @@ export default function MyProjects() {
                       <h3 className="font-semibold">{project.title}</h3>
                       <Badge 
                         className={
-                          project.status === "open" ? "bg-success text-success-foreground" :
-                          project.status === "pending" ? "bg-blue-500 hover:bg-blue-600 text-white" :
-                          project.status === "draft" ? "bg-warning text-warning-foreground" :
-                          "bg-muted text-muted-foreground"
+                          getStatusClass(project.status)
                         }
                       >
-                        {project.status}
+                        {getStatusLabel(project.status)}
                       </Badge>
                       <Badge variant="secondary">{project.category}</Badge>
                     </div>
@@ -382,12 +376,12 @@ export default function MyProjects() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        Deadline: {new Date(project.deadline).toLocaleDateString()}
+                        Deadline: {getProjectDeadline(project)}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
-                    {project.status === "draft" ? (
+                    {isDraftStatus(project.status) ? (
                       (project.featuredPosting || project.urgentHiringBadge || project.instantPosting) ? (
                         <Button 
                           variant="default" 
@@ -436,7 +430,7 @@ export default function MyProjects() {
                         Preview
                       </Link>
                     </Button>
-                    {project.status === "open" && (
+                    {isOpenStatus(project.status) && (
                       <Button variant="outline" size="sm" className="text-warning" onClick={() => handleCloseProject(project._id)}>
                         <MoreVertical className="w-3 h-3 mr-1" />
                         Close

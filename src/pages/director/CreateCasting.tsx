@@ -1,78 +1,32 @@
-// ── Constants from Reference Tables ──────────────────────────────────────────
-const PROJECT_TYPES = [
-  "Film", "TV", "Theatre", "Commercial", "Music Video", "Voiceover", 
-  "Fashion Campaign", "Content Project", "Live Event", "Other"
-];
-
-const INDUSTRY_AREAS = [
-  "Film", "TV", "Theatre", "Music", "Fashion", "Commercials", "Digital", "Live Events", "Corporate", "Other"
-];
-
-const AUDITION_TYPES = [
-  "Open Call", "By Appointment", "Self-Tape Only", "Invite Only", "Online Live Audition", "Callback Only", "No Audition Required"
-];
-
-const PAYMENT_TYPES = [
-  "Fixed Fee", "Per Hour", "Per Day", "Per Week", "Flat Project Fee", "Expenses Only", "Profit Share", "Negotiable", "Unpaid", "Deferred Payment"
-];
-
-const VISIBILITY_LEVELS = [
-  "Public on Castglo", "Invite Only", "Private Draft", "Visible to Selected Talent Only"
-];
-
-const TALENT_TYPES = [
-  "actor_performer", "model", "singer", "dancer", "voice_artist", "presenter_host",
-  "extra_supporting_artist", "musician", "content_creator", "comedian", "stunt_performer",
-  "child_talent", "mixed_cast", "other"
-];
-
-const GENRES = [
-  "Action", "Comedy", "Drama", "Horror", "Sci-Fi", "Thriller", "Documentary", 
-  "Reality", "Musical", "Commercial", "Corporate", "Educational", "Other"
-];
-
-const ETHNICITIES = [
-  "black_african", "black_caribbean", "black_british", "mixed_black_white", 
-  "mixed_asian_white", "mixed_other", "south_asian_indian", "south_asian_pakistani", 
-  "south_asian_bangladeshi", "south_asian_other", "east_asian_chinese", 
-  "east_asian_japanese", "east_asian_korean", "east_asian_other", "south_east_asian", 
-  "middle_eastern", "north_african", "hispanic_latinx", "white_british", 
-  "white_irish", "white_european", "white_other", "indigenous", "pacific_islander", 
-  "ethnically_ambiguous", "open_to_all"
-];
-
-const ROLE_SKILLS = [
-  "acting", "improvisation", "comedy", "dramatic_performance", "stage_combat", 
-  "screen_combat", "self_taping", "voiceover", "narration", "character_voice", 
-  "singing", "harmonising", "songwriting", "piano", "guitar", "drums", "violin", 
-  "dancing", "ballet", "contemporary_dance", "hip_hop", "commercial_dance", 
-  "choreography", "modelling", "runway_walk", "posing", "hosting", "presenting", 
-  "interviewing", "public_speaking", "accents", "multilingual", "horse_riding", 
-  "swimming", "cycling", "driving", "martial_arts", "weapons_handling", "stunts", 
-  "motion_capture", "sports_fitness", "content_creation", "social_media_presence", "other"
-];
-
-const HAIR_COLORS = ["Black", "Brown", "Blonde", "Red", "Grey", "White", "Bald", "Other"];
-const EYE_COLORS = ["Blue", "Brown", "Green", "Hazel", "Grey", "Other"];
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowRight, ArrowLeft, ChevronRight, HelpCircle, Rocket, X, Loader2, Trash2, Plus, Video, Image as ImageIcon, Zap, Star, FastForward, Upload } from "lucide-react";
-import { castingCallAPI, profileAPI, subscriptionAPI, uploadAPI } from "@/lib/api";
+import { ArrowLeft, ChevronRight, Loader2, Zap } from "lucide-react";
+import { castingCallAPI, uploadAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { getStripe } from "@/lib/stripe";
+import {
+  parseMetaFromAttachments,
+  buildMetaRolesById,
+  normaliseRoleFromAPI,
+  buildRolePayload,
+  buildProjectPayload,
+  getProjectCoverImage,
+  toDateInput,
+  toStringArray,
+  toProjectTypeLabel,
+  toProjectStatusLabel,
+} from "@/lib/project.utils";
+
+import Step1Basics from "./create-casting/Step1Basics";
+import Step2TalentNeeded from "./create-casting/Step2TalentNeeded";
+import Step3Roles from "./create-casting/Step3Roles";
+import Step4ApplicationAuditions from "./create-casting/Step4ApplicationAuditions";
+import Step5MediaRequirements from "./create-casting/Step5MediaRequirements";
+import Step6PublishReview from "./create-casting/Step6PublishReview";
+import { CastingFormData } from "./create-casting/types";
 
 export default function CreateCasting() {
   const { formatPrice, user } = useAuth();
@@ -86,7 +40,7 @@ export default function CreateCasting() {
   const [showLimitModal, setShowLimitModal] = useState(false);
 
   // ── Form State ─────────────────────────────────────────────────────────────
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CastingFormData>({
     // Step 1: Project Basics & Production Details
     project_title: "",
     internal_project_reference: "",
@@ -382,161 +336,36 @@ export default function CreateCasting() {
       const fetchCasting = async () => {
         setIsLoading(true);
         try {
-          const response = await castingCallAPI.getOne(id as string);
-          if (response.data.success) {
-            const raw = response.data.data;
+          const [projectRes, rolesRes] = await Promise.all([
+            projectAPI.getOne(id as string),
+            projectAPI.getRoles(id as string).catch(() => ({ data: { success: false, data: [] } }))
+          ]);
+          
+          if (projectRes.data.success) {
+            const raw = projectRes.data.data;
             const data = raw?.castingCall || raw?.project || raw;
-
-            const toDateInput = (value: any) => {
-              if (!value) return "";
-              const str = String(value);
-              if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-              const d = new Date(str);
-              if (Number.isNaN(d.getTime())) return "";
-              const yyyy = d.getFullYear();
-              const mm = String(d.getMonth() + 1).padStart(2, "0");
-              const dd = String(d.getDate()).padStart(2, "0");
-              return `${yyyy}-${mm}-${dd}`;
-            };
-
-            const toStringArray = (value: any) => {
-              if (Array.isArray(value)) return value.filter(Boolean).map(String);
-              if (typeof value === "string" && value.trim()) return [value.trim()];
-              return [];
-            };
-
-            const toProjectTypeLabel = (value: any) => {
-              const v = String(value || "").trim();
-              if (!v) return "";
-              const normalized = v.toLowerCase();
-              const map: Record<string, string> = {
-                film: "Film",
-                tv: "TV",
-                theatre: "Theatre",
-                theater: "Theatre",
-                commercial: "Commercial",
-                voiceover: "Voiceover",
-                voice_over: "Voiceover",
-                voice: "Voiceover",
-                musicvideo: "Music Video",
-                music_video: "Music Video",
-              };
-              return map[normalized] || v.charAt(0).toUpperCase() + v.slice(1);
-            };
-
-            const toProjectStatusLabel = (value: any) => {
-              const v = String(value || "").trim();
-              if (!v) return "";
-              const normalized = v.toLowerCase();
-              if (normalized === "open") return "Open for Applications";
-              if (normalized === "draft") return "Draft";
-              if (normalized === "closed") return "Closed";
-              if (normalized === "filled") return "Role Filled";
-              return v;
-            };
+            // Overwrite data.roles with actual roles from the separate endpoint if the endpoint returned data
+            if (rolesRes.data?.success && Array.isArray(rolesRes.data?.data)) {
+              data.roles = rolesRes.data.data;
+            } else if (rolesRes.data?.success && Array.isArray(rolesRes.data?.data?.roles)) {
+              data.roles = rolesRes.data.data.roles;
+            }
 
             // ── Extract __META__ blob ────────────────────────────────────
-            // The meta blob stores every form field that the backend doesn't have
-            // native schema columns for. We parse it separately and then use it
-            // to fill in any gaps — but we do NOT blindly overwrite the backend
-            // roles array, because the backend is the source of truth for role IDs.
-            let parsedMeta: any = null;
-            const reqsArr = Array.isArray(data.requirements)
-              ? data.requirements
-              : typeof data.requirements === "string"
-                ? data.requirements.split("\n")
-                : [];
-            for (const r of reqsArr) {
-              if (typeof r === "string" && r.trim().startsWith("__META__:")) {
-                try { parsedMeta = JSON.parse(r.trim().substring(9)); } catch (e) {}
-                break;
-              }
-            }
+            let parsedMeta: any = parseMetaFromAttachments(
+              data.projectAttachments,
+              data.requirements
+            );
 
             // Meta roles keyed by ID — used to fill gaps in backend role objects
-            const metaRolesById: Record<string, any> = {};
-            if (Array.isArray(parsedMeta?.roles)) {
-              for (const mr of parsedMeta.roles) {
-                const key = String(mr.id || mr._id || "");
-                if (key) metaRolesById[key] = mr;
-              }
-            }
+            const metaRolesById = buildMetaRolesById(parsedMeta);
 
-            // ── Normalise roles ──────────────────────────────────────────
+            // ── Normalise roles using shared util ────────────────────────
             const rawRoles = Array.isArray(data.roles) ? data.roles : [];
             const safeRoles = rawRoles.map((r: any) => {
               const roleId = String(r.id || r._id || r.role_id || "");
-              const meta = metaRolesById[roleId] || {};
-              // Merge: start with meta (has all original fields), then overlay backend values
-              const merged = { ...meta, ...r };
-
-              return {
-                ...merged,
-                id: roleId || Math.random().toString(),
-                role_name: merged.role_name || merged.title || "",
-                // role_type must always be an array
-                role_type: Array.isArray(merged.role_type)
-                  ? merged.role_type
-                  : Array.isArray(merged.roleType)
-                    ? merged.roleType
-                    : merged.roleType
-                      ? [String(merged.roleType)]
-                      : [],
-                role_status: merged.role_status || "Open",
-                character_role_summary: merged.character_role_summary || merged.description || "",
-                full_role_description: merged.full_role_description || "",
-                // gender must always be an array
-                gender: Array.isArray(merged.gender)
-                  ? merged.gender
-                  : merged.gender && merged.gender !== "any"
-                    ? [String(merged.gender)]
-                    : [],
-                // ethnicity must always be an array
-                ethnicity: Array.isArray(merged.ethnicity)
-                  ? merged.ethnicity
-                  : merged.ethnicity && merged.ethnicity !== "any"
-                    ? [String(merged.ethnicity)]
-                    : [],
-                minimum_age: merged.minimum_age || merged.minAge || merged.min_age || "18",
-                maximum_age: merged.maximum_age || merged.maxAge || merged.max_age || "35",
-                number_of_talents_needed: merged.number_of_talents_needed || merged.numberOfTalentsNeeded || "1",
-                playing_age_range: merged.playing_age_range || merged.playingAgeRange || "",
-                role_city: merged.role_city || merged.city || "",
-                role_country: merged.role_country || merged.country || "UK",
-                union_status_required: merged.union_status_required || merged.unionStatus || "Open to All",
-                payment_amount: merged.payment_amount || merged.payRate || merged.pay_rate || "",
-                payment_type: merged.payment_type || merged.paymentType || "Fixed Fee",
-                currency: merged.currency || "GBP",
-                is_paid_role: merged.is_paid_role ?? true,
-                // All array fields
-                role_talent_types_needed: Array.isArray(merged.role_talent_types_needed) ? merged.role_talent_types_needed : [],
-                build_physical_type: Array.isArray(merged.build_physical_type) ? merged.build_physical_type : [],
-                languages_required: Array.isArray(merged.languages_required) ? merged.languages_required : [],
-                accents_required: Array.isArray(merged.accents_required) ? merged.accents_required : [],
-                skills_required: Array.isArray(merged.skills_required) ? merged.skills_required : [],
-                preferred_skills: Array.isArray(merged.preferred_skills) ? merged.preferred_skills : [],
-                // Boolean flags
-                speaking_role: merged.speaking_role ?? true,
-                singing_required: merged.singing_required ?? false,
-                dancing_required: merged.dancing_required ?? false,
-                stunts_required: merged.stunts_required ?? false,
-                intimacy_scene: merged.intimacy_scene ?? false,
-                nudity_required: merged.nudity_required ?? false,
-                travel_required: merged.travel_required ?? false,
-                remote_option_available: merged.remote_option_available ?? false,
-                featured_role: merged.featured_role ?? false,
-                expenses_covered: merged.expenses_covered ?? false,
-                accommodation_covered: merged.accommodation_covered ?? false,
-                travel_covered: merged.travel_covered ?? false,
-                // Date fields
-                shoot_dates: merged.shoot_dates || "",
-                rehearsal_dates: merged.rehearsal_dates || "",
-                performance_dates: merged.performance_dates || "",
-                availability_requirement: merged.availability_requirement || "",
-                compensation_notes: merged.compensation_notes || "",
-                height_range: merged.height_range || "",
-                role_shoot_performance_location: merged.role_shoot_performance_location || "",
-              };
+              const metaRole = metaRolesById[roleId] || {};
+              return normaliseRoleFromAPI(r, metaRole);
             });
 
             // ── Build the merged top-level form state ────────────────────
@@ -563,8 +392,9 @@ export default function CreateCasting() {
               casting_director_name: data.casting_director_name || metaTop.casting_director_name || "",
               production_notes: data.production_notes || metaTop.production_notes || "",
               intended_audience_market: data.intended_audience_market || metaTop.intended_audience_market || "",
-              // Dates
-              application_deadline: toDateInput(data.application_deadline || data.deadline || metaTop.application_deadline),
+              // Dates — use shared toDateInput helper
+              application_deadline: toDateInput(data.application_deadline || data.deadline || metaTop.application_deadline
+                || data.dates?.submission),
               self_tape_deadline: toDateInput(data.self_tape_deadline || metaTop.self_tape_deadline),
               audition_date: toDateInput(data.audition_date || metaTop.audition_date),
               callback_date: toDateInput(data.callback_date || metaTop.callback_date),
@@ -585,8 +415,8 @@ export default function CreateCasting() {
               // Location
               talent_location_scope: data.talent_location_scope || metaTop.talent_location_scope || prev.talent_location_scope,
               preferred_talent_base: data.preferred_talent_base || metaTop.preferred_talent_base || (typeof data.location === "string" ? data.location : prev.preferred_talent_base),
-              // Images
-              project_cover_image: data.project_cover_image || data.image || data.coverImage || metaTop.project_cover_image || prev.project_cover_image,
+              // Images — use shared helper
+              project_cover_image: getProjectCoverImage(data, metaTop) || prev.project_cover_image,
               additional_images: Array.isArray(data.additional_images) ? data.additional_images : (Array.isArray(metaTop.additional_images) ? metaTop.additional_images : prev.additional_images),
               moodboard_references: Array.isArray(data.moodboard_references) ? data.moodboard_references : (Array.isArray(metaTop.moodboard_references) ? metaTop.moodboard_references : prev.moodboard_references),
               // Audition settings
@@ -603,6 +433,12 @@ export default function CreateCasting() {
               // Roles — use our fully normalised safeRoles
               roles: safeRoles.length > 0 ? safeRoles : prev.roles,
             }));
+
+            // Restore the cover image preview so it shows in the upload widget on edit
+            const coverUrl = getProjectCoverImage(data, metaTop);
+            if (coverUrl) {
+              setSelectedImage(coverUrl);
+            }
           }
         } catch (error) {
           toast.error("Failed to load casting call details");
@@ -796,74 +632,24 @@ export default function CreateCasting() {
 
     setIsSubmitting(true);
     try {
-      const firstRole = formData.roles[0];
-      
-      // Map roles: keep ALL original fields, add legacy aliases for backend compat.
-      // CRITICAL: Do NOT collapse gender/ethnicity/role_type arrays to strings —
-      // the backend stores what we send, and we need arrays back on edit/preview.
+      // Map roles to backend payload using shared util
       const mappedRoles = formData.roles.map(r => ({
-        ...r,                                                         // all original form fields preserved
-        // --- Legacy aliases the old backend schema may read ---
-        title: r.role_name,
-        description: r.full_role_description || r.character_role_summary,
-        roleType: r.role_type,                                        // keep as array
-        minAge: r.minimum_age,
-        maxAge: r.maximum_age,
-        // Keep gender & ethnicity as arrays; add singular alias for any legacy reads
-        genderSingle: r.gender?.[0]?.toLowerCase() || "any",
-        ethnicitySingle: r.ethnicity?.[0]?.toLowerCase() || "any",
-        unionStatus: r.union_status_required?.toLowerCase()?.includes('non')
-          ? "non-union"
-          : r.union_status_required?.toLowerCase()?.includes('union')
-            ? "union"
-            : "both",
-        payRate: r.payment_amount,
-        requestVideo: formData.media_required?.includes("Reel"),
-        requestAudio: formData.media_required?.includes("Voice Reel"),
-        requestCoverLetter: formData.media_required?.includes("Cover Letter"),
-        customQuestions: formData.custom_upload_description || "",
+        id: r.id || r._id,
+        ...buildRolePayload(
+          r,
+          formData.media_required,
+          formData.application_deadline,
+          formData.custom_upload_description
+        ),
       }));
 
       const isBoosted = formData.featured_project || formData.instant_posting_addon;
 
-      // Embed the full formData as a hidden __META__ string inside requirements.
-      // This guarantees that every form field survives the round-trip even if the
-      // backend doesn't have a matching schema column.
-      const formStateMeta = { 
-        ...formData,
-        roles: mappedRoles,               // store the full mapped roles in meta too
-      };
-      delete (formStateMeta as any).project_cover_image; // image handled separately
-      const metaString = `__META__:${JSON.stringify(formStateMeta)}`;
-
-      // Build a clean requirements list: only real requirement lines (not summary)
-      // followed by the meta blob. We no longer embed the role description here
-      // to avoid duplication — it's already on each role object.
-      const visibleReqs: string[] = [];
-      // (future: you could add project-level requirements lines here)
-      visibleReqs.push(metaString);
-
+      // Build project payload using shared util, then attach META blob
+      const metaString = encodeURIComponent(JSON.stringify({ ...formData }));
       let payload: any = {
-        ...formData,
-        // Legacy top-level fields
-        title: formData.project_title || (firstRole ? firstRole.role_name : ""),
-        projectName: formData.project_title,
-        projectType: formData.project_type?.toLowerCase(),
-        description: formData.full_project_description || formData.short_project_summary,
-        deadline: formData.application_deadline,
-        status: (statusOverride === "draft" || isBoosted)
-          ? "draft"
-          : formData.project_status?.toLowerCase().includes("open")
-            ? "open"
-            : "draft",
-        location: formData.preferred_talent_base || formData.talent_location_scope,
-        category: formData.genre?.[0] || "other",
-        requirements: visibleReqs,
-        roles: mappedRoles,
-        // Add-on legacy names
-        featuredPosting: formData.featured_project,
-        urgentHiringBadge: formData.instant_posting_addon,
-        instantPosting: formData.instant_posting_addon,
+        ...buildProjectPayload(formData, statusOverride),
+        projectAttachments: ["__META__:" + metaString],
       };
 
       if (imageFile) {
@@ -875,25 +661,48 @@ export default function CreateCasting() {
           const uploadRes = await uploadAPI.uploadImage(uploadFormData);
           const imageUrl = uploadRes.data?.data?.url || uploadRes.data?.url;
           if (imageUrl) {
-            payload.project_cover_image = imageUrl;
-            payload.image = imageUrl; // Legacy field
+            payload.projectAttachments.push(imageUrl);
           }
         } catch (uploadErr) {
           console.error("Image upload failed:", uploadErr);
           toast.error("Image upload failed. Project saved without cover image.");
         }
+      } else if (formData.project_cover_image) {
+        payload.projectAttachments.push(formData.project_cover_image);
       }
 
       let response;
       if (isEditMode) {
-        response = await castingCallAPI.update(id as string, payload);
+        response = await projectAPI.update(id as string, payload);
       } else {
-        response = await castingCallAPI.create(payload);
+        response = await projectAPI.create(payload);
       }
 
       if (response.data.success) {
         const projectData = response.data.data;
         const projectId = projectData?.id || projectData?._id || id;
+        
+        // --- Add/Update roles via projectAPI ---
+        if (mappedRoles.length > 0) {
+          try {
+            await Promise.all(mappedRoles.map(r => {
+              const roleId = r.id;
+              // Remove the local id before sending to backend
+              const payload = { ...r };
+              delete payload.id;
+              
+              if (isEditMode && roleId && roleId !== r.name && !roleId.startsWith("role-")) {
+                // If it's an existing role with a real MongoDB ID
+                return projectAPI.updateRole(projectId, roleId, payload).catch(() => projectAPI.createRole(projectId, payload));
+              } else {
+                return projectAPI.createRole(projectId, payload);
+              }
+            }));
+          } catch (roleErr) {
+            console.error("Failed to add/update roles:", roleErr);
+            toast.error("Project saved, but some roles failed to attach or update. Please check the project details.");
+          }
+        }
 
         // If any boost is selected, redirect to checkout
         if ((formData.featured_project || formData.instant_posting_addon) && statusOverride !== "draft") {
@@ -1028,876 +837,65 @@ export default function CreateCasting() {
 
       <form onSubmit={(e) => handleSubmit(e)} onKeyDown={handleKeyDown}>
         {/* STEP 1: PROJECT BASICS & PRODUCTION DETAILS */}
-        <div className={step === 1 ? "block space-y-6 animate-fade-in" : "hidden"}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Basics</CardTitle>
-              <CardDescription>Section 1: High-level identification of the project.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="project_title">Project Title *</Label>
-                  <Input 
-                    id="project_title"
-                    name="project_title"
-                    value={formData.project_title}
-                    onChange={handleChange}
-                    placeholder="e.g. Current Production Name" 
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="internal_project_reference">Internal Project Reference</Label>
-                  <Input 
-                    id="internal_project_reference"
-                    name="internal_project_reference"
-                    value={formData.internal_project_reference}
-                    onChange={handleChange}
-                    placeholder="e.g. REF-123" 
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="casting_company_name">Casting Company / Agency Name *</Label>
-                  <Input 
-                    id="casting_company_name"
-                    name="casting_company_name"
-                    value={formData.casting_company_name}
-                    onChange={handleChange}
-                    placeholder="Auto-fills if profile exists" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="production_company_name">Production Company Name</Label>
-                  <Input 
-                    id="production_company_name"
-                    name="production_company_name"
-                    value={formData.production_company_name}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="project_status">Project Status *</Label>
-                  <Select value={formData.project_status} onValueChange={(v) => handleSelectChange("project_status", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Draft">Draft</SelectItem>
-                      <SelectItem value="Open for Applications">Open for Applications</SelectItem>
-                      <SelectItem value="Invite Only">Invite Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="project_type">Project Type *</Label>
-                  <Select value={formData.project_type} onValueChange={(v) => handleSelectChange("project_type", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {PROJECT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Genre</Label>
-                <div className="flex flex-wrap gap-2">
-                  {GENRES.map(g => (
-                    <Badge 
-                      key={g} 
-                      variant={formData.genre?.includes(g) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const newGenre = formData.genre?.includes(g) 
-                          ? formData.genre.filter(i => i !== g)
-                          : [...(formData.genre || []), g];
-                        handleSelectChange("genre", newGenre);
-                      }}
-                    >
-                      {g}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="is_union_project" 
-                  checked={formData.is_union_project} 
-                  onCheckedChange={(c) => setFormData(p => ({...p, is_union_project: c}))} 
-                />
-                <Label htmlFor="is_union_project">Is this a union project?</Label>
-              </div>
-
-              {formData.is_union_project && (
-                <div className="space-y-2">
-                  <Label htmlFor="union_details">Union Details</Label>
-                  <Input 
-                    id="union_details"
-                    name="union_details"
-                    value={formData.union_details}
-                    onChange={handleChange}
-                    placeholder="e.g. SAG-AFTRA, Equity" 
-                  />
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="project_website">Project Website</Label>
-                <Input 
-                  id="project_website"
-                  name="project_website"
-                  value={formData.project_website}
-                  onChange={handleChange}
-                  placeholder="https://..." 
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Production Details</CardTitle>
-              <CardDescription>Section 2: Detailed description of the production.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="short_project_summary">Short Project Summary *</Label>
-                <Textarea 
-                  id="short_project_summary"
-                  name="short_project_summary"
-                  value={formData.short_project_summary}
-                  onChange={handleChange}
-                  rows={2}
-                  placeholder="30-300 chars summary"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="full_project_description">Full Project Description *</Label>
-                <Textarea 
-                  id="full_project_description"
-                  name="full_project_description"
-                  value={formData.full_project_description}
-                  onChange={handleChange}
-                  rows={6}
-                  placeholder="100-5000 chars detailed description"
-                />
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="director_name">Director Name</Label>
-                  <Input id="director_name" name="director_name" value={formData.director_name} onChange={handleChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="producer_name">Producer Name</Label>
-                  <Input id="producer_name" name="producer_name" value={formData.producer_name} onChange={handleChange} />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="writer_name">Writer Name</Label>
-                  <Input id="writer_name" name="writer_name" value={formData.writer_name} onChange={handleChange} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="casting_director_name">Casting Director Name</Label>
-                  <Input id="casting_director_name" name="casting_director_name" value={formData.casting_director_name} onChange={handleChange} />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Industry Areas</Label>
-                <div className="flex flex-wrap gap-2">
-                  {INDUSTRY_AREAS.map(a => (
-                    <Badge 
-                      key={a} 
-                      variant={formData.industry_areas?.includes(a) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const newAreas = formData.industry_areas?.includes(a) 
-                          ? formData.industry_areas.filter(i => i !== a)
-                          : [...(formData.industry_areas || []), a];
-                        handleSelectChange("industry_areas", newAreas);
-                      }}
-                    >
-                      {a}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="intended_audience_market">Intended Audience / Market</Label>
-                <Input id="intended_audience_market" name="intended_audience_market" value={formData.intended_audience_market} onChange={handleChange} />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="production_notes">Production Notes</Label>
-                <Textarea id="production_notes" name="production_notes" value={formData.production_notes} onChange={handleChange} rows={3} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {step === 1 && (
+          <Step1Basics
+            formData={formData}
+            handleChange={handleChange}
+            handleSelectChange={handleSelectChange}
+            setFormData={setFormData}
+          />
+        )}
 
         {/* STEP 2: TALENT NEEDED */}
-        <div className={step === 2 ? "block space-y-6 animate-fade-in" : "hidden"}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Talent Needed</CardTitle>
-              <CardDescription>Section 3: High-level requirements for the talent pool.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Talent Types Needed *</Label>
-                <div className="flex flex-wrap gap-2">
-                  {TALENT_TYPES.map(t => (
-                    <Badge 
-                      key={t} 
-                      variant={formData.talent_types_needed?.includes(t) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const newTypes = formData.talent_types_needed?.includes(t) 
-                          ? formData.talent_types_needed.filter(i => i !== t)
-                          : [...(formData.talent_types_needed || []), t];
-                        handleSelectChange("talent_types_needed", newTypes);
-                      }}
-                    >
-                      {t.replace('_', ' ')}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="role_scope">Is this for a single role or multiple roles? *</Label>
-                  <Select value={formData.role_scope} onValueChange={(v) => handleSelectChange("role_scope", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Single Role">Single Role</SelectItem>
-                      <SelectItem value="Multiple Roles">Multiple Roles</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="total_number_of_roles">Total Number of Roles</Label>
-                  <Input type="number" id="total_number_of_roles" name="total_number_of_roles" value={formData.total_number_of_roles} onChange={handleChange} min="1" />
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-center space-x-2">
-                  <Switch id="open_to_mixed_talent_categories" checked={formData.open_to_mixed_talent_categories} onCheckedChange={(c) => setFormData(p => ({...p, open_to_mixed_talent_categories: c}))} />
-                  <Label htmlFor="open_to_mixed_talent_categories">Open to mixed talent categories?</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="child_talent_involved" checked={formData.child_talent_involved} onCheckedChange={(c) => setFormData(p => ({...p, child_talent_involved: c}))} />
-                  <Label htmlFor="child_talent_involved">Child Talent Involved?</Label>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-center space-x-2">
-                  <Switch id="represented_talent_only" checked={formData.represented_talent_only} onCheckedChange={(c) => setFormData(p => ({...p, represented_talent_only: c}))} />
-                  <Label htmlFor="represented_talent_only">Open to represented talent only?</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="open_to_unrepresented_talent" checked={formData.open_to_unrepresented_talent} onCheckedChange={(c) => setFormData(p => ({...p, open_to_unrepresented_talent: c}))} />
-                  <Label htmlFor="open_to_unrepresented_talent">Open to unrepresented talent?</Label>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="talent_location_scope">Talent Location Scope *</Label>
-                  <Select value={formData.talent_location_scope} onValueChange={(v) => handleSelectChange("talent_location_scope", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Local Only">Local Only</SelectItem>
-                      <SelectItem value="Nationwide">Nationwide</SelectItem>
-                      <SelectItem value="International">International</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="preferred_talent_base">Preferred Talent Base</Label>
-                  <Input id="preferred_talent_base" name="preferred_talent_base" value={formData.preferred_talent_base} onChange={handleChange} placeholder="e.g. London, New York" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {step === 2 && (
+          <Step2TalentNeeded
+            formData={formData}
+            handleChange={handleChange}
+            handleSelectChange={handleSelectChange}
+            setFormData={setFormData}
+          />
+        )}
 
         {/* STEP 3: ROLES */}
-        <div className={step === 3 ? "block space-y-6 animate-fade-in" : "hidden"}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Characters & Roles</h2>
-            <Button type="button" onClick={addRole} variant="outline" size="sm" className="gap-1">
-              <Plus className="w-4 h-4" /> Add Role
-            </Button>
-          </div>
-
-          {formData.roles.map((role, index) => (
-            <Card key={role.id} className="border-primary/20 shadow-sm relative overflow-visible">
-              {formData.roles.length > 1 && (
-                <Button 
-                  type="button" 
-                  variant="destructive" 
-                  size="icon" 
-                  className="absolute -top-3 -right-3 h-8 w-8 rounded-full shadow-md z-10"
-                  onClick={() => removeRole(role.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              )}
-              <CardHeader className="bg-slate-50 border-b relative pb-4 rounded-t-xl">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-tl-xl" />
-                <CardTitle className="text-lg flex items-center gap-2">
-                  Role {index + 1}: {role.role_name || "Untitled Role"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-8">
-                {/* 4 B. ROLE IDENTITY */}
-                <div className="space-y-4">
-                  <h3 className="font-bold text-sm text-primary uppercase tracking-wider">Role Identity</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Role Name *</Label>
-                      <Input value={role.role_name} onChange={(e) => handleRoleChange(role.id, 'role_name', e.target.value)} placeholder="e.g. John Doe" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Role Status</Label>
-                      <Select value={role.role_status} onValueChange={(v) => handleRoleChange(role.id, 'role_status', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Draft">Draft</SelectItem>
-                          <SelectItem value="Open">Open</SelectItem>
-                          <SelectItem value="Paused">Paused</SelectItem>
-                          <SelectItem value="Closed">Closed</SelectItem>
-                          <SelectItem value="Cast">Cast</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Character / Role Summary *</Label>
-                    <Textarea value={role.character_role_summary} onChange={(e) => handleRoleChange(role.id, 'character_role_summary', e.target.value)} rows={2} placeholder="20-300 chars" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Full Role Description</Label>
-                    <Textarea value={role.full_role_description} onChange={(e) => handleRoleChange(role.id, 'full_role_description', e.target.value)} rows={4} placeholder="50-4000 chars" />
-                  </div>
-                </div>
-
-                {/* 4 C. ROLE REQUIREMENTS */}
-                <Separator />
-                <div className="space-y-4">
-                  <h3 className="font-bold text-sm text-primary uppercase tracking-wider">Role Requirements</h3>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <div className="space-y-2">
-                      <Label>Min Age</Label>
-                      <Input type="number" value={role.minimum_age} onChange={(e) => handleRoleChange(role.id, 'minimum_age', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Max Age</Label>
-                      <Input type="number" value={role.maximum_age} onChange={(e) => handleRoleChange(role.id, 'maximum_age', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Gender</Label>
-                      <div className="flex flex-wrap gap-1">
-                        {["Male", "Female", "Non-binary", "Any"].map(g => (
-                          <Badge 
-                            key={g} 
-                            variant={role.gender?.includes(g) ? "default" : "outline"}
-                            className="cursor-pointer text-[10px]"
-                            onClick={() => {
-                              const newG = role.gender?.includes(g) ? role.gender.filter(i => i !== g) : [...(role.gender || []), g];
-                              handleRoleChange(role.id, 'gender', newG);
-                            }}
-                          >
-                            {g}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Union Status Required</Label>
-                      <Select value={role.union_status_required} onValueChange={(v) => handleRoleChange(role.id, 'union_status_required', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Union Only">Union Only</SelectItem>
-                          <SelectItem value="Non-Union Only">Non-Union Only</SelectItem>
-                          <SelectItem value="Open to All">Open to All</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Experience Level Preferred</Label>
-                      <Select value={role.experience_level_preferred} onValueChange={(v) => handleRoleChange(role.id, 'experience_level_preferred', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Beginner">Beginner</SelectItem>
-                          <SelectItem value="Intermediate">Intermediate</SelectItem>
-                          <SelectItem value="Professional">Professional</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.professional_experience_required} onCheckedChange={(c) => handleRoleChange(role.id, 'professional_experience_required', !!c)} />
-                      <Label className="text-xs">Pro Experience Req?</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.driving_licence_required} onCheckedChange={(c) => handleRoleChange(role.id, 'driving_licence_required', !!c)} />
-                      <Label className="text-xs">Driving Licence?</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.passport_required} onCheckedChange={(c) => handleRoleChange(role.id, 'passport_required', !!c)} />
-                      <Label className="text-xs">Passport?</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.travel_required} onCheckedChange={(c) => handleRoleChange(role.id, 'travel_required', !!c)} />
-                      <Label className="text-xs">Travel Required?</Label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4 D. ROLE PERFORMANCE */}
-                <Separator />
-                <div className="space-y-4">
-                  <h3 className="font-bold text-sm text-primary uppercase tracking-wider">Performance Details</h3>
-                  <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.speaking_role} onCheckedChange={(c) => handleRoleChange(role.id, 'speaking_role', !!c)} />
-                      <Label className="text-xs">Speaking Role?</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.singing_required} onCheckedChange={(c) => handleRoleChange(role.id, 'singing_required', !!c)} />
-                      <Label className="text-xs">Singing?</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.dancing_required} onCheckedChange={(c) => handleRoleChange(role.id, 'dancing_required', !!c)} />
-                      <Label className="text-xs">Dancing?</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.stunts_required} onCheckedChange={(c) => handleRoleChange(role.id, 'stunts_required', !!c)} />
-                      <Label className="text-xs">Stunts?</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.intimacy_scene} onCheckedChange={(c) => handleRoleChange(role.id, 'intimacy_scene', !!c)} />
-                      <Label className="text-xs">Intimacy Scene?</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.nudity_required} onCheckedChange={(c) => handleRoleChange(role.id, 'nudity_required', !!c)} />
-                      <Label className="text-xs">Nudity Required?</Label>
-                    </div>
-                  </div>
-                  {role.nudity_required && (
-                    <div className="space-y-2">
-                      <Label>Nudity Type</Label>
-                      <Select value={role.nudity_type} onValueChange={(v) => handleRoleChange(role.id, 'nudity_type', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Partial">Partial</SelectItem>
-                          <SelectItem value="Full">Full</SelectItem>
-                          <SelectItem value="To Be Discussed">To Be Discussed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-
-                {/* 4 F. ROLE PAYMENT */}
-                <Separator />
-                <div className="space-y-4">
-                  <h3 className="font-bold text-sm text-primary uppercase tracking-wider">Payment & Compensation</h3>
-                  <div className="flex items-center space-x-2">
-                    <Switch checked={role.is_paid_role} onCheckedChange={(c) => handleRoleChange(role.id, 'is_paid_role', c)} />
-                    <Label>Is this a paid role? *</Label>
-                  </div>
-                  {role.is_paid_role && (
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <div className="space-y-2">
-                        <Label>Payment Type *</Label>
-                        <Select value={role.payment_type} onValueChange={(v) => handleRoleChange(role.id, 'payment_type', v)}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {PAYMENT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Rate / Amount</Label>
-                        <Input type="number" value={role.payment_amount} onChange={(e) => handleRoleChange(role.id, 'payment_amount', e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Currency *</Label>
-                        <Select value={role.currency} onValueChange={(v) => handleRoleChange(role.id, 'currency', v)}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="GBP">GBP (£)</SelectItem>
-                            <SelectItem value="USD">USD ($)</SelectItem>
-                            <SelectItem value="EUR">EUR (€)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
-                  <div className="grid gap-4 grid-cols-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.expenses_covered} onCheckedChange={(c) => handleRoleChange(role.id, 'expenses_covered', !!c)} />
-                      <Label className="text-xs">Expenses Covered?</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.accommodation_covered} onCheckedChange={(c) => handleRoleChange(role.id, 'accommodation_covered', !!c)} />
-                      <Label className="text-xs">Accommodation?</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox checked={role.travel_covered} onCheckedChange={(c) => handleRoleChange(role.id, 'travel_covered', !!c)} />
-                      <Label className="text-xs">Travel Covered?</Label>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Additional Compensation Notes</Label>
-                    <Textarea value={role.compensation_notes} onChange={(e) => handleRoleChange(role.id, 'compensation_notes', e.target.value)} rows={2} />
-                  </div>
-                </div>
-
-              </CardContent>
-            </Card>
-          ))}
-          
-          <Button type="button" onClick={addRole} variant="outline" className="w-full border-dashed border-2 py-8 text-muted-foreground hover:text-primary hover:border-primary transition-colors">
-            <Plus className="w-5 h-5 mr-2" /> Add Another Role
-          </Button>
-        </div>
+        {step === 3 && (
+          <Step3Roles
+            roles={formData.roles}
+            addRole={addRole}
+            removeRole={removeRole}
+            handleRoleChange={handleRoleChange}
+          />
+        )}
 
         {/* STEP 4: APPLICATION & AUDITION SETTINGS */}
-        <div className={step === 4 ? "block space-y-6 animate-fade-in" : "hidden"}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Application Settings</CardTitle>
-              <CardDescription>Section 5: Define how and when talent can apply.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="application_deadline">Application Deadline *</Label>
-                  <Input 
-                    id="application_deadline" 
-                    name="application_deadline"
-                    type="date" 
-                    required 
-                    value={formData.application_deadline}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="who_can_apply">Who Can Apply? *</Label>
-                  <Select value={formData.who_can_apply} onValueChange={(v) => handleSelectChange("who_can_apply", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Anyone on Castglo">Anyone on Castglo</SelectItem>
-                      <SelectItem value="Invited Talent Only">Invited Talent Only</SelectItem>
-                      <SelectItem value="Represented Talent Only">Represented Talent Only</SelectItem>
-                      <SelectItem value="Specific Talent Type Only">Specific Talent Type Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-center space-x-2">
-                  <Switch id="accept_until_role_filled" checked={formData.accept_until_role_filled} onCheckedChange={(c) => setFormData(p => ({...p, accept_until_role_filled: c}))} />
-                  <Label htmlFor="accept_until_role_filled">Accept until role is filled?</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="invite_only" checked={formData.invite_only} onCheckedChange={(c) => setFormData(p => ({...p, invite_only: c}))} />
-                  <Label htmlFor="invite_only">Is Application by Invite Only?</Label>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-center space-x-2">
-                  <Switch id="direct_invitations_enabled" checked={formData.direct_invitations_enabled} onCheckedChange={(c) => setFormData(p => ({...p, direct_invitations_enabled: c}))} />
-                  <Label htmlFor="direct_invitations_enabled">Are direct invitations enabled?</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="castglo_matches_enabled" checked={formData.castglo_matches_enabled} onCheckedChange={(c) => setFormData(p => ({...p, castglo_matches_enabled: c}))} />
-                  <Label htmlFor="castglo_matches_enabled">Enable Castglo Matches?</Label>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Audition Settings</CardTitle>
-              <CardDescription>Section 6: Audition and interview process details.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center space-x-2">
-                <Switch id="audition_required" checked={formData.audition_required} onCheckedChange={(c) => setFormData(p => ({...p, audition_required: c}))} />
-                <Label htmlFor="audition_required">Is an audition required? *</Label>
-              </div>
-
-              {formData.audition_required && (
-                <div className="space-y-6 pt-4 animate-fade-in">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="audition_type">Audition Type</Label>
-                      <Select value={formData.audition_type} onValueChange={(v) => handleSelectChange("audition_type", v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {AUDITION_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="audition_date">Audition Date</Label>
-                      <Input type="date" id="audition_date" name="audition_date" value={formData.audition_date} onChange={handleChange} />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="callback_date">Callback Date</Label>
-                      <Input type="date" id="callback_date" name="callback_date" value={formData.callback_date} onChange={handleChange} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="audition_location">Audition Location</Label>
-                      <Input id="audition_location" name="audition_location" value={formData.audition_location} onChange={handleChange} placeholder="e.g. Studio A, Online" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="audition_instructions">Audition Instructions</Label>
-                    <Textarea id="audition_instructions" name="audition_instructions" value={formData.audition_instructions} onChange={handleChange} rows={3} />
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="flex items-center space-x-2">
-                      <Switch id="self_tape_accepted" checked={formData.self_tape_accepted} onCheckedChange={(c) => setFormData(p => ({...p, self_tape_accepted: c}))} />
-                      <Label htmlFor="self_tape_accepted">Self-Tape Accepted?</Label>
-                    </div>
-                    {formData.self_tape_accepted && (
-                      <div className="space-y-2">
-                        <Label htmlFor="self_tape_deadline">Self-Tape Deadline</Label>
-                        <Input type="date" id="self_tape_deadline" name="self_tape_deadline" value={formData.self_tape_deadline} onChange={handleChange} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <Separator />
-
-              <div className="flex items-center space-x-2">
-                <Switch id="interview_required" checked={formData.interview_required} onCheckedChange={(c) => setFormData(p => ({...p, interview_required: c}))} />
-                <Label htmlFor="interview_required">Interview Required?</Label>
-              </div>
-
-              {formData.interview_required && (
-                <div className="space-y-2 pt-2">
-                  <Label htmlFor="interview_format">Interview Format</Label>
-                  <Select value={formData.interview_format} onValueChange={(v) => handleSelectChange("interview_format", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="In-person">In-person</SelectItem>
-                      <SelectItem value="Online">Online</SelectItem>
-                      <SelectItem value="Phone">Phone</SelectItem>
-                      <SelectItem value="To Be Confirmed">To Be Confirmed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {step === 4 && (
+          <Step4ApplicationAuditions
+            formData={formData}
+            handleChange={handleChange}
+            handleSelectChange={handleSelectChange}
+            setFormData={setFormData}
+          />
+        )}
 
         {/* STEP 5: MEDIA & PRE-AUDITION */}
-        <div className={step === 5 ? "block space-y-6 animate-fade-in" : "hidden"}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Media</CardTitle>
-              <CardDescription>Section 8: Upload assets related to the production.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Project Poster / Cover Image *</Label>
-                <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-8 hover:bg-slate-50 transition-colors cursor-pointer relative group">
-                  <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageChange} accept="image/*" />
-                  {selectedImage || formData.project_cover_image ? (
-                    <div className="relative w-full aspect-[21/9] rounded-xl overflow-hidden max-w-2xl">
-                      <img src={selectedImage || formData.project_cover_image} alt="Project Header" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Upload className="w-8 h-8 text-white" />
-                        <span className="ml-2 text-white font-medium">Change Image</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                        <ImageIcon className="w-6 h-6 text-slate-400" />
-                      </div>
-                      <p className="text-sm font-medium text-slate-600">Click or drag to upload header image</p>
-                      <p className="text-xs text-slate-400 mt-1">Recommended size: 1200x600px</p>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Script Sides (PDF)</Label>
-                  <Input type="file" accept=".pdf" onChange={(e) => {}} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Director / Producer Brief</Label>
-                  <Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => {}} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Applicant Requirements</CardTitle>
-              <CardDescription>Section 9: What talent must provide in their application.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Media Required *</Label>
-                <div className="flex flex-wrap gap-2">
-                  {["Headshot", "Reel", "Voice Reel", "Portfolio", "Cover Letter"].map(m => (
-                    <Badge 
-                      key={m} 
-                      variant={formData.media_required?.includes(m) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const newM = formData.media_required?.includes(m) 
-                          ? formData.media_required.filter(i => i !== m)
-                          : [...(formData.media_required || []), m];
-                        handleSelectChange("media_required", newM);
-                      }}
-                    >
-                      {m}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch id="custom_upload_requested" checked={formData.custom_upload_requested} onCheckedChange={(c) => setFormData(p => ({...p, custom_upload_requested: c}))} />
-                <Label htmlFor="custom_upload_requested">Custom Upload Requested?</Label>
-              </div>
-
-              {formData.custom_upload_requested && (
-                <div className="space-y-2 pt-2">
-                  <Label htmlFor="custom_upload_description">Custom Upload Description</Label>
-                  <Textarea id="custom_upload_description" name="custom_upload_description" value={formData.custom_upload_description} onChange={handleChange} placeholder="Describe what custom file you need..." />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {step === 5 && (
+          <Step5MediaRequirements
+            formData={formData}
+            selectedImage={selectedImage}
+            handleImageChange={handleImageChange}
+            handleSelectChange={handleSelectChange}
+            setFormData={setFormData}
+            handleChange={handleChange}
+          />
+        )}
 
         {/* STEP 6: PUBLISHING & REVIEW */}
-        <div className={step === 6 ? "block space-y-6 animate-fade-in" : "hidden"}>
-          <Card className="border-amber-200 bg-amber-50/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-amber-500" />
-                Boost Your Casting Call
-              </CardTitle>
-              <CardDescription>Upgrade your listing to gain maximum visibility.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.featured_project ? 'border-amber-400 bg-amber-100/50' : 'border-slate-200 bg-white hover:border-amber-200'}`} onClick={() => setFormData(p => ({...p, featured_project: !p.featured_project}))}>
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-3">
-                    <div className="mt-1"><Star className={`w-5 h-5 ${formData.featured_project ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} /></div>
-                    <div>
-                      <h4 className="font-bold text-slate-800">Featured Listing</h4>
-                      <p className="text-sm text-slate-600 mt-1">Pin your project to the top for 7 days. Gets up to 5x more applications.</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-bold text-lg">{formatPrice(29.99)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.instant_posting_addon ? 'border-red-400 bg-red-50/50' : 'border-slate-200 bg-white hover:border-red-200'}`} onClick={() => setFormData(p => ({...p, instant_posting_addon: !p.instant_posting_addon}))}>
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-3">
-                    <div className="mt-1"><FastForward className={`w-5 h-5 ${formData.instant_posting_addon ? 'text-red-500' : 'text-slate-400'}`} /></div>
-                    <div>
-                      <h4 className="font-bold text-slate-800">Instant Posting</h4>
-                      <p className="text-sm text-slate-600 mt-1">Skip moderation and publish immediately.</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-bold text-lg">{formatPrice(14.99)}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Review & Compliance</CardTitle>
-              <CardDescription>Section 11: Final confirmations before publishing.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <Checkbox id="confirm_information_accurate" checked={formData.confirm_information_accurate} onCheckedChange={(c) => setFormData(p => ({...p, confirm_information_accurate: !!c}))} />
-                  <Label htmlFor="confirm_information_accurate" className="text-sm font-normal leading-tight">I confirm the information provided is accurate</Label>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Checkbox id="confirm_right_to_post" checked={formData.confirm_right_to_post} onCheckedChange={(c) => setFormData(p => ({...p, confirm_right_to_post: !!c}))} />
-                  <Label htmlFor="confirm_right_to_post" className="text-sm font-normal leading-tight">I confirm I have the right to post this casting/project</Label>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Checkbox id="confirm_legal_safeguarding_compliance" checked={formData.confirm_legal_safeguarding_compliance} onCheckedChange={(c) => setFormData(p => ({...p, confirm_legal_safeguarding_compliance: !!c}))} />
-                  <Label htmlFor="confirm_legal_safeguarding_compliance" className="text-sm font-normal leading-tight">I confirm this project complies with legal and safeguarding requirements</Label>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Checkbox id="confirm_platform_policy" checked={formData.confirm_platform_policy} onCheckedChange={(c) => setFormData(p => ({...p, confirm_platform_policy: !!c}))} />
-                  <Label htmlFor="confirm_platform_policy" className="text-sm font-normal leading-tight">I understand Castglo policies on fairness, privacy, and conduct</Label>
-                </div>
-              </div>
-
-              <Separator className="my-6" />
-
-              <div className="p-4 bg-slate-50 rounded-lg border">
-                <p className="text-sm text-muted-foreground">You are about to publish <strong>{formData.project_title || "Untitled Project"}</strong> with <strong>{formData.roles.length} role(s)</strong>.</p>
-                {(formData.featured_project || formData.instant_posting_addon) && (
-                  <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                    <span className="font-bold">Total Add-ons Cost:</span>
-                    <span className="font-bold text-lg">
-                      {formatPrice((formData.featured_project ? 29.99 : 0) + (formData.instant_posting_addon ? 14.99 : 0))}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {step === 6 && (
+          <Step6PublishReview
+            formData={formData}
+            setFormData={setFormData}
+            formatPrice={formatPrice}
+          />
+        )}
 
         {/* BOTTOM NAVIGATION ACTIONS */}
         <div className="flex justify-between items-center mt-10 pt-6 border-t">

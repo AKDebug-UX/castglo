@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { castingCallAPI, applicationAPI } from "@/lib/api";
+import { castingCallAPI, applicationAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
 
@@ -117,9 +117,9 @@ export default function ApplicantsManagement() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const listingsRes = await castingCallAPI.getMyListings();
+        const listingsRes = await projectAPI.getMe();
         const myProjects: Project[] = listingsRes.data?.success
-          ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.castingCalls || [])
+          ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [])
           : [];
         setProjects(myProjects);
 

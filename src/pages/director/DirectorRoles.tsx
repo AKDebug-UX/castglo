@@ -13,7 +13,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { castingCallAPI } from "@/lib/api";
+import { castingCallAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 interface RoleItem {
@@ -36,9 +36,9 @@ export default function DirectorRoles() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const res = await castingCallAPI.getMyListings();
+        const res = await projectAPI.getMe();
         if (res.data.success) {
-          const listings = Array.isArray(res.data.data) ? res.data.data : res.data.data?.castingCalls || [];
+          const listings = Array.isArray(res.data.data) ? res.data.data : res.data.data?.projects || res.data.data?.castingCalls || [];
           const flattenedRoles: RoleItem[] = listings.flatMap((p: any) => 
             (p.roles || []).map((r: any) => ({
               id: r.id || r._id,

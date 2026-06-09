@@ -1,64 +1,22 @@
-import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Calendar, 
-  DollarSign,
-  Loader2
-} from "lucide-react";
-import { castingCallAPI } from "@/lib/api";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { formatLocation, formatBudget } from "@/lib/utils";
 import SharedCastingDetail from "@/components/casting/SharedCastingDetail";
+import { useProjectWithRoles } from "@/hooks/useProjectWithRoles";
 
 export default function PublicCastingDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [casting, setCasting] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [metaData, setMetaData] = useState<any>(null);
+  const { project, isLoading, error } = useProjectWithRoles(id);
 
   useEffect(() => {
-    const fetchCasting = async () => {
-      if (!id) return;
-      setIsLoading(true);
-
-      try {
-        const response = await castingCallAPI.getOne(id);
-        if (response.data.success) {
-          const data = response.data.data;
-          
-          let parsedMeta = null;
-          if (data.requirements && Array.isArray(data.requirements)) {
-            const cleanReqs = [];
-            data.requirements.forEach((r: string) => {
-              if (typeof r === 'string' && r.startsWith('__META__:')) {
-                try { parsedMeta = JSON.parse(r.substring(9)); } catch(e){}
-              } else {
-                cleanReqs.push(r);
-              }
-            });
-            data.requirements = cleanReqs;
-          }
-
-          setCasting(data);
-          setMetaData(parsedMeta);
-        }
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to load casting details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCasting();
-  }, [id]);
+    if (error) toast.error(error);
+  }, [error]);
 
   if (isLoading) {
     return (
@@ -68,7 +26,7 @@ export default function PublicCastingDetail() {
     );
   }
 
-  if (!casting) {
+  if (!project) {
     return (
       <div className="text-center py-16">
         <p className="text-muted-foreground">Casting call not found.</p>
@@ -80,9 +38,9 @@ export default function PublicCastingDetail() {
   }
 
   const backLink = (
-    <Link 
+    <Link
       onClick={(e) => { e.preventDefault(); navigate(-1); }}
-      to="#" 
+      to="#"
       className="inline-flex items-center gap-2 text-sm text-[#009698] hover:text-[#007A7C] transition-colors mb-4"
     >
       <ArrowLeft className="w-4 h-4" />
@@ -94,12 +52,14 @@ export default function PublicCastingDetail() {
     <Card className="rounded-2xl border-none shadow-lg overflow-hidden bg-white mt-6">
       <CardHeader className="pb-6">
         <CardTitle className="text-xl font-bold text-slate-900">Ready to Apply?</CardTitle>
-        <p className="text-sm text-slate-500 font-medium">Create an account to submit your application</p>
+        <p className="text-sm text-slate-500 font-medium">
+          Create an account to submit your application
+        </p>
       </CardHeader>
       <CardContent className="pt-2">
-        <Button 
-          className="w-full h-14 rounded-2xl font-bold text-lg bg-[#009698] hover:bg-[#007A7C] transition-all shadow-lg shadow-[#009698]/20" 
-          size="lg" 
+        <Button
+          className="w-full h-14 rounded-2xl font-bold text-lg bg-[#009698] hover:bg-[#007A7C] transition-all shadow-lg shadow-[#009698]/20"
+          size="lg"
           asChild
         >
           <Link to="/join">Sign Up to Apply</Link>
@@ -113,7 +73,7 @@ export default function PublicCastingDetail() {
       <Header />
       <main className="py-10">
         <SharedCastingDetail
-          casting={casting}
+          casting={project}
           backLink={backLink}
           sidebarActions={sidebarActions}
           isInternal={false}
