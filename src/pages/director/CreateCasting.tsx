@@ -7,6 +7,7 @@ import { ArrowLeft, ChevronRight, Loader2, Zap } from "lucide-react";
 import { castingCallAPI, uploadAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolveMediaUrl } from "@/lib/utils";
 import {
   parseMetaFromAttachments,
   buildMetaRolesById,
@@ -437,7 +438,7 @@ export default function CreateCasting() {
             // Restore the cover image preview so it shows in the upload widget on edit
             const coverUrl = getProjectCoverImage(data, metaTop);
             if (coverUrl) {
-              setSelectedImage(coverUrl);
+              setSelectedImage(resolveMediaUrl(coverUrl));
             }
           }
         } catch (error) {

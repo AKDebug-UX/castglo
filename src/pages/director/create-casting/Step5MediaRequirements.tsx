@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Upload, Image as ImageIcon } from "lucide-react";
+import { resolveMediaUrl } from "@/lib/utils";
 import { CastingFormData } from "./types";
 
 interface Step5MediaRequirementsProps {
@@ -39,7 +40,7 @@ export default function Step5MediaRequirements({
               <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageChange} accept="image/*" />
               {selectedImage || formData.project_cover_image ? (
                 <div className="relative w-full aspect-[21/9] rounded-xl overflow-hidden max-w-2xl">
-                  <img src={selectedImage || formData.project_cover_image || ""} alt="Project Header" className="w-full h-full object-cover" />
+                  <img src={selectedImage || resolveMediaUrl(formData.project_cover_image) || ""} alt="Project Header" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <Upload className="w-8 h-8 text-white" />
                     <span className="ml-2 text-white font-medium">Change Image</span>
