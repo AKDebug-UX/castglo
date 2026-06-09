@@ -36,10 +36,10 @@ export default function Submissions() {
             status: app.status, // submitted, viewed, shortlisted, rejected, accepted, withdrawn
             createdAt: app.createdAt,
             castingCall: {
-              title: app.castingCall?.title || "Unknown Position",
-              category: app.castingCall?.category || "Other",
+              title: app.project?.title || app.project?.projectName || app.castingCall?.title || "Unknown Position",
+              category: app.role?.role_name || app.role?.name || app.role?.title || app.castingCall?.category || "Other",
               postedBy: {
-                fullName: app.castingCall?.postedBy?.fullName || "Casting Team"
+                fullName: app.project?.postedBy?.fullName || app.project?.productionCompany || app.castingCall?.postedBy?.fullName || "Casting Team"
               }
             }
           }));

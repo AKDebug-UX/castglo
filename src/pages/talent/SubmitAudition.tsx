@@ -188,23 +188,17 @@ export default function SubmitAudition() {
 
       const finalNotes = formData.additional_notes + "\n__META__:" + JSON.stringify(metaData);
 
-      let response;
-      if (isProjectPipeline && selectedRoleId) {
-        response = await projectAPI.applyToRole(id, selectedRoleId, {
-          ...metaData,
-          notes: finalNotes,
-          auditionVideo: mediaUrl,
-          auditionVideoUrl: mediaUrl,
-        });
-      } else {
-        response = await applicationAPI.create({
-          ...metaData,
-          castingCallId: id,
-          notes: finalNotes,
-          auditionVideo: mediaUrl,
-          auditionVideoUrl: mediaUrl,
-        });
+      if (!selectedRoleId) {
+        setIsSubmitting(false);
+        return toast.error("Please select a role to apply for");
       }
+
+      const response = await projectAPI.applyToRole(id, selectedRoleId, {
+        ...metaData,
+        notes: finalNotes,
+        auditionVideo: mediaUrl,
+        auditionVideoUrl: mediaUrl,
+      });
 
       if (response.data.success) {
         toast.success("Application submitted successfully!");

@@ -47,7 +47,7 @@ export default function Dashboard() {
           const apps = appsRes.data.data;
           setRecentSubmissions(apps.slice(0, 3).map((app) => ({
             id: app._id,
-            title: app.castingCall?.title || "Unknown Position",
+            title: app.project?.title || app.project?.projectName || app.castingCall?.title || "Unknown Position",
             date: new Date(app.createdAt).toLocaleDateString(),
             status: app.status
           })));

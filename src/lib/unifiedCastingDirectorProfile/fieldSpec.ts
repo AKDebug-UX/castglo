@@ -108,76 +108,7 @@ const HIRING_TOOL_FIELDS: CastingDirectorFieldSpec[] = [
   { id: "collaborator_permissions", label: "Collaborator Permission Levels", section: "Applicant Management", type: "multi-item-text", required: false, searchable: false },
 ];
 
-const PROJECT_FIELDS: CastingDirectorFieldSpec[] = [
-  { id: "project_title", label: "Project Title", section: "Project / Casting Call", type: "text", required: true, searchable: true },
-  { id: "production_type", label: "Production Type", section: "Project / Casting Call", type: "select", required: true, searchable: true, optionSource: "production_types" },
-  { id: "genre", label: "Genre", section: "Project / Casting Call", type: "text", required: false, searchable: true },
-  { id: "production_company", label: "Production Company", section: "Project / Casting Call", type: "text", required: false, searchable: true },
-  { id: "production_personnel", label: "Production Personnel", section: "Project / Casting Call", type: "multi-item-text", required: false, searchable: false },
-  { id: "production_description", label: "Production Description", section: "Project / Casting Call", type: "textarea", required: true, searchable: true },
-  { id: "project_website", label: "Website", section: "Project / Casting Call", type: "url", required: false, searchable: false },
 
-  { id: "talent_type_needed", label: "Type of Talent Needed", section: "Project / Casting Call", type: "multi-select", required: true, searchable: true, optionSource: "talent_types" },
-  { id: "paid_unpaid", label: "Paid / Unpaid", section: "Project / Casting Call", type: "select", required: true, searchable: true, options: ["Paid", "Unpaid"] },
-  { id: "payment_type", label: "Payment Type", section: "Project / Casting Call", type: "select", required: false, searchable: true, optionSource: "payment_types" },
-  { id: "payment_amount", label: "Payment Amount", section: "Project / Casting Call", type: "number", required: false, searchable: true },
-  { id: "currency", label: "Currency", section: "Project / Casting Call", type: "select", required: false, searchable: true, optionSource: "currencies" },
-  { id: "compensation_notes", label: "Additional Compensation Notes", section: "Project / Casting Call", type: "textarea", required: false, searchable: false },
-
-  { id: "project_date", label: "Project Date", section: "Project / Casting Call", type: "date", required: false, searchable: false },
-  { id: "start_date", label: "Start Date", section: "Project / Casting Call", type: "date", required: false, searchable: false },
-  { id: "end_date", label: "End Date", section: "Project / Casting Call", type: "date", required: false, searchable: false },
-  { id: "audition_date", label: "Audition Date", section: "Project / Casting Call", type: "date", required: false, searchable: false },
-  { id: "callback_date", label: "Callback Date", section: "Project / Casting Call", type: "date", required: false, searchable: false },
-  { id: "submission_deadline", label: "Submission Deadline", section: "Project / Casting Call", type: "date", required: false, searchable: false },
-  { id: "location_type", label: "Location Type", section: "Project / Casting Call", type: "select", required: false, searchable: true, optionSource: "location_types" },
-  { id: "location_city", label: "City", section: "Project / Casting Call", type: "text", required: false, searchable: true },
-  { id: "location_country", label: "Country", section: "Project / Casting Call", type: "select", required: false, searchable: true, optionSource: "countries" },
-  { id: "address_details", label: "Address Details", section: "Project / Casting Call", type: "textarea", required: false, searchable: false },
-  { id: "remote_option_available", label: "Remote Option Available", section: "Project / Casting Call", type: "select", options: ["Yes", "No"], required: false, searchable: true },
-
-  { id: "audition_required", label: "Audition Required", section: "Project / Casting Call", type: "select", options: ["Yes", "No"], required: false, searchable: true },
-  { id: "interview_required", label: "Interview Required", section: "Project / Casting Call", type: "select", options: ["Yes", "No"], required: false, searchable: true },
-  { id: "audition_type", label: "Audition Type", section: "Project / Casting Call", type: "select", required: false, searchable: true, optionSource: "audition_types" },
-
-  { id: "script_sides", label: "Script Sides", section: "Project / Casting Call", type: "file", required: false, searchable: false },
-  { id: "project_poster", label: "Project Poster", section: "Project / Casting Call", type: "file", required: false, searchable: false },
-  { id: "director_bio", label: "Director Bio", section: "Project / Casting Call", type: "textarea", required: false, searchable: false },
-  { id: "project_videos", label: "Videos", section: "Project / Casting Call", type: "multi-item-text", required: false, searchable: false },
-  { id: "project_attachments", label: "Attachments", section: "Project / Casting Call", type: "multi-item-text", required: false, searchable: false },
-];
-
-const ROLE_FIELDS: CastingDirectorFieldSpec[] = [
-  { id: "role_name", label: "Role Name", section: "Role Management", type: "text", required: true, searchable: true },
-  { id: "role_type", label: "Role Type", section: "Role Management", type: "select", required: true, searchable: true, optionSource: "role_types" },
-  { id: "role_status", label: "Role Status", section: "Role Management", type: "select", required: true, searchable: true, optionSource: "role_statuses" },
-  { id: "age_range", label: "Age Range", section: "Role Management", type: "select", required: false, searchable: true, optionSource: "age_ranges" },
-  { id: "gender", label: "Gender", section: "Role Management", type: "select", required: false, searchable: true, optionSource: "genders" },
-  { id: "ethnicity", label: "Ethnicity", section: "Role Management", type: "text", required: false, searchable: true },
-  { id: "skills_required", label: "Skills Required", section: "Role Management", type: "multi-item-text", required: false, searchable: true },
-  { id: "role_description", label: "Role Description", section: "Role Management", type: "textarea", required: false, searchable: true },
-  { id: "nudity_required", label: "Nudity Required", section: "Role Management", type: "select", options: ["Yes", "No"], required: false, searchable: true },
-  { id: "media_required_from_applicants", label: "Media Required from Applicants", section: "Role Management", type: "multi-select", required: false, searchable: true, optionSource: "media_requirements" },
-  { id: "location_requirements", label: "Location Requirements", section: "Role Management", type: "textarea", required: false, searchable: false },
-  { id: "accent_requirements", label: "Accent Requirements", section: "Role Management", type: "textarea", required: false, searchable: true },
-  { id: "language_requirements", label: "Language Requirements", section: "Role Management", type: "textarea", required: false, searchable: true },
-  { id: "union_status_requirement", label: "Union Status Requirement", section: "Role Management", type: "text", required: false, searchable: true },
-  { id: "availability_requirement", label: "Availability Requirement", section: "Role Management", type: "text", required: false, searchable: true },
-
-  { id: "preaudition_request_custom_video", label: "Request Custom Video", section: "Pre-Audition Workflow", type: "select", options: ["Yes", "No"], required: false, searchable: false },
-  { id: "preaudition_request_custom_audio", label: "Request Custom Audio", section: "Pre-Audition Workflow", type: "select", options: ["Yes", "No"], required: false, searchable: false },
-  { id: "preaudition_request_additional_media", label: "Request Additional Media", section: "Pre-Audition Workflow", type: "select", options: ["Yes", "No"], required: false, searchable: false },
-  { id: "preaudition_send_message", label: "Send Message to Talent", section: "Pre-Audition Workflow", type: "select", options: ["Yes", "No"], required: false, searchable: false },
-  { id: "preaudition_questions_enabled", label: "Enable Pre-Audition Questions", section: "Pre-Audition Workflow", type: "select", options: ["Yes", "No"], required: false, searchable: false },
-  { id: "preaudition_instructions", label: "Instructions", section: "Pre-Audition Workflow", type: "textarea", required: false, searchable: false },
-  { id: "preaudition_deadline", label: "Submission Deadline", section: "Pre-Audition Workflow", type: "date", required: false, searchable: false },
-
-  { id: "preaudition_question_text", label: "Question Text", section: "Pre-Audition Form", type: "text", required: false, searchable: false },
-  { id: "preaudition_question_type", label: "Question Type", section: "Pre-Audition Form", type: "select", required: false, searchable: false, optionSource: "preaudition_question_types" },
-  { id: "preaudition_question_required", label: "Required / Optional Toggle", section: "Pre-Audition Form", type: "select", options: ["Yes", "No"], required: false, searchable: false },
-  { id: "preaudition_sort_order", label: "Sort Order", section: "Pre-Audition Form", type: "integer", required: false, searchable: false },
-  { id: "preaudition_question_examples", label: "Question Examples", section: "Pre-Audition Form", type: "multi-item-text", required: false, searchable: false },
-];
 
 const MARKETPLACE_FIELDS: CastingDirectorFieldSpec[] = [
   { id: "marketplace_addons", label: "Marketplace Add-ons", section: "Marketplace / Commercial", type: "multi-select", required: false, searchable: true, optionSource: "addons" },
@@ -195,8 +126,6 @@ const MARKETPLACE_FIELDS: CastingDirectorFieldSpec[] = [
 export const UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC: CastingDirectorFieldSpec[] = [
   ...CORE_FIELDS,
   ...HIRING_TOOL_FIELDS,
-  ...PROJECT_FIELDS,
-  ...ROLE_FIELDS,
   ...MARKETPLACE_FIELDS,
 ];
 
@@ -210,8 +139,6 @@ export const castingDirectorSectionTabMap: Record<string, "overview" | "hiring" 
   "Credibility / Trust": "overview",
   "Hiring Manager Tools": "hiring",
   "Applicant Management": "hiring",
-  "Project / Casting Call": "overview",
-  "Role Management": "overview",
   "Pre-Audition Workflow": "audition",
   "Pre-Audition Form": "audition",
   "Marketplace / Commercial": "commercial",

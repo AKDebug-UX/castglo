@@ -37,8 +37,6 @@ const sectionOrder = [
   "Credibility / Trust",
   "Hiring Manager Tools",
   "Applicant Management",
-  "Project / Casting Call",
-  "Role Management",
   "Pre-Audition Workflow",
   "Pre-Audition Form",
   "Marketplace / Commercial",

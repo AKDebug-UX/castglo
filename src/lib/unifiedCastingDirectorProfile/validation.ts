@@ -29,17 +29,8 @@ export const unifiedCastingDirectorProfileSchema = z
     primary_account_type: z.string(),
     years_of_experience: z.string(),
     experience_level: z.string(),
-    project_title: z.string().min(2).max(150),
-    production_type: z.string().min(2),
-    production_description: z.string().min(10),
-    talent_type_needed: z.array(z.string()).min(1),
-    paid_unpaid: z.string(),
-    role_name: z.string().min(2).max(120),
-    role_type: z.string(),
-    role_status: z.string(),
     applicant_statuses: z.array(z.string()).min(1),
     website: optionalUrl,
-    project_website: optionalUrl,
   })
   .passthrough()
   .superRefine((values, ctx) => {
@@ -49,15 +40,6 @@ export const unifiedCastingDirectorProfileSchema = z
         path: ["additional_account_types"],
         message: "Additional account types cannot contain primary account type.",
       });
-    }
-
-    if (values.paid_unpaid === "Paid") {
-      if (!values.payment_type) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["payment_type"], message: "Payment type is required for paid casting calls." });
-      }
-      if (values.payment_amount === undefined || values.payment_amount === null || values.payment_amount === "") {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["payment_amount"], message: "Payment amount is required for paid casting calls." });
-      }
     }
 
     if (values.preaudition_questions_enabled) {
