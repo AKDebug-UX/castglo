@@ -13,7 +13,8 @@ import {
   Loader2
 } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
-import { formatLocation, formatBudget } from "@/lib/utils";
+import { formatLocation, formatBudget, resolveMediaUrl } from "@/lib/utils";
+import { getProjectCoverImage } from "@/lib/project.utils";
 
 import castingIndieDrama from "@/assets/casting-indie-drama.jpg";
 
@@ -88,7 +89,7 @@ export function BrowseCastSection() {
               <Card key={casting._id || casting.id} className="overflow-hidden border-none shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl bg-white flex flex-col group">
                 <div className="relative aspect-video overflow-hidden">
                   <img 
-                    src={casting.image || castingIndieDrama} 
+                    src={resolveMediaUrl(getProjectCoverImage(casting)) || castingIndieDrama} 
                     alt={casting.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />

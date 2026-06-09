@@ -17,7 +17,8 @@ import {
 } from "lucide-react";
 import { applicationAPI, castingCallAPI, livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { formatLocation } from "@/lib/utils";
+import { formatLocation, resolveMediaUrl } from "@/lib/utils";
+import { getProjectCoverImage } from "@/lib/project.utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Dashboard() {
@@ -169,7 +170,7 @@ export default function Dashboard() {
               <div key={casting._id} className="rounded-lg border border-border overflow-hidden card-elevated">
                 <div className="relative h-40">
                   <img 
-                    src={casting.image || "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=400"} 
+                    src={resolveMediaUrl(getProjectCoverImage(casting)) || "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=400"} 
                     alt={casting.title}
                     className="w-full h-full object-cover"
                   />
