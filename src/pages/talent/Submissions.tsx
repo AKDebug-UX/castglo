@@ -30,8 +30,21 @@ export default function Submissions() {
     const fetchSubmissions = async () => {
       try {
         const response = await applicationAPI.getMe();
-        if (response.data.success && Array.isArray(response.data.data)) {
-          const apps = response.data.data.map((app) => ({
+        console.log('Full API response:', response);
+        console.log('Response data:', response.data);
+        
+        let appsData = null;
+        if (response.data.success) {
+          // Check if data is array directly, or has an applications property
+          if (Array.isArray(response.data.data)) {
+            appsData = response.data.data;
+          } else if (response.data.data && Array.isArray(response.data.data.applications)) {
+            appsData = response.data.data.applications;
+          }
+        }
+
+        if (appsData && Array.isArray(appsData)) {
+          const apps = appsData.map((app: { _id: any; status: any; createdAt: any; project: { title: any; projectName: any; postedBy: { fullName: any; }; productionCompany: any; }; castingCall: { title: any; category: any; postedBy: { fullName: any; }; }; role: { role_name: any; name: any; title: any; }; }) => ({
             _id: app._id,
             status: app.status, // submitted, viewed, shortlisted, rejected, accepted, withdrawn
             createdAt: app.createdAt,
@@ -48,8 +61,8 @@ export default function Submissions() {
           // Calculate stats
           setStats([
             { label: "Total Submissions", value: apps.length.toString(), sublabel: "All time", Icon: FileText },
-            { label: "Viewed/In Review", value: apps.filter((a) => ["submitted", "viewed"].includes(a.status)).length.toString(), sublabel: "Pending Review", Icon: Eye },
-            { label: "Shortlisted", value: apps.filter((a) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", Icon: Star },
+            { label: "Viewed/In Review", value: apps.filter((a: { status: string; }) => ["submitted", "viewed"].includes(a.status)).length.toString(), sublabel: "Pending Review", Icon: Eye },
+            { label: "Shortlisted", value: apps.filter((a: { status: string; }) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", Icon: Star },
           ]);
         } else {
           setSubmissions([]);
@@ -60,6 +73,7 @@ export default function Submissions() {
           ]);
         }
       } catch (error) {
+        console.error("Error loading submissions:", error);
         toast.error("Failed to load submissions");
       } finally {
         setIsLoading(false);

@@ -79,16 +79,16 @@ export default function DirectorSubmissions() {
       if (id) {
         // Fetch submissions for a specific casting call
         const [subsRes, castingRes] = await Promise.all([
-          applicationAPI.getByCastingCall(id),
-          projectAPI.getOne(id)
+          applicationAPI.getByCastingCall(id).catch(() => null),
+          projectAPI.getOne(id).catch(() => null)
         ]);
 
-        if (subsRes.data.success && Array.isArray(subsRes.data.data)) {
+        if (subsRes && subsRes.data.success && Array.isArray(subsRes.data.data)) {
           setSubmissions(subsRes.data.data);
         } else {
           setSubmissions([]);
         }
-        if (castingRes.data.success) {
+        if (castingRes && castingRes.data.success) {
           setCastingCall(castingRes.data.data);
         }
       } else {
@@ -98,10 +98,10 @@ export default function DirectorSubmissions() {
           const myCastings = listingsRes.data.data;
           
           if (myCastings.length > 0) {
-            const allAppsPromises = myCastings.map((c) => applicationAPI.getByCastingCall(c._id));
+            const allAppsPromises = myCastings.map((c) => applicationAPI.getByCastingCall(c._id).catch(() => null));
             const appsResults = await Promise.all(allAppsPromises);
             const allApps = appsResults.flatMap(res => 
-              (res.data.success && Array.isArray(res.data.data)) ? res.data.data : []
+              (res && res.data.success && Array.isArray(res.data.data)) ? res.data.data : []
             );
             
             // Sort by most recent

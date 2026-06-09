@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, DollarSign, Clock, FileText, Mic2, Music, Theater, Globe, Users, ChevronDown, ChevronUp } from "lucide-react";
-import { formatBudget, formatLocation } from "@/lib/utils";
+import { formatBudget, formatLocation, resolveMediaUrl } from "@/lib/utils";
 
 interface SharedCastingDetailProps {
   casting: any;
@@ -33,13 +33,14 @@ export default function SharedCastingDetail({
 
   // ── Cover Image ────────────────────────────────────────────────
   const coverImage = useMemo(() => {
-    if (casting?.project_cover_image || casting?.image || casting?.coverImage) {
-      return casting?.project_cover_image || casting?.image || casting?.coverImage;
+    const rawImage = casting?.project_cover_image || casting?.image || casting?.coverImage;
+    if (rawImage) {
+      return resolveMediaUrl(rawImage);
     }
     // Also check projectAttachments for a URL that isn't META
     if (Array.isArray(casting?.projectAttachments)) {
       const url = casting.projectAttachments.find((a: string) => typeof a === "string" && !a.startsWith("__META__:"));
-      if (url) return url;
+      if (url) return resolveMediaUrl(url);
     }
     return "";
   }, [casting]);

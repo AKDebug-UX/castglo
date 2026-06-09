@@ -90,3 +90,29 @@ export function isNoneOption(value: string | undefined): boolean {
   const normalized = value.toLowerCase().trim();
   return normalized === "none" || normalized === "n/a" || normalized === "none of the above";
 }
+
+/**
+ * Resolves media URLs, handling relative paths and prepending the API base URL if needed.
+ */
+export function resolveMediaUrl(value: any, apiBaseUrl?: string) {
+  if (!value) return "";
+  
+  // Handle object with url property
+  const raw = typeof value === "string" ? value : (typeof value === "object" && value?.url ? String(value.url) : "");
+  const url = raw.trim();
+  
+  if (!url) return "";
+  
+  // If it's already a full URL, return as is
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith("//")) return `https:${url}`;
+  
+  // If we have an API base URL, prepend it
+  const baseUrl = apiBaseUrl || import.meta.env.VITE_API_BASE_URL || "https://castglo-qupm.onrender.com/api/v1";
+  
+  // Clean up the URL
+  const cleanedUrl = url.startsWith("/") ? url.substring(1) : url;
+  const cleanedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+  
+  return `${cleanedBase}/${cleanedUrl}`;
+}
