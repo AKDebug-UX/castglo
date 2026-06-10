@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { 
   Users, Mail, Shield, UserPlus, 
   MoreVertical, Trash2, ShieldCheck, 
-  ShieldAlert, ShieldEllipsis, X, FolderOpen
+  ShieldAlert, ShieldEllipsis, X, FolderOpen,
+  RefreshCw
 } from "lucide-react";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
@@ -17,7 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { castingCallAPI, messagingAPI, userAPI, projectAPI } from "@/lib/api";
+import { collaboratorAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 interface Teammate {
@@ -54,6 +55,11 @@ const timeAgo = (dateInput: string | Date | undefined) => {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 };
 
+// Try "type" key!
+const getPermissionsObject = (role: string) => {
+  return { type: role };
+};
+
 export default function Collaborators() {
   const [team, setTeam] = useState<Teammate[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -62,6 +68,35 @@ export default function Collaborators() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [customProjectName, setCustomProjectName] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [isLoadingCollaborators, setIsLoadingCollaborators] = useState(false);
+  const [inviting, setInviting] = useState(false);
+
+  const fetchCollaborators = async () => {
+    setIsLoadingCollaborators(true);
+    try {
+      const res = await collaboratorAPI.getAll();
+      console.log("Collaborators API response:", JSON.stringify(res, null, 2));
+      const data = Array.isArray(res.data?.data) ? res.data.data : 
+        (Array.isArray(res.data) ? res.data : []);
+      
+      const mapped = data.map((collab: any) => ({
+        id: collab._id || collab.id || collab.userId || "",
+        name: collab.user?.fullName || collab.name || collab.invitedUser?.fullName || collab.email?.split('@')[0] || "Unknown",
+        email: collab.email || collab.user?.email || collab.invitedUser?.email || "",
+        role: (collab.role || collab.permission || collab.roleName || "viewer") as any,
+        avatar: collab.user?.profilePicture || collab.invitedUser?.profilePicture,
+        status: collab.status === "accepted" ? "active" : (collab.status || "pending"),
+        lastActive: timeAgo(collab.updatedAt || collab.lastActiveAt),
+        assignedProject: collab.project?.title || collab.projectName || "All Projects"
+      }));
+      setTeam(mapped);
+    } catch (e) {
+      console.error("Failed to load collaborators:", e);
+      setTeam([]);
+    } finally {
+      setIsLoadingCollaborators(false);
+    }
+  };
 
   useEffect(() => {
     const fetchMyProjects = async () => {
@@ -85,6 +120,7 @@ export default function Collaborators() {
       }
     };
     fetchMyProjects();
+    fetchCollaborators();
   }, []);
 
   const assignedProjName = useMemo(() => {
@@ -96,47 +132,6 @@ export default function Collaborators() {
     return "All Projects";
   }, [customProjectName, projects, selectedProjectId]);
 
-  useEffect(() => {
-    const fetchCollaborators = async () => {
-      try {
-        const res = await messagingAPI.getMyConversations();
-        const conversations = res.data?.success
-          ? (Array.isArray(res.data.data) ? res.data.data : res.data.data?.conversations || [])
-          : [];
-
-        const byId = new Map<string, Teammate>();
-        conversations.forEach((conv: any) => {
-          const participants = conv.participants || [];
-          const other = participants.find((p: any) => p?._id && p?._id !== conv?.createdBy);
-          const fallback = participants[0];
-          const user = other || fallback;
-          if (!user?._id) return;
-
-          const name = user.fullName || user.name || user.email || "Unknown";
-          const email = user.email || "";
-          const lastActive = timeAgo(conv.lastMessage?.createdAt || conv.updatedAt || conv.createdAt);
-
-          byId.set(user._id, {
-            id: user._id,
-            name,
-            email,
-            role: "viewer",
-            status: "active",
-            lastActive,
-            assignedProject: "All Projects",
-            avatar: user.profilePicture,
-          });
-        });
-
-        setTeam(Array.from(byId.values()));
-      } catch (e) {
-        setTeam([]);
-      }
-    };
-
-    fetchCollaborators();
-  }, []);
-
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     const email = inviteEmail.trim();
@@ -144,52 +139,61 @@ export default function Collaborators() {
       toast.error("Please enter an email address.");
       return;
     }
+    setInviting(true);
     try {
-      const searchRes = await userAPI.search({ query: email, limit: 10 });
-      const results = searchRes.data?.success ? (searchRes.data.data?.users || searchRes.data.data || []) : [];
-      const match = Array.isArray(results)
-        ? results.find((u: any) => String(u.email || "").toLowerCase() === email.toLowerCase()) || results[0]
-        : null;
-
-      const userId = match?._id || match?.id;
-      if (!userId) {
-        toast.error("User not found for that email.");
-        return;
-      }
-
-      await messagingAPI.getOrCreateConversation(userId);
-
-      const name = match?.fullName || match?.name || email.split("@")[0];
-      setTeam((prev) => {
-        const exists = prev.some((t) => t.id === userId);
-        if (exists) return prev;
-        return [
-          ...prev,
+      const inviteData: any = {
+        inviteEmail: email,
+        projectGrants: [
           {
-            id: userId,
-            name,
-            email: match?.email || email,
-            role: selectedRole,
-            status: "pending",
-            assignedProject: assignedProjName,
-            avatar: match?.profilePicture,
-          },
-        ];
-      });
+            projectId: selectedProjectId,
+            permissions: getPermissionsObject(selectedRole)
+          }
+        ]
+      };
+      
+      console.log("Sending invite data:", JSON.stringify(inviteData, null, 2));
+      await collaboratorAPI.invite(inviteData);
 
-      setInviteEmail("");
       toast.success(`Invitation sent to ${email}`);
+      setInviteEmail("");
+      // Refresh collaborators list
+      fetchCollaborators();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to send invitation.");
+    } finally {
+      setInviting(false);
     }
   };
 
-  const removeTeammate = (id: string) => {
-    toast.message("Remove collaborator is not available yet.");
+  const removeTeammate = async (id: string) => {
+    try {
+      await collaboratorAPI.revoke(id);
+      toast.success("Collaborator removed successfully.");
+      fetchCollaborators();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to remove collaborator.");
+    }
   };
 
-  const updateRole = (id: string, newRole: "admin" | "editor" | "viewer") => {
-    toast.message("Role management is not available yet.");
+  const updateRole = async (id: string, newRole: "admin" | "editor" | "viewer") => {
+    try {
+      await collaboratorAPI.updatePermissions(id, { 
+        permissions: getPermissionsObject(newRole) 
+      });
+      toast.success("Role updated successfully.");
+      fetchCollaborators();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update role.");
+    }
+  };
+
+  const resendInvitation = async (id: string) => {
+    try {
+      await collaboratorAPI.resendInvitation(id);
+      toast.success("Invitation resent successfully.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to resend invitation.");
+    }
   };
 
   const getRoleIcon = (role: string) => {
@@ -209,6 +213,10 @@ export default function Collaborators() {
             Invite hiring staff, producers, and casting assistants to collaborate on your projects.
           </p>
         </div>
+        <Button variant="ghost" onClick={fetchCollaborators} className="flex items-center gap-2">
+          <RefreshCw className={`w-4 h-4 ${isLoadingCollaborators ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -219,7 +227,11 @@ export default function Collaborators() {
               <CardTitle className="text-lg font-bold text-slate-900">Active Collaborators</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              {team.length === 0 ? (
+              {isLoadingCollaborators ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  Loading collaborators...
+                </div>
+              ) : team.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   No teammates added yet. Use the sidebar form to invite collaborators.
                 </div>
@@ -241,7 +253,7 @@ export default function Collaborators() {
                                {member.status}
                              </Badge>
                           </div>
-                          <p className="text-xs text-slate-500 truncate mt-0.5">{member.email}</p>
+                          <p className="text-xs text-slate-500 truncate mt-0.5">{member.directorBio}</p>
                           {member.assignedProject && (
                             <div className="text-[11px] text-[#009698] font-bold mt-1 flex items-center gap-1">
                               <FolderOpen className="w-3.5 h-3.5 text-[#009698]" />
@@ -271,6 +283,9 @@ export default function Collaborators() {
                             <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => updateRole(member.id, "admin")}>Set as Admin</DropdownMenuItem>
                             <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => updateRole(member.id, "editor")}>Set as Editor</DropdownMenuItem>
                             <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => updateRole(member.id, "viewer")}>Set as Viewer</DropdownMenuItem>
+                            {member.status === "pending" && (
+                              <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => resendInvitation(member.id)}>Resend Invitation</DropdownMenuItem>
+                            )}
                             <div className="h-px bg-muted my-1" />
                             <DropdownMenuItem className="text-destructive font-medium cursor-pointer" onClick={() => removeTeammate(member.id)}>
                               <Trash2 className="w-4 h-4 mr-2" /> Remove
@@ -306,6 +321,7 @@ export default function Collaborators() {
                       className="pl-10 rounded-xl" 
                       value={inviteEmail}
                       onChange={e => setInviteEmail(e.target.value)}
+                      disabled={inviting}
                     />
                   </div>
                 </div>
@@ -322,6 +338,7 @@ export default function Collaborators() {
                         const selectedProj = projects.find(p => (p._id || p.id) === val);
                         setCustomProjectName(selectedProj ? (selectedProj.projectName || selectedProj.title) : "");
                       }}
+                      disabled={inviting}
                     >
                       <SelectTrigger className="w-full bg-background border rounded-xl">
                         <SelectValue placeholder="Select a project" />
@@ -342,6 +359,7 @@ export default function Collaborators() {
                         className="pl-10 rounded-xl"
                         value={customProjectName}
                         onChange={e => setCustomProjectName(e.target.value)}
+                        disabled={inviting}
                       />
                     </div>
                   )}
@@ -361,7 +379,7 @@ export default function Collaborators() {
                             ? "bg-[#009698] text-white border-transparent hover:bg-[#009698]/90" 
                             : "bg-background text-slate-600 hover:bg-slate-50"
                         )}
-                        onClick={() => setSelectedRole(r as any)}
+                        onClick={() => !inviting && setSelectedRole(r as any)}
                       >
                         {r}
                       </Badge>
@@ -369,8 +387,12 @@ export default function Collaborators() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-[#009698] hover:bg-[#009698]/90 text-white font-bold rounded-xl py-5 shadow-lg shadow-[#009698]/10 transition-transform active:scale-[0.99]">
-                  Send Invitation
+                <Button 
+                  type="submit" 
+                  className="w-full bg-[#009698] hover:bg-[#009698]/90 text-white font-bold rounded-xl py-5 shadow-lg shadow-[#009698]/10 transition-transform active:scale-[0.99]"
+                  disabled={inviting}
+                >
+                  {inviting ? "Sending..." : "Send Invitation"}
                 </Button>
               </form>
             </CardContent>

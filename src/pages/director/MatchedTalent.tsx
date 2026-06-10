@@ -16,9 +16,9 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger
 } from "@/components/ui/collapsible";
-import { API_BASE_URL, castingCallAPI, messagingAPI, profileAPI, applicationAPI, projectAPI } from "@/lib/api";
+import { castingCallAPI, messagingAPI, profileAPI, applicationAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { getAvatarUrl, resolveMediaUrl } from "@/lib/utils";
+import { resolveMediaUrl } from "@/lib/utils";
 
 interface TalentProfile {
   _id: string;
@@ -37,7 +37,7 @@ interface TalentProfile {
   headshots?: { url: string }[];
   profilePicture?: string;
   unionStatus?: string;
-  matchScore?: number; // computed client-side
+  matchScore?: number;
   appliedProjects: string[];
   appliedRoles: string[];
 }
@@ -60,69 +60,6 @@ interface Project {
   roles?: Role[];
 }
 
-// ── Naive client-side match scoring ──────────────────────────────────────────
-const scoreMatch = (talent: any, role: any): number => {
-  const roleGender = role?.gender ?? role?.role_gender ?? role?.gender_identity;
-  const roleMinAge = role?.age_range_min ?? role?.minAge ?? role?.min_age ?? role?.ageMin;
-  const roleMaxAge = role?.age_range_max ?? role?.maxAge ?? role?.max_age ?? role?.ageMax;
-  const roleHair = role?.hair_color ?? role?.hairColor ?? role?.hair_colour;
-  const roleEye = role?.eye_color ?? role?.eyeColor ?? role?.eye_colour;
-  const roleHeightMin = role?.height_min ?? role?.heightMin;
-  const roleHeightMax = role?.height_max ?? role?.heightMax;
-  const roleEthnicities = role?.ethnicities ?? role?.ethnicity ?? role?.ethnicity_options;
-  const roleSkills = role?.role_skills ?? role?.skills ?? role?.skill_tags;
-
-  let score = 0;
-  
-  // Basic Demographic (50%)
-  if (roleGender && String(roleGender).length > 0 && !String(roleGender).toLowerCase().includes("any")) {
-    if (String(roleGender).toLowerCase().includes(String(talent.gender || "").toLowerCase())) score += 25;
-  } else {
-    score += 25; // open to all
-  }
-
-  if (roleMinAge && roleMaxAge && talent.age) {
-    const min = parseInt(String(roleMinAge)), max = parseInt(String(roleMaxAge));
-    if (talent.age >= min && talent.age <= max) score += 25;
-    else if (talent.age >= min - 5 && talent.age <= max + 5) score += 15; // close match
-  } else {
-    score += 25;
-  }
-
-  // Appearance (25%)
-  if (Array.isArray(roleHair) && roleHair.length > 0 && talent.hairColor) {
-    if (roleHair.map(String).includes(String(talent.hairColor))) score += 10;
-  } else score += 10;
-
-  if (Array.isArray(roleEye) && roleEye.length > 0 && talent.eyeColor) {
-    if (roleEye.map(String).includes(String(talent.eyeColor))) score += 5;
-  } else score += 5;
-
-  if (roleHeightMin && talent.height) {
-    const tHeight = parseInt(talent.height);
-    const rMin = parseInt(String(roleHeightMin));
-    const rMax = parseInt(String(roleHeightMax || "999"));
-    if (tHeight >= rMin && tHeight <= rMax) score += 10;
-  } else score += 10;
-
-  // Skills & Ethnicity (25%)
-  if (Array.isArray(roleEthnicities) && roleEthnicities.length > 0 && talent.ethnicity) {
-    const normalized = roleEthnicities.map((e: any) => String(e));
-    if (normalized.includes(String(talent.ethnicity)) || normalized.includes("open_to_all")) score += 15;
-  } else score += 15;
-
-  const talentSkills = talent.skills || [];
-  const roleSkillsArr = Array.isArray(roleSkills) ? roleSkills : [];
-  if (roleSkillsArr.length > 0) {
-    const overlap = roleSkillsArr.map(String).filter((s: string) => talentSkills.map(String).includes(s));
-    score += Math.round((overlap.length / roleSkillsArr.length) * 10);
-  } else {
-    score += 10;
-  }
-
-  return Math.min(score, 100);
-};
-
 const getMatchColor = (score: number) => {
   if (score >= 75) return { text: "text-green-700", bg: "bg-green-50 border-green-200", label: "Excellent Match" };
   if (score >= 50) return { text: "text-blue-700", bg: "bg-blue-50 border-blue-200",  label: "Good Match" };
@@ -130,180 +67,183 @@ const getMatchColor = (score: number) => {
   return { text: "text-slate-500", bg: "bg-slate-50 border-slate-200", label: "Low Match" };
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
 export default function MatchedTalent() {
   const navigate = useNavigate();
-  const [projects, setProjects]         = useState<Project[]>([]);
-  const [allTalents, setAllTalents]     = useState<TalentProfile[]>([]);
-  const [isLoading, setIsLoading]       = useState(true);
+  
+  // Helper functions (defined first so they can be used in any useEffect
+  const getRoleId = (r: any) => String(r?.id || r?._id || r?.roleId || r?.role_id || r?.uuid || "");
+  const getRoleTitle = (r: any) => String(r?.title || r?.role_name || r?.roleName || r?.name || "Role");
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [allTalents, setAllTalents] = useState<TalentProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [selectedRole, setSelectedRole] = useState<string>("all");
-  const [searchQuery, setSearchQuery]   = useState("");
-  const [filtersOpen, setFiltersOpen]   = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [invitingTalentId, setInvitingTalentId] = useState<string>("");
-
-
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
 
   // Filters
-  const [filterGender, setFilterGender]     = useState("any");
-  const [filterAgeMin, setFilterAgeMin]     = useState(16);
-  const [filterAgeMax, setFilterAgeMax]     = useState(65);
+  const [filterGender, setFilterGender] = useState("any");
+  const [filterAgeMin, setFilterAgeMin] = useState(16);
+  const [filterAgeMax, setFilterAgeMax] = useState(65);
   const [filterEthnicity, setFilterEthnicity] = useState("any");
-  const [filterUnion, setFilterUnion]       = useState("any");
-  const [minScore, setMinScore]             = useState(0);
+  const [filterUnion, setFilterUnion] = useState("any");
+  const [minScore, setMinScore] = useState(0);
 
-  // Live roles for the selected project (fetched fresh, not from stale embed)
+  // Live roles for the selected project
   const [liveRoles, setLiveRoles] = useState<Role[]>([]);
   const [rolesLoading, setRolesLoading] = useState(false);
 
-  // ── URL params (deep-link from DirectorRoles) ─────────────────────────────
+  // URL params
   const [searchParams] = useSearchParams();
 
+  // Normalize talent function
+  const normalizeTalent = (raw: any): Omit<TalentProfile, 'appliedProjects' | 'appliedRoles'> => {
+    const userObj = raw?.userId && typeof raw.userId === "object" ? raw.userId : null;
+    const userId = userObj?._id || userObj?.id || (typeof raw?.userId === "string" ? raw.userId : undefined);
+    const fullName = userObj?.fullName || raw?.fullName || raw?.displayName || raw?.display_name;
+    const city = raw?.location?.city || raw?.city || raw?.current_city || raw?.unifiedTalentProfile?.city;
+    const country = raw?.location?.country || raw?.country || raw?.current_country || raw?.unifiedTalentProfile?.country;
+    const skills = raw?.skills || raw?.unifiedTalentProfile?.skills || raw?.talent?.skills || [];
+    const headshots = raw?.talent?.headshots || raw?.headshots || raw?.media?.additionalPhotos || [];
+    const profilePicture =
+      raw?.profilePicture ||
+      userObj?.profilePicture ||
+      raw?.talent?.headshots?.[0]?.url ||
+      raw?.headshots?.[0]?.url ||
+      raw?.media?.additionalPhotos?.[0]?.url;
+
+    return {
+      _id: raw?._id || userId || crypto.randomUUID(),
+      userId,
+      fullName,
+      city,
+      country,
+      gender: raw?.gender || raw?.talent?.gender || raw?.talent?.appearance?.gender,
+      age: raw?.age || raw?.talent?.age,
+      ethnicity: raw?.ethnicity || raw?.talent?.ethnicity || raw?.talent?.appearance?.ethnicity,
+      skills: Array.isArray(skills) ? skills : [],
+      languages: raw?.languages || raw?.talent?.languages,
+      accents: raw?.accents || raw?.talent?.accents,
+      showreelUrl: raw?.showreelUrl || raw?.showreel || raw?.media?.showreel?.url,
+      headshots: Array.isArray(headshots) ? headshots : [],
+      profilePicture: resolveMediaUrl(profilePicture),
+      unionStatus: raw?.unionStatus || raw?.talent?.unionStatus,
+    };
+  };
+
+  // 1. Load projects on mount
   useEffect(() => {
-    const load = async () => {
-      setIsLoading(true);
+    const loadProjects = async () => {
       try {
         const listingsRes = await projectAPI.getMe();
         const myProjects: Project[] = listingsRes.data?.success
           ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [])
           : [];
         setProjects(myProjects);
+      } catch {
+        toast.error("Failed to load projects.");
+      } finally {
+        setProjectsLoaded(true);
+      }
+    };
+    loadProjects();
+  }, []);
 
-        // If we have both selected project and role, fetch matches from API
+  // 2. Initialize selectedProject and selectedRole from URL params ONLY (no auto-select first project/role)
+  useEffect(() => {
+    if (!projectsLoaded) return;
+    
+    let finalProjectId = searchParams.get("projectId") || searchParams.get("project");
+    let finalRoleId = searchParams.get("roleId") || searchParams.get("role");
+    
+    if (finalProjectId) {
+      setSelectedProject(finalProjectId);
+      
+      // If we have a project from URL, then select role from URL or default to first role
+      const checkAndSelectRole = () => {
+        const selectedProj = projects.find(p => p._id === finalProjectId);
+        const rolesForProject = liveRoles.length > 0 ? liveRoles : (selectedProj?.roles || []);
+        
+        if (!finalRoleId && rolesForProject.length > 0) {
+          finalRoleId = getRoleId(rolesForProject[0]);
+          setSelectedRole(finalRoleId);
+        } else if (finalRoleId) {
+          setSelectedRole(finalRoleId);
+        }
+      };
+      checkAndSelectRole();
+    }
+  }, [searchParams, projectsLoaded, projects, liveRoles]);
+
+  // 3. Load talents when selectedProject or selectedRole changes
+  useEffect(() => {
+    if (!projectsLoaded) return;
+
+    const loadTalents = async () => {
+      setIsLoading(true);
+      try {
         if (selectedProject !== "all" && selectedRole !== "all") {
+          // Fetch matches from API
           const matchesRes = await projectAPI.getMatches(selectedProject, selectedRole);
           if (matchesRes.data?.success) {
-            const normalizeTalent = (raw: any): Omit<TalentProfile, 'appliedProjects' | 'appliedRoles'> => {
-              const userObj = raw?.userId && typeof raw.userId === "object" ? raw.userId : null;
-              const userId = userObj?._id || userObj?.id || (typeof raw?.userId === "string" ? raw.userId : undefined);
-              const fullName = userObj?.fullName || raw?.fullName || raw?.displayName || raw?.display_name;
-              const city = raw?.location?.city || raw?.city || raw?.current_city || raw?.unifiedTalentProfile?.city;
-              const country = raw?.location?.country || raw?.country || raw?.current_country || raw?.unifiedTalentProfile?.country;
-              const skills = raw?.skills || raw?.unifiedTalentProfile?.skills || raw?.talent?.skills || [];
-              const headshots = raw?.talent?.headshots || raw?.headshots || raw?.media?.additionalPhotos || [];
-              const profilePicture =
-                raw?.profilePicture ||
-                userObj?.profilePicture ||
-                raw?.talent?.headshots?.[0]?.url ||
-                raw?.headshots?.[0]?.url ||
-                raw?.media?.additionalPhotos?.[0]?.url;
-
-              return {
-                _id: raw?._id || userId || crypto.randomUUID(),
-                userId,
-                fullName,
-                city,
-                country,
-                gender: raw?.gender || raw?.talent?.gender || raw?.talent?.appearance?.gender,
-                age: raw?.age || raw?.talent?.age,
-                ethnicity: raw?.ethnicity || raw?.talent?.ethnicity || raw?.talent?.appearance?.ethnicity,
-                skills: Array.isArray(skills) ? skills : [],
-                languages: raw?.languages || raw?.talent?.languages,
-                accents: raw?.accents || raw?.talent?.accents,
-                showreelUrl: raw?.showreelUrl || raw?.showreel || raw?.media?.showreel?.url,
-                headshots: Array.isArray(headshots) ? headshots : [],
-                profilePicture: resolveMediaUrl(profilePicture),
-                unionStatus: raw?.unionStatus || raw?.talent?.unionStatus,
-              };
-            };
-            
-            const talents = Array.isArray(matchesRes.data.data) 
-              ? matchesRes.data.data 
+            const talents = Array.isArray(matchesRes.data.data)
+              ? matchesRes.data.data
               : (matchesRes.data.data?.talents || matchesRes.data.data?.matches || []);
-              
+            
             setAllTalents(talents.map(t => ({
               ...normalizeTalent(t),
               matchScore: t.matchScore || t.score || 0,
               appliedProjects: [],
               appliedRoles: []
             })));
+          } else {
+            setAllTalents([]);
           }
         } else {
           // Fallback to loading applicants
-          const allAppsPromises = myProjects.map(p => applicationAPI.getByCastingCall(p._id).catch(() => null));
+          const allAppsPromises = projects.map(p => applicationAPI.getByCastingCall(p._id).catch(() => null));
           const appsResults = await Promise.all(allAppsPromises);
           
           const allApps = appsResults.flatMap(res => 
             (res?.data?.success && Array.isArray(res.data.data)) ? res.data.data : []
           );
-          
-          const normalizeTalent = (raw: any): Omit<TalentProfile, 'appliedProjects' | 'appliedRoles'> => {
-            const userObj = raw?.userId && typeof raw.userId === "object" ? raw.userId : null;
-            const userId = userObj?._id || userObj?.id || (typeof raw?.userId === "string" ? raw.userId : undefined);
-            const fullName = userObj?.fullName || raw?.fullName || raw?.displayName || raw?.display_name;
-            const city = raw?.location?.city || raw?.city || raw?.current_city || raw?.unifiedTalentProfile?.city;
-            const country = raw?.location?.country || raw?.country || raw?.current_country || raw?.unifiedTalentProfile?.country;
-            const skills = raw?.skills || raw?.unifiedTalentProfile?.skills || raw?.talent?.skills || [];
-            const headshots = raw?.talent?.headshots || raw?.headshots || raw?.media?.additionalPhotos || [];
-            const profilePicture =
-              raw?.profilePicture ||
-              userObj?.profilePicture ||
-              raw?.talent?.headshots?.[0]?.url ||
-              raw?.headshots?.[0]?.url ||
-              raw?.media?.additionalPhotos?.[0]?.url;
-
-            return {
-              _id: raw?._id || userId || crypto.randomUUID(),
-              userId,
-              fullName,
-              city,
-              country,
-              gender: raw?.gender || raw?.talent?.gender || raw?.talent?.appearance?.gender,
-              age: raw?.age || raw?.talent?.age,
-              ethnicity: raw?.ethnicity || raw?.talent?.ethnicity || raw?.talent?.appearance?.ethnicity,
-              skills: Array.isArray(skills) ? skills : [],
-              languages: raw?.languages || raw?.talent?.languages,
-              accents: raw?.accents || raw?.talent?.accents,
-              showreelUrl: raw?.showreelUrl || raw?.showreel || raw?.media?.showreel?.url,
-              headshots: Array.isArray(headshots) ? headshots : [],
-              profilePicture: resolveMediaUrl(profilePicture),
-              unionStatus: raw?.unionStatus || raw?.talent?.unionStatus,
-            };
-          };
 
           const talentMap = new Map<string, TalentProfile>();
           
           allApps.forEach(app => {
-             if (!app.talent) return;
-             const tId = String(app.talent.userId?._id || app.talent.userId || app.talent._id || "");
-             if (!tId) return;
+            if (!app.talent) return;
+            const tId = String(app.talent.userId?._id || app.talent.userId || app.talent._id || "");
+            if (!tId) return;
 
-             const projId = String(app.castingCall?._id || app.castingCall || "");
-             const rId = String(app.roleId || "");
+            const projId = String(app.castingCall?._id || app.castingCall || "");
+            const rId = String(app.roleId || "");
 
-             if (!talentMap.has(tId)) {
-               talentMap.set(tId, {
-                 ...normalizeTalent(app.talent),
-                 appliedProjects: [],
-                 appliedRoles: []
-               });
-             }
+            if (!talentMap.has(tId)) {
+              talentMap.set(tId, {
+                ...normalizeTalent(app.talent),
+                appliedProjects: [],
+                appliedRoles: []
+              });
+            }
 
-             const talent = talentMap.get(tId)!;
-             if (projId && !talent.appliedProjects.includes(projId)) talent.appliedProjects.push(projId);
-             if (rId && !talent.appliedRoles.includes(rId)) talent.appliedRoles.push(rId);
+            const talent = talentMap.get(tId)!;
+            if (projId && !talent.appliedProjects.includes(projId)) talent.appliedProjects.push(projId);
+            if (rId && !talent.appliedRoles.includes(rId)) talent.appliedRoles.push(rId);
           });
 
-          const onlyTalents = Array.from(talentMap.values());
-
-          setAllTalents(onlyTalents);
+          setAllTalents(Array.from(talentMap.values()));
         }
-      } catch {
-        toast.error("Failed to load talent data.");
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || "Failed to load talent data.");
       } finally {
         setIsLoading(false);
       }
     };
-    load();
-  }, [selectedProject, selectedRole]);
-
-  // Pre-populate selectors from URL params on mount
-  useEffect(() => {
-    const projectParam = searchParams.get("project");
-    const roleParam    = searchParams.get("role");
-    if (projectParam) setSelectedProject(projectParam);
-    if (roleParam)    setSelectedRole(roleParam);
-  }, [searchParams]);
+    loadTalents();
+  }, [selectedProject, selectedRole, projects, projectsLoaded]);
 
   // Fetch live roles whenever the selected project changes
   useEffect(() => {
@@ -331,17 +271,13 @@ export default function MatchedTalent() {
       .finally(() => setRolesLoading(false));
   }, [selectedProject]);
 
-  // Derive active role object from liveRoles (live) with fallback to embedded project roles
-  const currentProject  = projects.find(p => p._id === selectedProject);
-  const getRoleId = (r: any) => String(r?.id || r?._id || r?.roleId || r?.role_id || r?.uuid || "");
-  const getRoleTitle = (r: any) => String(r?.title || r?.role_name || r?.roleName || r?.name || "Role");
-  const activeRoles     = liveRoles.length > 0 ? liveRoles : (currentProject?.roles || []);
-  const currentRoleObj  = activeRoles.find((r: any) => getRoleId(r) === selectedRole);
+  // Derive active role object from liveRoles
+  const currentProject = projects.find(p => p._id === selectedProject);
+  const activeRoles = liveRoles.length > 0 ? liveRoles : (currentProject?.roles || []);
+  const currentRoleObj = activeRoles.find((r: any) => getRoleId(r) === selectedRole);
 
   // Compute ranked matches
   const rankedTalents = useMemo(() => {
-    // If we have a selected project and role, we already have match scores from API
-    // Otherwise, use the local logic for applicants
     let filtered = allTalents;
     
     if (selectedProject !== "all" && selectedRole === "all") {
@@ -353,7 +289,7 @@ export default function MatchedTalent() {
     }
 
     return filtered.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
-  }, [allTalents, currentRoleObj, selectedProject, selectedRole]);
+  }, [allTalents, selectedProject, selectedRole]);
 
   // Apply filters
   const displayedTalents = useMemo(() => {

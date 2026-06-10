@@ -58,6 +58,7 @@ const Livestream = lazy(() => import("./pages/talent/Livestream"));
 const LivestreamsList = lazy(() => import("./pages/talent/LivestreamsList"));
 const VerificationProcess = lazy(() => import("./pages/talent/VerificationProcess"));
 const AccountSettings = lazy(() => import("./pages/talent/AccountSettings"));
+const CollaborationsPage = lazy(() => import("./pages/Collaborations"));
 
 // Director Dashboard
 const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DirectorLayout })));
@@ -189,6 +190,7 @@ const App = () => (
                 <Route path="create-audition" element={<InstantAudition />} />
                 <Route path="livestream/:id" element={<Livestream />} />
                 <Route path="verification-process" element={<VerificationProcess />} />
+                <Route path="collaborations" element={<CollaborationsPage />} />
               </Route>
 
               {/* Director Dashboard Routes */}
@@ -213,6 +215,7 @@ const App = () => (
                 <Route path="roles" element={<DirectorRoles />} />
                 <Route path="matched" element={<MatchedTalent />} />
                 <Route path="collaborators" element={<Collaborators />} />
+                <Route path="collaborations" element={<CollaborationsPage />} />
                 <Route path="billing" element={<DirectorBilling />} />
                 <Route path="messages" element={<DirectorMessages />} />
                 <Route path="notifications" element={<Notifications />} />
@@ -238,6 +241,7 @@ const App = () => (
                 <Route path="messages" element={<ProfessionalMessages />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="settings" element={<ProfessionalSettings />} />
+                <Route path="collaborations" element={<CollaborationsPage />} />
               </Route>
 
               {/* Admin Dashboard Routes */}
