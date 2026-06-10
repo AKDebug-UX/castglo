@@ -70,6 +70,7 @@ export default function Collaborators() {
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [isLoadingCollaborators, setIsLoadingCollaborators] = useState(false);
   const [inviting, setInviting] = useState(false);
+  const [projectsFetched, setProjectsFetched] = useState(false);
 
   const fetchCollaborators = async () => {
     setIsLoadingCollaborators(true);
@@ -98,28 +99,30 @@ export default function Collaborators() {
     }
   };
 
-  useEffect(() => {
-    const fetchMyProjects = async () => {
-      setIsLoadingProjects(true);
-      try {
-        const response = await projectAPI.getMe();
-        if (response.data.success && response.data.data) {
-          const projectData = Array.isArray(response.data.data) 
-            ? response.data.data 
-            : response.data.data.projects || response.data.data.castingCalls || [];
-          setProjects(projectData);
-          if (projectData.length > 0) {
-            setSelectedProjectId(projectData[0]._id || projectData[0].id);
-            setCustomProjectName(projectData[0].projectName || projectData[0].title);
-          }
+  const fetchMyProjects = async () => {
+    if (projectsFetched) return;
+    setIsLoadingProjects(true);
+    try {
+      const response = await projectAPI.getMe();
+      if (response.data.success && response.data.data) {
+        const projectData = Array.isArray(response.data.data) 
+          ? response.data.data 
+          : response.data.data.projects || response.data.data.castingCalls || [];
+        setProjects(projectData);
+        if (projectData.length > 0) {
+          setSelectedProjectId(projectData[0]._id || projectData[0].id);
+          setCustomProjectName(projectData[0].projectName || projectData[0].title);
         }
-      } catch (e) {
-        console.error("Failed to load projects:", e);
-      } finally {
-        setIsLoadingProjects(false);
       }
-    };
-    fetchMyProjects();
+    } catch (e) {
+      console.error("Failed to load projects:", e);
+    } finally {
+      setIsLoadingProjects(false);
+      setProjectsFetched(true);
+    }
+  };
+
+  useEffect(() => {
     fetchCollaborators();
   }, []);
 
@@ -340,7 +343,7 @@ export default function Collaborators() {
                       }}
                       disabled={inviting}
                     >
-                      <SelectTrigger className="w-full bg-background border rounded-xl">
+                      <SelectTrigger className="w-full bg-background border rounded-xl" onFocus={fetchMyProjects}>
                         <SelectValue placeholder="Select a project" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl shadow-xl">
@@ -359,6 +362,7 @@ export default function Collaborators() {
                         className="pl-10 rounded-xl"
                         value={customProjectName}
                         onChange={e => setCustomProjectName(e.target.value)}
+                        onFocus={fetchMyProjects}
                         disabled={inviting}
                       />
                     </div>

@@ -202,9 +202,11 @@ export default function MatchedTalent() {
           } else {
             setAllTalents([]);
           }
-        } else {
-          // Fallback to loading applicants
-          const allAppsPromises = projects.map(p => applicationAPI.getByCastingCall(p._id).catch(() => null));
+        } else if (selectedProject !== "all" || selectedRole !== "all") {
+          // Fallback to loading applicants only if either project or role is selected
+          const allAppsPromises = selectedProject !== "all" 
+            ? [applicationAPI.getByCastingCall(selectedProject).catch(() => null)]
+            : projects.map(p => applicationAPI.getByCastingCall(p._id).catch(() => null));
           const appsResults = await Promise.all(allAppsPromises);
           
           const allApps = appsResults.flatMap(res => 
@@ -221,6 +223,9 @@ export default function MatchedTalent() {
             const projId = String(app.castingCall?._id || app.castingCall || "");
             const rId = String(app.roleId || "");
 
+            // Filter by selectedRole if needed
+            if (selectedRole !== "all" && rId !== selectedRole) return;
+
             if (!talentMap.has(tId)) {
               talentMap.set(tId, {
                 ...normalizeTalent(app.talent),
@@ -235,6 +240,9 @@ export default function MatchedTalent() {
           });
 
           setAllTalents(Array.from(talentMap.values()));
+        } else {
+          // Don't load anything if both are "all"
+          setAllTalents([]);
         }
       } catch (err: any) {
         toast.error(err?.response?.data?.message || "Failed to load talent data.");
@@ -242,7 +250,13 @@ export default function MatchedTalent() {
         setIsLoading(false);
       }
     };
-    loadTalents();
+
+    if (selectedProject !== "all" || selectedRole !== "all") {
+      loadTalents();
+    } else {
+      setIsLoading(false);
+      setAllTalents([]);
+    }
   }, [selectedProject, selectedRole, projects, projectsLoaded]);
 
   // Fetch live roles whenever the selected project changes
@@ -467,7 +481,13 @@ export default function MatchedTalent() {
       )}
 
       {/* Results grid */}
-      {displayedTalents.length === 0 ? (
+      {selectedProject === "all" && selectedRole === "all" ? (
+        <div className="text-center py-20 text-muted-foreground">
+          <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-30" />
+          <p className="text-lg font-semibold">Select a project and role</p>
+          <p className="text-sm mt-1">Choose a project and role to see matched talent.</p>
+        </div>
+      ) : displayedTalents.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
           <Users className="w-12 h-12 mx-auto mb-4 opacity-30" />
           <p className="text-lg font-semibold">No matches found</p>
