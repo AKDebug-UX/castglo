@@ -103,9 +103,10 @@ export function resolveMediaUrl(value: any, apiBaseUrl?: string) {
   
   if (!url) return "";
   
-  // If it's already a full URL, return as is
+  // If it's already a full URL or data URI, return as is
   if (/^https?:\/\//i.test(url)) return url;
   if (url.startsWith("//")) return `https:${url}`;
+  if (url.startsWith("data:")) return url; // base64 / data URIs — pass through unchanged
   
   // If we have an API base URL, prepend it
   const baseUrl = apiBaseUrl || import.meta.env.VITE_API_BASE_URL || "https://castglo-qupm.onrender.com/api/v1";

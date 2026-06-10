@@ -188,17 +188,30 @@ export default function SubmitAudition() {
 
       const finalNotes = formData.additional_notes + "\n__META__:" + JSON.stringify(metaData);
 
-      if (!selectedRoleId) {
-        setIsSubmitting(false);
-        return toast.error("Please select a role to apply for");
-      }
+      let response;
 
-      const response = await projectAPI.applyToRole(id, selectedRoleId, {
-        ...metaData,
-        notes: finalNotes,
-        auditionVideo: mediaUrl,
-        auditionVideoUrl: mediaUrl,
-      });
+      if (isProjectPipeline && selectedRoleId !== "general") {
+        if (!selectedRoleId) {
+          setIsSubmitting(false);
+          return toast.error("Please select a role to apply for");
+        }
+        
+        response = await projectAPI.applyToRole(id, selectedRoleId, {
+          ...metaData,
+          notes: finalNotes,
+          auditionVideo: mediaUrl,
+          auditionVideoUrl: mediaUrl,
+        });
+      } else {
+        // It's a standard casting call
+        response = await applicationAPI.create({
+          castingCallId: id,
+          ...metaData,
+          notes: finalNotes,
+          auditionVideo: mediaUrl,
+          auditionVideoUrl: mediaUrl,
+        });
+      }
 
       if (response.data.success) {
         toast.success("Application submitted successfully!");
@@ -283,6 +296,9 @@ export default function SubmitAudition() {
                   <SelectValue placeholder="Select a role..." />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="general" className="font-semibold text-primary">
+                    General Submission (No specific role)
+                  </SelectItem>
                   {casting.roles.map((role: any) => {
                     const roleIdentifier = role.id || role.roleId || role._id;
                     return (

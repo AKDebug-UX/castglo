@@ -39,8 +39,10 @@ export function HeroSection() {
           setFeaturedCalls([]);
         }
 
-        if (profilesRes.data?.success && profilesRes.data.data?.profiles) {
-          setFeaturedTalents(profilesRes.data.data.profiles.slice(0, 4));
+        if (profilesRes.data?.success) {
+          const payload = profilesRes.data.data;
+          const talents = Array.isArray(payload) ? payload : (payload?.profiles || []);
+          setFeaturedTalents(talents.slice(0, 4));
         } else {
           setFeaturedTalents([]);
         }
@@ -383,7 +385,7 @@ export function HeroSection() {
                           className="w-full h-full object-cover object-top"
                         />
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                          <h4 className="font-semibold text-white text-xs">{talent.userId?.fullName}</h4>
+                          <h4 className="font-semibold text-white text-xs">{talent.userId?.fullName || talent.fullName || "Talent Profile"}</h4>
                           <p className="text-[10px] text-white/80 line-clamp-1">
                             {talent.category || talent.userRole} {talent.subCategory ? `• ${talent.subCategory}` : ""}
                           </p>

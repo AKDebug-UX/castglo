@@ -15,6 +15,17 @@ import { toast } from "sonner";
 import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
 
 const statusColors: Record<string, string> = {
+  "review": "bg-slate-500 text-white hover:bg-slate-600 capitalize",
+  "shortlist": "bg-amber-500 text-white hover:bg-amber-600 capitalize",
+  "contacting": "bg-purple-500 text-white hover:bg-purple-600 capitalize",
+  "audition_requested": "bg-orange-500 text-white hover:bg-orange-600 capitalize",
+  "self_tape_requested": "bg-pink-500 text-white hover:bg-pink-600 capitalize",
+  "invite": "bg-teal-500 text-white hover:bg-teal-600 capitalize",
+  "offer": "bg-emerald-500 text-white hover:bg-emerald-600 capitalize",
+  "hired": "bg-green-600 text-white hover:bg-green-700 capitalize",
+  "declined": "bg-rose-500 text-white hover:bg-rose-600 capitalize",
+  "matched": "bg-indigo-500 text-white hover:bg-indigo-600 capitalize",
+  // Legacy backups
   "submitted": "bg-slate-500 text-white hover:bg-slate-600 capitalize",
   "viewed": "bg-blue-400 text-white hover:bg-blue-500 capitalize",
   "shortlisted": "bg-amber-500 text-white hover:bg-amber-600 capitalize",
@@ -23,8 +34,8 @@ const statusColors: Record<string, string> = {
   "withdrawn": "bg-slate-300 text-slate-700 hover:bg-slate-400 capitalize",
 };
 
-export default function Submissions() {
-  const [submissions, setSubmissions] = useState([]);
+export default function Applications() {
+  const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState([]);
   
@@ -33,15 +44,12 @@ export default function Submissions() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchSubmissions = async () => {
+    const fetchApplications = async () => {
       try {
         const response = await applicationAPI.getMe();
-        console.log('Full API response:', response);
-        console.log('Response data:', response.data);
         
         let appsData = null;
         if (response.data.success) {
-          // Check if data is array directly, or has an applications property
           if (Array.isArray(response.data.data)) {
             appsData = response.data.data;
           } else if (response.data.data && Array.isArray(response.data.data.applications)) {
@@ -50,45 +58,45 @@ export default function Submissions() {
         }
 
         if (appsData && Array.isArray(appsData)) {
-          // Filter to only include casting call submissions (which typically don't have appliedRole)
-          const castingCallApps = appsData.filter(app => !app.appliedRole);
-          
-          const apps = castingCallApps.map((app: any) => ({
+          // Filter to only include project applications (which typically have appliedRole)
+          const projectApps = appsData.filter(app => !!app.appliedRole);
+
+          const apps = projectApps.map((app: any) => ({
             _id: app._id,
-            status: app.status, // submitted, viewed, shortlisted, rejected, accepted, withdrawn
+            status: app.status,
             createdAt: app.createdAt,
-            castingCall: {
-              title: app.castingCallId?.project_title || app.project?.projectName || app.castingCall?.title || "Unknown Position",
-              category: app.role?.role_name || app.role?.name || app.role?.title || app.castingCall?.category || "Other",
+            project: {
+              title: app.castingCallId?.project_title || app.castingCallId?.title || app.project?.projectName || "Unknown Project",
+              role: app.appliedRole || app.role?.role_name || app.role?.title || "Unknown Role",
               postedBy: {
-                fullName: app.project?.postedBy?.fullName || app.project?.productionCompany || app.castingCall?.postedBy?.fullName || "Casting Team"
+                fullName: app.castingCallId?.castingDirectorId?.fullName || app.project?.postedBy?.fullName || "Casting Team"
               }
             }
           }));
-          setSubmissions(apps);
+          setApplications(apps);
 
           // Calculate stats
           setStats([
-            { label: "Total Submissions", value: apps.length.toString(), sublabel: "All time", Icon: FileText },
-            { label: "Viewed/In Review", value: apps.filter((a: { status: string; }) => ["submitted", "viewed"].includes(a.status)).length.toString(), sublabel: "Pending Review", Icon: Eye },
-            { label: "Shortlisted", value: apps.filter((a: { status: string; }) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", Icon: Star },
+            { label: "Total Applications", value: apps.length.toString(), sublabel: "All time", Icon: FileText },
+            { label: "Under Review", value: apps.filter((a: { status: string; }) => ["review", "submitted", "viewed"].includes(a.status)).length.toString(), sublabel: "Pending Review", Icon: Eye },
+            { label: "Shortlisted", value: apps.filter((a: { status: string; }) => ["shortlist", "shortlisted"].includes(a.status)).length.toString(), sublabel: "Callbacks Pending", Icon: Star },
           ]);
         } else {
-          setSubmissions([]);
+          setApplications([]);
           setStats([
-            { label: "Total Submissions", value: "0", sublabel: "All time", Icon: FileText },
-            { label: "In Review", value: "0", sublabel: "Pending Review", Icon: Eye },
+            { label: "Total Applications", value: "0", sublabel: "All time", Icon: FileText },
+            { label: "Under Review", value: "0", sublabel: "Pending Review", Icon: Eye },
             { label: "Shortlisted", value: "0", sublabel: "Callbacks Pending", Icon: Star },
           ]);
         }
       } catch (error) {
-        console.error("Error loading submissions:", error);
-        toast.error("Failed to load submissions");
+        console.error("Error loading applications:", error);
+        toast.error("Failed to load applications");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchSubmissions();
+    fetchApplications();
   }, []);
 
   const handleWithdraw = async (applicationId: string) => {
@@ -98,7 +106,7 @@ export default function Submissions() {
       const res = await applicationAPI.withdraw(applicationId);
       if (res.data?.success) {
         toast.success("Application withdrawn successfully");
-        setSubmissions(prev => prev.map(sub => sub._id === applicationId ? { ...sub, status: "withdrawn" } : sub));
+        setApplications(prev => prev.map(sub => sub._id === applicationId ? { ...sub, status: "withdrawn" } : sub));
       } else {
         toast.error("Failed to withdraw application");
       }
@@ -124,8 +132,8 @@ export default function Submissions() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold">My Submissions</h1>
-        <p className="text-muted-foreground">Track your audition submissions and feedback</p>
+        <h1 className="text-2xl font-bold">My Applications</h1>
+        <p className="text-muted-foreground">Track your applications to projects and roles</p>
       </div>
 
       {/* Stats */}
@@ -148,11 +156,11 @@ export default function Submissions() {
         ))}
       </div>
 
-      {/* Submissions Table */}
+      {/* Applications Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Submission History</CardTitle>
-          <p className="text-sm text-muted-foreground">View and manage all your audition submissions</p>
+          <CardTitle>Application History</CardTitle>
+          <p className="text-sm text-muted-foreground">View and manage your project applications</p>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -160,21 +168,21 @@ export default function Submissions() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Project Title</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>Casting Team</TableHead>
+                  <TableHead>Applied Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {submissions.length > 0 ? submissions.map((submission) => (
-                  <TableRow key={submission._id}>
-                    <TableCell className="font-medium">{submission.castingCall?.title}</TableCell>
-                    <TableCell>{submission.castingCall?.postedBy?.fullName || "Unknown"}</TableCell>
-                    <TableCell>{submission.castingCall?.category}</TableCell>
+                {applications.length > 0 ? applications.map((app) => (
+                  <TableRow key={app._id}>
+                    <TableCell className="font-medium">{app.project?.title}</TableCell>
+                    <TableCell>{app.project?.postedBy?.fullName}</TableCell>
+                    <TableCell>{app.project?.role}</TableCell>
                     <TableCell>
-                      <Badge className={statusColors[submission.status] || "bg-muted"}>
-                        {submission.status}
+                      <Badge className={statusColors[app.status] || "bg-muted"}>
+                        {app.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -187,12 +195,12 @@ export default function Submissions() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-[160px]">
-                            <DropdownMenuItem onClick={() => handleViewDetails(submission._id)} className="cursor-pointer">
+                            <DropdownMenuItem onClick={() => handleViewDetails(app._id)} className="cursor-pointer">
                               <Info className="w-4 h-4 mr-2" /> Details
                             </DropdownMenuItem>
-                            {["submitted", "viewed"].includes(submission.status) && (
+                            {["review", "submitted", "viewed"].includes(app.status) && (
                               <DropdownMenuItem 
-                                onClick={() => handleWithdraw(submission._id)} 
+                                onClick={() => handleWithdraw(app._id)} 
                                 className="cursor-pointer text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="w-4 h-4 mr-2" /> Withdraw
@@ -205,8 +213,8 @@ export default function Submissions() {
                   </TableRow>
                 )) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No submissions found.
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      No applications found.
                     </TableCell>
                   </TableRow>
                 )}

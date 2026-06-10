@@ -83,8 +83,14 @@ export default function DirectorSubmissions() {
           projectAPI.getOne(id).catch(() => null)
         ]);
 
-        if (subsRes && subsRes.data.success && Array.isArray(subsRes.data.data)) {
-          setSubmissions(subsRes.data.data);
+        if (subsRes && subsRes.data.success) {
+          const payload = subsRes.data.data;
+          const apps = Array.isArray(payload) ? payload : (payload?.applications || []);
+          const mappedApps = apps.map((app: any) => ({ 
+            ...app, 
+            talent: app.talentUserId || app.talentId || app.talentUser || app.talent 
+          }));
+          setSubmissions(mappedApps);
         } else {
           setSubmissions([]);
         }
@@ -100,12 +106,19 @@ export default function DirectorSubmissions() {
           if (myCastings.length > 0) {
             const allAppsPromises = myCastings.map((c) => applicationAPI.getByCastingCall(c._id).catch(() => null));
             const appsResults = await Promise.all(allAppsPromises);
-            const allApps = appsResults.flatMap(res => 
-              (res && res.data.success && Array.isArray(res.data.data)) ? res.data.data : []
-            );
+            const allApps = appsResults.flatMap(res => {
+              if (!res || !res.data.success) return [];
+              const payload = res.data.data;
+              return Array.isArray(payload) ? payload : (payload?.applications || []);
+            });
+            
+            const mappedApps = allApps.map((app: any) => ({ 
+              ...app, 
+              talent: app.talentUserId || app.talentId || app.talentUser || app.talent 
+            }));
             
             // Sort by most recent
-            setSubmissions(allApps.sort((a, b) => 
+            setSubmissions(mappedApps.sort((a: any, b: any) => 
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             ));
           } else {

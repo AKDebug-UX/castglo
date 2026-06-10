@@ -33,7 +33,13 @@ export default function Pricing() {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
-  const [activeTab, setActiveTab] = useState(categoryParam || "talent");
+  const [activeTab, setActiveTab] = useState(categoryParam || user?.role || "talent");
+
+  useEffect(() => {
+    if (user?.role && !categoryParam) {
+      setActiveTab(user.role);
+    }
+  }, [user, categoryParam]);
 
   const localPlanKeys = useMemo(() => new Set((SUBSCRIPTION_PLANS as Plan[]).map((p) => p.planKey)), []);
 
@@ -216,18 +222,20 @@ export default function Pricing() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-7xl mx-auto">
-            <TabsList className="grid grid-cols-2 md:grid-cols-3 h-auto p-1 bg-white border border-slate-200 shadow-sm rounded-xl mb-10">
-              {categories.map((cat) => (
-                <TabsTrigger 
-                  key={cat.id} 
-                  value={cat.id}
-                  className="py-3 rounded-lg data-[state=active]:bg-slate-50 data-[state=active]:shadow-none"
-                >
-                  <cat.icon className="w-4 h-4 mr-2 hidden sm:inline-block" />
-                  {cat.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            {!user && (
+              <TabsList className="grid grid-cols-2 md:grid-cols-3 h-auto p-1 bg-white border border-slate-200 shadow-sm rounded-xl mb-10">
+                {categories.map((cat) => (
+                  <TabsTrigger 
+                    key={cat.id} 
+                    value={cat.id}
+                    className="py-3 rounded-lg data-[state=active]:bg-slate-50 data-[state=active]:shadow-none"
+                  >
+                    <cat.icon className="w-4 h-4 mr-2 hidden sm:inline-block" />
+                    {cat.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            )}
 
             {categories.map((cat) => (
               <TabsContent key={cat.id} value={cat.id} className="animate-in fade-in-50 duration-500">

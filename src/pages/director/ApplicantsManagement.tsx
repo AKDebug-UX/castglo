@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import {
   MessageSquare, Star, ThumbsDown, UserCheck, Video,
   FileText, Loader2, SlidersHorizontal, CheckSquare,
   FolderOpen, ArrowRight, ExternalLink, X, ListFilter,
-  CheckCircle, Clock, Send, Mic, Award
+  CheckCircle, Clock, Send, Mic, Award, Sparkles
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -26,15 +26,16 @@ import { ApplicationDetailsModal } from "@/components/applications/ApplicationDe
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type PipelineStage =
-  | "applied"
-  | "shortlisted"
+  | "review"
+  | "shortlist"
   | "contacting"
   | "audition_requested"
   | "self_tape_requested"
   | "invite"
   | "offer"
-  | "accepted"
-  | "rejected";
+  | "hired"
+  | "declined"
+  | "matched";
 
 interface Applicant {
   _id: string;
@@ -64,26 +65,29 @@ interface Project {
 
 // ── Pipeline Config ──────────────────────────────────────────────────────────
 const STAGES: { key: PipelineStage; label: string; color: string; bgLight: string; icon: React.ReactNode }[] = [
-  { key: "applied",            label: "Review",            color: "text-slate-600",   bgLight: "bg-slate-50 border-slate-200",      icon: <Clock className="w-3.5 h-3.5" /> },
-  { key: "shortlisted",        label: "Shortlist",         color: "text-blue-600",    bgLight: "bg-blue-50 border-blue-200",         icon: <Star className="w-3.5 h-3.5" /> },
+  { key: "matched",            label: "Matched",           color: "text-indigo-600",  bgLight: "bg-indigo-50 border-indigo-200",     icon: <Sparkles className="w-3.5 h-3.5" /> },
+  { key: "review",             label: "Under Review",      color: "text-slate-600",   bgLight: "bg-slate-50 border-slate-200",       icon: <Clock className="w-3.5 h-3.5" /> },
+  { key: "shortlist",          label: "Shortlisted",       color: "text-blue-600",    bgLight: "bg-blue-50 border-blue-200",         icon: <CheckCircle className="w-3.5 h-3.5" /> },
   { key: "contacting",         label: "Contacting",        color: "text-purple-600",  bgLight: "bg-purple-50 border-purple-200",     icon: <Send className="w-3.5 h-3.5" /> },
   { key: "audition_requested", label: "Audition",          color: "text-orange-600",  bgLight: "bg-orange-50 border-orange-200",     icon: <Video className="w-3.5 h-3.5" /> },
   { key: "self_tape_requested",label: "Self-Tape",         color: "text-pink-600",    bgLight: "bg-pink-50 border-pink-200",         icon: <Mic className="w-3.5 h-3.5" /> },
   { key: "invite",             label: "Invite",            color: "text-teal-600",    bgLight: "bg-teal-50 border-teal-200",         icon: <UserCheck className="w-3.5 h-3.5" /> },
-  { key: "offer",              label: "Offer / Hire",      color: "text-green-700",   bgLight: "bg-green-50 border-green-200",       icon: <Award className="w-3.5 h-3.5" /> },
-  { key: "rejected",           label: "Declined",          color: "text-red-600",     bgLight: "bg-red-50 border-red-200",           icon: <ThumbsDown className="w-3.5 h-3.5" /> },
+  { key: "offer",              label: "Offer",             color: "text-amber-700",   bgLight: "bg-amber-50 border-amber-200",       icon: <Award className="w-3.5 h-3.5" /> },
+  { key: "hired",              label: "Hired",             color: "text-green-700",   bgLight: "bg-green-50 border-green-200",       icon: <Award className="w-3.5 h-3.5" /> },
+  { key: "declined",           label: "Declined",          color: "text-red-600",     bgLight: "bg-red-50 border-red-200",           icon: <ThumbsDown className="w-3.5 h-3.5" /> },
 ];
 
 const STAGE_MAP = Object.fromEntries(STAGES.map(s => [s.key, s]));
 
 const MOVE_TO_OPTIONS: { label: string; value: PipelineStage }[] = [
-  { label: "Shortlist",          value: "shortlisted" },
+  { label: "Shortlist",          value: "shortlist" },
   { label: "Contacting",         value: "contacting" },
   { label: "Request Audition",   value: "audition_requested" },
   { label: "Request Self-Tape",  value: "self_tape_requested" },
   { label: "Invite",             value: "invite" },
-  { label: "Offer / Hire",       value: "offer" },
-  { label: "Decline",            value: "rejected" },
+  { label: "Offer",              value: "offer" },
+  { label: "Hire",               value: "hired" },
+  { label: "Decline",            value: "declined" },
 ];
 
 // ── Helper ────────────────────────────────────────────────────────────────────
@@ -112,6 +116,9 @@ export default function ApplicantsManagement() {
   // Application Details Modal State
   const [detailsModalAppId, setDetailsModalAppId] = useState<string | null>(null);
 
+  // ── URL params (deep-link from DirectorRoles) ─────────────────────────────
+  const [searchParams] = useSearchParams();
+
   // ── Load data ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
@@ -124,11 +131,47 @@ export default function ApplicantsManagement() {
         setProjects(myProjects);
 
         if (myProjects.length > 0) {
-          const allAppPromises = myProjects.map(p => applicationAPI.getByCastingCall(p._id).catch(() => null));
-          const results = await Promise.all(allAppPromises);
+          const roleQueries: { projId: string; roleId: string; projTitle: string; roleName: string }[] = [];
+          myProjects.forEach(p => {
+             const roles = p.roles || [];
+             roles.forEach(r => {
+                roleQueries.push({ 
+                   projId: p._id, 
+                   roleId: r.id || r._id, 
+                   projTitle: p.projectName || p.title, 
+                   roleName: r.role_name || r.name || r.title 
+                });
+             });
+          });
+
+          const results = await Promise.all(
+            roleQueries.map(q => projectAPI.getApplicants(q.projId, q.roleId).catch(() => null))
+          );
+          
           const allApps: Applicant[] = results.flatMap((res, i) => {
-            const list = res?.data?.success && Array.isArray(res.data.data) ? res.data.data : [];
-            return list.map((a: any) => ({ ...a, castingCall: { ...a.castingCall, _id: myProjects[i]._id } }));
+            if (!res || !res.data?.success) return [];
+            const payload = res.data.data;
+            const list = Array.isArray(payload) ? payload : (payload?.applicants || payload?.applications || []);
+            return list.map((a: any) => {
+              const userObj = (typeof a.userId === "object" ? a.userId : null) || 
+                              (typeof a.talentId === "object" ? a.talentId : null) || 
+                              (typeof a.talentUserId === "object" ? a.talentUserId : null) ||
+                              a.talentUser || a.talent || a.user;
+                              
+              const talentData = {
+                _id: userObj?._id || userObj?.id || (typeof a.userId === "string" ? a.userId : (typeof a.talentUserId === "string" ? a.talentUserId : a.talentId)),
+                fullName: userObj?.fullName || a.fullName || a.displayName || a.display_name,
+                profilePicture: userObj?.profilePicture || a.profilePicture,
+              };
+
+              return {
+                ...a, 
+                talent: talentData,
+                roleId: roleQueries[i].roleId,
+                roleName: roleQueries[i].roleName,
+                castingCall: { ...a.castingCall, _id: roleQueries[i].projId, title: roleQueries[i].projTitle } 
+              };
+            });
           });
           setApplicants(allApps);
         }
@@ -140,6 +183,14 @@ export default function ApplicantsManagement() {
     };
     load();
   }, []);
+
+  // Pre-populate filters from URL params on first load
+  useEffect(() => {
+    const projectParam = searchParams.get("project");
+    const roleParam    = searchParams.get("role");
+    if (projectParam) setSelectedProject(projectParam);
+    if (roleParam)    setSelectedRole(roleParam);
+  }, [searchParams]);
 
   // ── Filtered list ─────────────────────────────────────────────────────────
   const currentProject = projects.find(p => p._id === selectedProject);
@@ -161,19 +212,34 @@ export default function ApplicantsManagement() {
     const map: Record<string, Applicant[]> = {};
     STAGES.forEach(s => { map[s.key] = []; });
     filteredApplicants.forEach(a => {
-      const stage = a.status || "applied";
-      if (map[stage]) map[stage].push(a); else map["applied"].push(a);
+      const stage = a.status || "review";
+      if (map[stage]) map[stage].push(a); else map["review"].push(a);
     });
     return map;
   }, [filteredApplicants]);
 
-  // ── Status mutation (calls existing API) ──────────────────────────────────
+  // ── Status mutation ───────────────────────────────────────────────────────
   const updateStatus = async (appId: string, toStatus: PipelineStage) => {
     try {
-      if (toStatus === "shortlisted")  await applicationAPI.shortlist(appId);
-      else if (toStatus === "rejected") await applicationAPI.reject(appId);
-      else if (toStatus === "offer")    await applicationAPI.accept(appId);
-      else                              await applicationAPI.update(appId, { status: toStatus });
+      // Use the role-level pipeline endpoint when project context is known
+      const app = applicants.find(a => a._id === appId);
+      const projId = selectedProject !== "all" ? selectedProject : app?.castingCall?._id;
+      const roleId  = app?.roleId as string | undefined;
+
+      if (projId && roleId) {
+        // Prefer the authoritative project-scoped endpoint
+        await projectAPI.updateApplicantStatus(projId, roleId, appId, { status: toStatus });
+      } else if (toStatus === "shortlist") {
+        await applicationAPI.shortlist(appId);
+      } else if (toStatus === "declined") {
+        await applicationAPI.reject(appId);
+      } else if (toStatus === "hired") {
+        await applicationAPI.accept(appId);
+      } else {
+        // Generic fallback (cross-project view, no roleId available)
+        await applicationAPI.update(appId, { status: toStatus });
+      }
+
       setApplicants(prev => prev.map(a => a._id === appId ? { ...a, status: toStatus } : a));
       toast.success("Applicant moved.");
     } catch {
@@ -183,7 +249,27 @@ export default function ApplicantsManagement() {
 
   // ── Bulk actions ──────────────────────────────────────────────────────────
   const bulkMove = async (toStatus: PipelineStage) => {
-    await Promise.all([...selectedIds].map(id => updateStatus(id, toStatus)));
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+
+    // If a single project + role is in scope, use the dedicated bulk endpoint
+    if (selectedProject !== "all" && selectedRole !== "all") {
+      try {
+        await projectAPI.bulkAction(selectedProject, selectedRole, {
+          applicantIds: ids,
+          action: toStatus,
+        });
+        setApplicants(prev => prev.map(a => ids.includes(a._id) ? { ...a, status: toStatus } : a));
+        setSelectedIds(new Set());
+        toast.success(`${ids.length} applicants moved.`);
+      } catch {
+        toast.error("Bulk action failed.");
+      }
+      return;
+    }
+
+    // Fallback: individual updates (cross-project view)
+    await Promise.all(ids.map(id => updateStatus(id, toStatus)));
     setSelectedIds(new Set());
   };
 
@@ -408,10 +494,10 @@ export default function ApplicantsManagement() {
           <span className="font-semibold text-sm">{selectedIds.size} selected</span>
           <div className="flex items-center gap-2 ml-auto flex-wrap">
             {[
-              { label: "Shortlist",   value: "shortlisted" as PipelineStage },
+              { label: "Shortlist",   value: "shortlist" as PipelineStage },
               { label: "Audition",    value: "audition_requested" as PipelineStage },
               { label: "Offer",       value: "offer" as PipelineStage },
-              { label: "Decline",     value: "rejected" as PipelineStage },
+              { label: "Decline",     value: "declined" as PipelineStage },
             ].map(opt => (
               <Button key={opt.value} variant="secondary" size="sm" onClick={() => bulkMove(opt.value)}>
                 {opt.label}

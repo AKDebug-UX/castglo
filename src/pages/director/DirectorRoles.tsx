@@ -7,14 +7,15 @@ import { Input } from "@/components/ui/input";
 import { 
   Users, Search, Filter, ArrowRight, 
   Clapperboard, Sparkles, MoreHorizontal,
-  Loader2, Plus, Calendar, Tag
+  Loader2, Plus, Calendar, Tag, Copy, Trash2
 } from "lucide-react";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { castingCallAPI, projectAPI } from "@/lib/api";
+import { projectAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { getProjectDeadline } from "@/lib/project.utils";
 
 interface RoleItem {
   id: string;
@@ -22,48 +23,114 @@ interface RoleItem {
   projectName: string;
   roleName: string;
   roleType: string;
-  status: "open" | "filled" | "closed";
+  status: "open" | "filled" | "closed" | string;
   applicantCount: number;
   deadline: string;
+  /** Full raw role payload — used when duplicating */
+  _raw?: any;
 }
 
 export default function DirectorRoles() {
-  const [roles, setRoles]       = useState<RoleItem[]>([]);
+  const [roles, setRoles]         = useState<RoleItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deletingId, setDeletingId]   = useState<string | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      setIsLoading(true);
-      try {
-        const res = await projectAPI.getMe();
-        if (res.data.success) {
-          const listings = Array.isArray(res.data.data) ? res.data.data : res.data.data?.projects || res.data.data?.castingCalls || [];
-          const flattenedRoles: RoleItem[] = listings.flatMap((p: any) => 
-            (p.roles || []).map((r: any) => ({
-              id: r.id || r._id,
-              projectId: p._id,
-              projectName: p.projectName || p.title,
-              roleName: r.role_name || r.title,
-              roleType: r.role_type || r.type || "Lead",
-              status: p.status || "open",
-              applicantCount: r.applicationCount || 0,
-              deadline: p.deadline
-            }))
-          );
-          setRoles(flattenedRoles);
-        }
-      } catch {
-        toast.error("Failed to load roles.");
-      } finally {
-        setIsLoading(false);
+  const load = async () => {
+    setIsLoading(true);
+    try {
+      const res = await projectAPI.getMe();
+      if (!res.data.success) {
+        setRoles([]);
+        return;
       }
-    };
-    load();
-  }, []);
 
-  const filteredRoles = roles.filter(r => 
-    r.roleName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const listings: any[] = Array.isArray(res.data.data)
+        ? res.data.data
+        : res.data.data?.projects || res.data.data?.castingCalls || [];
+
+      // Fan-out: fetch live roles for each project in parallel
+      const roleResults = await Promise.all(
+        listings.map(p =>
+          projectAPI.getRoles(p._id)
+            .then(r => ({ projectId: p._id, project: p, roles: r.data?.data || r.data?.data?.roles || [] }))
+            .catch(() => ({ projectId: p._id, project: p, roles: [] }))
+        )
+      );
+
+      const flattenedRoles: RoleItem[] = roleResults.flatMap(({ project, roles: pRoles }) =>
+        (Array.isArray(pRoles) ? pRoles : []).map((r: any) => ({
+          id: r.id || r._id,
+          projectId: project._id,
+          projectName: project.projectName || project.title || "Untitled",
+          roleName: r.role_name || r.name || r.title || "Unnamed Role",
+          roleType: r.roleType || r.role_type || r.type || "Other",
+          status: (project.status || "open").toLowerCase(),
+          applicantCount: r.applicationCount || r.applicantCount || 0,
+          deadline: getProjectDeadline(project),
+          _raw: r,
+        }))
+      );
+
+      setRoles(flattenedRoles);
+    } catch {
+      toast.error("Failed to load roles.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleDeleteRole = async (role: RoleItem) => {
+    if (!confirm(`Delete role "${role.roleName}"? This will also remove all its applicants.`)) return;
+    setDeletingId(role.id);
+    try {
+      await projectAPI.deleteRole(role.projectId, role.id);
+      setRoles(prev => prev.filter(r => r.id !== role.id));
+      toast.success("Role deleted.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to delete role.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleDuplicateRole = async (role: RoleItem) => {
+    setDuplicatingId(role.id);
+    try {
+      const raw = role._raw || {};
+      const payload = {
+        name: `${role.roleName} (Copy)`,
+        roleType: raw.roleType || role.roleType || "Other",
+        status: "active",
+        roleDescription: raw.roleDescription || raw.description || "",
+        ageRange: raw.ageRange || { min: 18, max: 35 },
+        gender: raw.gender || "any",
+        ethnicity: raw.ethnicity || "any",
+        skillsRequired: raw.skillsRequired || [],
+        nudityRequired: raw.nudityRequired ?? false,
+        mediaRequiredFromApplicants: raw.mediaRequiredFromApplicants || [],
+        locationRequirements: raw.locationRequirements || "any",
+        accentRequirements: raw.accentRequirements || "any",
+        languageRequirements: raw.languageRequirements || "English",
+        unionStatusRequirement: raw.unionStatusRequirement || "any",
+        availabilityRequirement: raw.availabilityRequirement || "flexible",
+        preAudition: raw.preAudition || {},
+      };
+      await projectAPI.createRole(role.projectId, payload);
+      toast.success("Role duplicated.");
+      load(); // refresh
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to duplicate role.");
+    } finally {
+      setDuplicatingId(null);
+    }
+  };
+
+  const filteredRoles = roles.filter(r =>
+    r.roleName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.projectName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -124,7 +191,7 @@ export default function DirectorRoles() {
                 <div className="flex flex-col md:flex-row md:items-center">
                   {/* Status Strip */}
                   <div className={`w-full md:w-1.5 h-1.5 md:h-auto shrink-0 ${
-                    role.status === "open" ? "bg-green-500" : "bg-slate-300"
+                    role.status === "open" || role.status === "active" ? "bg-green-500" : "bg-slate-300"
                   }`} />
                   
                   <div className="flex-1 p-4 grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 items-center">
@@ -150,26 +217,26 @@ export default function DirectorRoles() {
 
                     {/* Meta */}
                     <div className="hidden lg:block space-y-1">
-                       <p className="text-xs font-bold capitalize">{role.roleType.replace("_", " ")}</p>
+                       <p className="text-xs font-bold capitalize">{String(role.roleType).replace("_", " ")}</p>
                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Role Type</p>
                     </div>
 
                     <div className="hidden lg:block space-y-1">
                        <p className="text-xs font-bold">
-                         {new Date(role.deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                         {role.deadline || "—"}
                        </p>
                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Deadline</p>
                     </div>
 
-                    {/* Actions */}
+                    {/* Actions — pass project+role context as URL params */}
                     <div className="flex items-center justify-end gap-2">
                       <Button variant="outline" size="sm" asChild className="hidden sm:flex gap-1.5 h-8 text-xs font-bold">
-                         <Link to="/director/matched">
+                         <Link to={`/director/matched?project=${role.projectId}&role=${role.id}`}>
                            <Sparkles className="w-3 h-3" /> Match
                          </Link>
                       </Button>
                       <Button size="sm" asChild className="h-8 text-xs font-bold gap-1.5">
-                         <Link to="/director/applicants">
+                         <Link to={`/director/applicants?project=${role.projectId}&role=${role.id}`}>
                            Review <ArrowRight className="w-3 h-3" />
                          </Link>
                       </Button>
@@ -184,9 +251,26 @@ export default function DirectorRoles() {
                           <DropdownMenuItem asChild>
                             <Link to={`/director/projects/${role.projectId}/edit`}>Edit Role</Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>Duplicate Role</DropdownMenuItem>
-                          <div className="h-px bg-muted my-1" />
-                          <DropdownMenuItem className="text-destructive">Remove Role</DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDuplicateRole(role)}
+                            disabled={duplicatingId === role.id}
+                          >
+                            {duplicatingId === role.id
+                              ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              : <Copy className="w-4 h-4 mr-2" />}
+                            Duplicate Role
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDeleteRole(role)}
+                            disabled={deletingId === role.id}
+                          >
+                            {deletingId === role.id
+                              ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              : <Trash2 className="w-4 h-4 mr-2" />}
+                            Remove Role
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

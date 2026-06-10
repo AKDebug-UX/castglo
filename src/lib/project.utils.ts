@@ -68,6 +68,8 @@ export interface FormRole {
   accommodation_covered: boolean;
   travel_covered: boolean;
   compensation_notes: string;
+  /** True when this role was loaded from the server (edit mode). False for locally-added new roles. */
+  _fromServer?: boolean;
   [key: string]: any;
 }
 
@@ -273,6 +275,7 @@ export function normaliseRoleFromAPI(backendRole: any, metaRole?: any): FormRole
   return {
     ...merged,
     id: roleId || Math.random().toString(36).slice(2),
+    _fromServer: true, // Sourced from the API — safe to call updateRole on submit
 
     // Name
     role_name: merged.role_name || merged.name || merged.title || "",

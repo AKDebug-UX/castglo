@@ -114,11 +114,11 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Casting Call</p>
-                      <p className="font-medium">{application.project?.title || application.project?.projectName || application.castingCall?.title || "Unknown"}</p>
+                      <p className="font-medium">{application.castingCallId?.project_title || application.castingCallId?.title || application.project?.title || application.project?.projectName || application.castingCall?.title || "Unknown"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Applicant</p>
-                      <p className="font-medium">{application.talentUser?.fullName || "Unknown"}</p>
+                      <p className="font-medium">{application.talentId?.fullName || application.talentUser?.fullName || "Unknown"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Date Submitted</p>
@@ -126,7 +126,7 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
                     </div>
                     <div>
                       <p className="text-muted-foreground">Role</p>
-                      <p className="font-medium">{application.role?.role_name || application.role?.name || application.role?.title || application.castingCall?.category || "Unknown"}</p>
+                      <p className="font-medium">{application.appliedRole || application.role?.role_name || application.role?.name || application.role?.title || application.castingCallId?.category || application.castingCall?.category || "Unknown"}</p>
                     </div>
                   </div>
 

@@ -50,6 +50,7 @@ const BrowseCast = lazy(() => import("./pages/talent/BrowseCast"));
 const CastingDetail = lazy(() => import("./pages/talent/CastingDetail"));
 const SubmitAudition = lazy(() => import("./pages/talent/SubmitAudition"));
 const Submissions = lazy(() => import("./pages/talent/Submissions"));
+const Applications = lazy(() => import("./pages/talent/Applications"));
 const Messages = lazy(() => import("./pages/talent/Messages"));
 const Notifications = lazy(() => import("./pages/talent/Notifications"));
 const InstantAudition = lazy(() => import("./pages/talent/InstantAudition"));
@@ -181,6 +182,7 @@ const App = () => (
                 <Route path="browse-cast/:id" element={<CastingDetail />} />
                 <Route path="browse-cast/:id/submit" element={<SubmitAudition />} />
                 <Route path="submissions" element={<Submissions />} />
+                <Route path="applications" element={<Applications />} />
                 <Route path="messages" element={<Messages />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="audition" element={<LivestreamsList />} />

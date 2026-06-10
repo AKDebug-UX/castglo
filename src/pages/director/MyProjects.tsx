@@ -68,13 +68,14 @@ export default function MyProjects() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this casting call?")) return;
     try {
-      const response = await castingCallAPI.delete(id);
+      const response = await projectAPI.delete(id);
       if (response.data.success) {
         toast.success("Project deleted successfully");
         setProjects(prev => prev.filter(p => p._id !== id));
       }
-    } catch (error) {
-      toast.error("Failed to delete project");
+    } catch (error: any) {
+      const message = error?.response?.data?.message || "Failed to delete project";
+      toast.error(message);
     }
   };
 
@@ -290,12 +291,20 @@ export default function MyProjects() {
                       </Button>
                     )
                   ) : (
-                    <Button variant="outline" size="sm" className="flex-1" asChild>
-                      <Link to={`/director/submissions/${project._id}`}>
-                        <Users className="w-3 h-3 mr-1" />
-                        Submissions
-                      </Link>
-                    </Button>
+                    <div className="flex gap-2 flex-1">
+                      <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
+                        <Link to={`/director/submissions/${project._id}`}>
+                          <Users className="w-3 h-3 mr-1" />
+                          Submissions
+                        </Link>
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
+                        <Link to={`/director/applicants?project=${project._id}`}>
+                          <Users className="w-3 h-3 mr-1" />
+                          Applicants
+                        </Link>
+                      </Button>
+                    </div>
                   )}
                   
                   <DropdownMenu>
@@ -411,12 +420,20 @@ export default function MyProjects() {
                         </Button>
                       )
                     ) : (
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/director/submissions/${project._id}`}>
-                          <Users className="w-3 h-3 mr-1" />
-                          Submissions
-                        </Link>
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/director/submissions/${project._id}`}>
+                            <Users className="w-3 h-3 mr-1" />
+                            Submissions
+                          </Link>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/director/applicants?project=${project._id}`}>
+                            <Users className="w-3 h-3 mr-1" />
+                            Applicants
+                          </Link>
+                        </Button>
+                      </div>
                     )}
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/director/projects/${project._id}/edit`}>

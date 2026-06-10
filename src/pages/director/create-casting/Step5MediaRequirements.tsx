@@ -38,23 +38,30 @@ export default function Step5MediaRequirements({
             <Label>Project Poster / Cover Image *</Label>
             <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-8 hover:bg-slate-50 transition-colors cursor-pointer relative group">
               <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageChange} accept="image/*" />
-              {selectedImage || formData.project_cover_image ? (
-                <div className="relative w-full aspect-[21/9] rounded-xl overflow-hidden max-w-2xl">
-                  <img src={selectedImage || resolveMediaUrl(formData.project_cover_image) || ""} alt="Project Header" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Upload className="w-8 h-8 text-white" />
-                    <span className="ml-2 text-white font-medium">Change Image</span>
+              {(() => {
+                // Determine the best available image source:
+                // 1. selectedImage — set when user picks a new file or on edit-mode load
+                // 2. formData.project_cover_image — resolveMediaUrl handles https:// and data: URIs
+                const imgSrc = selectedImage
+                  || (formData.project_cover_image ? resolveMediaUrl(formData.project_cover_image) : "");
+                return imgSrc ? (
+                  <div className="relative w-full aspect-[21/9] rounded-xl overflow-hidden max-w-2xl">
+                    <img src={imgSrc} alt="Project Header" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Upload className="w-8 h-8 text-white" />
+                      <span className="ml-2 text-white font-medium">Change Image</span>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <>
-                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                    <ImageIcon className="w-6 h-6 text-slate-400" />
-                  </div>
-                  <p className="text-sm font-medium text-slate-600">Click or drag to upload header image</p>
-                  <p className="text-xs text-slate-400 mt-1">Recommended size: 1200x600px</p>
-                </>
-              )}
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                      <ImageIcon className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-600">Click or drag to upload header image</p>
+                    <p className="text-xs text-slate-400 mt-1">Recommended size: 1200x600px</p>
+                  </>
+                );
+              })()}
             </div>
           </div>
 

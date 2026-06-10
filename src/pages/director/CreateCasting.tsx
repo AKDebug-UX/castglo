@@ -435,10 +435,12 @@ export default function CreateCasting() {
               roles: safeRoles.length > 0 ? safeRoles : prev.roles,
             }));
 
-            // Restore the cover image preview so it shows in the upload widget on edit
+            // Restore the cover image preview so it shows in the upload widget on edit.
+            // Priority: CDN URL from attachments → meta blob URL/base64 → existing selectedImage
             const coverUrl = getProjectCoverImage(data, metaTop);
-            if (coverUrl) {
-              setSelectedImage(resolveMediaUrl(coverUrl));
+            const fallbackCover = coverUrl || metaTop?.project_cover_image || "";
+            if (fallbackCover) {
+              setSelectedImage(resolveMediaUrl(fallbackCover));
             }
           }
         } catch (error) {
@@ -475,6 +477,7 @@ export default function CreateCasting() {
         ...prev.roles,
         {
           id: Date.now().toString(),
+          _fromServer: false,
           role_name: "",
           role_type: [],
           role_status: "Open",
@@ -692,8 +695,8 @@ export default function CreateCasting() {
               const payload = { ...r };
               delete payload.id;
               
-              if (isEditMode && roleId && roleId !== r.name && !roleId.startsWith("role-")) {
-                // If it's an existing role with a real MongoDB ID
+              if (isEditMode && r._fromServer && roleId) {
+                // Server-sourced role — update it, fall back to create on 404
                 return projectAPI.updateRole(projectId, roleId, payload).catch(() => projectAPI.createRole(projectId, payload));
               } else {
                 return projectAPI.createRole(projectId, payload);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -152,6 +152,13 @@ export default function MatchedTalent() {
   const [filterUnion, setFilterUnion]       = useState("any");
   const [minScore, setMinScore]             = useState(0);
 
+  // Live roles for the selected project (fetched fresh, not from stale embed)
+  const [liveRoles, setLiveRoles] = useState<Role[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+
+  // ── URL params (deep-link from DirectorRoles) ─────────────────────────────
+  const [searchParams] = useSearchParams();
+
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
@@ -290,12 +297,46 @@ export default function MatchedTalent() {
     load();
   }, [selectedProject, selectedRole]);
 
-  // Derive active role object
+  // Pre-populate selectors from URL params on mount
+  useEffect(() => {
+    const projectParam = searchParams.get("project");
+    const roleParam    = searchParams.get("role");
+    if (projectParam) setSelectedProject(projectParam);
+    if (roleParam)    setSelectedRole(roleParam);
+  }, [searchParams]);
+
+  // Fetch live roles whenever the selected project changes
+  useEffect(() => {
+    if (selectedProject === "all") {
+      setLiveRoles([]);
+      return;
+    }
+    setRolesLoading(true);
+    projectAPI.getRoles(selectedProject)
+      .then(res => {
+        const raw = res.data?.data || res.data?.data?.roles || [];
+        const roles: Role[] = (Array.isArray(raw) ? raw : []).map((r: any) => ({
+          id: String(r.id || r._id || ""),
+          title: r.role_name || r.name || r.title || "Unnamed Role",
+          gender: r.gender,
+          minAge: r.ageRange?.min,
+          maxAge: r.ageRange?.max,
+          ethnicity: r.ethnicity,
+          skills: r.skillsRequired,
+          unionStatus: r.unionStatusRequirement,
+        }));
+        setLiveRoles(roles);
+      })
+      .catch(() => setLiveRoles([]))
+      .finally(() => setRolesLoading(false));
+  }, [selectedProject]);
+
+  // Derive active role object from liveRoles (live) with fallback to embedded project roles
   const currentProject  = projects.find(p => p._id === selectedProject);
   const getRoleId = (r: any) => String(r?.id || r?._id || r?.roleId || r?.role_id || r?.uuid || "");
   const getRoleTitle = (r: any) => String(r?.title || r?.role_name || r?.roleName || r?.name || "Role");
-  const currentRoleObj  = currentProject?.roles?.find((r: any) => getRoleId(r) === selectedRole);
-  const activeRoles     = currentProject?.roles || [];
+  const activeRoles     = liveRoles.length > 0 ? liveRoles : (currentProject?.roles || []);
+  const currentRoleObj  = activeRoles.find((r: any) => getRoleId(r) === selectedRole);
 
   // Compute ranked matches
   const rankedTalents = useMemo(() => {
@@ -402,9 +443,9 @@ export default function MatchedTalent() {
           <Select
             value={selectedRole}
             onValueChange={setSelectedRole}
-            disabled={!activeRoles.length}
+            disabled={!activeRoles.length || rolesLoading}
           >
-            <SelectTrigger><SelectValue placeholder="Select role to match" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={rolesLoading ? "Loading roles..." : "Select role to match"} /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
               {activeRoles.map(r => (
