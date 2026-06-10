@@ -80,16 +80,19 @@ export default function Collaborators() {
       const data = Array.isArray(res.data?.data) ? res.data.data : 
         (Array.isArray(res.data) ? res.data : []);
       
-      const mapped = data.map((collab: any) => ({
-        id: collab._id || collab.id || collab.userId || "",
-        name: collab.user?.fullName || collab.name || collab.invitedUser?.fullName || collab.email?.split('@')[0] || "Unknown",
-        email: collab.email || collab.user?.email || collab.invitedUser?.email || "",
-        role: (collab.role || collab.permission || collab.roleName || "viewer") as any,
-        avatar: collab.user?.profilePicture || collab.invitedUser?.profilePicture,
-        status: collab.status === "accepted" ? "active" : (collab.status || "pending"),
-        lastActive: timeAgo(collab.updatedAt || collab.lastActiveAt),
-        assignedProject: collab.project?.title || collab.projectName || "All Projects"
-      }));
+      const mapped = data.map((collab: any) => {
+        const email = collab.email || collab.user?.email || collab.invitedUser?.email || collab.inviteEmail || "";
+        return {
+          id: collab._id || collab.id || collab.userId || "",
+          name: collab.user?.fullName || collab.name || collab.invitedUser?.fullName || email.split('@')[0] || "Unknown",
+          email: email,
+          role: (collab.role || collab.permission || collab.roleName || "viewer") as any,
+          avatar: collab.user?.profilePicture || collab.invitedUser?.profilePicture,
+          status: collab.status === "accepted" ? "active" : (collab.status || "pending"),
+          lastActive: timeAgo(collab.updatedAt || collab.lastActiveAt),
+          assignedProject: collab.project?.title || collab.projectName || "All Projects"
+        };
+      });
       setTeam(mapped);
     } catch (e) {
       console.error("Failed to load collaborators:", e);
