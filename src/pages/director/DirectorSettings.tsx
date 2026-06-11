@@ -213,7 +213,7 @@ export default function DirectorSettings() {
                   <p className="text-xs text-muted-foreground">Used for all prices and rates across the app</p>
                 </div>
                 <Select
-                  value={user?.preferredCurrency || "GBP"}
+                  value={currentUser?.preferredCurrency || "GBP"}
                   onValueChange={async (v) => {
                     setIsSaving(true);
                     const res = await updatePreferredCurrency(v);

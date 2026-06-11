@@ -228,7 +228,7 @@ export default function ProfessionalSettings() {
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div className="p-4 rounded-xl border bg-slate-50/50">
                 <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Email</p>
-                <p className="font-medium text-slate-800">{user?.email}</p>
+                <p className="font-medium text-slate-800">{currentUser?.email}</p>
               </div>
               <div className="p-4 rounded-xl border bg-slate-50/50">
                 <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Plan</p>
@@ -249,7 +249,7 @@ export default function ProfessionalSettings() {
                   <p className="text-xs text-muted-foreground">Used for all prices and rates across the app</p>
                 </div>
                 <Select
-                  value={user?.preferredCurrency || "GBP"}
+                  value={currentUser?.preferredCurrency || "GBP"}
                   onValueChange={async (v) => {
                     setIsSaving(true);
                     const res = await updatePreferredCurrency(v);
