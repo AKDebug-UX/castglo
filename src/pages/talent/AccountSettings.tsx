@@ -53,18 +53,17 @@ export default function AccountSettings() {
       "";
 
     const aliasMap: Record<string, string> = {
-      cd_free: "director_free",
-      cd_basic: "director_basic",
-      cd_professional: "director_pro",
-      cd_pro: "director_pro",
-      cd_agency: "director_agency",
-      cd_enterprise: "director_enterprise",
-      ip_free: "professional_free",
-      ip_basic: "professional_basic",
-      ip_pro: "professional_pro",
+      director_free: "cd_free",
+      director_basic: "cd_basic",
+      director_pro: "cd_pro",
+      director_agency: "agency",
+      director_enterprise: "enterprise",
+      professional_free: "ip_free",
+      professional_basic: "ip_basic",
+      professional_pro: "ip_pro",
       freemium: "talent_free",
       premium: "talent_pro",
-      professional: "professional_pro",
+      professional: "ip_pro",
     };
 
     const planKey = aliasMap[rawKeyOrName] || rawKeyOrName;

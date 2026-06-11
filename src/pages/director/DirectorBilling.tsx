@@ -14,7 +14,7 @@ import { subscriptionAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 const PLAN_DETAILS: Record<string, { name: string; price: string; cycle: string; features: string[] }> = {
-  director_free: {
+  cd_free: {
     name: "Free",
     price: "£0",
     cycle: "/month",
@@ -25,7 +25,7 @@ const PLAN_DETAILS: Record<string, { name: string; price: string; cycle: string;
       "Help Centre Support"
     ]
   },
-  director_basic: {
+  cd_basic: {
     name: "Basic",
     price: "£29",
     cycle: "/month",
@@ -36,7 +36,7 @@ const PLAN_DETAILS: Record<string, { name: string; price: string; cycle: string;
       "Email Support"
     ]
   },
-  director_pro: {
+  cd_pro: {
     name: "Pro",
     price: "£79",
     cycle: "/month",
@@ -47,7 +47,7 @@ const PLAN_DETAILS: Record<string, { name: string; price: string; cycle: string;
       "Priority Support"
     ]
   },
-  director_agency: {
+  agency: {
     name: "Agency",
     price: "£99",
     cycle: "/month",
@@ -58,7 +58,7 @@ const PLAN_DETAILS: Record<string, { name: string; price: string; cycle: string;
       "Dedicated Support"
     ]
   },
-  director_enterprise: {
+  enterprise: {
     name: "Enterprise",
     price: "Custom",
     cycle: "",
@@ -107,8 +107,8 @@ export default function DirectorBilling() {
     navigate("/pricing?category=casting_director");
   };
 
-  const currentPlanKey = subStatus?.plan?.key || "director_free";
-  const planInfo = PLAN_DETAILS[currentPlanKey] || PLAN_DETAILS.director_free;
+  const currentPlanKey = subStatus?.plan?.key || "cd_free";
+  const planInfo = PLAN_DETAILS[currentPlanKey] || PLAN_DETAILS.cd_free;
   const planName = subStatus?.plan?.name || planInfo.name;
   const planPrice = subStatus?.plan?.price !== undefined ? `£${subStatus.plan.price}` : planInfo.price;
   const planCycle = subStatus?.billingCycle ? `/${subStatus.billingCycle.replace('ly', '')}` : planInfo.cycle;

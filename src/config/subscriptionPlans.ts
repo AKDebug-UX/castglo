@@ -75,7 +75,7 @@ export const SUBSCRIPTION_PLANS = [
 
   // CASTING DIRECTOR / AGENCY PLANS
   {
-    planKey: "director_free",
+    planKey: "cd_free",
     name: "Free",
     category: "casting_director",
     description: "For early onboarding and trial.",
@@ -101,7 +101,7 @@ export const SUBSCRIPTION_PLANS = [
     }
   },
   {
-    planKey: "director_basic",
+    planKey: "cd_basic",
     name: "Basic",
     category: "casting_director",
     description: "Best for small agencies and independent casting directors.",
@@ -127,7 +127,7 @@ export const SUBSCRIPTION_PLANS = [
     }
   },
   {
-    planKey: "director_pro",
+    planKey: "iirectorrectorrectorrector_pro",
     name: "Pro",
     category: "casting_director",
     description: "Best for active agencies, production teams and companies posting regularly.",
@@ -153,7 +153,7 @@ export const SUBSCRIPTION_PLANS = [
     }
   },
   {
-    planKey: "director_agency",
+    planKey: "agency",
     name: "Agency",
     category: "casting_director",
     description: "Best for large casting agencies and networks needing maximum volume.",
@@ -179,7 +179,7 @@ export const SUBSCRIPTION_PLANS = [
     }
   },
   {
-    planKey: "director_enterprise",
+    planKey: "enterprise",
     name: "Enterprise",
     category: "casting_director",
     description: "Custom solutions for major studios, networks, and high-volume productions.",
@@ -206,7 +206,7 @@ export const SUBSCRIPTION_PLANS = [
 
   // INDUSTRY PROFESSIONAL PLANS
   {
-    planKey: "professional_free",
+    planKey: "ip_free",
     name: "Free",
     category: "industry_professional",
     description: "For professionals who want to be discoverable.",
@@ -231,7 +231,7 @@ export const SUBSCRIPTION_PLANS = [
     }
   },
   {
-    planKey: "professional_basic",
+    planKey: "ip_basic",
     name: "Basic",
     category: "industry_professional",
     description: "Best for freelancers who want more enquiries and portfolio exposure.",
@@ -256,7 +256,7 @@ export const SUBSCRIPTION_PLANS = [
     }
   },
   {
-    planKey: "professional_pro",
+    planKey: "ip_pro",
     name: "Pro",
     category: "industry_professional",
     description: "Best for established professionals who want premium visibility and trust.",

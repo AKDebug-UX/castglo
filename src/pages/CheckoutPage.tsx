@@ -18,12 +18,12 @@ export default function CheckoutPage() {
     const keys = new Set([
       "talent_basic",
       "talent_pro",
-      "director_basic",
-      "director_pro",
-      "professional_basic",
-      "professional_pro",
-      "director_agency",
-      "director_enterprise",
+      "cd_basic",
+      "cd_pro",
+      "ip_basic",
+      "ip_pro",
+      "agency",
+      "enterprise",
     ]);
     return SUBSCRIPTION_PLANS.filter((p) => keys.has(p.planKey));
   }, []);

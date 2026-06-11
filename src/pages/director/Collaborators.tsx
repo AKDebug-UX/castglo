@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { 
   Users, Mail, Shield, UserPlus, 
   MoreVertical, Trash2, ShieldCheck, 
@@ -55,9 +58,9 @@ const timeAgo = (dateInput: string | Date | undefined) => {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 };
 
-// Try "type" key!
+// Try "role" key!
 const getPermissionsObject = (role: string) => {
-  return { type: role };
+  return { role };
 };
 
 export default function Collaborators() {
@@ -71,6 +74,26 @@ export default function Collaborators() {
   const [isLoadingCollaborators, setIsLoadingCollaborators] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [projectsFetched, setProjectsFetched] = useState(false);
+  const [accessScope, setAccessScope] = useState<"all_projects" | "selected_projects">("all_projects");
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const [globalPermissions, setGlobalPermissions] = useState({
+    viewApplicants: true,
+    moveApplicants: true,
+    addNotes: true,
+    sendMessages: true,
+    editProject: false,
+    editRoles: false,
+    manageCollaborators: false,
+  });
+  const [projectPermissions, setProjectPermissions] = useState<Record<string, {
+    viewApplicants: boolean;
+    moveApplicants: boolean;
+    addNotes: boolean;
+    sendMessages: boolean;
+    editProject: boolean;
+    editRoles: boolean;
+    manageCollaborators: boolean;
+  }>>({});
 
   const fetchCollaborators = async () => {
     setIsLoadingCollaborators(true);
@@ -127,6 +150,7 @@ export default function Collaborators() {
 
   useEffect(() => {
     fetchCollaborators();
+    fetchMyProjects();
   }, []);
 
   const assignedProjName = useMemo(() => {
@@ -138,6 +162,36 @@ export default function Collaborators() {
     return "All Projects";
   }, [customProjectName, projects, selectedProjectId]);
 
+  const toggleProjectSelection = (projectId: string) => {
+    setSelectedProjectIds(prev => {
+      const isSelected = prev.includes(projectId);
+      const newSelected = isSelected 
+        ? prev.filter(id => id !== projectId)
+        : [...prev, projectId];
+      
+      // Initialize permissions for newly selected projects
+      setProjectPermissions(prevPerm => {
+        const newPerm = { ...prevPerm };
+        if (!isSelected) {
+          newPerm[projectId] = {
+            viewApplicants: true,
+            moveApplicants: true,
+            addNotes: true,
+            sendMessages: true,
+            editProject: false,
+            editRoles: false,
+            manageCollaborators: false,
+          };
+        } else {
+          delete newPerm[projectId];
+        }
+        return newPerm;
+      });
+      
+      return newSelected;
+    });
+  };
+
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     const email = inviteEmail.trim();
@@ -145,16 +199,22 @@ export default function Collaborators() {
       toast.error("Please enter an email address.");
       return;
     }
+    if (accessScope === "selected_projects" && selectedProjectIds.length === 0) {
+      toast.error("Please select at least one project.");
+      return;
+    }
     setInviting(true);
     try {
       const inviteData: any = {
         inviteEmail: email,
-        projectGrants: [
-          {
-            projectId: selectedProjectId,
-            permissions: getPermissionsObject(selectedRole)
-          }
-        ]
+        accessScope,
+        globalPermissions: { role: selectedRole },
+        projectGrants: accessScope === "selected_projects" 
+          ? selectedProjectIds.map(projectId => ({
+              projectId,
+              permissions: { role: selectedRole }
+            }))
+          : undefined
       };
       
       console.log("Sending invite data:", JSON.stringify(inviteData, null, 2));
@@ -162,6 +222,8 @@ export default function Collaborators() {
 
       toast.success(`Invitation sent to ${email}`);
       setInviteEmail("");
+      setSelectedProjectIds([]);
+      setProjectPermissions({});
       // Refresh collaborators list
       fetchCollaborators();
     } catch (err: any) {
@@ -184,7 +246,7 @@ export default function Collaborators() {
   const updateRole = async (id: string, newRole: "admin" | "editor" | "viewer") => {
     try {
       await collaboratorAPI.updatePermissions(id, { 
-        permissions: getPermissionsObject(newRole) 
+        permissions: { role: newRole } 
       });
       toast.success("Role updated successfully.");
       fetchCollaborators();
@@ -333,45 +395,65 @@ export default function Collaborators() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-slate-500">Project Access Link</label>
-                  {isLoadingProjects ? (
-                    <div className="h-10 bg-slate-100 animate-pulse rounded-xl" />
-                  ) : projects.length > 0 ? (
-                    <Select 
-                      value={selectedProjectId} 
-                      onValueChange={(val) => {
-                        setSelectedProjectId(val);
-                        const selectedProj = projects.find(p => (p._id || p.id) === val);
-                        setCustomProjectName(selectedProj ? (selectedProj.projectName || selectedProj.title) : "");
-                      }}
-                      disabled={inviting}
+                  <label className="text-xs font-bold uppercase text-slate-500">Access Scope</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Badge 
+                      variant={accessScope === "all_projects" ? "default" : "outline"} 
+                      className={cn(
+                        "justify-center cursor-pointer py-2 rounded-xl transition-all border-slate-200 text-xs font-bold shadow-sm",
+                        accessScope === "all_projects" 
+                          ? "bg-[#009698] text-white border-transparent hover:bg-[#009698]/90" 
+                          : "bg-background text-slate-600 hover:bg-slate-50"
+                      )}
+                      onClick={() => !inviting && setAccessScope("all_projects")}
                     >
-                      <SelectTrigger className="w-full bg-background border rounded-xl" onFocus={fetchMyProjects}>
-                        <SelectValue placeholder="Select a project" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl shadow-xl">
-                        {projects.map(p => (
-                          <SelectItem key={p._id || p.id} value={p._id || p.id}>
-                            {p.projectName || p.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="relative">
-                      <FolderOpen className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      <Input 
-                        placeholder="e.g. Project Aurora" 
-                        className="pl-10 rounded-xl"
-                        value={customProjectName}
-                        onChange={e => setCustomProjectName(e.target.value)}
-                        onFocus={fetchMyProjects}
-                        disabled={inviting}
-                      />
-                    </div>
-                  )}
-                  <p className="text-[10px] text-muted-foreground mt-1">Select the project this collaborator will assist with.</p>
+                      All Projects
+                    </Badge>
+                    <Badge 
+                      variant={accessScope === "selected_projects" ? "default" : "outline"} 
+                      className={cn(
+                        "justify-center cursor-pointer py-2 rounded-xl transition-all border-slate-200 text-xs font-bold shadow-sm",
+                        accessScope === "selected_projects" 
+                          ? "bg-[#009698] text-white border-transparent hover:bg-[#009698]/90" 
+                          : "bg-background text-slate-600 hover:bg-slate-50"
+                      )}
+                      onClick={() => !inviting && setAccessScope("selected_projects")}
+                    >
+                      Selected Projects
+                    </Badge>
+                  </div>
                 </div>
+
+                {accessScope === "selected_projects" && (
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold uppercase text-slate-500">Select Projects</label>
+                    {isLoadingProjects ? (
+                      <div className="h-20 bg-slate-100 animate-pulse rounded-xl" />
+                    ) : projects.length > 0 ? (
+                      <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        {projects.map(p => {
+                          const projectId = p._id || p.id;
+                          const isSelected = selectedProjectIds.includes(projectId);
+                          return (
+                            <div key={projectId} className="flex items-center gap-3 p-3 rounded-xl bg-white border">
+                              <Checkbox 
+                                id={`project-${projectId}`} 
+                                checked={isSelected}
+                                onCheckedChange={() => toggleProjectSelection(projectId)}
+                                disabled={inviting}
+                              />
+                              <Label htmlFor={`project-${projectId}`} className="text-sm font-medium text-slate-900 cursor-pointer">
+                                {p.projectName || p.title}
+                              </Label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-muted-foreground">No projects available.</div>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold uppercase text-slate-500">Role Permissions</label>
