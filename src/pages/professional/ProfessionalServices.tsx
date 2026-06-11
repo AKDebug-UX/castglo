@@ -105,7 +105,7 @@ export default function ProfessionalServices() {
   };
 
   const handleCreateService = async () => {
-    if (!formData.title || !formData.description || !formData.price) {
+    if (!formData.title || !formData.description || !formData.category || !formData.price || !formData.duration) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -122,6 +122,9 @@ export default function ProfessionalServices() {
 
       const response = await serviceAPI.create({
         ...formData,
+        serviceTitle: formData.title,
+        serviceShortDescription: formData.description,
+        serviceCategory: formData.category,
         price: Number(formData.price),
         image: imageUrl || undefined,
       });
@@ -266,7 +269,7 @@ export default function ProfessionalServices() {
 
                   <Separator className="my-2" />
 
-                  {/* Pricing & Target */}
+                  {/* Pricing & Duration */}
                   <div className="grid gap-5 md:grid-cols-2">
                     <div className="space-y-3">
                       <Label className="text-sm font-bold flex items-center gap-2">
@@ -305,6 +308,40 @@ export default function ProfessionalServices() {
                           disabled={formData.pricing_model === 'quote'}
                         />
                       </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-[#009698]" /> 
+                        Duration (Minutes)
+                      </Label>
+                      <Input 
+                        type="number"
+                        placeholder="e.g. 60" 
+                        value={formData.duration}
+                        onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                        className="rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold">
+                        Availability Type
+                      </Label>
+                      <Select 
+                        value={formData.availability_type} 
+                        onValueChange={(v) => setFormData({...formData, availability_type: v})}
+                      >
+                        <SelectTrigger className="rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="project_based">Project Based</SelectItem>
+                          <SelectItem value="retainer">Retainer</SelectItem>
+                          <SelectItem value="one_time">One Time</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -449,7 +486,7 @@ export default function ProfessionalServices() {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-slate-900">{service.title}</h3>
+                        <h3 className="text-xl font-bold text-slate-900">{service.serviceTitle || service.title}</h3>
                         <div className="flex items-center gap-2 mt-2">
                           <Badge className="bg-[#DEFCFE] text-[#009698] hover:bg-[#DEFCFE] border-none px-3 py-0.5 rounded-full text-xs font-bold">
                             {service.status || 'Active'}
@@ -475,7 +512,7 @@ export default function ProfessionalServices() {
                     </div>
 
                     <p className="text-sm text-slate-500 leading-relaxed line-clamp-2 mb-6">
-                      {service.description}
+                      {service.serviceShortDescription || service.description}
                     </p>
 
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100">

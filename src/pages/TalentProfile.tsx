@@ -622,8 +622,8 @@ export default function TalentProfile() {
                         <div className="grid gap-4 sm:grid-cols-2">
                           {t.services.map((service: any) => (
                             <div key={service._id} className="p-4 rounded-xl border bg-muted/10">
-                              <h4 className="font-bold text-sm mb-1">{service.name}</h4>
-                              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{service.description}</p>
+                              <h4 className="font-bold text-sm mb-1">{service.serviceTitle || service.title || service.name}</h4>
+                              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{service.serviceShortDescription || service.description}</p>
                               <div className="flex items-center justify-between mt-auto">
                                 <span className="text-sm font-bold text-primary">From {service.price || "Inquire"}</span>
                                 <Button size="sm" variant="outline" className="h-7 text-[10px]">Details</Button>

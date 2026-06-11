@@ -126,14 +126,14 @@ export default function BrowseTalents() {
               <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                   <Avatar className="w-12 h-12">
-                    <AvatarImage src={talent.talent?.headshots?.[0]?.url} />
+                    <AvatarImage src={talent?.talent?.headshots?.[0]?.url || talent?.profilePicture} />
                     <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                      {talent.userId?.fullName?.[0] || 'T'}
+                      {talent?.userId?.fullName?.[0] || talent?.fullName?.[0] || 'T'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold truncate">{talent.userId?.fullName}</h3>
+                      <h3 className="font-semibold truncate">{talent?.userId?.fullName || talent?.fullName || 'Talent'}</h3>
                       <div className="flex items-center gap-1 text-sm">
                         <Star className="w-4 h-4 fill-warning text-warning" />
                         <span>{talent.rating || "0.0"}</span>
@@ -155,7 +155,7 @@ export default function BrowseTalents() {
                     </div>
 
                     <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
-                      {talent.bio || "No bio provided."}
+                      {talent.talentProfile.shortBio || "No bio provided."}
                     </p>
 
                     <div className="flex gap-2 mt-4">
@@ -175,13 +175,13 @@ export default function BrowseTalents() {
                             <div className="space-y-4 mt-4">
                               <div className="flex items-center gap-4">
                                 <Avatar className="w-16 h-16">
-                                  <AvatarImage src={selectedTalent.talent.headshots[0].url} />
+                                  <AvatarImage src={selectedTalent?.talent?.headshots?.[0]?.url || selectedTalent?.profilePicture} />
                                   <AvatarFallback className="bg-primary/10 text-primary text-xl">
-                                    {selectedTalent.userId?.fullName?.[0]}
+                                    {selectedTalent?.userId?.fullName?.[0] || selectedTalent?.fullName?.[0] || 'T'}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <h3 className="font-semibold text-lg">{selectedTalent.userId?.fullName}</h3>
+                                  <h3 className="font-semibold text-lg">{selectedTalent?.userId?.fullName || selectedTalent?.fullName || 'Talent'}</h3>
                                   <p className="text-muted-foreground capitalize">{selectedTalent.professionalRoles?.join(", ") || selectedTalent.userRole}</p>
                                   <p className="text-sm text-muted-foreground flex items-center gap-1">
                                     <Star className="w-3 h-3 fill-warning text-warning" />
@@ -194,7 +194,7 @@ export default function BrowseTalents() {
 
                               <div>
                                 <h4 className="font-medium mb-1">About</h4>
-                                <p className="text-sm text-muted-foreground">{selectedTalent.bio || "No bio provided."}</p>
+                                <p className="text-sm text-muted-foreground">{selectedTalent.talentProfile.shortBio || "No bio provided."}</p>
                               </div>
 
                               {selectedTalent.skills?.length > 0 && (
