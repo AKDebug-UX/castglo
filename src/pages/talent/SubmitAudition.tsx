@@ -10,8 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ArrowLeft, Upload, Loader2, File, Image as ImageIcon, Video, Zap } from "lucide-react";
-import { castingCallAPI, applicationAPI, uploadAPI, projectAPI } from "@/lib/api";
+import { castingCallAPI, applicationAPI, uploadAPI, projectAPI, profileAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,12 +26,16 @@ export default function SubmitAudition() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [casting, setCasting] = useState<any>(null);
+  const [casting, setCasting] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchParams] = useSearchParams();
   const initialRoleId = searchParams.get("roleId") || "";
   const [selectedRoleId, setSelectedRoleId] = useState(initialRoleId);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [showProfileUsePrompt, setShowProfileUsePrompt] = useState(false);
+  const [questionAnswers, setQuestionAnswers] = useState<Record<string, any>>({});
+  const [hasExistingApplication, setHasExistingApplication] = useState(false);
 
   const [formData, setFormData] = useState({
     cover_message: "",
@@ -54,28 +59,227 @@ export default function SubmitAudition() {
   const [useProfileHeadshot, setUseProfileHeadshot] = useState(false);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
 
+  const getProfileFieldValue = (key: string): any => {
+    console.log(`getProfileFieldValue called for key: ${key}`);
+    if (!userProfile) return null;
+    
+    // Check various places the value might be stored
+    const flatData: Record<string, any> = {};
+    const flatten = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return;
+      Object.entries(obj).forEach(([k, v]) => {
+        if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+          flatten(v);
+        } else {
+          if (v !== undefined && v !== null && v !== "") {
+            flatData[k] = v;
+          }
+        }
+      });
+    };
+    flatten(userProfile);
+    console.log("flatData:", flatData);
+    
+    // Check unified talent profile fields
+    const unified = userProfile.unifiedTalentProfile || {};
+    console.log("unifiedTalentProfile:", unified);
+    if (unified[key] && unified[key] !== "") {
+      console.log(`Found in unifiedTalentProfile: ${unified[key]}`);
+      return unified[key];
+    }
+    
+    // Check flat data
+    const keysToCheck = [key, key.replace(/_/g, ''), key.replace(/_/g, '-'), key.replace(/_/g, ' ')];
+    for (const k of keysToCheck) {
+      if (flatData[k] && flatData[k] !== "") {
+        console.log(`Found in flatData[${k}]: ${flatData[k]}`);
+        return flatData[k];
+      }
+    }
+    
+    // Special cases for common fields
+    const specialCases: Record<string, string[]> = {
+      short_bio: ['bio', 'shortBio', 'short_bio'],
+      relevant_experience: ['experience', 'yearsOfExperience', 'years_of_experience'],
+      skills: ['skills', 'coreSkills', 'core_skills'],
+      height: ['height', 'appearance.height'],
+      age_range: ['playingAgeRange', 'actor_playing_age_range', 'age_range'],
+      location_override: ['location', 'current_city', 'city'],
+      portfolio_links: ['portfolio_url', 'website', 'socialLinks'],
+      showreel_url: ['showreel', 'actor_showreel', 'reel'],
+      previous_work_links: ['notableCredits', 'actor_notable_credits']
+    };
+    
+    if (specialCases[key]) {
+      for (const specialKey of specialCases[key]) {
+        console.log(`Checking specialKey: ${specialKey}`);
+        if (specialKey.includes('.')) {
+          const parts = specialKey.split('.');
+          let val = userProfile;
+          for (const p of parts) {
+            val = val?.[p];
+          }
+          if (val) {
+            console.log(`Found in nested key ${specialKey}: ${val}`);
+            return val;
+          }
+        }
+        if (unified[specialKey]) {
+          console.log(`Found in unified[${specialKey}]: ${unified[specialKey]}`);
+          return unified[specialKey];
+        }
+        if (flatData[specialKey]) {
+          console.log(`Found in flatData[${specialKey}]: ${flatData[specialKey]}`);
+          return flatData[specialKey];
+        }
+      }
+    }
+    
+    console.log(`No value found for key: ${key}`);
+    return null;
+  };
+  
+  const useProfileData = () => {
+    console.log("useProfileData called!");
+    console.log("Current userProfile:", userProfile);
+    
+    // Make a deep copy of formData
+    const newFormData = { ...formData };
+    
+    // Auto-fill common fields from profile with explicit mappings
+    const fieldMappings: Record<string, string[]> = {
+      cover_message: ['short_bio', 'bio', 'shortBio', 'short_bio'],
+      relevant_experience: ['experience', 'yearsOfExperience', 'years_of_experience'],
+      skills: ['skills', 'coreSkills', 'core_skills'],
+      height: ['height', 'appearance.height'],
+      age_range: ['playingAgeRange', 'actor_playing_age_range', 'age_range'],
+      location_override: ['location', 'current_city', 'city'],
+      portfolio_links: ['portfolio_url', 'website', 'socialLinks'],
+      showreel_url: ['showreel', 'actor_showreel', 'reel'],
+      previous_work_links: ['notableCredits', 'actor_notable_credits']
+    };
+    
+    for (const [targetField, sourceKeys] of Object.entries(fieldMappings)) {
+      let val: any = null;
+      for (const key of sourceKeys) {
+        val = getProfileFieldValue(key);
+        if (val !== null && val !== undefined) break;
+      }
+      console.log(`Field ${targetField}:`, val);
+      if (val !== null && val !== undefined) {
+        if (typeof val === 'boolean') {
+          (newFormData as any)[targetField] = val;
+        } else if (typeof val === 'string' && (val.toLowerCase() === 'yes' || val.toLowerCase() === 'no')) {
+          if (targetField === 'willing_to_travel') {
+            newFormData.willing_to_travel = val.toLowerCase() === 'yes';
+          }
+        } else if (Array.isArray(val)) {
+          if (val.length > 0 && typeof val[0] === 'string') {
+            (newFormData as any)[targetField] = val.filter(s => SKILLS_LIST.includes(s));
+          }
+        } else if (typeof val === 'string' && val.trim() !== '') {
+          (newFormData as any)[targetField] = val;
+        }
+      }
+    }
+    
+    console.log("New formData:", newFormData);
+    setFormData(newFormData);
+    setShowProfileUsePrompt(false);
+    toast.success("Profile data applied!");
+  };
+  
   useEffect(() => {
-    const fetchCasting = async () => {
+    const fetchData = async () => {
       if (!id) return;
       setIsLoading(true);
 
       try {
-        const response = await projectAPI.getOne(id);
-        if (response.data.success) {
-          const data = response.data.data;
+        const [castingRes, profileRes, applicationsRes] = await Promise.all([
+          projectAPI.getOne(id),
+          profileAPI.getMe().catch(() => {
+            console.log("profileAPI.getMe() failed");
+            return { data: { success: false, data: null } };
+          }),
+          applicationAPI.getMe().catch(() => {
+            console.log("applicationAPI.getMe() failed");
+            return { data: { success: false, data: [] } };
+          })
+        ]);
+        console.log("castingRes:", castingRes);
+        console.log("profileRes:", profileRes);
+        console.log("applicationsRes:", applicationsRes);
+        
+        if (castingRes.data.success) {
+          const data = castingRes.data.data;
           setCasting(data);
+          
+          // Initialize question answers if there are pre-audition questions
+          if (data.pre_audition_questions && Array.isArray(data.pre_audition_questions)) {
+            const initialAnswers: Record<string, any> = {};
+            data.pre_audition_questions.forEach((q: any) => {
+              const qKey = `q-${q.sort_order || Date.now()}`;
+              initialAnswers[qKey] = '';
+            });
+            setQuestionAnswers(initialAnswers);
+          }
+          
           // If no roleId in URL but there's exactly one role, auto-select it
           if (!initialRoleId && data.roles && data.roles.length === 1) {
             setSelectedRoleId(data.roles[0].id || data.roles[0].roleId || data.roles[0]._id);
           }
         }
+        
+        // Check for existing applications
+        if (applicationsRes.data.success) {
+          let appsData: any[] = [];
+          if (Array.isArray(applicationsRes.data.data)) {
+            appsData = applicationsRes.data.data;
+          } else if (applicationsRes.data.data && Array.isArray(applicationsRes.data.data.applications)) {
+            appsData = applicationsRes.data.data.applications;
+          }
+
+          // Check if user has already applied to this casting/project
+          const existingApp = appsData.find((app: any) => {
+            // Check if castingCallId or projectId matches
+            const castingIdMatch = 
+              app.castingCallId?._id === id || 
+              app.castingCallId?.id === id ||
+              app.castingCallId === id;
+              
+            const projectIdMatch = 
+              app.projectId?._id === id || 
+              app.projectId?.id === id ||
+              app.projectId === id ||
+              app.project?._id === id ||
+              app.project?.id === id;
+              
+            return castingIdMatch || projectIdMatch;
+          });
+          
+          if (existingApp) {
+            setHasExistingApplication(true);
+          }
+        }
+        
+        if (profileRes.data.success && profileRes.data.data) {
+          console.log("Setting userProfile to:", profileRes.data.data);
+          setUserProfile(profileRes.data.data);
+          
+          // Show the prompt to use profile data only if no existing application
+          if (castingRes.data.success && !hasExistingApplication) {
+            console.log("Setting showProfileUsePrompt to true");
+            setShowProfileUsePrompt(true);
+          }
+        }
       } catch (error: any) {
-        toast.error("Failed to load casting details");
+        console.error("fetchData error:", error);
+        toast.error("Failed to load details");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchCasting();
+    fetchData();
   }, [id]);
 
   useEffect(() => {
@@ -148,6 +352,19 @@ export default function SubmitAudition() {
     }
 
     if (!formData.legal_consent) return toast.error("You must agree to the application terms");
+    
+    // Validate required pre-audition questions
+    if (casting?.pre_audition_questions) {
+      for (const question of casting.pre_audition_questions) {
+        if (question.required) {
+          const qKey = `q-${question.sort_order || 0}`;
+          const answer = questionAnswers[qKey];
+          if (!answer || (typeof answer === 'string' && answer.trim() === '')) {
+            return toast.error(`Please answer the question: ${question.title}`);
+          }
+        }
+      }
+    }
 
     setIsSubmitting(true);
 
@@ -183,7 +400,8 @@ export default function SubmitAudition() {
       const metaData = {
         ...formData,
         headshotUrl,
-        mediaUrl
+        mediaUrl,
+        preAuditionAnswers: questionAnswers
       };
 
       const finalNotes = formData.additional_notes + "\n__META__:" + JSON.stringify(metaData);
@@ -215,7 +433,7 @@ export default function SubmitAudition() {
 
       if (response.data.success) {
         toast.success("Application submitted successfully!");
-        navigate("/talent/submissions");
+        navigate("/talent/applications");
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to submit application");
@@ -239,6 +457,34 @@ export default function SubmitAudition() {
         <Button variant="link" asChild>
           <Link to="/talent/browse-cast">Back to browse</Link>
         </Button>
+      </div>
+    );
+  }
+
+  if (hasExistingApplication) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in pb-20">
+        <Link 
+          to={`/talent/browse-cast/${id}`}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Casting Call
+        </Link>
+        
+        <Card className="text-center py-12">
+          <CardContent>
+            <h2 className="text-2xl font-bold mb-2">You've already applied!</h2>
+            <p className="text-muted-foreground mb-6">
+              You have already submitted an application for this casting call.
+            </p>
+            <Button asChild>
+              <Link to="/talent/submissions">
+                View My Submissions
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -571,6 +817,68 @@ export default function SubmitAudition() {
         </CardContent>
       </Card>
 
+      {/* Pre-audition Questions */}
+      {casting?.pre_audition_questions && casting.pre_audition_questions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>F. Pre-Audition Questions</CardTitle>
+            <CardDescription>Please answer the following questions</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {casting.pre_audition_questions.sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)).map((question: any, index: number) => {
+              const qKey = `q-${question.sort_order || index}`;
+              return (
+                <div key={qKey} className="space-y-2">
+                  <Label>{question.title}{question.required ? <span className="text-red-500 ml-1">*</span> : ''}</Label>
+                  {question.help_text && (
+                    <p className="text-sm text-muted-foreground">{question.help_text}</p>
+                  )}
+                  
+                  {/* Render question based on type */}
+                  {question.type?.toLowerCase() === 'yes/no' || question.type?.toLowerCase() === 'yes / no' ? (
+                    <div className="flex items-center gap-3">
+                      <Button 
+                        variant={questionAnswers[qKey] === 'Yes' ? 'default' : 'outline'}
+                        onClick={() => setQuestionAnswers(prev => ({ ...prev, [qKey]: 'Yes' }))}
+                      >
+                        Yes
+                      </Button>
+                      <Button 
+                        variant={questionAnswers[qKey] === 'No' ? 'default' : 'outline'}
+                        onClick={() => setQuestionAnswers(prev => ({ ...prev, [qKey]: 'No' }))}
+                      >
+                        No
+                      </Button>
+                    </div>
+                  ) : question.type?.toLowerCase() === 'select' && question.options?.length > 0 ? (
+                    <Select 
+                      value={questionAnswers[qKey] || ''} 
+                      onValueChange={(val) => setQuestionAnswers(prev => ({ ...prev, [qKey]: val }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {question.options.map((option: string, optIdx: number) => (
+                          <SelectItem key={optIdx} value={option}>{option}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Textarea 
+                      placeholder="Your answer..."
+                      value={questionAnswers[qKey] || ''}
+                      onChange={(e) => setQuestionAnswers(prev => ({ ...prev, [qKey]: e.target.value }))}
+                      rows={3}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Section G & H: Legal & Optional */}
       <Card>
         <CardHeader>
@@ -624,6 +932,43 @@ export default function SubmitAudition() {
         {isSubmitting && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
         Submit Application
       </Button>
+      
+      {/* Profile Use Prompt Dialog */}
+      <Dialog open={showProfileUsePrompt} onOpenChange={setShowProfileUsePrompt}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Use Your Profile Data?</DialogTitle>
+            <DialogDescription>
+              We found existing information in your profile. Would you like to use it to auto-fill this application form?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={(e) => {
+                console.log("NO BUTTON CLICKED!");
+                e.preventDefault();
+                e.stopPropagation();
+                setShowProfileUsePrompt(false);
+              }}
+              className="z-50"
+            >
+              No, Fill Manually
+            </Button>
+            <Button 
+              onClick={(e) => {
+                console.log("YES BUTTON CLICKED!");
+                e.preventDefault();
+                e.stopPropagation();
+                useProfileData();
+              }}
+              className="z-50"
+            >
+              Yes, Use Profile Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

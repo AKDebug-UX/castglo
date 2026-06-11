@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Image as ImageIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Upload, Image as ImageIcon, Plus, Trash2, GripVertical } from "lucide-react";
 import { resolveMediaUrl } from "@/lib/utils";
 import { CastingFormData } from "./types";
 
@@ -26,6 +28,40 @@ export default function Step5MediaRequirements({
   setFormData,
   handleChange,
 }: Step5MediaRequirementsProps) {
+  
+  const addQuestion = () => {
+    const newQuestion = {
+      title: "",
+      type: "Text",
+      required: true,
+      help_text: "",
+      options: [],
+      sort_order: (formData.pre_audition_questions?.length || 0) + 1
+    };
+    setFormData(p => ({
+      ...p,
+      pre_audition_questions: [...(p.pre_audition_questions || []), newQuestion]
+    }));
+  };
+  
+  const updateQuestion = (index: number, field: string, value: any) => {
+    setFormData(p => {
+      const newQuestions = [...(p.pre_audition_questions || [])];
+      newQuestions[index] = { ...newQuestions[index], [field]: value };
+      return { ...p, pre_audition_questions: newQuestions };
+    });
+  };
+  
+  const removeQuestion = (index: number) => {
+    setFormData(p => {
+      const newQuestions = [...(p.pre_audition_questions || [])];
+      newQuestions.splice(index, 1);
+      // Reorder sort_order
+      newQuestions.forEach((q, i) => q.sort_order = i + 1);
+      return { ...p, pre_audition_questions: newQuestions };
+    });
+  };
+  
   return (
     <div className="space-y-6 animate-fade-in">
       <Card>
@@ -115,6 +151,96 @@ export default function Step5MediaRequirements({
               <Label htmlFor="custom_upload_description">Custom Upload Description</Label>
               <Textarea id="custom_upload_description" name="custom_upload_description" value={formData.custom_upload_description} onChange={handleChange} placeholder="Describe what custom file you need..." />
             </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Pre-Audition Questions</CardTitle>
+            <CardDescription>Add custom questions for applicants to answer.</CardDescription>
+          </div>
+          <Button onClick={addQuestion} variant="outline" className="gap-2">
+            <Plus className="w-4 h-4" />
+            Add Question
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {(formData.pre_audition_questions || []).length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No questions added yet. Click "Add Question" to start.
+            </div>
+          ) : (
+            (formData.pre_audition_questions || []).map((question, index) => (
+              <div key={index} className="space-y-4 p-4 border rounded-lg bg-muted/20">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 space-y-4">
+                    <div className="space-y-2">
+                      <Label>Question Title</Label>
+                      <Input 
+                        value={question.title} 
+                        onChange={(e) => updateQuestion(index, "title", e.target.value)} 
+                        placeholder="e.g., Do you have prior experience in this genre?"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Question Type</Label>
+                        <Select 
+                          value={question.type} 
+                          onValueChange={(val) => updateQuestion(index, "type", val)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Text">Text</SelectItem>
+                            <SelectItem value="Yes / No">Yes / No</SelectItem>
+                            <SelectItem value="Select">Select</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center space-x-2 pt-6">
+                        <Switch 
+                          checked={question.required} 
+                          onCheckedChange={(c) => updateQuestion(index, "required", c)} 
+                        />
+                        <Label>Required</Label>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Help Text (Optional)</Label>
+                      <Textarea 
+                        value={question.help_text || ''} 
+                        onChange={(e) => updateQuestion(index, "help_text", e.target.value)} 
+                        placeholder="Add more context or instructions for this question"
+                      />
+                    </div>
+                    {question.type === "Select" && (
+                      <div className="space-y-2">
+                        <Label>Options (comma separated)</Label>
+                        <Input 
+                          value={(question.options || []).join(", ")} 
+                          onChange={(e) => updateQuestion(index, "options", e.target.value.split(",").map(o => o.trim()).filter(Boolean))} 
+                          placeholder="e.g., Option 1, Option 2, Option 3"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <GripVertical className="w-5 h-5 text-muted-foreground" />
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      onClick={() => removeQuestion(index)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
           )}
         </CardContent>
       </Card>
