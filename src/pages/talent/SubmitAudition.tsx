@@ -17,9 +17,7 @@ import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
-const SKILLS_LIST = [
-  "Acting", "Voice over", "Modeling", "Dancing", "Stunts", "Presenting", "Singing", "Comedy"
-];
+
 
 export default function SubmitAudition() {
   const { id } = useParams();
@@ -33,7 +31,9 @@ export default function SubmitAudition() {
   const initialRoleId = searchParams.get("roleId") || "";
   const [selectedRoleId, setSelectedRoleId] = useState(initialRoleId);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [showProfileUsePrompt, setShowProfileUsePrompt] = useState(false);
+  const [availableSkills, setAvailableSkills] = useState<string[]>([
+    "Acting", "Voice over", "Modeling", "Dancing", "Stunts", "Presenting", "Singing", "Comedy"
+  ]);
   const [questionAnswers, setQuestionAnswers] = useState<Record<string, any>>({});
   const [hasExistingApplication, setHasExistingApplication] = useState(false);
 
@@ -139,18 +139,17 @@ export default function SubmitAudition() {
     return null;
   };
   
-  const useProfileData = () => {
-    console.log("useProfileData called!");
-    console.log("Current userProfile:", userProfile);
+  const useProfileData = (profileToUse: any = userProfile) => {
+    console.log("useProfileData called!", profileToUse);
     
     // Make a deep copy of formData
-    const newFormData = { ...formData };
+    let newFormData = { ...formData };
     
     // Auto-fill common fields from profile with explicit mappings
     const fieldMappings: Record<string, string[]> = {
       cover_message: ['short_bio', 'bio', 'shortBio', 'short_bio'],
       relevant_experience: ['experience', 'yearsOfExperience', 'years_of_experience'],
-      skills: ['skills', 'coreSkills', 'core_skills'],
+      skills: ['skills', 'coreSkills', 'core_skills', 'actor_special_skills', 'special_skills'],
       height: ['height', 'appearance.height'],
       age_range: ['playingAgeRange', 'actor_playing_age_range', 'age_range'],
       location_override: ['location', 'current_city', 'city'],
@@ -159,10 +158,91 @@ export default function SubmitAudition() {
       previous_work_links: ['notableCredits', 'actor_notable_credits']
     };
     
+    // Override getProfileFieldValue to use profileToUse if provided
+    const getVal = (key: string): any => {
+      console.log(`getVal called for key: ${key}`, profileToUse);
+      if (!profileToUse) return null;
+      
+      // Check various places the value might be stored
+      const flatData: Record<string, any> = {};
+      const flatten = (obj: any) => {
+        if (!obj || typeof obj !== 'object') return;
+        Object.entries(obj).forEach(([k, v]) => {
+          if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+            flatten(v);
+          } else {
+            if (v !== undefined && v !== null && v !== "") {
+              flatData[k] = v;
+            }
+          }
+        });
+      };
+      flatten(profileToUse);
+      console.log("flatData:", flatData);
+      
+      // Check unified talent profile fields
+      const unified = profileToUse.unifiedTalentProfile || {};
+      console.log("unifiedTalentProfile:", unified);
+      if (unified[key] && unified[key] !== "") {
+        console.log(`Found in unifiedTalentProfile: ${unified[key]}`);
+        return unified[key];
+      }
+      
+      // Check flat data
+      const keysToCheck = [key, key.replace(/_/g, ''), key.replace(/_/g, '-'), key.replace(/_/g, ' ')];
+      for (const k of keysToCheck) {
+        if (flatData[k] && flatData[k] !== "") {
+          console.log(`Found in flatData[${k}]: ${flatData[k]}`);
+          return flatData[k];
+        }
+      }
+      
+      // Special cases for common fields
+      const specialCases: Record<string, string[]> = {
+        short_bio: ['bio', 'shortBio', 'short_bio'],
+        relevant_experience: ['experience', 'yearsOfExperience', 'years_of_experience'],
+        skills: ['skills', 'coreSkills', 'core_skills', 'actor_special_skills', 'special_skills'],
+        height: ['height', 'appearance.height'],
+        age_range: ['playingAgeRange', 'actor_playing_age_range', 'age_range'],
+        location_override: ['location', 'current_city', 'city'],
+        portfolio_links: ['portfolio_url', 'website', 'socialLinks'],
+        showreel_url: ['showreel', 'actor_showreel', 'reel'],
+        previous_work_links: ['notableCredits', 'actor_notable_credits']
+      };
+      
+      if (specialCases[key]) {
+        for (const specialKey of specialCases[key]) {
+          console.log(`Checking specialKey: ${specialKey}`);
+          if (specialKey.includes('.')) {
+            const parts = specialKey.split('.');
+            let val = profileToUse;
+            for (const p of parts) {
+              val = val?.[p];
+            }
+            if (val) {
+              console.log(`Found in nested key ${specialKey}: ${val}`);
+              return val;
+            }
+          }
+          if (unified[specialKey]) {
+            console.log(`Found in unified[${specialKey}]: ${unified[specialKey]}`);
+            return unified[specialKey];
+          }
+          if (flatData[specialKey]) {
+            console.log(`Found in flatData[${specialKey}]: ${flatData[specialKey]}`);
+            return flatData[specialKey];
+          }
+        }
+      }
+      
+      console.log(`No value found for key: ${key}`);
+      return null;
+    };
+    
     for (const [targetField, sourceKeys] of Object.entries(fieldMappings)) {
       let val: any = null;
       for (const key of sourceKeys) {
-        val = getProfileFieldValue(key);
+        val = getVal(key);
         if (val !== null && val !== undefined) break;
       }
       console.log(`Field ${targetField}:`, val);
@@ -175,7 +255,7 @@ export default function SubmitAudition() {
           }
         } else if (Array.isArray(val)) {
           if (val.length > 0 && typeof val[0] === 'string') {
-            (newFormData as any)[targetField] = val.filter(s => SKILLS_LIST.includes(s));
+            (newFormData as any)[targetField] = val.filter(s => availableSkills.includes(s));
           }
         } else if (typeof val === 'string' && val.trim() !== '') {
           (newFormData as any)[targetField] = val;
@@ -185,8 +265,6 @@ export default function SubmitAudition() {
     
     console.log("New formData:", newFormData);
     setFormData(newFormData);
-    setShowProfileUsePrompt(false);
-    toast.success("Profile data applied!");
   };
   
   useEffect(() => {
@@ -267,22 +345,52 @@ export default function SubmitAudition() {
           const profile = profileRes.data.data;
           setUserProfile(profile);
           
-          // Always get skills from the profile
-          const profileSkills = getProfileFieldValue('skills');
-          if (profileSkills && Array.isArray(profileSkills)) {
-            const validSkills = profileSkills.filter(s => SKILLS_LIST.includes(s));
-            if (validSkills.length > 0) {
-              setFormData(prev => ({
-                ...prev,
-                skills: validSkills
-              }));
+          // Extract skills from profile and add to available skills
+          const getProfileSkills = () => {
+            const flatData: Record<string, any> = {};
+            const flatten = (obj: any) => {
+              if (!obj || typeof obj !== 'object') return;
+              Object.entries(obj).forEach(([k, v]) => {
+                if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+                  flatten(v);
+                } else {
+                  if (v !== undefined && v !== null && v !== "") {
+                    flatData[k] = v;
+                  }
+                }
+              });
+            };
+            flatten(profile);
+            
+            const unified = profile.unifiedTalentProfile || {};
+            const skillKeysToCheck = ['skills', 'coreSkills', 'core_skills', 'actor_special_skills', 'special_skills'];
+            
+            let profileSkills: string[] = [];
+            for (const key of skillKeysToCheck) {
+              const val = unified[key] || flatData[key];
+              if (Array.isArray(val)) {
+                profileSkills = [...profileSkills, ...val];
+              } else if (typeof val === 'string' && val.trim()) {
+                profileSkills.push(val.trim());
+              }
             }
+            return profileSkills;
+          };
+          
+          const profileSkills = getProfileSkills();
+          console.log("Profile skills found:", profileSkills);
+          
+          if (profileSkills.length > 0) {
+            const uniqueCombinedSkills = [...new Set([
+              "Acting", "Voice over", "Modeling", "Dancing", "Stunts", "Presenting", "Singing", "Comedy",
+              ...profileSkills
+            ])];
+            setAvailableSkills(uniqueCombinedSkills as string[]);
           }
           
-          // Show the prompt to use profile data only if no existing application
+          // Auto-fill form with profile data if no existing application
           if (castingRes.data.success && !hasExistingApplication) {
-            console.log("Setting showProfileUsePrompt to true");
-            setShowProfileUsePrompt(true);
+            useProfileData(profile);
           }
         }
       } catch (error: any) {
@@ -648,7 +756,7 @@ export default function SubmitAudition() {
           <div className="space-y-2">
             <Label>Skills Selection <span className="text-red-500">*</span></Label>
             <div className="flex flex-wrap gap-2 mt-2">
-              {SKILLS_LIST.map((skill) => (
+              {availableSkills.map((skill) => (
                 <Badge
                   key={skill}
                   variant={formData.skills.includes(skill) ? "default" : "outline"}
@@ -945,43 +1053,6 @@ export default function SubmitAudition() {
         {isSubmitting && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
         Submit Application
       </Button>
-      
-      {/* Profile Use Prompt Dialog */}
-      <Dialog open={showProfileUsePrompt} onOpenChange={setShowProfileUsePrompt}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Use Your Profile Data?</DialogTitle>
-            <DialogDescription>
-              We found existing information in your profile. Would you like to use it to auto-fill this application form?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={(e) => {
-                console.log("NO BUTTON CLICKED!");
-                e.preventDefault();
-                e.stopPropagation();
-                setShowProfileUsePrompt(false);
-              }}
-              className="z-50"
-            >
-              No, Fill Manually
-            </Button>
-            <Button 
-              onClick={(e) => {
-                console.log("YES BUTTON CLICKED!");
-                e.preventDefault();
-                e.stopPropagation();
-                useProfileData();
-              }}
-              className="z-50"
-            >
-              Yes, Use Profile Data
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
