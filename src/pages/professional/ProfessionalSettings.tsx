@@ -4,15 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { authAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { KeyRound, Loader2, UserMinus, Bell, CreditCard, History, Download, Trash2 } from "lucide-react";
+import { KeyRound, Loader2, UserMinus, Bell, CreditCard, History, Download, Trash2, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 
 export default function ProfessionalSettings() {
-  const { user, updatePreferredCurrency, formatPrice } = useAuth();
+  const { user: currentUser, updatePreferredCurrency, formatPrice, enableTwoFactor, disableTwoFactor } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -20,6 +21,9 @@ export default function ProfessionalSettings() {
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [isEnabling2FA, setIsEnabling2FA] = useState(false);
+  const [isDisabling2FA, setIsDisabling2FA] = useState(false);
+  const [disablePassword, setDisablePassword] = useState("");
 
   const [notificationSettings, setNotificationSettings] = useState({
     newBookingRequests: true,
@@ -99,6 +103,43 @@ export default function ProfessionalSettings() {
     return { name: friendlyName, billingCycle, price };
   }, [subscriptionInfo]);
 
+  const handleEnable2FA = async () => {
+    setIsEnabling2FA(true);
+    try {
+      const result = await enableTwoFactor();
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Two-factor authentication enabled!");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to enable two-factor authentication");
+    } finally {
+      setIsEnabling2FA(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (!disablePassword) {
+      toast.error("Password is required to disable two-factor authentication");
+      return;
+    }
+    setIsDisabling2FA(true);
+    try {
+      const result = await disableTwoFactor(disablePassword);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Two-factor authentication disabled!");
+      setDisablePassword("");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to disable two-factor authentication");
+    } finally {
+      setIsDisabling2FA(false);
+    }
+  };
+
   const handleChangePassword = async () => {
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       toast.error("New passwords do not match");
@@ -106,11 +147,14 @@ export default function ProfessionalSettings() {
     }
     setIsSaving(true);
     try {
-      await authAPI.changePassword({ currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword });
+      await authAPI.changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
       toast.success("Password updated successfully");
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update password");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to update password");
     } finally {
       setIsSaving(false);
     }
@@ -468,6 +512,85 @@ export default function ProfessionalSettings() {
         </TabsContent>
 
         <TabsContent value="security" className="mt-6 space-y-6">
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-primary" />
+                Two-factor authentication
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-5 rounded-2xl border bg-slate-50/50">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Email verification</p>
+                  <p className="text-xs text-muted-foreground">Get a verification code sent to your email</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {currentUser?.twoFactorEnabled ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" disabled={isDisabling2FA}>
+                          {isDisabling2FA ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Disabling...
+                            </>
+                          ) : "Disable"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Disable two-factor authentication?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will remove the extra layer of security from your account. Are you sure you want to proceed?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Enter your password to confirm</label>
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            value={disablePassword}
+                            onChange={(e) => setDisablePassword(e.target.value)}
+                          />
+                        </div>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setDisablePassword("")}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDisable2FA}
+                            disabled={isDisabling2FA || !disablePassword}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {isDisabling2FA ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Disabling...
+                              </>
+                            ) : "Disable 2FA"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={handleEnable2FA}
+                      disabled={isEnabling2FA}
+                    >
+                      {isEnabling2FA ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Enabling...
+                        </>
+                      ) : "Enable"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><KeyRound className="w-5 h-5 text-primary" /> Change Password</CardTitle>

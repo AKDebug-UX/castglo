@@ -253,20 +253,20 @@ export default function Collaborators() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                             <p className="font-bold text-sm text-slate-900 truncate">{member.name}</p>
-                             <Badge variant={member.status === "active" ? "secondary" : "outline"} className="text-[10px] h-4 py-0 rounded-full font-bold">
-                               {member.status}
-                             </Badge>
-                          </div>
-                          <p className="text-xs text-slate-500 truncate mt-0.5">{member.directorBio}</p>
-                          {member.assignedProject && (
-                            <div className="text-[11px] text-[#009698] font-bold mt-1 flex items-center gap-1">
-                              <FolderOpen className="w-3.5 h-3.5 text-[#009698]" />
-                              <span className="truncate">{member.assignedProject}</span>
-                            </div>
-                          )}
-                        </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                     <p className="font-bold text-sm text-slate-900 truncate">{member.name}</p>
+                     <Badge variant={member.status === "active" ? "secondary" : "outline"} className="text-[10px] h-4 py-0 rounded-full font-bold">
+                       {member.status}
+                     </Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 truncate mt-0.5">{member.email}</p>
+                  {member.assignedProject && (
+                    <div className="text-[11px] text-[#009698] font-bold mt-1 flex items-center gap-1">
+                      <FolderOpen className="w-3.5 h-3.5 text-[#009698]" />
+                      <span className="truncate">{member.assignedProject}</span>
+                    </div>
+                  )}
+                </div>
                       </div>
 
                       <div className="flex items-center gap-4 shrink-0">

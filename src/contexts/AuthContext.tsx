@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { authAPI, userAPI } from "@/lib/api";
+import { authAPI, userAPI, twoFactorAuthAPI } from "@/lib/api";
 
 export type UserRole = "talent" | "casting_director" | "industry_professional" | "admin";
 
@@ -12,13 +12,14 @@ interface User {
   isEmailVerified: boolean;
   isVerified?: boolean;
   preferredCurrency?: string;
+  twoFactorEnabled?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error?: string; role?: UserRole }>;
-  signUp: (data: { email: string, password: string, role: UserRole, fullName: string, phoneNumber?: string }) => Promise<{ error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ error?: string; role?: UserRole; requiresTwoFactor?: boolean; tempToken?: string }>;
+  signUp: (data: { email: string, password: string, role: UserRole, fullName: string, phoneNumber?: string, collaboratorToken?: string }) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   forgotPassword: (email: string) => Promise<{ error?: string }>;
   resetPassword: (data: { token: string, newPassword: string, confirmPassword: string }) => Promise<{ error?: string }>;
@@ -27,6 +28,10 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   updatePreferredCurrency: (currency: string) => Promise<{ error?: string }>;
   formatPrice: (amount: number | string) => string;
+  enableTwoFactor: () => Promise<{ error?: string }>;
+  disableTwoFactor: (password: string) => Promise<{ error?: string }>;
+  verifyTwoFactor: (code: string, tempToken?: string) => Promise<{ error?: string; role?: UserRole }>;
+  resendTwoFactorCode: (email?: string) => Promise<{ error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,6 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               isEmailVerified: userData.emailVerified || userData.isEmailVerified,
               isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified),
               preferredCurrency: userData.preferredCurrency || "GBP",
+              twoFactorEnabled: userData.twoFactorEnabled || false,
             };
             setUser(userObj);
             localStorage.setItem('userData', JSON.stringify(userObj));
@@ -74,11 +80,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   verifyUser();
 }, []);
 
-const signIn = async (email: string, password: string): Promise<{ error?: string; role?: UserRole }> => {
+const signIn = async (email: string, password: string): Promise<{ error?: string; role?: UserRole; requiresTwoFactor?: boolean; tempToken?: string }> => {
   try {
     const response = await authAPI.login({ email, password });
     
     if (response.data.success) {
+      if (response.data.data.requiresTwoFactor) {
+        return { requiresTwoFactor: true, tempToken: response.data.data.tempToken };
+      }
       const { token, user: userData } = response.data.data;
       localStorage.setItem('token', token);
       
@@ -91,6 +100,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
         isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
         isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
         preferredCurrency: userData.preferredCurrency || "GBP",
+        twoFactorEnabled: userData.twoFactorEnabled || false,
       };
       setUser(userObj);
       localStorage.setItem('userData', JSON.stringify(userObj));
@@ -102,7 +112,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
   }
 };
 
-  const signUp = async (data: { email: string, password: string, role: UserRole, fullName: string, phoneNumber?: string }): Promise<{ error?: string }> => {
+  const signUp = async (data: { email: string, password: string, role: UserRole, fullName: string, phoneNumber?: string, collaboratorToken?: string }): Promise<{ error?: string }> => {
     try {
       const response = await authAPI.register(data);
       if (response.data.success) {
@@ -189,6 +199,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
             isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
             isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
             preferredCurrency: userData.preferredCurrency || "GBP",
+            twoFactorEnabled: userData.twoFactorEnabled || false,
           };
           setUser(userObj);
           localStorage.setItem('userData', JSON.stringify(userObj));
@@ -196,6 +207,72 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
       } catch (error) {
         console.error("User refresh failed:", error);
       }
+    }
+  };
+
+  const enableTwoFactor = async (): Promise<{ error?: string }> => {
+    try {
+      const response = await twoFactorAuthAPI.enable();
+      if (response.data.success) {
+        await refreshUser();
+        return {};
+      }
+      return { error: response.data.message || "Failed to enable two-factor authentication" };
+    } catch (error: any) {
+      return { error: error?.response?.data?.message || "An error occurred while enabling two-factor authentication" };
+    }
+  };
+
+  const disableTwoFactor = async (password: string): Promise<{ error?: string }> => {
+    try {
+      const response = await twoFactorAuthAPI.disable({ password });
+      if (response.data.success) {
+        await refreshUser();
+        return {};
+      }
+      return { error: response.data.message || "Failed to disable two-factor authentication" };
+    } catch (error: any) {
+      return { error: error?.response?.data?.message || "An error occurred while disabling two-factor authentication" };
+    }
+  };
+
+  const verifyTwoFactor = async (code: string, tempToken?: string): Promise<{ error?: string; role?: UserRole }> => {
+    try {
+      const response = await twoFactorAuthAPI.verify({ code, tempToken });
+      if (response.data.success) {
+        const { token, user: userData } = response.data.data;
+        localStorage.setItem('token', token);
+        
+        const userObj: User = {
+          id: userData._id || userData.id,
+          email: userData.email,
+          role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
+          fullName: userData.fullName,
+          profilePicture: userData.profilePicture,
+          isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
+          isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
+          preferredCurrency: userData.preferredCurrency || "GBP",
+          twoFactorEnabled: userData.twoFactorEnabled || false,
+        };
+        setUser(userObj);
+        localStorage.setItem('userData', JSON.stringify(userObj));
+        return { role: userObj.role };
+      }
+      return { error: response.data.message || "Failed to verify two-factor code" };
+    } catch (error: any) {
+      return { error: error?.response?.data?.message || "An error occurred while verifying two-factor code" };
+    }
+  };
+
+  const resendTwoFactorCode = async (email?: string): Promise<{ error?: string }> => {
+    try {
+      const response = await twoFactorAuthAPI.resend({ email });
+      if (response.data.success) {
+        return {};
+      }
+      return { error: response.data.message || "Failed to resend two-factor code" };
+    } catch (error: any) {
+      return { error: error?.response?.data?.message || "An error occurred while resending two-factor code" };
     }
   };
 
@@ -239,7 +316,11 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
         if (isNaN(numericAmount)) return amount.toString();
         
         return `${symbol}${numericAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
-      }
+      },
+      enableTwoFactor,
+      disableTwoFactor,
+      verifyTwoFactor,
+      resendTwoFactorCode,
     }}>
       {children}
     </AuthContext.Provider>

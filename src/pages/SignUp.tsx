@@ -42,9 +42,11 @@ export default function SignUp() {
   
   const selectedPlan = searchParams.get("plan");
   const selectedCycle = searchParams.get("cycle");
+  const collaboratorToken = searchParams.get("collaboratorToken");
+  const inviteEmail = searchParams.get("email");
 
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(inviteEmail || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -72,7 +74,8 @@ export default function SignUp() {
       email, 
       password, 
       role: config.role, 
-      fullName 
+      fullName,
+      collaboratorToken
     });
 
     if (error) {

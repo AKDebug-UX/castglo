@@ -55,6 +55,13 @@ export default function SignIn() {
         return;
       }
 
+      if (result.requiresTwoFactor && result.tempToken) {
+        navigate("/verify-two-factor", {
+          state: { tempToken: result.tempToken, email: data.email }
+        });
+        return;
+      }
+
       toast.success("Welcome back!");
 
       // Route based on user role returned from API

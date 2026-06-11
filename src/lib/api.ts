@@ -200,6 +200,13 @@ export const API_ENDPOINTS = {
     ACCEPT_INVITATION: '/collaborators/invite/accept',
     DECLINE_INVITATION: '/collaborators/invite/decline',
   },
+  TWO_FACTOR_AUTH: {
+    ENABLE: '/2fa/enable',
+    DISABLE: '/2fa/disable',
+    VERIFY: '/2fa/verify',
+    RESEND: '/2fa/resend',
+    STATUS: '/2fa/status',
+  },
   USERS: {
     UPDATE_PROFILE: '/user/profile',
     UPDATE_PROFILE_PICTURE: '/users/profile-picture',
@@ -548,6 +555,14 @@ export const collaboratorAPI = {
     api.post(API_ENDPOINTS.COLLABORATORS.ACCEPT_INVITATION, typeof data === "string" ? { id: data, invitationId: data } : data),
   declineInvitation: (data: string | { invitationId: string; id?: string }) => 
     api.post(API_ENDPOINTS.COLLABORATORS.DECLINE_INVITATION, typeof data === "string" ? { id: data, invitationId: data } : data),
+};
+
+export const twoFactorAuthAPI = {
+  enable: () => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.ENABLE),
+  disable: (data: { password: string }) => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.DISABLE, data),
+  verify: (data: { code: string; email?: string; password?: string }) => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.VERIFY, data),
+  resend: (data?: { email?: string }) => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.RESEND, data),
+  getStatus: () => api.get(API_ENDPOINTS.TWO_FACTOR_AUTH.STATUS),
 };
 
 export default api;

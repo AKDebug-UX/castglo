@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ShieldCheck, Upload, CreditCard, Bell, KeyRound, UserMinus, History, Trash2, Download } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Loader2, ShieldCheck, Upload, CreditCard, Bell, KeyRound, UserMinus, History, Trash2, Download, Mail } from "lucide-react";
 import { authAPI, profileAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,11 +31,14 @@ export default function AccountSettings() {
   }, [location.search]);
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("overview");
-  const { updatePreferredCurrency, formatPrice } = useAuth();
+  const { user: currentUser, updatePreferredCurrency, formatPrice, enableTwoFactor, disableTwoFactor } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [isEnabling2FA, setIsEnabling2FA] = useState(false);
+  const [isDisabling2FA, setIsDisabling2FA] = useState(false);
+  const [disablePassword, setDisablePassword] = useState("");
 
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [subscriptionQuota, setSubscriptionQuota] = useState<any>(null);
@@ -195,6 +199,43 @@ export default function AccountSettings() {
     }
   };
 
+  const handleEnable2FA = async () => {
+    setIsEnabling2FA(true);
+    try {
+      const result = await enableTwoFactor();
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Two-factor authentication enabled!");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to enable two-factor authentication");
+    } finally {
+      setIsEnabling2FA(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (!disablePassword) {
+      toast.error("Password is required to disable two-factor authentication");
+      return;
+    }
+    setIsDisabling2FA(true);
+    try {
+      const result = await disableTwoFactor(disablePassword);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Two-factor authentication disabled!");
+      setDisablePassword("");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to disable two-factor authentication");
+    } finally {
+      setIsDisabling2FA(false);
+    }
+  };
+
   const deleteAccount = async () => {
     const password = prompt("To confirm deletion, please enter your password:");
     if (password === null) return;
@@ -339,6 +380,85 @@ export default function AccountSettings() {
         </TabsContent>
 
         <TabsContent value="security" className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-primary" />
+                Two-factor authentication
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Email verification</p>
+                  <p className="text-xs text-muted-foreground">Get a verification code sent to your email</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {currentUser?.twoFactorEnabled ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" disabled={isDisabling2FA}>
+                          {isDisabling2FA ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Disabling...
+                            </>
+                          ) : "Disable"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Disable two-factor authentication?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will remove the extra layer of security from your account. Are you sure you want to proceed?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Enter your password to confirm</label>
+                          <Input
+                            type="password"
+                            placeholder="••••••••"
+                            value={disablePassword}
+                            onChange={(e) => setDisablePassword(e.target.value)}
+                          />
+                        </div>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setDisablePassword("")}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDisable2FA}
+                            disabled={isDisabling2FA || !disablePassword}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {isDisabling2FA ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Disabling...
+                              </>
+                            ) : "Disable 2FA"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={handleEnable2FA}
+                      disabled={isEnabling2FA}
+                    >
+                      {isEnabling2FA ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Enabling...
+                        </>
+                      ) : "Enable"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
