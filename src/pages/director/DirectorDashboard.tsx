@@ -43,37 +43,52 @@ export default function DirectorDashboard() {
             : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [];
           setListings(myCastings.slice(0, 5));
 
-          const activeCount       = myCastings.filter((c: any) => c.status === "open").length;
-          const totalSubmissions  = myCastings.reduce((acc: number, c: any) => acc + (c.applicationCount || 0), 0);
+          // Calculate active projects (handle multiple possible statuses)
+          const activeCount       = myCastings.filter((c: any) => {
+            const status = (c.status || "").toLowerCase();
+            return ["open", "active", "open_for_applications"].includes(status);
+          }).length;
+          
+          // Calculate total submissions (handle both applicationCount and maybe other fields)
+          const totalSubmissions  = myCastings.reduce((acc: number, c: any) => {
+            return acc + (c.applicationCount || c.applications?.length || 0);
+          }, 0);
 
-          setStats([
-            { label: "Active Projects",    value: activeCount.toString(),      change: "Live now",          Icon: Clapperboard, color: "text-blue-600",   bg: "bg-blue-50" },
-            { label: "Total Applicants",   value: totalSubmissions.toString(), change: "Across all roles",  Icon: Users,        color: "text-purple-600", bg: "bg-purple-50" },
-            { label: "Pending Reviews",    value: "—",                         change: "Open in Applicants",Icon: Clock,        color: "text-orange-600", bg: "bg-orange-50" },
-            { label: "Roles Filled",       value: "—",                         change: "This quarter",      Icon: CheckCircle,  color: "text-green-600",  bg: "bg-green-50" },
-          ]);
+          // Initialize tally with 0s in case we don't have apps to fetch
+          let tally = { review: 0, shortlisted: 0, audition: 0, offer: 0 };
 
-          // Fetch apps for pipeline mini-stats
+          // Fetch apps for pipeline mini-stats and update stats
           if (myCastings.length > 0) {
             const allAppPromises = myCastings.slice(0, 5).map((c: any) =>
               applicationAPI.getByCastingCall(c._id).catch(() => null)
             );
             const results = await Promise.all(allAppPromises);
-            const allApps: any[] = results.flatMap(res =>
-              res?.data?.success && Array.isArray(res.data.data) ? res.data.data : []
-            );
+            const allApps: any[] = results.flatMap(res => {
+              if (!res?.data?.success) return [];
+              // Handle both array responses and wrapped object responses
+              if (Array.isArray(res.data.data)) return res.data.data;
+              if (Array.isArray(res.data.data?.applications)) return res.data.data.applications;
+              return [];
+            });
             setRecentApps(allApps.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5));
 
-            // Tally pipeline
-            const tally = { review: 0, shortlisted: 0, audition: 0, offer: 0 };
+            // Tally pipeline (handle more status variations)
             allApps.forEach(a => {
-              if (a.status === "applied")            tally.review++;
-              else if (a.status === "shortlisted")   tally.shortlisted++;
-              else if (a.status === "audition_requested" || a.status === "self_tape_requested") tally.audition++;
-              else if (a.status === "offer" || a.status === "accepted") tally.offer++;
+              const status = (a.status || "").toLowerCase();
+              if (["applied", "submitted"].includes(status))            tally.review++;
+              else if (["shortlisted", "shortlist"].includes(status))   tally.shortlisted++;
+              else if (["audition_requested", "self_tape_requested", "audition"].includes(status)) tally.audition++;
+              else if (["offer", "accepted", "hired"].includes(status)) tally.offer++;
             });
             setPipeline(tally);
           }
+
+          setStats([
+            { label: "Active Projects",    value: activeCount.toString(),      change: "Live now",          Icon: Clapperboard, color: "text-blue-600",   bg: "bg-blue-50" },
+            { label: "Total Applicants",   value: totalSubmissions.toString(), change: "Across all roles",  Icon: Users,        color: "text-purple-600", bg: "bg-purple-50" },
+            { label: "Pending Reviews",    value: tally.review.toString(),      change: "Open in Applicants",Icon: Clock,        color: "text-orange-600", bg: "bg-orange-50" },
+            { label: "Roles Filled",       value: tally.offer.toString(),       change: "This quarter",      Icon: CheckCircle,  color: "text-green-600",  bg: "bg-green-50" },
+          ]);
         } else {
           setStats([
             { label: "Active Projects",  value: "0", change: "Live now",          Icon: Clapperboard, color: "text-blue-600",   bg: "bg-blue-50" },
@@ -235,9 +250,11 @@ export default function DirectorDashboard() {
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" /> {casting.applicationCount || 0} applicants
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Deadline: {new Date(casting.deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                    </span>
+                    {(casting.dates?.submission || casting.deadline || casting.application_deadline) && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Deadline: {new Date(casting.dates?.submission || casting.deadline || casting.application_deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" asChild>
@@ -274,11 +291,11 @@ export default function DirectorDashboard() {
                 <div className="flex items-center gap-3 min-w-0">
                   <Avatar className="h-9 w-9 shrink-0">
                     <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                      {(app.talent?.fullName || "?").split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
+                      {(app.talentId?.fullName || "?").split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate">{app.talent?.fullName || "Unknown"}</p>
+                    <p className="text-sm font-semibold truncate">{app.talentId?.fullName || "Unknown"}</p>
                     <p className="text-xs text-muted-foreground truncate">{app.castingCall?.title}</p>
                   </div>
                 </div>

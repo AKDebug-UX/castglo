@@ -44,8 +44,14 @@ export default function Dashboard() {
           setActiveStreams([]);
         }
 
-        if (appsRes.data?.success && Array.isArray(appsRes.data.data)) {
-          const apps = appsRes.data.data;
+        if (appsRes.data?.success) {
+          let apps: any[] = [];
+          if (Array.isArray(appsRes.data.data)) {
+            apps = appsRes.data.data;
+          } else if (appsRes.data.data && Array.isArray(appsRes.data.data.applications)) {
+            apps = appsRes.data.data.applications;
+          }
+          
           setRecentSubmissions(apps.slice(0, 3).map((app) => ({
             id: app._id,
             title: app.project?.title || app.project?.projectName || app.castingCall?.title || "Unknown Position",
@@ -55,7 +61,7 @@ export default function Dashboard() {
 
           // Calculate stats based on actual application status from schema:
           // submitted, viewed, shortlisted, rejected, accepted, withdrawn
-          const activeApps = apps.filter((a) => ["submitted", "viewed", "shortlisted"].includes(a.status)).length;
+          const activeApps = apps.filter((a) => ["submitted", "viewed", "shortlisted", "applied"].includes(a.status)).length;
           const accepted = apps.filter((a) => a.status === "accepted").length;
           const shortlisted = apps.filter((a) => a.status === "shortlisted").length;
           
@@ -184,10 +190,12 @@ export default function Dashboard() {
                       <MapPin className="w-3 h-3" />
                       {formatLocation(casting.location)}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Deadline: {casting.deadline ? new Date(casting.deadline).toLocaleDateString() : "TBD"}
-                    </span>
+                    {casting.deadline && (
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        Deadline: {new Date(casting.deadline).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
                   <Button size="sm" asChild>
                     <Link to={`/talent/browse-cast/${casting._id}`}>

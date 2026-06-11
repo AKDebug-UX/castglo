@@ -20,7 +20,7 @@ export default function CastingDetail() {
       if (!id) return;
       
       try {
-        const res = await applicationAPI.getMe();
+        const res = await applicationAPI.getMe(); 
         if (res.data.success) {
           let appsData: any[] = [];
           if (Array.isArray(res.data.data)) {

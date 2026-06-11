@@ -101,7 +101,7 @@ export default function SubmitAudition() {
     const specialCases: Record<string, string[]> = {
       short_bio: ['bio', 'shortBio', 'short_bio'],
       relevant_experience: ['experience', 'yearsOfExperience', 'years_of_experience'],
-      skills: ['skills', 'coreSkills', 'core_skills'],
+      skills: ['skills', 'coreSkills', 'core_skills', 'actor_special_skills', 'special_skills'],
       height: ['height', 'appearance.height'],
       age_range: ['playingAgeRange', 'actor_playing_age_range', 'age_range'],
       location_override: ['location', 'current_city', 'city'],
@@ -264,7 +264,20 @@ export default function SubmitAudition() {
         
         if (profileRes.data.success && profileRes.data.data) {
           console.log("Setting userProfile to:", profileRes.data.data);
-          setUserProfile(profileRes.data.data);
+          const profile = profileRes.data.data;
+          setUserProfile(profile);
+          
+          // Always get skills from the profile
+          const profileSkills = getProfileFieldValue('skills');
+          if (profileSkills && Array.isArray(profileSkills)) {
+            const validSkills = profileSkills.filter(s => SKILLS_LIST.includes(s));
+            if (validSkills.length > 0) {
+              setFormData(prev => ({
+                ...prev,
+                skills: validSkills
+              }));
+            }
+          }
           
           // Show the prompt to use profile data only if no existing application
           if (castingRes.data.success && !hasExistingApplication) {
