@@ -145,7 +145,8 @@ const App = () => (
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/verification-pending" element={<VerificationPending />} />
-              <Route path="/verify-two-factor" element={<VerifyTwoFactor />} />
+              <Route path="/auth/2fa" element={<VerifyTwoFactor />} />
+              <Route path="/verify-two-factor" element={<Navigate to="/auth/2fa" replace />} />
               <Route path="/news" element={<News />} />
               <Route path="/news/:id" element={<NewsArticle />} />
               <Route path="/whats-new" element={<WhatsNew />} />

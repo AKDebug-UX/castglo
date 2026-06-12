@@ -14,6 +14,7 @@ import { authAPI, profileAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
+import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsPanel";
 
 type SettingsTab =
   | "overview"
@@ -385,79 +386,12 @@ export default function AccountSettings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Mail className="w-5 h-5 text-primary" />
                 Two-factor authentication
               </CardTitle>
               <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
-                <div className="space-y-0.5">
-                  <p className="text-sm font-medium">Email verification</p>
-                  <p className="text-xs text-muted-foreground">Get a verification code sent to your email</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {currentUser?.twoFactorEnabled ? (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm" disabled={isDisabling2FA}>
-                          {isDisabling2FA ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Disabling...
-                            </>
-                          ) : "Disable"}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Disable two-factor authentication?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will remove the extra layer of security from your account. Are you sure you want to proceed?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Enter your password to confirm</label>
-                          <Input
-                            type="password"
-                            placeholder="••••••••"
-                            value={disablePassword}
-                            onChange={(e) => setDisablePassword(e.target.value)}
-                          />
-                        </div>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => setDisablePassword("")}>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleDisable2FA}
-                            disabled={isDisabling2FA || !disablePassword}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            {isDisabling2FA ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Disabling...
-                              </>
-                            ) : "Disable 2FA"}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  ) : (
-                    <Button
-                      size="sm"
-                      onClick={handleEnable2FA}
-                      disabled={isEnabling2FA}
-                    >
-                      {isEnabling2FA ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Enabling...
-                        </>
-                      ) : "Enable"}
-                    </Button>
-                  )}
-                </div>
-              </div>
+            <CardContent>
+              <TwoFactorSettingsPanel />
             </CardContent>
           </Card>
 

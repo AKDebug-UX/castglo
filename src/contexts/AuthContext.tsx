@@ -15,11 +15,19 @@ interface User {
   twoFactorEnabled?: boolean;
 }
 
+export interface PendingTwoFactor {
+  tempToken: string;
+  email?: string;
+  returnTo?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  pendingTwoFactor: PendingTwoFactor | null;
+  setPendingTwoFactor: (v: PendingTwoFactor | null) => void;
   signIn: (email: string, password: string) => Promise<{ error?: string; role?: UserRole; requiresTwoFactor?: boolean; tempToken?: string }>;
-  signInWithGoogle: (idToken: string, role?: UserRole) => Promise<{ error?: string; role?: UserRole }>;
+  signInWithGoogle: (idToken: string, role?: UserRole) => Promise<{ error?: string; role?: UserRole; requiresTwoFactor?: boolean; tempToken?: string }>;
   signUp: (data: { email: string, password: string, role: UserRole, fullName: string, phoneNumber?: string, collaboratorToken?: string }) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   forgotPassword: (email: string) => Promise<{ error?: string }>;
@@ -29,13 +37,29 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   updatePreferredCurrency: (currency: string) => Promise<{ error?: string }>;
   formatPrice: (amount: number | string) => string;
-  enableTwoFactor: () => Promise<{ error?: string }>;
-  disableTwoFactor: (password: string) => Promise<{ error?: string }>;
+  // 2FA — login verification
   verifyTwoFactor: (code: string, tempToken?: string) => Promise<{ error?: string; role?: UserRole }>;
   resendTwoFactorCode: (email?: string) => Promise<{ error?: string }>;
+  // 2FA — authenticated TOTP management
+  enrolTwoFactor: () => Promise<{ error?: string; qrCode?: string; secret?: string }>;
+  confirmTwoFactor: (token: string) => Promise<{ error?: string; backupCodes?: string[] }>;
+  disableTwoFactor: (password: string) => Promise<{ error?: string }>;
+  regenerateBackupCodes: () => Promise<{ error?: string; backupCodes?: string[] }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const buildUserObj = (userData: any): User => ({
+  id: userData._id || userData.id,
+  email: userData.email,
+  role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
+  fullName: userData.fullName,
+  profilePicture: userData.profilePicture,
+  isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
+  isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
+  preferredCurrency: userData.preferredCurrency || "GBP",
+  twoFactorEnabled: userData.twoFactorEnabled || false,
+});
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {
@@ -43,6 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return storedUser ? JSON.parse(storedUser) : null;
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingTwoFactor, setPendingTwoFactor] = useState<PendingTwoFactor | null>(null);
 
   useEffect(() => {
     const verifyUser = async () => {
@@ -51,87 +76,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           const response = await authAPI.getMe();
           if (response.data.success) {
-            const userData = response.data.data;
-            const userObj: User = {
-              id: userData._id || userData.id,
-              email: userData.email,
-              role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
-              fullName: userData.fullName,
-              profilePicture: userData.profilePicture,
-              isEmailVerified: userData.emailVerified || userData.isEmailVerified,
-              isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified),
-              preferredCurrency: userData.preferredCurrency || "GBP",
-              twoFactorEnabled: userData.twoFactorEnabled || false,
-            };
+            const userObj = buildUserObj(response.data.data);
             setUser(userObj);
             localStorage.setItem('userData', JSON.stringify(userObj));
           }
         } catch (error) {
-        console.error("Session verification failed:", error);
-        localStorage.removeItem('token');
+          console.error("Session verification failed:", error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('userData');
+          setUser(null);
+        }
+      } else {
         localStorage.removeItem('userData');
         setUser(null);
       }
-    } else {
-      localStorage.removeItem('userData');
-      setUser(null);
-    }
-    setIsLoading(false);
-  };
-  verifyUser();
-}, []);
+      setIsLoading(false);
+    };
+    verifyUser();
+  }, []);
 
-const signIn = async (email: string, password: string): Promise<{ error?: string; role?: UserRole; requiresTwoFactor?: boolean; tempToken?: string }> => {
-  try {
-    const response = await authAPI.login({ email, password });
-    
-    if (response.data.success) {
-      if (response.data.data.requiresTwoFactor) {
-        return { requiresTwoFactor: true, tempToken: response.data.data.tempToken };
+  const signIn = async (email: string, password: string): Promise<{ error?: string; role?: UserRole; requiresTwoFactor?: boolean; tempToken?: string }> => {
+    try {
+      const response = await authAPI.login({ email, password });
+      if (response.data.success) {
+        const data = response.data.data;
+        if (data.requiresTwoFactor) {
+          setPendingTwoFactor({ tempToken: data.tempToken, email });
+          return { requiresTwoFactor: true, tempToken: data.tempToken };
+        }
+        const { token, user: userData } = data;
+        localStorage.setItem('token', token);
+        const userObj = buildUserObj(userData);
+        setUser(userObj);
+        localStorage.setItem('userData', JSON.stringify(userObj));
+        return { role: userObj.role };
       }
-      const { token, user: userData } = response.data.data;
-      localStorage.setItem('token', token);
-      
-      const userObj: User = {
-        id: userData._id || userData.id,
-        email: userData.email,
-        role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
-        fullName: userData.fullName,
-        profilePicture: userData.profilePicture,
-        isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-        isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
-        preferredCurrency: userData.preferredCurrency || "GBP",
-        twoFactorEnabled: userData.twoFactorEnabled || false,
-      };
-      setUser(userObj);
-      localStorage.setItem('userData', JSON.stringify(userObj));
-      return { role: userObj.role };
+      return { error: response.data.message || "Sign in failed" };
+    } catch (error: any) {
+      return { error: error.response?.data?.message || "An error occurred during sign in" };
     }
-    return { error: response.data.message || "Sign in failed" };
-  } catch (error) {
-    return { error: error.response?.data?.message || "An error occurred during sign in" };
-  }
-};
+  };
 
-  const signInWithGoogle = async (idToken: string, role?: UserRole): Promise<{ error?: string; role?: UserRole }> => {
+  const signInWithGoogle = async (idToken: string, role?: UserRole): Promise<{ error?: string; role?: UserRole; requiresTwoFactor?: boolean; tempToken?: string }> => {
     try {
       const response = await authAPI.google({ idToken, role });
-      
       if (response.data.success) {
-        const { token, user: userData } = response.data.data;
+        const data = response.data.data;
+        if (data.requiresTwoFactor) {
+          setPendingTwoFactor({ tempToken: data.tempToken });
+          return { requiresTwoFactor: true, tempToken: data.tempToken };
+        }
+        const { token, user: userData } = data;
         localStorage.setItem('token', token);
-        
-        const userObj: User = {
-          id: userData._id || userData.id,
-          email: userData.email,
-          role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
-          fullName: userData.fullName,
-          profilePicture: userData.profilePicture,
-          isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-          isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
-          preferredCurrency: userData.preferredCurrency || "GBP",
-          twoFactorEnabled: userData.twoFactorEnabled || false,
-        };
+        const userObj = buildUserObj(userData);
         setUser(userObj);
         localStorage.setItem('userData', JSON.stringify(userObj));
         return { role: userObj.role };
@@ -145,11 +142,9 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
   const signUp = async (data: { email: string, password: string, role: UserRole, fullName: string, phoneNumber?: string, collaboratorToken?: string }): Promise<{ error?: string }> => {
     try {
       const response = await authAPI.register(data);
-      if (response.data.success) {
-        return {};
-      }
+      if (response.data.success) return {};
       return { error: response.data.message || "Registration failed" };
-    } catch (error) {
+    } catch (error: any) {
       return { error: error.response?.data?.message || "An error occurred during registration" };
     }
   };
@@ -162,6 +157,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('userData');
+      setPendingTwoFactor(null);
       setUser(null);
     }
   };
@@ -171,7 +167,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
       const response = await authAPI.forgotPassword(email);
       if (response.data.success) return {};
       return { error: response.data.message };
-    } catch (error) {
+    } catch (error: any) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };
@@ -181,7 +177,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
       const response = await authAPI.resetPassword(data);
       if (response.data.success) return {};
       return { error: response.data.message };
-    } catch (error) {
+    } catch (error: any) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };
@@ -198,7 +194,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
         return {};
       }
       return { error: response.data.message };
-    } catch (error) {
+    } catch (error: any) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };
@@ -208,7 +204,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
       const response = await authAPI.resendVerification(email);
       if (response.data.success) return {};
       return { error: response.data.message };
-    } catch (error) {
+    } catch (error: any) {
       return { error: error.response?.data?.message || "An error occurred" };
     }
   };
@@ -219,18 +215,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
       try {
         const response = await authAPI.getMe();
         if (response.data.success) {
-          const userData = response.data.data;
-          const userObj: User = {
-            id: userData._id || userData.id,
-            email: userData.email,
-            role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
-            fullName: userData.fullName,
-            profilePicture: userData.profilePicture,
-            isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-            isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
-            preferredCurrency: userData.preferredCurrency || "GBP",
-            twoFactorEnabled: userData.twoFactorEnabled || false,
-          };
+          const userObj = buildUserObj(response.data.data);
           setUser(userObj);
           localStorage.setItem('userData', JSON.stringify(userObj));
         }
@@ -240,24 +225,87 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
     }
   };
 
-  const enableTwoFactor = async (): Promise<{ error?: string }> => {
+  // ---- Login 2FA verification (uses tempToken, no full bearer auth) ----
+  const verifyTwoFactor = async (code: string, tempToken?: string): Promise<{ error?: string; role?: UserRole }> => {
+    const resolvedToken = tempToken || pendingTwoFactor?.tempToken;
+    if (!resolvedToken) {
+      return { error: "No pending two-factor session. Please sign in again." };
+    }
     try {
-      const response = await twoFactorAuthAPI.enable();
+      const response = await twoFactorAuthAPI.verifyLogin(resolvedToken, code.trim().toUpperCase());
       if (response.data.success) {
-        await refreshUser();
-        return {};
+        const { token, user: userData } = response.data.data;
+        localStorage.setItem('token', token);
+        const userObj = buildUserObj(userData);
+        setUser(userObj);
+        localStorage.setItem('userData', JSON.stringify(userObj));
+        setPendingTwoFactor(null);
+        return { role: userObj.role };
       }
-      return { error: response.data.message || "Failed to enable two-factor authentication" };
+      return { error: response.data.message || "Two-factor verification failed" };
     } catch (error: any) {
-      return { error: error?.response?.data?.message || "An error occurred while enabling two-factor authentication" };
+      const msg: string = error?.response?.data?.message || "An error occurred while verifying two-factor code";
+      // Expired temp token detection
+      if (
+        error?.response?.status === 401 ||
+        msg.toLowerCase().includes("expired") ||
+        msg.toLowerCase().includes("invalid token")
+      ) {
+        setPendingTwoFactor(null);
+        return { error: "__EXPIRED__" };
+      }
+      return { error: msg };
+    }
+  };
+
+  const resendTwoFactorCode = async (email?: string): Promise<{ error?: string }> => {
+    try {
+      const response = await twoFactorAuthAPI.resend({ email });
+      if (response.data.success) return {};
+      return { error: response.data.message || "Failed to resend two-factor code" };
+    } catch (error: any) {
+      return { error: error?.response?.data?.message || "An error occurred while resending two-factor code" };
+    }
+  };
+
+  // ---- Authenticated TOTP management ----
+  const enrolTwoFactor = async (): Promise<{ error?: string; qrCode?: string; secret?: string }> => {
+    try {
+      const response = await twoFactorAuthAPI.enrol();
+      if (response.data.success) {
+        return {
+          qrCode: response.data.data?.qrCode,
+          secret: response.data.data?.secret,
+        };
+      }
+      return { error: response.data.message || "Failed to start 2FA enrolment" };
+    } catch (error: any) {
+      return { error: error?.response?.data?.message || "An error occurred while starting 2FA enrolment" };
+    }
+  };
+
+  const confirmTwoFactor = async (token: string): Promise<{ error?: string; backupCodes?: string[] }> => {
+    try {
+      const response = await twoFactorAuthAPI.confirm(token);
+      if (response.data.success) {
+        await refreshUser(); // refresh user so twoFactorEnabled=true is reflected
+        return { backupCodes: response.data.data?.backupCodes };
+      }
+      return { error: response.data.message || "Failed to confirm 2FA setup" };
+    } catch (error: any) {
+      return { error: error?.response?.data?.message || "An error occurred while confirming 2FA" };
     }
   };
 
   const disableTwoFactor = async (password: string): Promise<{ error?: string }> => {
     try {
-      const response = await twoFactorAuthAPI.disable({ password });
+      const response = await twoFactorAuthAPI.disable(password);
       if (response.data.success) {
-        await refreshUser();
+        if (user) {
+          const updated = { ...user, twoFactorEnabled: false };
+          setUser(updated);
+          localStorage.setItem('userData', JSON.stringify(updated));
+        }
         return {};
       }
       return { error: response.data.message || "Failed to disable two-factor authentication" };
@@ -266,53 +314,27 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
     }
   };
 
-  const verifyTwoFactor = async (code: string, tempToken?: string): Promise<{ error?: string; role?: UserRole }> => {
+  const regenerateBackupCodes = async (): Promise<{ error?: string; backupCodes?: string[] }> => {
     try {
-      const response = await twoFactorAuthAPI.verify({ code, tempToken });
+      const response = await twoFactorAuthAPI.regenerateBackupCodes();
       if (response.data.success) {
-        const { token, user: userData } = response.data.data;
-        localStorage.setItem('token', token);
-        
-        const userObj: User = {
-          id: userData._id || userData.id,
-          email: userData.email,
-          role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
-          fullName: userData.fullName,
-          profilePicture: userData.profilePicture,
-          isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-          isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
-          preferredCurrency: userData.preferredCurrency || "GBP",
-          twoFactorEnabled: userData.twoFactorEnabled || false,
-        };
-        setUser(userObj);
-        localStorage.setItem('userData', JSON.stringify(userObj));
-        return { role: userObj.role };
+        return { backupCodes: response.data.data?.backupCodes };
       }
-      return { error: response.data.message || "Failed to verify two-factor code" };
+      return { error: response.data.message || "Failed to regenerate backup codes" };
     } catch (error: any) {
-      return { error: error?.response?.data?.message || "An error occurred while verifying two-factor code" };
-    }
-  };
-
-  const resendTwoFactorCode = async (email?: string): Promise<{ error?: string }> => {
-    try {
-      const response = await twoFactorAuthAPI.resend({ email });
-      if (response.data.success) {
-        return {};
-      }
-      return { error: response.data.message || "Failed to resend two-factor code" };
-    } catch (error: any) {
-      return { error: error?.response?.data?.message || "An error occurred while resending two-factor code" };
+      return { error: error?.response?.data?.message || "An error occurred while regenerating backup codes" };
     }
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isLoading, 
-      signIn, 
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      pendingTwoFactor,
+      setPendingTwoFactor,
+      signIn,
       signInWithGoogle,
-      signUp, 
+      signUp,
       signOut,
       forgotPassword,
       resetPassword,
@@ -340,18 +362,17 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
           "EUR": "€"
         };
         const symbol = symbolMap[currency] || symbolMap["GBP"];
-        
         if (amount === null || amount === undefined) return `${symbol}0`;
-        
         const numericAmount = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.]/g, '')) : amount;
         if (isNaN(numericAmount)) return amount.toString();
-        
         return `${symbol}${numericAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
       },
-      enableTwoFactor,
-      disableTwoFactor,
       verifyTwoFactor,
       resendTwoFactorCode,
+      enrolTwoFactor,
+      confirmTwoFactor,
+      disableTwoFactor,
+      regenerateBackupCodes,
     }}>
       {children}
     </AuthContext.Provider>

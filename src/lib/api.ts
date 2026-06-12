@@ -203,8 +203,12 @@ export const API_ENDPOINTS = {
     DECLINE_INVITATION: '/collaborators/invite/decline',
   },
   TWO_FACTOR_AUTH: {
-    ENABLE: '/2fa/enable',
+    ENROL: '/2fa/enrol',
+    CONFIRM: '/2fa/confirm',
     DISABLE: '/2fa/disable',
+    BACKUP_CODES: '/2fa/backup-codes',
+    VERIFY_LOGIN: '/auth/2fa/verify',
+    // Legacy — kept for backwards compat with old email-code flow
     VERIFY: '/2fa/verify',
     RESEND: '/2fa/resend',
     STATUS: '/2fa/status',
@@ -562,9 +566,21 @@ export const collaboratorAPI = {
 };
 
 export const twoFactorAuthAPI = {
-  enable: () => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.ENABLE),
-  disable: (data: { password: string }) => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.DISABLE, data),
-  verify: (data: { code: string; email?: string; password?: string }) => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.VERIFY, data),
+  // ---- TOTP enrolment (authenticated) ----
+  enrol: () => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.ENROL),
+  confirm: (token: string) => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.CONFIRM, { token }),
+  disable: (password: string) => api.delete(API_ENDPOINTS.TWO_FACTOR_AUTH.DISABLE, { data: { password } }),
+  regenerateBackupCodes: () => api.get(API_ENDPOINTS.TWO_FACTOR_AUTH.BACKUP_CODES),
+
+  // ---- Login 2FA verification (uses tempToken, NO bearer header) ----
+  verifyLogin: (tempToken: string, code: string) =>
+    api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.VERIFY_LOGIN, { tempToken, code }, {
+      headers: { Authorization: '' },
+    }),
+
+  // Legacy email-code helpers (retained)
+  verify: (data: { code: string; email?: string; password?: string; tempToken?: string }) =>
+    api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.VERIFY, data),
   resend: (data?: { email?: string }) => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.RESEND, data),
   getStatus: () => api.get(API_ENDPOINTS.TWO_FACTOR_AUTH.STATUS),
 };

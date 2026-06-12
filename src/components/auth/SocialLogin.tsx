@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 declare global {
   interface Window {
@@ -17,6 +17,7 @@ interface SocialLoginProps {
 export function SocialLogin({ mode = 'signin', disabled = false }: SocialLoginProps) {
   const { signInWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const initGoogleSignIn = () => {
@@ -47,6 +48,18 @@ export function SocialLogin({ mode = 'signin', disabled = false }: SocialLoginPr
         toast.error(result.error);
         return;
       }
+
+      // Handle 2FA requirement from Google login
+      if (result.requiresTwoFactor && result.tempToken) {
+        navigate("/auth/2fa", {
+          state: {
+            tempToken: result.tempToken,
+            returnTo: (location.state as any)?.from?.pathname,
+          }
+        });
+        return;
+      }
+
       toast.success("Welcome back!");
       if (result.role) {
         const roleRoutes: Record<string, string> = {

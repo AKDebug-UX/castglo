@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -23,6 +23,7 @@ type SignInValues = z.infer<typeof signInSchema>;
 
 export default function SignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,8 +57,8 @@ export default function SignIn() {
       }
 
       if (result.requiresTwoFactor && result.tempToken) {
-        navigate("/verify-two-factor", {
-          state: { tempToken: result.tempToken, email: data.email }
+        navigate("/auth/2fa", {
+          state: { tempToken: result.tempToken, email: data.email, returnTo: location.state?.from?.pathname }
         });
         return;
       }
