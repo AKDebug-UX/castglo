@@ -135,7 +135,10 @@ export default function AccountSettings() {
 
         if (authRes.data?.success) {
           setUser(authRes.data.data);
-          setNotificationSettings(authRes.data.data.notificationSettings || notificationSettings);
+          setNotificationSettings((s: any) => ({
+            ...s,
+            ...(authRes.data.data.notificationSettings || {})
+          }));
         }
 
         if (profileRes.data?.success) {

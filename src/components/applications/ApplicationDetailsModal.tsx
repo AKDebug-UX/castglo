@@ -77,6 +77,16 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
     "withdrawn": "bg-slate-300 text-slate-700",
   };
 
+  const applicantRole = application?.talentId?.role || application?.talentUser?.role || "talent";
+  const isProfessionalApplicant = applicantRole === "industry_professional";
+
+  const metaEntries = application?.metaData ? Object.entries(application.metaData).filter(([key]) => {
+    if (isProfessionalApplicant && ["height", "age_range", "legal_consent"].includes(key)) {
+      return false;
+    }
+    return true;
+  }) : [];
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
@@ -113,11 +123,11 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
                   
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Casting Call</p>
+                      <p className="text-muted-foreground">{isProfessionalApplicant ? "Project / Casting Call" : "Casting Call"}</p>
                       <p className="font-medium">{application.castingCallId?.project_title || application.castingCallId?.title || application.project?.title || application.project?.projectName || application.castingCall?.title || "Unknown"}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Applicant</p>
+                      <p className="text-muted-foreground">{isProfessionalApplicant ? "Professional Provider" : "Applicant"}</p>
                       <p className="font-medium">{application.talentId?.fullName || application.talentUser?.fullName || "Unknown"}</p>
                     </div>
                     <div>
@@ -125,21 +135,47 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
                       <p className="font-medium">{new Date(application.createdAt).toLocaleDateString()}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Role</p>
+                      <p className="text-muted-foreground">Applied Role / Category</p>
                       <p className="font-medium">{application.appliedRole || application.role?.role_name || application.role?.name || application.role?.title || application.castingCallId?.category || application.castingCall?.category || "Unknown"}</p>
                     </div>
                   </div>
 
-                  {application.metaData && Object.keys(application.metaData).length > 0 && (
+                  {metaEntries.length > 0 && (
                     <div className="mt-4 space-y-3">
-                      <p className="font-medium text-sm text-muted-foreground">Application Metadata</p>
+                      <p className="font-medium text-sm text-muted-foreground">Application Details</p>
                       <div className="bg-muted p-4 rounded-md text-sm space-y-2">
-                        {Object.entries(application.metaData).map(([key, value]) => (
-                          <div key={key}>
-                            <span className="font-semibold capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}: </span>
-                            <span>{String(value)}</span>
-                          </div>
-                        ))}
+                        {metaEntries.map(([key, value]) => {
+                          if (key === 'preAuditionAnswers' && typeof value === 'object' && value !== null) {
+                            const answers = Object.entries(value);
+                            if (answers.length === 0) return null;
+                            return (
+                              <div key={key} className="mt-2 pt-2 border-t border-muted-foreground/10 space-y-1">
+                                <span className="font-bold block text-xs uppercase tracking-wider text-muted-foreground">Pre-Audition Answers:</span>
+                                {answers.map(([qKey, qVal]) => (
+                                  <div key={qKey} className="pl-3 text-xs">
+                                    <span className="font-medium text-slate-700">{qKey.replace(/^q-\d+-/, '')}: </span>
+                                    <span className="text-muted-foreground">{String(qVal)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          if (typeof value === 'object') return null;
+
+                          let displayValue = String(value);
+                          if (typeof value === 'boolean') {
+                            displayValue = value ? "Yes" : "No";
+                          }
+
+                          return (
+                            <div key={key}>
+                              <span className="font-semibold capitalize text-slate-700">
+                                {key === 'showreel_url' ? 'Portfolio URL' : key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}: 
+                              </span>
+                              <span> {displayValue}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

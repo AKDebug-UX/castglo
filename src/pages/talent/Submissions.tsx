@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { FileText, Eye, Star, Loader2, Info, Trash2, MoreVertical } from "lucide-react";
+import { FileText, Eye, Star, Loader2, Info, Trash2, MoreVertical, Upload, CheckCircle } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -13,6 +13,7 @@ import {
 import { applicationAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
+import { ProjectSubmissionModal } from "@/components/submissions/ProjectSubmissionModal";
 
 const statusColors: Record<string, string> = {
   "submitted": "bg-slate-500 text-white hover:bg-slate-600 capitalize",
@@ -31,6 +32,15 @@ export default function Submissions() {
   // Modal state
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Delivery Modal State
+  const [deliverySubmission, setDeliverySubmission] = useState<any | null>(null);
+  const [isDeliveryModalOpen, setIsDeliveryModalOpen] = useState(false);
+
+  const handleOpenDeliveryForm = (submission: any) => {
+    setDeliverySubmission(submission);
+    setIsDeliveryModalOpen(true);
+  };
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -123,12 +133,19 @@ export default function Submissions() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold">My Submissions</h1>
-        <p className="text-muted-foreground">Track your audition submissions and feedback</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">My Submissions</h1>
+          <p className="text-muted-foreground">Track your audition submissions and feedback</p>
+        </div>
+        <Button 
+          className="bg-[#009698] hover:bg-[#009698]/90 text-white flex items-center gap-2 font-semibold shadow-sm transition-all duration-200 self-start sm:self-center"
+          onClick={() => handleOpenDeliveryForm(null)}
+        >
+          <Upload className="w-4 h-4" /> Submit Deliverables
+        </Button>
       </div>
 
-      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
         {stats.map((stat) => (
           <Card key={stat.label} className="card-elevated">
@@ -178,7 +195,17 @@ export default function Submissions() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end">
+                      <div className="flex justify-end items-center gap-2">
+                        {submission.status === "accepted" && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100/80 hover:text-teal-800 flex items-center gap-1.5 h-8 font-semibold"
+                            onClick={() => handleOpenDeliveryForm(submission)}
+                          >
+                            <Upload className="w-3.5 h-3.5" /> Submit Work
+                          </Button>
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -186,10 +213,15 @@ export default function Submissions() {
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-[160px]">
+                          <DropdownMenuContent align="end" className="w-[180px]">
                             <DropdownMenuItem onClick={() => handleViewDetails(submission._id)} className="cursor-pointer">
                               <Info className="w-4 h-4 mr-2" /> Details
                             </DropdownMenuItem>
+                            {submission.status === "accepted" && (
+                              <DropdownMenuItem onClick={() => handleOpenDeliveryForm(submission)} className="cursor-pointer text-teal-600 focus:text-teal-600 font-medium">
+                                <CheckCircle className="w-4 h-4 mr-2" /> Submit Work
+                              </DropdownMenuItem>
+                            )}
                             {["submitted", "viewed"].includes(submission.status) && (
                               <DropdownMenuItem 
                                 onClick={() => handleWithdraw(submission._id)} 
@@ -220,6 +252,12 @@ export default function Submissions() {
         applicationId={selectedApplicationId} 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
+      />
+
+      <ProjectSubmissionModal
+        submission={deliverySubmission}
+        isOpen={isDeliveryModalOpen}
+        onClose={() => setIsDeliveryModalOpen(false)}
       />
     </div>
   );

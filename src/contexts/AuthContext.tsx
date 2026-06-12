@@ -19,6 +19,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string; role?: UserRole; requiresTwoFactor?: boolean; tempToken?: string }>;
+  signInWithGoogle: (idToken: string, role?: UserRole) => Promise<{ error?: string; role?: UserRole }>;
   signUp: (data: { email: string, password: string, role: UserRole, fullName: string, phoneNumber?: string, collaboratorToken?: string }) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   forgotPassword: (email: string) => Promise<{ error?: string }>;
@@ -111,6 +112,35 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
     return { error: error.response?.data?.message || "An error occurred during sign in" };
   }
 };
+
+  const signInWithGoogle = async (idToken: string, role?: UserRole): Promise<{ error?: string; role?: UserRole }> => {
+    try {
+      const response = await authAPI.google({ idToken, role });
+      
+      if (response.data.success) {
+        const { token, user: userData } = response.data.data;
+        localStorage.setItem('token', token);
+        
+        const userObj: User = {
+          id: userData._id || userData.id,
+          email: userData.email,
+          role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
+          fullName: userData.fullName,
+          profilePicture: userData.profilePicture,
+          isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
+          isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
+          preferredCurrency: userData.preferredCurrency || "GBP",
+          twoFactorEnabled: userData.twoFactorEnabled || false,
+        };
+        setUser(userObj);
+        localStorage.setItem('userData', JSON.stringify(userObj));
+        return { role: userObj.role };
+      }
+      return { error: response.data.message || "Google authentication failed" };
+    } catch (error: any) {
+      return { error: error.response?.data?.message || "An error occurred during Google sign in" };
+    }
+  };
 
   const signUp = async (data: { email: string, password: string, role: UserRole, fullName: string, phoneNumber?: string, collaboratorToken?: string }): Promise<{ error?: string }> => {
     try {
@@ -281,6 +311,7 @@ const signIn = async (email: string, password: string): Promise<{ error?: string
       user, 
       isLoading, 
       signIn, 
+      signInWithGoogle,
       signUp, 
       signOut,
       forgotPassword,

@@ -31,9 +31,20 @@ export default function SubmitAudition() {
   const initialRoleId = searchParams.get("roleId") || "";
   const [selectedRoleId, setSelectedRoleId] = useState(initialRoleId);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [availableSkills, setAvailableSkills] = useState<string[]>([
-    "Acting", "Voice over", "Modeling", "Dancing", "Stunts", "Presenting", "Singing", "Comedy"
-  ]);
+  const isProfessional = user?.role === "industry_professional";
+  const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isProfessional) {
+      setAvailableSkills([
+        "Photography", "Makeup & Hair", "Coaching / Training", "Video Editing", "Fashion Styling", "Lighting", "Sound Design", "Production Assistant"
+      ]);
+    } else {
+      setAvailableSkills([
+        "Acting", "Voice over", "Modeling", "Dancing", "Stunts", "Presenting", "Singing", "Comedy"
+      ]);
+    }
+  }, [user, isProfessional]);
   const [questionAnswers, setQuestionAnswers] = useState<Record<string, any>>({});
   const [hasExistingApplication, setHasExistingApplication] = useState(false);
 
@@ -362,8 +373,10 @@ export default function SubmitAudition() {
             };
             flatten(profile);
             
-            const unified = profile.unifiedTalentProfile || {};
-            const skillKeysToCheck = ['skills', 'coreSkills', 'core_skills', 'actor_special_skills', 'special_skills'];
+            const unified = isProfessional ? (profile.unifiedProfessionalProfile || {}) : (profile.unifiedTalentProfile || {});
+            const skillKeysToCheck = isProfessional 
+              ? ['skills', 'specialties', 'services', 'coachingSpecialities']
+              : ['skills', 'coreSkills', 'core_skills', 'actor_special_skills', 'special_skills'];
             
             let profileSkills: string[] = [];
             for (const key of skillKeysToCheck) {
@@ -380,13 +393,17 @@ export default function SubmitAudition() {
           const profileSkills = getProfileSkills();
           console.log("Profile skills found:", profileSkills);
           
-          if (profileSkills.length > 0) {
-            const uniqueCombinedSkills = [...new Set([
-              "Acting", "Voice over", "Modeling", "Dancing", "Stunts", "Presenting", "Singing", "Comedy",
-              ...profileSkills
-            ])];
-            setAvailableSkills(uniqueCombinedSkills as string[]);
-          }
+          const baseSkills = isProfessional ? [
+            "Photography", "Makeup & Hair", "Coaching / Training", "Video Editing", "Fashion Styling", "Lighting", "Sound Design", "Production Assistant"
+          ] : [
+            "Acting", "Voice over", "Modeling", "Dancing", "Stunts", "Presenting", "Singing", "Comedy"
+          ];
+
+          const uniqueCombinedSkills = [...new Set([
+            ...baseSkills,
+            ...profileSkills
+          ])];
+          setAvailableSkills(uniqueCombinedSkills as string[]);
           
           // Auto-fill form with profile data if no existing application
           if (castingRes.data.success && !hasExistingApplication) {
@@ -465,7 +482,9 @@ export default function SubmitAudition() {
     if (!formData.why_suitable.trim()) return toast.error("Please explain why you are suitable");
     if (!formData.relevant_experience.trim()) return toast.error("Relevant Experience is required");
     if (formData.skills.length === 0) return toast.error("Please select at least one skill");
-    if (!headshotFile && !useProfileHeadshot) return toast.error("Please upload a headshot or select your profile picture");
+    if (!headshotFile && !useProfileHeadshot) {
+      return toast.error(isProfessional ? "Please upload a logo/photo or select your profile picture" : "Please upload a headshot or select your profile picture");
+    }
     
     const isProjectPipeline = !!(casting?.roles && casting.roles.length > 0);
     if (isProjectPipeline && !selectedRoleId) {
@@ -622,8 +641,8 @@ export default function SubmitAudition() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Talent Application Form</h1>
-          <p className="text-muted-foreground">Submit your application and portfolio for this role.</p>
+          <h1 className="text-3xl font-bold">{isProfessional ? "Professional Service Proposal" : "Talent Application Form"}</h1>
+          <p className="text-muted-foreground">{isProfessional ? "Submit your proposal and portfolio details to the Casting Director." : "Submit your application and portfolio for this role."}</p>
         </div>
         <Button
           type="button"
@@ -702,14 +721,14 @@ export default function SubmitAudition() {
       {/* Section A: Core Message */}
       <Card>
         <CardHeader>
-          <CardTitle>A. Core Application Message</CardTitle>
-          <CardDescription>Introduce yourself professionally</CardDescription>
+          <CardTitle>{isProfessional ? "A. Core Proposal Message" : "A. Core Application Message"}</CardTitle>
+          <CardDescription>{isProfessional ? "Introduce your services and proposal" : "Introduce yourself professionally"}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Cover Message / Introduction <span className="text-red-500">*</span></Label>
+            <Label>{isProfessional ? "Proposal Cover Message" : "Cover Message / Introduction"} <span className="text-red-500">*</span></Label>
             <Textarea 
-              placeholder="e.g. I believe I am a strong fit for this role because..."
+              placeholder={isProfessional ? "Describe your service proposal for this project..." : "e.g. I believe I am a strong fit for this role because..."}
               value={formData.cover_message}
               onChange={(e) => handleChange("cover_message", e.target.value)}
               rows={4}
@@ -721,23 +740,23 @@ export default function SubmitAudition() {
       {/* Section B: Role Specific Response */}
       <Card>
         <CardHeader>
-          <CardTitle>B. Role-Specific Response</CardTitle>
-          <CardDescription>Tell the Casting Director why you are the perfect fit.</CardDescription>
+          <CardTitle>{isProfessional ? "B. Project Suitability" : "B. Role-Specific Response"}</CardTitle>
+          <CardDescription>{isProfessional ? "Tell the Casting Director why you are the perfect choice." : "Tell the Casting Director why you are the perfect fit."}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Why are you suitable for this role? <span className="text-red-500">*</span></Label>
+            <Label>{isProfessional ? "Why are you suitable for this project?" : "Why are you suitable for this role?"} <span className="text-red-500">*</span></Label>
             <Textarea 
-              placeholder="Detail your specific attributes or background that match this role..."
+              placeholder={isProfessional ? "Detail your professional expertise matching this project..." : "Detail your specific attributes or background that match this role..."}
               value={formData.why_suitable}
               onChange={(e) => handleChange("why_suitable", e.target.value)}
               rows={3}
             />
           </div>
           <div className="space-y-2">
-            <Label>Relevant Experience <span className="text-red-500">*</span></Label>
+            <Label>{isProfessional ? "Relevant Professional Experience" : "Relevant Experience"} <span className="text-red-500">*</span></Label>
             <Textarea 
-              placeholder="Previous roles, productions worked on, years of experience..."
+              placeholder={isProfessional ? "Previous clients, bookings, portfolio work..." : "Previous roles, productions worked on, years of experience..."}
               value={formData.relevant_experience}
               onChange={(e) => handleChange("relevant_experience", e.target.value)}
               rows={3}
@@ -774,12 +793,12 @@ export default function SubmitAudition() {
       {/* Section D: Media Submission */}
       <Card>
         <CardHeader>
-          <CardTitle>D. Media Submission</CardTitle>
-          <CardDescription>Upload your headshot and portfolio media</CardDescription>
+          <CardTitle>{isProfessional ? "D. Portfolio & Media Submission" : "D. Media Submission"}</CardTitle>
+          <CardDescription>{isProfessional ? "Upload your business logo, professional photo, and work samples" : "Upload your headshot and portfolio media"}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label>Headshot <span className="text-red-500">*</span></Label>
+            <Label>{isProfessional ? "Professional Photo / Business Logo" : "Headshot"} <span className="text-red-500">*</span></Label>
             
             {user && (
               <div className="flex items-center space-x-2 mt-2 mb-4">
@@ -793,9 +812,9 @@ export default function SubmitAudition() {
                 />
                 <label
                   htmlFor="use-profile-headshot"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  className="text-sm font-medium leading-none cursor-pointer"
                 >
-                  Use my profile picture as headshot
+                  {isProfessional ? "Use my profile picture as professional photo" : "Use my profile picture as headshot"}
                 </label>
               </div>
             )}
@@ -809,7 +828,7 @@ export default function SubmitAudition() {
                 />
                 <div>
                   <p className="font-medium text-sm">Using Profile Picture</p>
-                  <p className="text-xs text-muted-foreground">This image will be submitted as your headshot.</p>
+                  <p className="text-xs text-muted-foreground">{isProfessional ? "This image will be submitted as your professional photo." : "This image will be submitted as your headshot."}</p>
                 </div>
               </div>
             ) : (
@@ -823,7 +842,7 @@ export default function SubmitAudition() {
                 ) : (
                   <label className="cursor-pointer block">
                     <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                    <p className="font-medium text-sm">Upload Headshot</p>
+                    <p className="font-medium text-sm">{isProfessional ? "Upload Logo / Photo" : "Upload Headshot"}</p>
                     <p className="text-xs text-muted-foreground mt-1">JPG or PNG</p>
                     <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={handleHeadshotChange} />
                   </label>
@@ -835,7 +854,7 @@ export default function SubmitAudition() {
           <Separator />
 
           <div className="space-y-2">
-            <Label>Showreel / Portfolio Media (Optional)</Label>
+            <Label>{isProfessional ? "Showcase Work / Portfolio Item (Optional)" : "Showreel / Portfolio Media (Optional)"}</Label>
             <div className="border-2 border-dashed border-border rounded-xl p-6 text-center bg-muted/20">
               {mediaFile ? (
                 <div className="space-y-2">
@@ -846,7 +865,7 @@ export default function SubmitAudition() {
               ) : (
                 <label className="cursor-pointer block">
                   <Video className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="font-medium text-sm">Upload Video/Media</p>
+                  <p className="font-medium text-sm">{isProfessional ? "Upload Portfolio Media" : "Upload Video/Media"}</p>
                   <input type="file" accept="video/*,image/*,application/pdf" className="hidden" onChange={handleMediaChange} />
                 </label>
               )}
@@ -854,7 +873,7 @@ export default function SubmitAudition() {
           </div>
           
           <div className="space-y-2">
-            <Label>Showreel Video URL (Optional)</Label>
+            <Label>{isProfessional ? "Portfolio Video URL (Optional)" : "Showreel Video URL (Optional)"}</Label>
             <Input 
               placeholder="YouTube, Vimeo, etc." 
               value={formData.showreel_url}
@@ -876,37 +895,41 @@ export default function SubmitAudition() {
       {/* Section E: Logistics */}
       <Card>
         <CardHeader>
-          <CardTitle>E. Physical Attributes & Logistics</CardTitle>
-          <CardDescription>Basic details required for casting</CardDescription>
+          <CardTitle>{isProfessional ? "E. Logistics & Business Details" : "E. Physical Attributes & Logistics"}</CardTitle>
+          <CardDescription>{isProfessional ? "Basic operational details required for casting" : "Basic details required for casting"}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {!isProfessional && (
+              <>
+                <div className="space-y-2">
+                  <Label>Height</Label>
+                  <Input 
+                    placeholder="e.g. 5'9'' or 175cm" 
+                    value={formData.height}
+                    onChange={(e) => handleChange("height", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Age Range</Label>
+                  <Input 
+                    placeholder="e.g. 20-25" 
+                    value={formData.age_range}
+                    onChange={(e) => handleChange("age_range", e.target.value)}
+                  />
+                </div>
+              </>
+            )}
             <div className="space-y-2">
-              <Label>Height</Label>
+              <Label>{isProfessional ? "Business Location / Base" : "Location"}</Label>
               <Input 
-                placeholder="e.g. 5'9'' or 175cm" 
-                value={formData.height}
-                onChange={(e) => handleChange("height", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Age Range</Label>
-              <Input 
-                placeholder="e.g. 20-25" 
-                value={formData.age_range}
-                onChange={(e) => handleChange("age_range", e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Location</Label>
-              <Input 
-                placeholder="Current city" 
+                placeholder={isProfessional ? "e.g. London, UK" : "Current city"} 
                 value={formData.location_override}
                 onChange={(e) => handleChange("location_override", e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>Availability Date</Label>
+              <Label>{isProfessional ? "Earliest Available Date" : "Availability Date"}</Label>
               <Input 
                 type="date"
                 value={formData.availability_date}
@@ -914,9 +937,9 @@ export default function SubmitAudition() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Compensation Expectation</Label>
+              <Label>{isProfessional ? "Rate / Quote Expectation" : "Compensation Expectation"}</Label>
               <Input 
-                placeholder="Fixed, Negotiable, Rate per day..." 
+                placeholder={isProfessional ? "e.g. £500/day, Negotiable" : "Fixed, Negotiable, Rate per day..."} 
                 value={formData.compensation_expectation}
                 onChange={(e) => handleChange("compensation_expectation", e.target.value)}
               />
@@ -927,8 +950,8 @@ export default function SubmitAudition() {
 
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-base">Willingness to Travel</Label>
-              <p className="text-sm text-muted-foreground">Are you willing to travel for this role?</p>
+              <Label className="text-base">{isProfessional ? "Willingness to Travel for On-site Work" : "Willingness to Travel"}</Label>
+              <p className="text-sm text-muted-foreground">{isProfessional ? "Are you willing to travel to project locations?" : "Are you willing to travel for this role?"}</p>
             </div>
             <Switch 
               checked={formData.willing_to_travel}

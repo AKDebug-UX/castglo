@@ -13,6 +13,7 @@ import {
   CheckCircle,
   XCircle,
   Award,
+  File,
   Loader2,
   ArrowLeft,
   Star,
@@ -338,6 +339,11 @@ export default function DirectorSubmissions() {
                         <MapPin className="w-3 h-3" />
                         {formatLocation(submission.talent?.location)}
                       </p>
+                      {submission.talent?.role === "industry_professional" && (
+                        <Badge variant="outline" className="text-[10px] py-0 px-2 mt-1 bg-teal-50/50 text-teal-700 border-teal-200 font-semibold">
+                          Industry Professional
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <Badge className={statusColors[submission.status] || "bg-muted"}>
@@ -355,7 +361,7 @@ export default function DirectorSubmissions() {
                   )}
                 </div>
 
-                {/* Video Preview */}
+                {/* Video / Media Preview */}
                 <div 
                   className="relative aspect-video rounded-lg bg-muted mb-3 flex items-center justify-center group cursor-pointer overflow-hidden"
                   onClick={() => {
@@ -366,6 +372,13 @@ export default function DirectorSubmissions() {
                 >
                   {submission.auditionVideo ? (
                     <video src={submission.auditionVideo} className="w-full h-full object-cover" />
+                  ) : submission.mediaUrl && (submission.mediaUrl.endsWith('.png') || submission.mediaUrl.endsWith('.jpg') || submission.mediaUrl.endsWith('.jpeg')) ? (
+                    <img src={submission.mediaUrl} className="w-full h-full object-cover" alt="Portfolio Preview" />
+                  ) : submission.mediaUrl && submission.mediaUrl.endsWith('.pdf') ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-4 bg-slate-100">
+                       <File className="w-8 h-8 text-[#009698] mb-1" />
+                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">View PDF Portfolio</span>
+                    </div>
                   ) : (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-lg flex items-center justify-center">
                        <Play className="w-8 h-8 text-white" />
@@ -373,8 +386,8 @@ export default function DirectorSubmissions() {
                   )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span className="text-white text-xs font-bold flex items-center gap-1">
-                      <Play className="w-4 h-4" />
-                      Review Audition
+                      {submission.auditionVideo ? <Play className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {submission.auditionVideo ? "Review Audition" : "Review Portfolio"}
                     </span>
                   </div>
                 </div>
@@ -541,7 +554,7 @@ export default function DirectorSubmissions() {
           <div className="grid md:grid-cols-[1fr,320px] gap-6 mt-4">
             {/* Left Column: Media & Notes */}
             <div className="space-y-6">
-              <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group">
+              <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group flex items-center justify-center">
                 {selectedSubmission?.auditionVideo ? (
                   <video 
                     src={selectedSubmission.auditionVideo} 
@@ -549,6 +562,22 @@ export default function DirectorSubmissions() {
                     className="w-full h-full object-contain"
                     autoPlay
                   />
+                ) : selectedSubmission?.mediaUrl && (selectedSubmission.mediaUrl.endsWith('.png') || selectedSubmission.mediaUrl.endsWith('.jpg') || selectedSubmission.mediaUrl.endsWith('.jpeg')) ? (
+                  <img 
+                    src={selectedSubmission.mediaUrl} 
+                    className="w-full h-full object-contain" 
+                    alt="Portfolio Preview" 
+                  />
+                ) : selectedSubmission?.mediaUrl && selectedSubmission.mediaUrl.endsWith('.pdf') ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4 p-6 bg-slate-900/50">
+                    <File className="w-16 h-16 text-[#009698]" />
+                    <p className="text-lg font-medium opacity-70">Document Portfolio Submitted</p>
+                    <Button variant="outline" className="border-teal-400 text-teal-400 hover:bg-teal-400/10" asChild>
+                      <a href={selectedSubmission.mediaUrl} target="_blank" rel="noopener noreferrer">
+                        Open PDF Document
+                      </a>
+                    </Button>
+                  </div>
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
                     <Play className="w-16 h-16 opacity-50" />

@@ -89,16 +89,16 @@ export default function ProfessionalServices() {
       title: service.serviceTitle || service.title || "",
       description: service.serviceShortDescription || service.description || "",
       category: service.serviceCategory || service.category || "",
-      pricing_model: service.pricing_model || "fixed",
+      pricing_model: service.pricingModel || service.pricing_model || "fixed",
       price: service.priceAmount !== undefined ? String(service.priceAmount) : service.price !== undefined ? String(service.price) : "",
       duration: service.duration !== undefined ? String(service.duration) : "",
-      target_clients: service.target_clients || [],
+      target_clients: service.targetClientTypes || service.target_clients || [],
       industry_areas: service.industry_areas || [],
-      availability_type: service.availability_type || "project_based",
-      working_days: service.working_days || ["mon", "tue", "wed", "thu", "fri"],
-      lead_time: service.lead_time || "1_week",
+      availability_type: service.deliveryType || service.availability_type || "project_based",
+      working_days: service.workingDays || service.working_days || ["mon", "tue", "wed", "thu", "fri"],
+      lead_time: service.turnaroundTime || service.lead_time || "1_week",
     });
-    setSelectedImage(service.image || null);
+    setSelectedImage(service.media?.[0]?.url || service.image || null);
     setImageFile(null);
     setIsDialogOpen(true);
   };
@@ -163,12 +163,17 @@ export default function ProfessionalServices() {
       }
 
       const payload = {
-        ...formData,
         serviceTitle: formData.title,
         serviceShortDescription: formData.description,
         serviceCategory: formData.category,
-        price: Number(formData.price),
-        image: imageUrl || undefined,
+        pricingModel: formData.pricing_model,
+        priceAmount: Number(formData.price),
+        duration: Number(formData.duration),
+        targetClientTypes: formData.target_clients,
+        deliveryType: formData.availability_type,
+        workingDays: formData.working_days,
+        turnaroundTime: formData.lead_time,
+        media: imageUrl ? [{ url: imageUrl, type: "image" }] : []
       };
 
       let response;
@@ -627,10 +632,10 @@ export default function ProfessionalServices() {
                 </DialogTitle>
               </DialogHeader>
 
-              {viewingService.image && (
+              {(viewingService.media?.[0]?.url || viewingService.image) && (
                 <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-md">
                   <img 
-                    src={viewingService.image} 
+                    src={viewingService.media?.[0]?.url || viewingService.image} 
                     alt={viewingService.serviceTitle || viewingService.title} 
                     className="w-full h-full object-cover"
                   />
@@ -651,7 +656,7 @@ export default function ProfessionalServices() {
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pricing Model</p>
                     <p className="text-sm font-black text-slate-900 mt-1 capitalize">
-                      {(viewingService.pricing_model || 'fixed').replace('_', ' ')}
+                      {(viewingService.pricingModel || viewingService.pricing_model || 'fixed').replace('_', ' ')}
                     </p>
                   </div>
 
@@ -673,7 +678,7 @@ export default function ProfessionalServices() {
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Availability</p>
                     <p className="text-sm font-black text-slate-900 mt-1 capitalize">
-                      {(viewingService.availability_type || 'project_based').replace('_', ' ')}
+                      {(viewingService.deliveryType || viewingService.availability_type || 'project_based').replace('_', ' ')}
                     </p>
                   </div>
                 </div>
@@ -685,8 +690,8 @@ export default function ProfessionalServices() {
                       Target Clients
                     </p>
                     <div className="flex flex-wrap gap-1.5">
-                      {viewingService.target_clients && viewingService.target_clients.length > 0 ? (
-                        viewingService.target_clients.map((client: string) => (
+                      {(viewingService.targetClientTypes || viewingService.target_clients) && (viewingService.targetClientTypes || viewingService.target_clients).length > 0 ? (
+                        (viewingService.targetClientTypes || viewingService.target_clients).map((client: string) => (
                           <Badge key={client} className="bg-white border border-slate-200 text-slate-600 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize">
                             {client}
                           </Badge>
@@ -703,17 +708,17 @@ export default function ProfessionalServices() {
                       Lead Time
                     </p>
                     <p className="text-sm font-bold text-slate-900 capitalize">
-                      {(viewingService.lead_time || '1_week').replace('_', ' ')}
+                      {(viewingService.turnaroundTime || viewingService.lead_time || '1_week').replace('_', ' ')}
                     </p>
                   </div>
                 </div>
 
-                {viewingService.working_days && (
+                {(viewingService.workingDays || viewingService.working_days) && (
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Working Days</p>
                     <div className="flex flex-wrap gap-2">
                       {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((day) => {
-                        const isActive = viewingService.working_days.includes(day);
+                        const isActive = (viewingService.workingDays || viewingService.working_days).includes(day);
                         return (
                           <div 
                             key={day} 

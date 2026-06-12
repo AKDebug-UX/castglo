@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, KeyRound, Settings2, ShieldCheck, CreditCard, Bell, Mail } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { authAPI, subscriptionAPI } from "@/lib/api";
+import { authAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -36,12 +36,33 @@ export default function DirectorSettings() {
 
   const fetchSettingsData = async () => {
     try {
-      const subRes = await subscriptionAPI.getStatus().catch(() => ({ data: { success: false } }));
+      const [subRes, authRes] = await Promise.all([
+        subscriptionAPI.getStatus().catch(() => ({ data: { success: false } })),
+        authAPI.getMe().catch(() => ({ data: { success: false } })),
+      ]);
       if (subRes.data?.success) setSubscriptionInfo(subRes.data.data);
+      if (authRes.data?.success) {
+        setNotificationSettings((s: any) => ({
+          ...s,
+          ...(authRes.data.data.notificationSettings || {})
+        }));
+      }
     } catch (error) {
       toast.error("Failed to load settings data");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const saveNotifications = async () => {
+    setIsSaving(true);
+    try {
+      await userAPI.updateProfile({ notificationSettings });
+      toast.success("Notification preferences saved successfully!");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to update notification settings");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -324,11 +345,11 @@ export default function DirectorSettings() {
               </div>
 
               <Button 
-                onClick={() => {
-                  toast.success("Notification preferences saved successfully!");
-                }}
+                onClick={saveNotifications}
+                disabled={isSaving}
                 className="bg-[#009698] hover:bg-[#009698]/90 font-bold rounded-xl px-6 py-5"
               >
+                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Save Settings
               </Button>
             </CardContent>

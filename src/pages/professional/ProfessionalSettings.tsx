@@ -36,15 +36,22 @@ export default function ProfessionalSettings() {
   useEffect(() => {
     const fetchSettingsData = async () => {
       try {
-        const [subRes, pmRes, invRes] = await Promise.all([
+        const [subRes, pmRes, invRes, authRes] = await Promise.all([
           subscriptionAPI.getStatus().catch(() => ({ data: { success: false } })),
           subscriptionAPI.getPaymentMethods().catch(() => ({ data: { success: false } })),
           subscriptionAPI.getInvoices().catch(() => ({ data: { success: false } })),
+          authAPI.getMe().catch(() => ({ data: { success: false } })),
         ]);
 
         if (subRes.data?.success) setSubscriptionInfo(subRes.data.data);
         if (pmRes.data?.success) setPaymentMethods(pmRes.data.data.paymentMethods || []);
         if (invRes.data?.success) setInvoices(invRes.data.data.invoices || []);
+        if (authRes.data?.success) {
+          setNotificationSettings((s: any) => ({
+            ...s,
+            ...(authRes.data.data.notificationSettings || {})
+          }));
+        }
       } catch (error) {
         console.error(error);
       } finally {
@@ -53,6 +60,18 @@ export default function ProfessionalSettings() {
     };
     fetchSettingsData();
   }, []);
+
+  const saveNotifications = async () => {
+    setIsSaving(true);
+    try {
+      await userAPI.updateProfile({ notificationSettings });
+      toast.success("Notification preferences saved successfully!");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to update notification settings");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const resolvedPlan = useMemo(() => {
     const rawKeyOrName =
@@ -360,11 +379,11 @@ export default function ProfessionalSettings() {
               </div>
 
               <Button 
-                onClick={() => {
-                  toast.success("Notification preferences saved successfully!");
-                }}
+                onClick={saveNotifications}
+                disabled={isSaving}
                 className="bg-[#009698] hover:bg-[#009698]/90 font-bold rounded-xl px-6 py-5 text-white shadow-lg shadow-[#009698]/10"
               >
+                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Save Settings
               </Button>
             </CardContent>

@@ -29,10 +29,11 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     const fetchNotifications = async () => {
       try {
         const response = await notificationAPI.getAll({ limit: 5, sort: "-createdAt" });
-        if (response.data.success && Array.isArray(response.data.data)) {
-          const fetchedNotifications = response.data.data;
+        if (response.data.success) {
+          const data = response.data.data;
+          const fetchedNotifications = Array.isArray(data) ? data : (data?.notifications || []);
           setNotifications(fetchedNotifications);
-          const unread = fetchedNotifications.filter((n) => !n.isRead).length;
+          const unread = fetchedNotifications.filter((n: any) => !(typeof n.isRead === 'boolean' ? n.isRead : n.read)).length;
           setUnreadCount(unread);
         }
       } catch (error) {
@@ -121,18 +122,18 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           <DropdownMenuContent align="end" className="w-80">
             <div className="p-2 font-medium">Notifications</div>
             <DropdownMenuSeparator />
-            {notifications.length > 0 ? (
-              notifications.map(notification => (
-                <DropdownMenuItem key={notification._id} asChild>
-                  <Link to={notification.metadata?.link || "/notifications"} className="flex items-start gap-3 p-2 cursor-pointer">
-                    <div className={`mt-1 h-2 w-2 rounded-full ${notification.isRead ? "bg-transparent" : "bg-primary"}`} />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground">{notification.message}</p>
-                    </div>
-                  </Link>
-                </DropdownMenuItem>
-              ))
+             {notifications.length > 0 ? (
+               notifications.map((notification: any) => (
+                 <DropdownMenuItem key={notification._id} asChild>
+                   <Link to={notification.metadata?.link || "/notifications"} className="flex items-start gap-3 p-2 cursor-pointer">
+                     <div className={`mt-1 h-2 w-2 rounded-full ${(typeof notification.isRead === 'boolean' ? notification.isRead : notification.read) ? "bg-transparent" : "bg-primary"}`} />
+                     <div className="flex-1">
+                       <p className="text-sm font-medium">{notification.title}</p>
+                       <p className="text-xs text-muted-foreground">{notification.message}</p>
+                     </div>
+                   </Link>
+                 </DropdownMenuItem>
+               ))
             ) : (
               <div className="p-4 text-sm text-center text-muted-foreground">No new notifications</div>
             )}
