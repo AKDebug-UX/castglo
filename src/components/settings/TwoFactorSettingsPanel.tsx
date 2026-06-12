@@ -204,13 +204,38 @@ function TwoFactorSetupModal({ open, onClose }: SetupModalProps) {
               </div>
             ) : (
               <>
-                {qrCode && (
+                {/* QR Code display — handles data URIs, otpauth:// URIs, and plain URLs */}
+                {qrCode ? (
                   <div className="flex justify-center">
                     <div className="p-3 bg-white border rounded-xl shadow-sm inline-block">
-                      <img src={qrCode} alt="2FA QR code" className="w-48 h-48" />
+                      <img
+                        src={
+                          // If it's already a data URI or a plain http URL, use as-is.
+                          // If it's an otpauth:// URI, render via Google Charts (reliable, no install needed).
+                          qrCode.startsWith("data:") || qrCode.startsWith("http")
+                            ? qrCode
+                            : `https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=${encodeURIComponent(qrCode)}`
+                        }
+                        alt="Scan this QR code with your authenticator app"
+                        className="w-48 h-48"
+                        onError={(e) => {
+                          // If image fails to load, hide it so the manual key is still usable
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
                     </div>
                   </div>
+                ) : (
+                  /* No QR code received from server — guide user to manual entry */
+                  <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-center space-y-1">
+                    <QrCode className="w-8 h-8 text-amber-400 mx-auto" />
+                    <p className="text-sm font-semibold text-amber-800">QR code unavailable</p>
+                    <p className="text-xs text-amber-700">
+                      Use the manual setup key below to add this account to your authenticator app.
+                    </p>
+                  </div>
                 )}
+
                 {secret && (
                   <div className="space-y-1.5">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
@@ -218,7 +243,7 @@ function TwoFactorSetupModal({ open, onClose }: SetupModalProps) {
                     </p>
                     <div className="flex items-center gap-2 rounded-xl border bg-slate-50 px-3 py-2">
                       <code className="flex-1 font-mono text-sm text-slate-800 tracking-widest break-all">
-                        {showSecret ? secret : "•".repeat(secret.length)}
+                        {showSecret ? secret : "•".repeat(Math.min(secret.length, 32))}
                       </code>
                       <button
                         type="button"
@@ -240,10 +265,19 @@ function TwoFactorSetupModal({ open, onClose }: SetupModalProps) {
                     </div>
                   </div>
                 )}
+
+                {/* Show if both QR and secret are missing — API returned nothing useful */}
+                {!qrCode && !secret && (
+                  <p className="text-xs text-destructive text-center">
+                    The server did not return setup details. Please try again or contact support.
+                  </p>
+                )}
+
                 <DialogFooter>
                   <Button
                     className="w-full bg-[#009698] hover:bg-[#009698]/90 font-bold rounded-xl text-white"
                     onClick={() => setStep("confirm")}
+                    disabled={!qrCode && !secret}
                   >
                     Next — Enter code
                   </Button>

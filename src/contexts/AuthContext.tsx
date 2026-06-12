@@ -272,11 +272,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const enrolTwoFactor = async (): Promise<{ error?: string; qrCode?: string; secret?: string }> => {
     try {
       const response = await twoFactorAuthAPI.enrol();
+      // Debug: log raw enrol response so the exact field names are visible in devtools
+      if (import.meta.env.DEV) {
+        console.log("[2FA enrol] raw response data:", JSON.stringify(response.data, null, 2));
+      }
       if (response.data.success) {
-        return {
-          qrCode: response.data.data?.qrCode,
-          secret: response.data.data?.secret,
-        };
+        const d = response.data.data ?? response.data;
+        // Resolve QR code — backends differ on field name
+        const qrCode: string | undefined =
+          d?.qrCode ||
+          d?.qrCodeUrl ||
+          d?.qr_code ||
+          d?.qr ||
+          d?.otpauthUrl ||
+          d?.otpauth_url ||
+          undefined;
+        // Resolve secret — backends differ on field name
+        const secret: string | undefined =
+          d?.secret ||
+          d?.manualEntryKey ||
+          d?.secretKey ||
+          d?.base32Secret ||
+          undefined;
+        return { qrCode, secret };
       }
       return { error: response.data.message || "Failed to start 2FA enrolment" };
     } catch (error: any) {

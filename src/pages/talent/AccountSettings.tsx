@@ -202,43 +202,6 @@ export default function AccountSettings() {
     }
   };
 
-  const handleEnable2FA = async () => {
-    setIsEnabling2FA(true);
-    try {
-      const result = await enableTwoFactor();
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-      toast.success("Two-factor authentication enabled!");
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to enable two-factor authentication");
-    } finally {
-      setIsEnabling2FA(false);
-    }
-  };
-
-  const handleDisable2FA = async () => {
-    if (!disablePassword) {
-      toast.error("Password is required to disable two-factor authentication");
-      return;
-    }
-    setIsDisabling2FA(true);
-    try {
-      const result = await disableTwoFactor(disablePassword);
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-      toast.success("Two-factor authentication disabled!");
-      setDisablePassword("");
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to disable two-factor authentication");
-    } finally {
-      setIsDisabling2FA(false);
-    }
-  };
-
   const deleteAccount = async () => {
     const password = prompt("To confirm deletion, please enter your password:");
     if (password === null) return;
