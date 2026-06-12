@@ -163,6 +163,8 @@ export const API_ENDPOINTS = {
     GET_MY_SERVICES: '/services/me',
     CREATE: '/services',
     STATS: '/services/stats',
+    UPDATE: (id: string) => `/services/${id}`,
+    DELETE: (id: string) => `/services/${id}`,
   },
   SUBSCRIPTIONS: {
     CREATE_CHECKOUT_SESSION: '/subscriptions/create-checkout-session',
@@ -413,6 +415,8 @@ export const serviceAPI = {
   getMyServices: () => api.get(API_ENDPOINTS.SERVICES.GET_MY_SERVICES),
   create: (data) => api.post(API_ENDPOINTS.SERVICES.CREATE, data),
   getStats: () => api.get(API_ENDPOINTS.SERVICES.STATS),
+  update: (id: string, data) => api.put(API_ENDPOINTS.SERVICES.UPDATE(id), data),
+  delete: (id: string) => api.delete(API_ENDPOINTS.SERVICES.DELETE(id)),
 };
 
 // --- SUBSCRIPTION ENDPOINTS ---

@@ -60,6 +60,48 @@ export default function ProfessionalServices() {
     working_days: ["mon", "tue", "wed", "thu", "fri"] as string[],
     lead_time: "1_week",
   });
+  const [editingService, setEditingService] = useState<any | null>(null);
+  const [viewingService, setViewingService] = useState<any | null>(null);
+
+  const handleOpenCreate = () => {
+    setEditingService(null);
+    setFormData({
+      title: "",
+      description: "",
+      category: "",
+      pricing_model: "fixed",
+      price: "",
+      duration: "",
+      target_clients: [],
+      industry_areas: [],
+      availability_type: "project_based",
+      working_days: ["mon", "tue", "wed", "thu", "fri"],
+      lead_time: "1_week",
+    });
+    setSelectedImage(null);
+    setImageFile(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleOpenEdit = (service: any) => {
+    setEditingService(service);
+    setFormData({
+      title: service.serviceTitle || service.title || "",
+      description: service.serviceShortDescription || service.description || "",
+      category: service.serviceCategory || service.category || "",
+      pricing_model: service.pricing_model || "fixed",
+      price: service.priceAmount !== undefined ? String(service.priceAmount) : service.price !== undefined ? String(service.price) : "",
+      duration: service.duration !== undefined ? String(service.duration) : "",
+      target_clients: service.target_clients || [],
+      industry_areas: service.industry_areas || [],
+      availability_type: service.availability_type || "project_based",
+      working_days: service.working_days || ["mon", "tue", "wed", "thu", "fri"],
+      lead_time: service.lead_time || "1_week",
+    });
+    setSelectedImage(service.image || null);
+    setImageFile(null);
+    setIsDialogOpen(true);
+  };
 
   const fetchServices = async () => {
     try {
@@ -104,7 +146,7 @@ export default function ProfessionalServices() {
     }
   };
 
-  const handleCreateService = async () => {
+  const handleSubmitService = async () => {
     if (!formData.title || !formData.description || !formData.category || !formData.price || !formData.duration) {
       toast.error("Please fill in all required fields");
       return;
@@ -112,7 +154,7 @@ export default function ProfessionalServices() {
 
     setIsSubmitting(true);
     try {
-      let imageUrl: string | undefined;
+      let imageUrl = selectedImage && !selectedImage.startsWith('data:') ? selectedImage : undefined;
       if (imageFile) {
         const uploadFormData = new FormData();
         uploadFormData.append("image", imageFile);
@@ -120,17 +162,24 @@ export default function ProfessionalServices() {
         imageUrl = uploadRes.data?.data?.url || uploadRes.data?.url;
       }
 
-      const response = await serviceAPI.create({
+      const payload = {
         ...formData,
         serviceTitle: formData.title,
         serviceShortDescription: formData.description,
         serviceCategory: formData.category,
         price: Number(formData.price),
         image: imageUrl || undefined,
-      });
+      };
+
+      let response;
+      if (editingService) {
+        response = await serviceAPI.update(editingService._id || editingService.id, payload);
+      } else {
+        response = await serviceAPI.create(payload);
+      }
 
       if (response.data.success) {
-        toast.success("Service created successfully!");
+        toast.success(editingService ? "Service updated successfully!" : "Service created successfully!");
         setIsDialogOpen(false);
         setFormData({
           title: "",
@@ -147,10 +196,11 @@ export default function ProfessionalServices() {
         });
         setSelectedImage(null);
         setImageFile(null);
+        setEditingService(null);
         fetchServices();
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create service");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || `Failed to ${editingService ? "update" : "create"} service`);
     } finally {
       setIsSubmitting(false);
     }
@@ -212,17 +262,22 @@ export default function ProfessionalServices() {
           <div>
             <CardTitle>My Professional Services</CardTitle>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="rounded-xl font-bold">
-                <Plus className="w-4 h-4 mr-2" />
-                Add New Service
-              </Button>
-            </DialogTrigger>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) {
+              setEditingService(null);
+            }
+          }}>
+            <Button className="rounded-xl font-bold" onClick={handleOpenCreate}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Service
+            </Button>
             <DialogContent className="max-w-2xl h-[600px] rounded-[32px] border-none shadow-2xl overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold">Create New Service</DialogTitle>
-                <p className="text-sm text-muted-foreground">Add a new service to your professional portfolio</p>
+                <DialogTitle className="text-2xl font-bold">{editingService ? "Edit Service" : "Create New Service"}</DialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  {editingService ? "Update your professional service details" : "Add a new service to your professional portfolio"}
+                </p>
               </DialogHeader>
               <div className="grid gap-6 py-4">
                 <div className="grid gap-5">
@@ -460,13 +515,20 @@ export default function ProfessionalServices() {
                 <Button variant="outline" className="rounded-xl px-8" onClick={() => {
                   setIsDialogOpen(false);
                   setSelectedImage(null);
+                  setEditingService(null);
                 }}>Cancel</Button>
                 <Button 
                   className="rounded-xl px-8 font-bold bg-[#009698] hover:bg-[#009698]/90" 
-                  onClick={handleCreateService}
+                  onClick={handleSubmitService}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Service"}
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : editingService ? (
+                    "Save Changes"
+                  ) : (
+                    "Create Service"
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -497,7 +559,12 @@ export default function ProfessionalServices() {
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-900">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-9 w-9 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-900"
+                          onClick={() => handleOpenEdit(service)}
+                        >
                           <Pencil className="w-4 h-4" />
                         </Button>
                         <Button 
@@ -517,13 +584,18 @@ export default function ProfessionalServices() {
 
                     <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                       <div>
-                        <p className="text-2xl font-black text-slate-900">{formatPrice(service.price)}</p>
+                        <p className="text-2xl font-black text-slate-900">{formatPrice(service.priceAmount)}</p>
                         <p className="text-xs font-bold text-slate-400 flex items-center gap-1 uppercase tracking-wider mt-0.5">
                           <Clock className="w-3 h-3" />
                           {service.duration || 'Flexible'}
                         </p>
                       </div>
-                      <Button variant="outline" size="sm" className="rounded-full px-6 font-bold border-slate-200 text-slate-600 hover:bg-slate-50">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-full px-6 font-bold border-slate-200 text-slate-600 hover:bg-slate-50"
+                        onClick={() => setViewingService(service)}
+                      >
                         <Eye className="w-4 h-4 mr-2" />
                         View Details
                       </Button>
@@ -535,6 +607,153 @@ export default function ProfessionalServices() {
           )}
         </CardContent>
       </Card>
+
+      {/* View Details Dialog */}
+      <Dialog open={!!viewingService} onOpenChange={(open) => !open && setViewingService(null)}>
+        <DialogContent className="max-w-2xl rounded-[32px] border-none shadow-2xl overflow-y-auto max-h-[90vh] p-6">
+          {viewingService && (
+            <div className="space-y-6">
+              <DialogHeader className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-[#DEFCFE] text-[#009698] hover:bg-[#DEFCFE] border-none px-3 py-0.5 rounded-full text-xs font-bold uppercase">
+                    {viewingService.serviceCategory || viewingService.category || 'General'}
+                  </Badge>
+                  <Badge className="bg-emerald-50 text-emerald-600 hover:bg-emerald-50 border-none px-3 py-0.5 rounded-full text-xs font-bold uppercase">
+                    {viewingService.status || 'Active'}
+                  </Badge>
+                </div>
+                <DialogTitle className="text-3xl font-black text-slate-900 leading-tight">
+                  {viewingService.serviceTitle || viewingService.title}
+                </DialogTitle>
+              </DialogHeader>
+
+              {viewingService.image && (
+                <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-md">
+                  <img 
+                    src={viewingService.image} 
+                    alt={viewingService.serviceTitle || viewingService.title} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Description</h4>
+                  <p className="text-slate-700 mt-1.5 leading-relaxed whitespace-pre-wrap">
+                    {viewingService.serviceShortDescription || viewingService.description}
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pricing Model</p>
+                    <p className="text-sm font-black text-slate-900 mt-1 capitalize">
+                      {(viewingService.pricing_model || 'fixed').replace('_', ' ')}
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Price</p>
+                    <p className="text-sm font-black text-[#009698] mt-1">
+                      {formatPrice(viewingService.priceAmount)}
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Duration</p>
+                    <p className="text-sm font-black text-slate-900 mt-1 flex items-center gap-1">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      {viewingService.duration ? `${viewingService.duration} mins` : 'Flexible'}
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Availability</p>
+                    <p className="text-sm font-black text-slate-900 mt-1 capitalize">
+                      {(viewingService.availability_type || 'project_based').replace('_', ' ')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Target className="w-4 h-4 text-[#009698]" />
+                      Target Clients
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {viewingService.target_clients && viewingService.target_clients.length > 0 ? (
+                        viewingService.target_clients.map((client: string) => (
+                          <Badge key={client} className="bg-white border border-slate-200 text-slate-600 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize">
+                            {client}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-400">All clients</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-[#009698]" />
+                      Lead Time
+                    </p>
+                    <p className="text-sm font-bold text-slate-900 capitalize">
+                      {(viewingService.lead_time || '1_week').replace('_', ' ')}
+                    </p>
+                  </div>
+                </div>
+
+                {viewingService.working_days && (
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Working Days</p>
+                    <div className="flex flex-wrap gap-2">
+                      {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((day) => {
+                        const isActive = viewingService.working_days.includes(day);
+                        return (
+                          <div 
+                            key={day} 
+                            className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold uppercase transition-colors ${
+                              isActive ? 'bg-[#009698] text-white font-bold' : 'bg-white border border-slate-200 text-slate-400'
+                            }`}
+                          >
+                            {day.slice(0, 2)}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="mt-4 gap-2 flex justify-end">
+                <Button 
+                  variant="outline" 
+                  className="rounded-xl px-6" 
+                  onClick={() => setViewingService(null)}
+                >
+                  Close
+                </Button>
+                <Button 
+                  className="rounded-xl px-6 bg-[#009698] hover:bg-[#009698]/90 text-white font-bold"
+                  onClick={() => {
+                    const svc = viewingService;
+                    setViewingService(null);
+                    handleOpenEdit(svc);
+                  }}
+                >
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit Service
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
