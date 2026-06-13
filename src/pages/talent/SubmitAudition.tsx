@@ -620,7 +620,7 @@ export default function SubmitAudition() {
             </p>
             <Button asChild>
               <Link to="/talent/submissions">
-                View My Submissions
+                View Deliverables
               </Link>
             </Button>
           </CardContent>

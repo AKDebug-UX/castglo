@@ -79,21 +79,21 @@ export default function Submissions() {
 
           // Calculate stats
           setStats([
-            { label: "Total Submissions", value: apps.length.toString(), sublabel: "All time", Icon: FileText },
-            { label: "Viewed/In Review", value: apps.filter((a: { status: string; }) => ["submitted", "viewed"].includes(a.status)).length.toString(), sublabel: "Pending Review", Icon: Eye },
-            { label: "Shortlisted", value: apps.filter((a: { status: string; }) => a.status === "shortlisted").length.toString(), sublabel: "Callbacks Pending", Icon: Star },
+            { label: "Total Deliverables", value: apps.length.toString(), sublabel: "All time", Icon: FileText },
+            { label: "Pending Approval", value: apps.filter((a: { status: string; }) => ["submitted", "viewed", "shortlisted"].includes(a.status)).length.toString(), sublabel: "Awaiting Review", Icon: Eye },
+            { label: "Approved Deliverables", value: apps.filter((a: { status: string; }) => a.status === "accepted").length.toString(), sublabel: "Completed", Icon: Star },
           ]);
         } else {
           setSubmissions([]);
           setStats([
-            { label: "Total Submissions", value: "0", sublabel: "All time", Icon: FileText },
-            { label: "In Review", value: "0", sublabel: "Pending Review", Icon: Eye },
-            { label: "Shortlisted", value: "0", sublabel: "Callbacks Pending", Icon: Star },
+            { label: "Total Deliverables", value: "0", sublabel: "All time", Icon: FileText },
+            { label: "Pending Approval", value: "0", sublabel: "Awaiting Review", Icon: Eye },
+            { label: "Approved Deliverables", value: "0", sublabel: "Completed", Icon: Star },
           ]);
         }
       } catch (error) {
-        console.error("Error loading submissions:", error);
-        toast.error("Failed to load submissions");
+        console.error("Error loading deliverables:", error);
+        toast.error("Failed to load deliverables");
       } finally {
         setIsLoading(false);
       }
@@ -135,8 +135,8 @@ export default function Submissions() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">My Submissions</h1>
-          <p className="text-muted-foreground">Track your audition submissions and feedback</p>
+          <h1 className="text-2xl font-bold">Deliverables</h1>
+          <p className="text-muted-foreground">Track your audition deliverables and feedback</p>
         </div>
         <Button 
           className="bg-[#009698] hover:bg-[#009698]/90 text-white flex items-center gap-2 font-semibold shadow-sm transition-all duration-200 self-start sm:self-center"
@@ -165,11 +165,11 @@ export default function Submissions() {
         ))}
       </div>
 
-      {/* Submissions Table */}
+      {/* Deliverables Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Submission History</CardTitle>
-          <p className="text-sm text-muted-foreground">View and manage all your audition submissions</p>
+          <CardTitle>Deliverable History</CardTitle>
+          <p className="text-sm text-muted-foreground">View and manage all your audition deliverables</p>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -238,7 +238,7 @@ export default function Submissions() {
                 )) : (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No submissions found.
+                      No deliverables found.
                     </TableCell>
                   </TableRow>
                 )}
