@@ -58,7 +58,7 @@ const buildUserObj = (userData: any): User => ({
   isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
   isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
   preferredCurrency: userData.preferredCurrency || "GBP",
-  twoFactorEnabled: userData.twoFactorEnabled || false,
+  twoFactorEnabled: userData.twoFactorEnabled || userData.isTwoFactorEnabled || userData.is2FAEnabled || userData.twoFactorAuthEnabled || false,
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -277,28 +277,65 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log("[2FA enrol] raw response data:", JSON.stringify(response.data, null, 2));
       }
       if (response.data.success) {
-        const d = response.data.data ?? response.data;
+        // Handle common nesting patterns (e.g. data.data, data.result, data.payload)
+        const root = response.data;
+        const d = root.data ?? root.result ?? root.payload ?? root.twoFactor ?? root;
+        
         // Resolve QR code — backends differ on field name
-        const qrCode: string | undefined =
+        let qrCode: string | undefined =
           d?.qrCode ||
           d?.qrCodeUrl ||
           d?.qr_code ||
           d?.qr ||
           d?.otpauthUrl ||
           d?.otpauth_url ||
+          d?.twoFactorQrCode ||
+          d?.totpQrCode ||
+          d?.qrcode ||
+          d?.dataUrl ||
+          root?.qrCode || // Fallback to root if nested wrong
+          root?.qr_code ||
           undefined;
+          
         // Resolve secret — backends differ on field name
-        const secret: string | undefined =
+        let secret: string | undefined =
           d?.secret ||
           d?.manualEntryKey ||
           d?.secretKey ||
           d?.base32Secret ||
+          d?.twoFactorSecret ||
+          d?.totpSecret ||
+          d?.base32 ||
+          root?.secret || // Fallback to root
           undefined;
+          
+        // If we got a secret but no QR code, generate the otpauth URL locally!
+        if (!qrCode && secret) {
+           const email = user?.email || "user@castglo.com";
+           qrCode = `otpauth://totp/Castglo:${encodeURIComponent(email)}?secret=${secret}&issuer=Castglo`;
+        }
+          
+        if (!qrCode && !secret) {
+           secret = JSON.stringify(root); // DEBUG fallback so it shows in UI
+        }
+        
         return { qrCode, secret };
       }
-      return { error: response.data.message || "Failed to start 2FA enrolment" };
+      const errMsg = response.data.message || "Failed to start 2FA enrolment";
+      if (errMsg.toLowerCase().includes("already enabled") && user) {
+        const updated = { ...user, twoFactorEnabled: true };
+        setUser(updated);
+        localStorage.setItem('userData', JSON.stringify(updated));
+      }
+      return { error: errMsg };
     } catch (error: any) {
-      return { error: error?.response?.data?.message || "An error occurred while starting 2FA enrolment" };
+      const errMsg = error?.response?.data?.message || "An error occurred while starting 2FA enrolment";
+      if (errMsg.toLowerCase().includes("already enabled") && user) {
+        const updated = { ...user, twoFactorEnabled: true };
+        setUser(updated);
+        localStorage.setItem('userData', JSON.stringify(updated));
+      }
+      return { error: errMsg };
     }
   };
 
@@ -306,6 +343,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await twoFactorAuthAPI.confirm(token);
       if (response.data.success) {
+        if (user) {
+          const updated = { ...user, twoFactorEnabled: true };
+          setUser(updated);
+          localStorage.setItem('userData', JSON.stringify(updated));
+        }
         await refreshUser(); // refresh user so twoFactorEnabled=true is reflected
         return { backupCodes: response.data.data?.backupCodes };
       }

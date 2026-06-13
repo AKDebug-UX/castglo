@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ShieldCheck, ShieldOff, QrCode, KeyRound, Copy, Download,
   AlertTriangle, Loader2, Eye, EyeOff, CheckCircle2, RefreshCcw,
@@ -124,7 +124,7 @@ interface SetupModalProps {
 type SetupStep = "enrol" | "confirm" | "backup";
 
 function TwoFactorSetupModal({ open, onClose }: SetupModalProps) {
-  const { enrolTwoFactor, confirmTwoFactor } = useAuth();
+  const { enrolTwoFactor, confirmTwoFactor, refreshUser } = useAuth();
   const [step, setStep] = useState<SetupStep>("enrol");
   const [isLoading, setIsLoading] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -142,7 +142,12 @@ function TwoFactorSetupModal({ open, onClose }: SetupModalProps) {
     const result = await enrolTwoFactor();
     setIsLoading(false);
     if (result.error) {
-      toast.error(result.error);
+      if (result.error.toLowerCase().includes("already enabled")) {
+        toast.info("Two-factor authentication is already enabled.");
+        await refreshUser();
+      } else {
+        toast.error(result.error);
+      }
       onClose();
       return;
     }
@@ -178,8 +183,14 @@ function TwoFactorSetupModal({ open, onClose }: SetupModalProps) {
     onClose();
   };
 
+  useEffect(() => {
+    if (open) {
+      handleOpen();
+    }
+  }, [open]);
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); else handleOpen(); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
       <DialogContent className="max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-bold">
