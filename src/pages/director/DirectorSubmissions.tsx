@@ -259,8 +259,8 @@ export default function DirectorSubmissions() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{castingCall?.title || "Project Submissions"}</h1>
-          <p className="text-muted-foreground">Review and manage talent applications</p>
+          <h1 className="text-2xl font-bold">{castingCall?.title || "Project Deliverables"}</h1>
+          <p className="text-muted-foreground">Review and manage talent work done</p>
         </div>
         <div className="relative w-full md:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -437,7 +437,7 @@ export default function DirectorSubmissions() {
             </Card>
           )) : (
             <div className="col-span-full text-center py-12 text-muted-foreground">
-               No submissions found.
+               No deliverables found.
             </div>
           )}
         </div>
@@ -530,7 +530,7 @@ export default function DirectorSubmissions() {
             </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
-               No submissions found.
+               No deliverables found.
             </div>
           )}
         </div>

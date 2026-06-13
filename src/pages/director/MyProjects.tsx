@@ -80,7 +80,7 @@ export default function MyProjects() {
   };
 
   const handleCloseProject = async (id: string) => {
-    if (!confirm("Are you sure you want to close this casting call? No new submissions will be accepted.")) return;
+    if (!confirm("Are you sure you want to close this casting call? No new deliverables will be accepted.")) return;
     try {
       const response = await castingCallAPI.close(id);
       if (response.data.success) {
@@ -247,7 +247,7 @@ export default function MyProjects() {
 
                 <div className="space-y-2 text-xs text-muted-foreground mb-4">
                   <div className="flex justify-between">
-                    <span>Submissions:</span>
+                    <span>Deliverables:</span>
                     <span className="font-medium text-foreground">{project.applicationCount || 0}</span>
                   </div>
                   <div className="flex justify-between">
@@ -295,7 +295,7 @@ export default function MyProjects() {
                       <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
                         <Link to={`/director/submissions/${project._id}`}>
                           <Users className="w-3 h-3 mr-1" />
-                          Submissions
+                          Deliverables
                         </Link>
                       </Button>
                       <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
@@ -381,7 +381,7 @@ export default function MyProjects() {
                     <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Users className="w-3 h-3" />
-                        {project.applicationCount || 0} submissions
+                        {project.applicationCount || 0} deliverables
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
@@ -424,7 +424,7 @@ export default function MyProjects() {
                         <Button variant="outline" size="sm" asChild>
                           <Link to={`/director/submissions/${project._id}`}>
                             <Users className="w-3 h-3 mr-1" />
-                            Submissions
+                            Deliverables
                           </Link>
                         </Button>
                         <Button variant="outline" size="sm" asChild>

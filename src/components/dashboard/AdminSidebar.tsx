@@ -24,7 +24,7 @@
    { Icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
    { Icon: Users, label: "Users Management", href: "/admin/users" },
    { Icon: Clock, label: "Platform Settings", href: "/admin/free-tier" },
-   { Icon: FileVideo, label: "Submissions", href: "/admin/submissions" },
+   { Icon: FileVideo, label: "Deliverables", href: "/admin/submissions" },
    { Icon: Calendar, label: "Bookings", href: "/admin/bookings" },
    { Icon: BadgeCheck, label: "Verifications", href: "/admin/verification" },
    { Icon: Target, label: "Leads", href: "/admin/leads" },
