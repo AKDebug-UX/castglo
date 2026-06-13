@@ -89,6 +89,10 @@ const AdminBookings = lazy(() => import("./pages/admin/AdminBookings"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const VerificationManagement = lazy(() => import("./pages/admin/VerificationManagement"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
+const AdminSubscriptions = lazy(() => import("./pages/admin/AdminSubscriptions"));
+const AdminCastingCallsPending = lazy(() => import("./pages/admin/AdminCastingCallsPending"));
+const AdminActionLogs = lazy(() => import("./pages/admin/AdminActionLogs"));
 
 // Professional Dashboard
 const ProfessionalLayout = lazy(() => import("./components/dashboard/ProfessionalLayout").then(m => ({ default: m.ProfessionalLayout })));
@@ -266,6 +270,10 @@ const App = () => (
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="verification" element={<VerificationManagement />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="leads" element={<AdminLeads />} />
+                <Route path="subscriptions" element={<AdminSubscriptions />} />
+                <Route path="casting-calls" element={<AdminCastingCallsPending />} />
+                <Route path="action-logs" element={<AdminActionLogs />} />
               </Route>
 
               {/* Catch-all */}

@@ -11,6 +11,11 @@
    Bell,
    Clock,
    Settings,
+   BadgeCheck,
+   Target,
+   CreditCard,
+   Film,
+   Activity,
  } from "lucide-react";
  
  const navItems = [
@@ -21,7 +26,12 @@
    { Icon: Clock, label: "Platform Settings", href: "/admin/free-tier" },
    { Icon: FileVideo, label: "Submissions", href: "/admin/submissions" },
    { Icon: Calendar, label: "Bookings", href: "/admin/bookings" },
+   { Icon: BadgeCheck, label: "Verifications", href: "/admin/verification" },
+   { Icon: Target, label: "Leads", href: "/admin/leads" },
+   { Icon: CreditCard, label: "Subscriptions", href: "/admin/subscriptions" },
+   { Icon: Film, label: "Casting Calls", href: "/admin/casting-calls" },
    { Icon: Bell, label: "Notifications", href: "/admin/notifications" },
+   { Icon: Activity, label: "Action Logs", href: "/admin/action-logs" },
    { Icon: Settings, label: "Settings", href: "/admin/settings" },
  ];
  
