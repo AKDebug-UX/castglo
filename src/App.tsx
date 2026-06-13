@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Loader2 } from "lucide-react";
@@ -120,7 +120,26 @@ const PageLoader = () => (
   </div>
 );
 
-const App = () => (
+const NotificationRedirect = () => {
+  const { user } = useAuth();
+  
+  if (!user) return <Navigate to="/sign-in" replace />;
+  
+  switch (user.role) {
+    case "admin":
+      return <Navigate to="/admin/notifications" replace />;
+    case "casting_director":
+      return <Navigate to="/director/notifications" replace />;
+    case "industry_professional":
+      return <Navigate to="/professional/notifications" replace />;
+    case "talent":
+    default:
+      return <Navigate to="/talent/notifications" replace />;
+  }
+};
+
+const App = () => {
+  return (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
@@ -130,6 +149,12 @@ const App = () => (
           <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <Routes>
+              {/* Redirect generic notification link to role-specific dashboard */}
+              <Route path="/notifications" element={
+                <ProtectedRoute allowedRoles={["talent", "casting_director", "industry_professional", "admin"]}>
+                  <NotificationRedirect />
+                </ProtectedRoute>
+              } />
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/pricing" element={<Pricing />} />
@@ -284,6 +309,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
