@@ -12,13 +12,16 @@ import {
   CreditCard,
   UserCircle,
   Briefcase,
-  User
+  User,
+  Video
 } from "lucide-react";
 
 const navItems = [
   { title: "Dashboard", href: "/director", Icon: LayoutDashboard },
   { title: "Profile", href: "/director/profile", Icon: UserCircle },
   { title: "Projects", href: "/director/projects", Icon: FolderOpen },
+  { title: "Virtual Auditions", href: "/director/audition", Icon: Video },
+  { title: "Livestreams", href: "/director/livestreams", Icon: Video },
   { title: "Applicants", href: "/director/applicants", Icon: Users },
   { title: "Matched", href: "/director/matched", Icon: Sparkles },
   { title: "Messages", href: "/director/messages", Icon: MessageSquare },

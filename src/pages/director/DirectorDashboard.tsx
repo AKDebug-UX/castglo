@@ -325,7 +325,7 @@ export default function DirectorDashboard() {
             {[
               { label: "Post a Project",    href: "/director/create",       Icon: Plus,        color: "text-primary" },
               { label: "View Applicants",   href: "/director/applicants",   Icon: Users,       color: "text-purple-600" },
-              { label: "Matched Talent",    href: "/director/matched",      Icon: Sparkles,    color: "text-blue-600" },
+              { label: "Virtual Auditions", href: "/director/audition",     Icon: Video,       color: "text-red-600" },
               { label: "My Projects",       href: "/director/projects",     Icon: Clapperboard,color: "text-orange-600" },
             ].map(action => (
               <Link
