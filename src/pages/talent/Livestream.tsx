@@ -682,7 +682,16 @@ export default function LivestreamPage() {
 
     // Socket listeners for livestream
     if (id) {
-      socketService.emit('join_livestream', id);
+      const handleConnect = () => {
+        console.log("Socket connected/reconnected, joining livestream room:", id);
+        socketService.emit('join_livestream', id);
+      };
+
+      if (socketService.isConnected()) {
+        handleConnect();
+      }
+
+      socketService.on('connect', handleConnect);
 
       const handleNewLivestreamMessage = (data) => {
         const msg = data.message || data; // Handle both wrapped and direct payloads
@@ -690,14 +699,20 @@ export default function LivestreamPage() {
         
         setChatMessages(prev => {
           const msgId = msg._id || msg.id;
+          const currentUserId = user?.id || user?._id;
+          const senderId = msg.senderId || msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' && msg.sender === currentUserId ? msg.sender : null);
+          const isSelf = Boolean(currentUserId && senderId && String(currentUserId) === String(senderId));
+
+          // Deduplicate optimistic messages for the sender
           if (msgId && prev.some(m => m.id === msgId)) return prev;
+          if (isSelf && prev.some(m => m.isSelf && (m.text === (msg.message || msg.text) || m.id === msgId))) return prev;
           
           return [...prev, {
             id: msgId || Date.now().toString(),
-            sender: msg.sender?.fullName || msg.senderName || (typeof msg.sender === 'string' ? msg.sender : "Unknown"),
+            sender: msg.sender?.fullName || msg.senderName || (typeof msg.sender === 'string' && msg.sender !== currentUserId ? msg.sender : (isSelf ? (user?.fullName || "Me") : "Unknown")),
             text: msg.message || msg.text,
             timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSelf: (msg.sender?._id || msg.senderId || (typeof msg.sender === 'string' ? msg.sender : null)) === user?.id
+            isSelf: isSelf
           }];
         });
       };
@@ -872,6 +887,7 @@ export default function LivestreamPage() {
       return () => {
         pollRef.active = false;
         if (timeoutId) clearTimeout(timeoutId);
+        socketService.off('connect', handleConnect);
         socketService.off('livestream_message', handleNewLivestreamMessage);
         socketService.off('participant_joined', handleParticipantJoined);
         socketService.off('participant_left', handleParticipantLeft);
@@ -925,42 +941,46 @@ export default function LivestreamPage() {
     if (!chatInput.trim() || !id) return;
     const messageText = chatInput;
     setChatInput("");
+
+    const tempId = `temp-${Date.now()}`;
+    const senderId = user?.id || user?._id;
+
+    // 1. Update local UI immediately (Optimistic UI)
+    const optimisticMessage = {
+      id: tempId,
+      sender: user?.fullName || "Me",
+      text: messageText,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isSelf: true
+    };
+    setChatMessages(prev => [...prev, optimisticMessage]);
+
+    // 2. Broadcast the message via Socket.IO immediately for real-time delivery
+    socketService.emit('send_livestream_message', {
+      streamId: id,
+      message: {
+        id: tempId,
+        sender: user?.fullName,
+        senderId: senderId,
+        text: messageText,
+        createdAt: new Date().toISOString()
+      }
+    });
+
+    // 3. Persist the message in the background (asynchronous)
     try {
-      // 1. Official API call to persist the message
       const response = await livestreamAPI.postMessage(id, messageText);
-      
       const success = response.data?.success || response.status === 201 || response.status === 200;
       const msg = response.data?.data || response.data;
 
       if (success && msg) {
-        // 2. Broadcast the message via Socket.IO for real-time delivery
-        socketService.emit('send_livestream_message', {
-          streamId: id,
-          message: {
-            id: msg._id || msg.id || Date.now().toString(),
-            sender: user?.fullName,
-            senderId: user?.id,
-            text: messageText,
-            createdAt: new Date().toISOString()
-          }
-        });
-
-        // 3. Update local UI (Optimistic/Immediate)
-        setChatMessages(prev => {
-          const msgId = msg._id || msg.id;
-          if (msgId && prev.some(m => m.id === msgId)) return prev;
-          return [...prev, {
-            id: msgId || Date.now().toString(),
-            sender: user?.fullName,
-            text: messageText,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSelf: true
-          }];
-        });
+        const realId = msg._id || msg.id;
+        // Swap tempId with the real database ID
+        setChatMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: realId } : m));
       }
     } catch (error) {
-      toast.error("Failed to send message");
-      setChatInput(messageText);
+      console.error("Failed to persist livestream message to DB:", error);
+      toast.error("Message broadcasted, but could not be saved to history.");
     }
   };
 
