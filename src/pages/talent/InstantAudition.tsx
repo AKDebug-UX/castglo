@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,16 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Upload, Info, Loader2, Globe, Lock, Users as UsersIcon, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { livestreamAPI } from "@/lib/api";
+import { livestreamAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function InstantAudition() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const emailParam = searchParams.get("email");
+  const talentIdParam = searchParams.get("talentId");
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -26,6 +29,32 @@ export default function InstantAudition() {
     scheduledTime: "",
     invitedTalents: [] as string[],
   });
+
+  useEffect(() => {
+    if (emailParam) {
+      setFormData(prev => ({
+        ...prev,
+        invitedTalents: [emailParam],
+        visibility: "private"
+      }));
+    } else if (talentIdParam) {
+      const fetchTalentEmail = async () => {
+        try {
+          const res = await userAPI.getOne(talentIdParam);
+          if (res.data?.success && res.data.data?.email) {
+            setFormData(prev => ({
+              ...prev,
+              invitedTalents: [res.data.data.email],
+              visibility: "private"
+            }));
+          }
+        } catch (err) {
+          console.error("Failed to fetch talent email:", err);
+        }
+      };
+      fetchTalentEmail();
+    }
+  }, [emailParam, talentIdParam]);
 
   const [talentEmail, setTalentEmail] = useState("");
 

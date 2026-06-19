@@ -69,10 +69,6 @@ const STAGES: { key: PipelineStage; label: string; color: string; bgLight: strin
   { key: "review",             label: "Under Review",      color: "text-slate-600",   bgLight: "bg-slate-50 border-slate-200",       icon: <Clock className="w-3.5 h-3.5" /> },
   { key: "shortlist",          label: "Shortlisted",       color: "text-blue-600",    bgLight: "bg-blue-50 border-blue-200",         icon: <CheckCircle className="w-3.5 h-3.5" /> },
   { key: "contacting",         label: "Contacting",        color: "text-purple-600",  bgLight: "bg-purple-50 border-purple-200",     icon: <Send className="w-3.5 h-3.5" /> },
-  { key: "audition_requested", label: "Audition",          color: "text-orange-600",  bgLight: "bg-orange-50 border-orange-200",     icon: <Video className="w-3.5 h-3.5" /> },
-  { key: "self_tape_requested",label: "Self-Tape",         color: "text-pink-600",    bgLight: "bg-pink-50 border-pink-200",         icon: <Mic className="w-3.5 h-3.5" /> },
-  { key: "invite",             label: "Invite",            color: "text-teal-600",    bgLight: "bg-teal-50 border-teal-200",         icon: <UserCheck className="w-3.5 h-3.5" /> },
-  { key: "offer",              label: "Offer",             color: "text-amber-700",   bgLight: "bg-amber-50 border-amber-200",       icon: <Award className="w-3.5 h-3.5" /> },
   { key: "hired",              label: "Hired",             color: "text-green-700",   bgLight: "bg-green-50 border-green-200",       icon: <Award className="w-3.5 h-3.5" /> },
   { key: "declined",           label: "Declined",          color: "text-red-600",     bgLight: "bg-red-50 border-red-200",           icon: <ThumbsDown className="w-3.5 h-3.5" /> },
 ];
@@ -82,10 +78,6 @@ const STAGE_MAP = Object.fromEntries(STAGES.map(s => [s.key, s]));
 const MOVE_TO_OPTIONS: { label: string; value: PipelineStage }[] = [
   { label: "Shortlist",          value: "shortlist" },
   { label: "Contacting",         value: "contacting" },
-  { label: "Request Audition",   value: "audition_requested" },
-  { label: "Request Self-Tape",  value: "self_tape_requested" },
-  { label: "Invite",             value: "invite" },
-  { label: "Offer",              value: "offer" },
   { label: "Hire",               value: "hired" },
   { label: "Decline",            value: "declined" },
 ];
@@ -162,6 +154,7 @@ export default function ApplicantsManagement() {
                 _id: userObj?._id || userObj?.id || (typeof a.userId === "string" ? a.userId : (typeof a.talentUserId === "string" ? a.talentUserId : a.talentId)),
                 fullName: userObj?.fullName || a.fullName || a.displayName || a.display_name,
                 profilePicture: userObj?.profilePicture || a.profilePicture,
+                email: userObj?.email || a.email || a.talentEmail || a.userId?.email || a.talentId?.email || "",
               };
 
               return {
@@ -372,6 +365,16 @@ export default function ApplicantsManagement() {
                 <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              {app.status === "contacting" && (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link to={`/director/audition?email=${encodeURIComponent(app.talent?.email || "")}`} className="flex items-center gap-2 text-primary font-semibold">
+                      <Video className="w-4 h-4 text-primary" /> Create Audition
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <p className="text-[11px] text-muted-foreground px-2 py-1 font-semibold uppercase tracking-wider">Move to</p>
               {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
                 <DropdownMenuItem key={opt.value} onClick={() => updateStatus(app._id, opt.value)}>
@@ -495,8 +498,6 @@ export default function ApplicantsManagement() {
           <div className="flex items-center gap-2 ml-auto flex-wrap">
             {[
               { label: "Shortlist",   value: "shortlist" as PipelineStage },
-              { label: "Audition",    value: "audition_requested" as PipelineStage },
-              { label: "Offer",       value: "offer" as PipelineStage },
               { label: "Decline",     value: "declined" as PipelineStage },
             ].map(opt => (
               <Button key={opt.value} variant="secondary" size="sm" onClick={() => bulkMove(opt.value)}>
@@ -635,6 +636,17 @@ export default function ApplicantsManagement() {
                               <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
+                            {app.status === "contacting" && (
+                              <>
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/director/audition?email=${encodeURIComponent(app.talent?.email || "")}`} className="flex items-center gap-2 text-primary font-semibold">
+                                    <Video className="w-4 h-4 text-primary" /> Create Audition
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
+                            <p className="text-[11px] text-muted-foreground px-2 py-1 font-semibold uppercase tracking-wider">Move to</p>
                             {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
                               <DropdownMenuItem key={opt.value} onClick={() => updateStatus(app._id, opt.value)}>
                                 <ArrowRight className="w-4 h-4 mr-2" /> {opt.label}

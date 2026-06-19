@@ -608,22 +608,54 @@ export default function LivestreamPage() {
         // Handle messages more robustly
         const rawMessages = msgRes.data?.data || (Array.isArray(msgRes.data) ? msgRes.data : []);
         if (Array.isArray(rawMessages)) {
-          const formattedMessages = rawMessages.map((msg) => ({
-            id: msg._id || msg.id,
-            sender: msg.sender?.fullName || msg.senderName || (typeof msg.sender === 'string' ? msg.sender : "Unknown"),
-            text: msg.message || msg.text,
-            timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSelf: (msg.sender?._id || msg.senderId || (typeof msg.sender === 'string' ? msg.sender : null)) === user?.id
-          }));
+          const currentUserId = user?.id || user?._id;
+          const currentUserName = user?.fullName;
+          const formattedMessages = rawMessages
+            .map((msg) => {
+              const senderId = msg.senderId || msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' && msg.sender.length === 24 ? msg.sender : null);
+              const senderName = msg.senderName || msg.sender?.fullName || (typeof msg.sender === 'string' && msg.sender.length !== 24 ? msg.sender : null);
+              const isSelf = Boolean(
+                (currentUserId && senderId && String(currentUserId) === String(senderId)) ||
+                (currentUserName && senderName && String(currentUserName).toLowerCase() === String(senderName).toLowerCase())
+              );
+              
+              // Resolve display name
+              let displayName = "Unknown";
+              if (isSelf) {
+                displayName = user?.fullName || "Me";
+              } else if (senderName) {
+                displayName = senderName;
+              } else if (typeof msg.sender === 'object' && msg.sender?.fullName) {
+                displayName = msg.sender.fullName;
+              } else if (typeof msg.sender === 'string') {
+                displayName = msg.sender.length === 24 ? "Participant" : msg.sender;
+              }
+
+              return {
+                id: msg._id || msg.id,
+                sender: displayName,
+                text: msg.message || msg.text,
+                createdAt: msg.createdAt || new Date().toISOString(),
+                timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                isSelf: isSelf
+              };
+            })
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
           
           setChatMessages(prev => {
             if (formattedMessages.length === 0) return prev;
-            // Only update if the last message ID has changed or length is different
-            if (prev.length === formattedMessages.length && 
-                prev[prev.length-1]?.id === formattedMessages[formattedMessages.length-1]?.id) {
+            
+            // Retain any optimistic messages whose text hasn't been saved to DB yet
+            const savedTexts = new Set(formattedMessages.map(m => m.text));
+            const activeOptimistic = prev.filter(m => String(m.id).startsWith('temp-') && !savedTexts.has(m.text));
+            const combined = [...formattedMessages, ...activeOptimistic];
+
+            // Deduplicate/check equality before updating (checking both ID and isSelf status to handle async auth loading)
+            if (prev.length === combined.length && 
+                prev.every((msg, idx) => msg.id === combined[idx]?.id && msg.isSelf === combined[idx]?.isSelf)) {
               return prev;
             }
-            return formattedMessages;
+            return combined;
           });
         }
 
@@ -700,16 +732,35 @@ export default function LivestreamPage() {
         setChatMessages(prev => {
           const msgId = msg._id || msg.id;
           const currentUserId = user?.id || user?._id;
-          const senderId = msg.senderId || msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' && msg.sender === currentUserId ? msg.sender : null);
-          const isSelf = Boolean(currentUserId && senderId && String(currentUserId) === String(senderId));
+          const currentUserName = user?.fullName;
+          
+          const senderId = msg.senderId || msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' && msg.sender.length === 24 ? msg.sender : null);
+          const senderName = msg.senderName || msg.sender?.fullName || (typeof msg.sender === 'string' && msg.sender.length !== 24 ? msg.sender : null);
+          
+          const isSelf = Boolean(
+            (currentUserId && senderId && String(currentUserId) === String(senderId)) ||
+            (currentUserName && senderName && String(currentUserName).toLowerCase() === String(senderName).toLowerCase())
+          );
 
           // Deduplicate optimistic messages for the sender
           if (msgId && prev.some(m => m.id === msgId)) return prev;
           if (isSelf && prev.some(m => m.isSelf && (m.text === (msg.message || msg.text) || m.id === msgId))) return prev;
           
+          // Resolve display name
+          let displayName = "Unknown";
+          if (isSelf) {
+            displayName = user?.fullName || "Me";
+          } else if (senderName) {
+            displayName = senderName;
+          } else if (typeof msg.sender === 'object' && msg.sender?.fullName) {
+            displayName = msg.sender.fullName;
+          } else if (typeof msg.sender === 'string') {
+            displayName = msg.sender.length === 24 ? "Participant" : msg.sender;
+          }
+
           return [...prev, {
             id: msgId || Date.now().toString(),
-            sender: msg.sender?.fullName || msg.senderName || (typeof msg.sender === 'string' && msg.sender !== currentUserId ? msg.sender : (isSelf ? (user?.fullName || "Me") : "Unknown")),
+            sender: displayName,
             text: msg.message || msg.text,
             timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isSelf: isSelf
