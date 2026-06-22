@@ -170,6 +170,7 @@ const App = () => {
               <Route path="/careers" element={<Careers />} />
               <Route path="/join" element={<Join />} />
               <Route path="/join/:type" element={<SignUp />} />
+              <Route path="/register" element={<SignUp />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
