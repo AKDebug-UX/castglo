@@ -318,7 +318,7 @@ export default function ApplicantsManagement() {
 
   // ── Applicant card (reused in both kanban + list) ─────────────────────────
   const ApplicantCard = ({ app, compact = false }: { app: Applicant; compact?: boolean }) => {
-    const stage = STAGE_MAP[app.status] || STAGE_MAP["applied"];
+    const stage = STAGE_MAP[app.status] || STAGE_MAP["review"];
     return (
       <div
         className={`group relative bg-background border rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-200 ${
@@ -592,7 +592,7 @@ export default function ApplicantsManagement() {
                   <span>Actions</span>
                 </div>
                 {filteredApplicants.map(app => {
-                  const stage = STAGE_MAP[app.status] || STAGE_MAP["applied"];
+                  const stage = STAGE_MAP[app.status] || STAGE_MAP["review"];
                   return (
                     <div key={app._id} className={`grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center hover:bg-muted/30 transition-colors ${isSelected(app._id) ? "bg-primary/5" : ""}`}>
                       <Checkbox checked={isSelected(app._id)} onCheckedChange={() => toggleSelect(app._id)} />
