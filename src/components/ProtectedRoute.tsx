@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,6 +9,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const location = useLocation();
 
   if (isLoading) {
@@ -34,6 +36,11 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Bypass role restriction if user is acting as a collaborator in a Casting Director workspace
+    if (location.pathname.startsWith("/director") && activeWorkspace !== "Personal") {
+      return <>{children}</>;
+    }
+
     // Redirect to appropriate dashboard based on role
     const roleRoutes: Record<UserRole, string> = {
       admin: "/admin",

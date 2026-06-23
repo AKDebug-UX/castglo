@@ -111,6 +111,11 @@ export default function SignUp() {
             <p className="text-muted-foreground mb-6">
               We've sent a verification link to <strong>{email}</strong>. 
               Please verify your account to start exploring.
+              {collaboratorToken && (
+                <span className="block mt-2 font-medium text-primary">
+                  Once verified, your invitation will be automatically accepted.
+                </span>
+              )}
             </p>
             <div className="space-y-3">
               <Button asChild className="w-full" size="lg">

@@ -207,14 +207,13 @@ export default function Collaborators() {
     try {
       const inviteData: any = {
         inviteEmail: email,
-        accessScope,
-        globalPermissions: { role: selectedRole },
+        // permissions: accessScope === "all_projects" ? { role: selectedRole } : undefined,
         projectGrants: accessScope === "selected_projects" 
           ? selectedProjectIds.map(projectId => ({
               projectId,
               permissions: { role: selectedRole }
             }))
-          : undefined
+          : []
       };
       
       console.log("Sending invite data:", JSON.stringify(inviteData, null, 2));

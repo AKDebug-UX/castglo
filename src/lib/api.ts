@@ -140,6 +140,7 @@ export const API_ENDPOINTS = {
   PROJECTS: {
     CREATE: '/projects',
     ME: '/projects/me',
+    WORKSPACE_PROJECTS: (ownerId: string) => `/workspaces/${ownerId}/projects`,
     GET_ONE: (id: string) => `/projects/${id}`,
     UPDATE: (id: string) => `/projects/${id}`,
     DELETE: (id: string) => `/projects/${id}`,
@@ -497,6 +498,7 @@ export const portfolioAPI = {
 export const projectAPI = {
   create: (data) => api.post(API_ENDPOINTS.PROJECTS.CREATE, data),
   getMe: (params?) => api.get(API_ENDPOINTS.PROJECTS.ME, { params }),
+  getWorkspaceProjects: (ownerId: string, params?) => api.get(API_ENDPOINTS.PROJECTS.WORKSPACE_PROJECTS(ownerId), { params }),
   getOne: (id: string) => api.get(API_ENDPOINTS.PROJECTS.GET_ONE(id)),
   update: (id: string, data) => api.patch(API_ENDPOINTS.PROJECTS.UPDATE(id), data),
   delete: (id: string) => api.delete(API_ENDPOINTS.PROJECTS.DELETE(id)),

@@ -12,8 +12,10 @@ import {
 import { Menu, Bell, Settings, LogOut, UserCircle } from "lucide-react";
 import userAvatar from "@/assets/user-avatar.jpg";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { notificationAPI } from "@/lib/api";
 import { getAvatarUrl, getInitials } from "@/lib/utils";
+import { Briefcase } from "lucide-react";
 
 interface DashboardHeaderProps {
   onMenuClick?: () => void;
@@ -22,6 +24,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { activeWorkspace, collaborations, switchWorkspace } = useWorkspace();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -107,6 +110,50 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       <div className="flex-1" />
 
       <div className="flex items-center gap-3">
+        {/* Workspace Switcher */}
+        {collaborations.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="hidden md:flex gap-2 mr-2">
+                <Briefcase className="w-4 h-4" />
+                <span className="truncate max-w-[150px]">
+                  {activeWorkspace === "Personal" 
+                    ? "Personal Workspace" 
+                    : `${activeWorkspace.owner?.fullName || "Collaborator"}'s Workspace`}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Switch Workspace
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => {
+                  switchWorkspace("Personal");
+                  // Ensure they go to their proper dashboard if they were in the director one
+                  navigate(user?.role === 'casting_director' ? '/director' : user?.role === 'industry_professional' ? '/professional' : '/talent');
+                }}
+                className={`cursor-pointer ${activeWorkspace === "Personal" ? "bg-primary/10" : ""}`}
+              >
+                Personal Workspace
+              </DropdownMenuItem>
+              {collaborations.map(collab => (
+                <DropdownMenuItem 
+                  key={collab._id} 
+                  onClick={() => {
+                    switchWorkspace(collab._id);
+                    navigate("/director"); // Force to CD dashboard for collaborator workspaces
+                  }}
+                  className={`cursor-pointer ${activeWorkspace !== "Personal" && activeWorkspace._id === collab._id ? "bg-primary/10" : ""}`}
+                >
+                  {collab.owner?.fullName || "Collaborator"}'s Workspace
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">

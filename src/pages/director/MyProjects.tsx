@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { getStripe } from "@/lib/stripe";
 import { getStatusLabel, getStatusClass, isOpenStatus, isDraftStatus, getProjectDeadline } from "@/lib/project.utils";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -39,11 +40,17 @@ export default function MyProjects() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDuplicating, setIsDuplicating] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState<string | null>(null);
+  const { activeWorkspace, getPermissionsForProject } = useWorkspace();
+  const globalPermissions = getPermissionsForProject(); // To check editProject for "New Casting Call"
 
   const fetchProjects = async () => {
     setIsLoading(true);
     try {
-      const response = await projectAPI.getMe();
+      const isPersonal = activeWorkspace === "Personal";
+      const response = isPersonal 
+        ? await projectAPI.getMe() 
+        : await projectAPI.getWorkspaceProjects(activeWorkspace.owner._id);
+        
       if (response.data.success && response.data.data) {
         // Handle both direct array and nested structure
         const projectData = Array.isArray(response.data.data) 
@@ -63,7 +70,7 @@ export default function MyProjects() {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [activeWorkspace]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this casting call?")) return;
@@ -190,12 +197,14 @@ export default function MyProjects() {
           <h1 className="text-2xl font-bold">My Projects</h1>
           <p className="text-muted-foreground">Manage all your casting calls and projects</p>
         </div>
-        <Button asChild>
-          <Link to="/director/create">
-            <Plus className="w-4 h-4 mr-2" />
-            New Casting Call
-          </Link>
-        </Button>
+        {globalPermissions.editProject && (
+          <Button asChild>
+            <Link to="/director/create">
+              <Plus className="w-4 h-4 mr-2" />
+              New Casting Call
+            </Link>
+          </Button>
+        )}
       </div>
 
       {/* Tabs and View Toggle */}
@@ -230,7 +239,9 @@ export default function MyProjects() {
       {/* Grid View */}
       {viewMode === "grid" ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.length > 0 ? filteredProjects.map((project: any) => (
+          {filteredProjects.length > 0 ? filteredProjects.map((project: any) => {
+            const projectPermissions = getPermissionsForProject(project.id || project._id);
+            return (
             <Card key={project.id || project._id} className="card-elevated">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
@@ -263,32 +274,36 @@ export default function MyProjects() {
                 <div className="flex items-center gap-2">
                   {isDraftStatus(project.status) ? (
                     (project.featuredPosting || project.urgentHiringBadge || project.instantPosting) ? (
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="flex-1 bg-amber-600 hover:bg-amber-700 text-white border-none shadow-sm"
-                        onClick={() => handlePayAndPublish(project)}
-                        disabled={isProcessingPayment === project._id}
-                      >
-                        {isProcessingPayment === project._id ? (
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                        ) : (
-                          <Zap className="w-3 h-3 mr-1 fill-white" />
-                        )}
-                        Pay & Publish
-                      </Button>
+                      projectPermissions.editProject && (
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="flex-1 bg-amber-600 hover:bg-amber-700 text-white border-none shadow-sm"
+                          onClick={() => handlePayAndPublish(project)}
+                          disabled={isProcessingPayment === project._id}
+                        >
+                          {isProcessingPayment === project._id ? (
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          ) : (
+                            <Zap className="w-3 h-3 mr-1 fill-white" />
+                          )}
+                          Pay & Publish
+                        </Button>
+                      )
                     ) : (
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="flex-1 bg-[#009698] hover:bg-[#009698]/90 text-white border-none shadow-sm"
-                        asChild
-                      >
-                        <Link to={`/director/projects/${project._id}/edit`}>
-                          <Rocket className="w-3 h-3 mr-1" />
-                          Publish Project
-                        </Link>
-                      </Button>
+                      projectPermissions.editProject && (
+                        <Button 
+                          variant="default" 
+                          size="sm" 
+                          className="flex-1 bg-[#009698] hover:bg-[#009698]/90 text-white border-none shadow-sm"
+                          asChild
+                        >
+                          <Link to={`/director/projects/${project._id}/edit`}>
+                            <Rocket className="w-3 h-3 mr-1" />
+                            Publish Project
+                          </Link>
+                        </Button>
+                      )
                     )
                   ) : (
                     <div className="flex gap-2 flex-1">
@@ -298,12 +313,14 @@ export default function MyProjects() {
                           Deliverables
                         </Link>
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
-                        <Link to={`/director/applicants?project=${project._id}`}>
-                          <Users className="w-3 h-3 mr-1" />
-                          Applicants
-                        </Link>
-                      </Button>
+                      {projectPermissions.viewApplicants && (
+                        <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
+                          <Link to={`/director/applicants?project=${project._id}`}>
+                            <Users className="w-3 h-3 mr-1" />
+                            Applicants
+                          </Link>
+                        </Button>
+                      )}
                     </div>
                   )}
                   
@@ -319,40 +336,44 @@ export default function MyProjects() {
                           <Eye className="w-4 h-4 mr-2" /> Preview
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate(`/director/projects/${project.id || project._id}/edit`)}>
-                        <Pencil className="w-4 h-4 mr-2" />
-                        Edit Project
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleDuplicate(project)}
-                        disabled={isDuplicating === (project.id || project._id)}
-                      >
-                        {isDuplicating === (project.id || project._id) ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <Copy className="w-4 h-4 mr-2" />
-                        )}
-                        Duplicate as Draft
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="text-destructive" 
-                        onClick={() => handleDelete(project.id || project._id)}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> Delete Project
-                      </DropdownMenuItem>
-                      {isOpenStatus(project.status) && (
-                        <DropdownMenuItem 
-                          onClick={() => handleCloseProject(project.id || project._id)}
-                        >
-                          <MoreVertical className="w-4 h-4 mr-2" /> Close Project
-                        </DropdownMenuItem>
+                      {projectPermissions.editProject && (
+                        <>
+                          <DropdownMenuItem onClick={() => navigate(`/director/projects/${project.id || project._id}/edit`)}>
+                            <Pencil className="w-4 h-4 mr-2" />
+                            Edit Project
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleDuplicate(project)}
+                            disabled={isDuplicating === (project.id || project._id)}
+                          >
+                            {isDuplicating === (project.id || project._id) ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <Copy className="w-4 h-4 mr-2" />
+                            )}
+                            Duplicate as Draft
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive" 
+                            onClick={() => handleDelete(project.id || project._id)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Delete Project
+                          </DropdownMenuItem>
+                          {isOpenStatus(project.status) && (
+                            <DropdownMenuItem 
+                              onClick={() => handleCloseProject(project.id || project._id)}
+                            >
+                              <MoreVertical className="w-4 h-4 mr-2" /> Close Project
+                            </DropdownMenuItem>
+                          )}
+                        </>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               </CardContent>
             </Card>
-          )) : (
+          )}) : (
             <div className="col-span-full text-center py-12 text-muted-foreground">
                No projects found in this category.
             </div>
@@ -361,7 +382,9 @@ export default function MyProjects() {
       ) : (
         /* List View */
         <div className="space-y-3">
-          {filteredProjects.length > 0 ? filteredProjects.map((project) => (
+          {filteredProjects.length > 0 ? filteredProjects.map((project) => {
+            const projectPermissions = getPermissionsForProject(project.id || project._id);
+            return (
             <Card key={project._id} className="card-elevated">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -392,32 +415,36 @@ export default function MyProjects() {
                   <div className="flex items-center gap-2 ml-4">
                     {isDraftStatus(project.status) ? (
                       (project.featuredPosting || project.urgentHiringBadge || project.instantPosting) ? (
-                        <Button 
-                          variant="default" 
-                          size="sm" 
-                          className="bg-amber-600 hover:bg-amber-700 text-white border-none shadow-sm"
-                          onClick={() => handlePayAndPublish(project)}
-                          disabled={isProcessingPayment === project._id}
-                        >
-                          {isProcessingPayment === project._id ? (
-                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                          ) : (
-                            <Zap className="w-3 h-3 mr-1 fill-white" />
-                          )}
-                          Pay & Publish
-                        </Button>
+                        projectPermissions.editProject && (
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            className="bg-amber-600 hover:bg-amber-700 text-white border-none shadow-sm"
+                            onClick={() => handlePayAndPublish(project)}
+                            disabled={isProcessingPayment === project._id}
+                          >
+                            {isProcessingPayment === project._id ? (
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            ) : (
+                              <Zap className="w-3 h-3 mr-1 fill-white" />
+                            )}
+                            Pay & Publish
+                          </Button>
+                        )
                       ) : (
-                        <Button 
-                          variant="default" 
-                          size="sm" 
-                          className="bg-[#009698] hover:bg-[#009698]/90 text-white border-none shadow-sm"
-                          asChild
-                        >
-                          <Link to={`/director/projects/${project._id}/edit`}>
-                            <Rocket className="w-3 h-3 mr-1" />
-                            Publish
-                          </Link>
-                        </Button>
+                        projectPermissions.editProject && (
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            className="bg-[#009698] hover:bg-[#009698]/90 text-white border-none shadow-sm"
+                            asChild
+                          >
+                            <Link to={`/director/projects/${project._id}/edit`}>
+                              <Rocket className="w-3 h-3 mr-1" />
+                              Publish
+                            </Link>
+                          </Button>
+                        )
                       )
                     ) : (
                       <div className="flex gap-2">
@@ -427,40 +454,46 @@ export default function MyProjects() {
                             Deliverables
                           </Link>
                         </Button>
-                        <Button variant="outline" size="sm" asChild>
-                          <Link to={`/director/applicants?project=${project._id}`}>
-                            <Users className="w-3 h-3 mr-1" />
-                            Applicants
-                          </Link>
-                        </Button>
+                        {projectPermissions.viewApplicants && (
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/director/applicants?project=${project._id}`}>
+                              <Users className="w-3 h-3 mr-1" />
+                              Applicants
+                            </Link>
+                          </Button>
+                        )}
                       </div>
                     )}
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/director/projects/${project._id}/edit`}>
-                        <Pencil className="w-3 h-3 mr-1" />
-                        Edit
-                      </Link>
-                    </Button>
+                    {projectPermissions.editProject && (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/director/projects/${project._id}/edit`}>
+                          <Pencil className="w-3 h-3 mr-1" />
+                          Edit
+                        </Link>
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" asChild>
                       <Link to={`/director/projects/${project._id}`}>
                         <Eye className="w-3 h-3 mr-1" />
                         Preview
                       </Link>
                     </Button>
-                    {isOpenStatus(project.status) && (
+                    {projectPermissions.editProject && isOpenStatus(project.status) && (
                       <Button variant="outline" size="sm" className="text-warning" onClick={() => handleCloseProject(project._id)}>
                         <MoreVertical className="w-3 h-3 mr-1" />
                         Close
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(project._id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {projectPermissions.editProject && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(project._id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
-          )) : (
+          )}) : (
             <div className="text-center py-12 text-muted-foreground">
                No projects found in this category.
             </div>

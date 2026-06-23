@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Loader2 } from "lucide-react";
@@ -42,6 +43,7 @@ const ProfessionalPublicProfile = lazy(() => import("./pages/ProfessionalPublicP
 const UnifiedProfile = lazy(() => import("./pages/UnifiedProfile"));
 const DirectorPublicProfile = lazy(() => import("./pages/DirectorPublicProfile"));
 const WhatsNew = lazy(() => import("./pages/WhatsNew"));
+const AcceptInvitation = lazy(() => import("./pages/AcceptInvitation"));
 
 // Talent Dashboard
 const DashboardLayout = lazy(() => import("./components/dashboard/TalentLayout").then(m => ({ default: m.DashboardLayout })));
@@ -142,8 +144,9 @@ const App = () => {
   return (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
+      <WorkspaceProvider>
+        <TooltipProvider>
+          <Toaster />
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ScrollToTop />
@@ -200,6 +203,7 @@ const App = () => {
               <Route path="/profile/:id" element={<UnifiedProfile />} />
               <Route path="/profile/me" element={<UnifiedProfile />} />
               <Route path="/subscription/cancel" element={<PaymentCancel />} />
+              <Route path="/collaborators/accept" element={<AcceptInvitation />} />
               {/* Talent Dashboard Routes */}
               <Route
                 path="/talent"
@@ -307,7 +311,8 @@ const App = () => {
             </Routes>
           </Suspense>
         </BrowserRouter>
-      </TooltipProvider>
+        </TooltipProvider>
+      </WorkspaceProvider>
     </AuthProvider>
   </QueryClientProvider>
   );

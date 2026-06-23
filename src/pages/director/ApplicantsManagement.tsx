@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { castingCallAPI, applicationAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type PipelineStage =
@@ -108,6 +109,8 @@ export default function ApplicantsManagement() {
   // Application Details Modal State
   const [detailsModalAppId, setDetailsModalAppId] = useState<string | null>(null);
 
+  const { activeWorkspace, getPermissionsForProject } = useWorkspace();
+
   // ── URL params (deep-link from DirectorRoles) ─────────────────────────────
   const [searchParams] = useSearchParams();
 
@@ -116,7 +119,10 @@ export default function ApplicantsManagement() {
     const load = async () => {
       setIsLoading(true);
       try {
-        const listingsRes = await projectAPI.getMe();
+        const isPersonal = activeWorkspace === "Personal";
+        const listingsRes = isPersonal 
+          ? await projectAPI.getMe() 
+          : await projectAPI.getWorkspaceProjects(activeWorkspace.owner._id);
         const myProjects: Project[] = listingsRes.data?.success
           ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [])
           : [];
@@ -175,7 +181,7 @@ export default function ApplicantsManagement() {
       }
     };
     load();
-  }, []);
+  }, [activeWorkspace]);
 
   // Pre-populate filters from URL params on first load
   useEffect(() => {
@@ -319,6 +325,8 @@ export default function ApplicantsManagement() {
   // ── Applicant card (reused in both kanban + list) ─────────────────────────
   const ApplicantCard = ({ app, compact = false }: { app: Applicant; compact?: boolean }) => {
     const stage = STAGE_MAP[app.status] || STAGE_MAP["review"];
+    const projectPermissions = getPermissionsForProject(app.castingCall?._id);
+    
     return (
       <div
         className={`group relative bg-background border rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-200 ${
@@ -326,11 +334,13 @@ export default function ApplicantsManagement() {
         }`}
       >
         <div className="flex items-start gap-3">
-          <Checkbox
-            checked={isSelected(app._id)}
-            onCheckedChange={() => toggleSelect(app._id)}
-            className="mt-0.5 shrink-0"
-          />
+          {projectPermissions.moveApplicants && (
+            <Checkbox
+              checked={isSelected(app._id)}
+              onCheckedChange={() => toggleSelect(app._id)}
+              className="mt-0.5 shrink-0"
+            />
+          )}
           <Avatar className="h-9 w-9 shrink-0">
             <AvatarImage src={app.talent?.profilePicture} />
             <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
@@ -358,12 +368,16 @@ export default function ApplicantsManagement() {
                   <ExternalLink className="w-4 h-4" /> View Profile
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openNote(app)}>
-                <FileText className="w-4 h-4 mr-2" /> Add / View Note
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDetailsModalAppId(app._id)}>
-                <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
-              </DropdownMenuItem>
+              {projectPermissions.addNotes && (
+                <DropdownMenuItem onClick={() => openNote(app)}>
+                  <FileText className="w-4 h-4 mr-2" /> Add / View Note
+                </DropdownMenuItem>
+              )}
+              {projectPermissions.sendMessages && (
+                <DropdownMenuItem onClick={() => setDetailsModalAppId(app._id)}>
+                  <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               {app.status === "contacting" && (
                 <>
@@ -375,12 +389,16 @@ export default function ApplicantsManagement() {
                   <DropdownMenuSeparator />
                 </>
               )}
-              <p className="text-[11px] text-muted-foreground px-2 py-1 font-semibold uppercase tracking-wider">Move to</p>
-              {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
-                <DropdownMenuItem key={opt.value} onClick={() => updateStatus(app._id, opt.value)}>
-                  <ArrowRight className="w-4 h-4 mr-2" /> {opt.label}
-                </DropdownMenuItem>
-              ))}
+              {projectPermissions.moveApplicants && (
+                <>
+                  <p className="text-[11px] text-muted-foreground px-2 py-1 font-semibold uppercase tracking-wider">Move to</p>
+                  {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
+                    <DropdownMenuItem key={opt.value} onClick={() => updateStatus(app._id, opt.value)}>
+                      <ArrowRight className="w-4 h-4 mr-2" /> {opt.label}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -593,9 +611,14 @@ export default function ApplicantsManagement() {
                 </div>
                 {filteredApplicants.map(app => {
                   const stage = STAGE_MAP[app.status] || STAGE_MAP["review"];
+                  const projectPermissions = getPermissionsForProject(app.castingCall?._id);
                   return (
                     <div key={app._id} className={`grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center hover:bg-muted/30 transition-colors ${isSelected(app._id) ? "bg-primary/5" : ""}`}>
-                      <Checkbox checked={isSelected(app._id)} onCheckedChange={() => toggleSelect(app._id)} />
+                      {projectPermissions.moveApplicants ? (
+                        <Checkbox checked={isSelected(app._id)} onCheckedChange={() => toggleSelect(app._id)} />
+                      ) : (
+                        <div className="w-4" />
+                      )}
                       <div className="flex items-center gap-3 min-w-0">
                         <Avatar className="h-9 w-9 shrink-0">
                           <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
@@ -617,9 +640,11 @@ export default function ApplicantsManagement() {
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openNote(app)}>
-                          <FileText className="w-4 h-4" />
-                        </Button>
+                        {projectPermissions.addNotes && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openNote(app)}>
+                            <FileText className="w-4 h-4" />
+                          </Button>
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -632,9 +657,11 @@ export default function ApplicantsManagement() {
                                 <ExternalLink className="w-4 h-4 mr-2" /> View Profile
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDetailsModalAppId(app._id)}>
-                              <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
-                            </DropdownMenuItem>
+                            {projectPermissions.sendMessages && (
+                              <DropdownMenuItem onClick={() => setDetailsModalAppId(app._id)}>
+                                <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             {app.status === "contacting" && (
                               <>
@@ -646,12 +673,16 @@ export default function ApplicantsManagement() {
                                 <DropdownMenuSeparator />
                               </>
                             )}
-                            <p className="text-[11px] text-muted-foreground px-2 py-1 font-semibold uppercase tracking-wider">Move to</p>
-                            {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
-                              <DropdownMenuItem key={opt.value} onClick={() => updateStatus(app._id, opt.value)}>
-                                <ArrowRight className="w-4 h-4 mr-2" /> {opt.label}
-                              </DropdownMenuItem>
-                            ))}
+                            {projectPermissions.moveApplicants && (
+                              <>
+                                <p className="text-[11px] text-muted-foreground px-2 py-1 font-semibold uppercase tracking-wider">Move to</p>
+                                {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
+                                  <DropdownMenuItem key={opt.value} onClick={() => updateStatus(app._id, opt.value)}>
+                                    <ArrowRight className="w-4 h-4 mr-2" /> {opt.label}
+                                  </DropdownMenuItem>
+                                ))}
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
