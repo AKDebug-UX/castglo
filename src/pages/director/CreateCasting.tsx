@@ -7,6 +7,7 @@ import { ArrowLeft, ChevronRight, Loader2, Zap } from "lucide-react";
 import { castingCallAPI, uploadAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { resolveMediaUrl } from "@/lib/utils";
 import {
   parseMetaFromAttachments,
@@ -39,6 +40,9 @@ export default function CreateCasting() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+
+  const { getPermissionsForProject } = useWorkspace();
+  const canEdit = !isEditMode || getPermissionsForProject(id).editProject;
 
   // ── Form State ─────────────────────────────────────────────────────────────
   const [formData, setFormData] = useState<CastingFormData>({
@@ -839,7 +843,18 @@ export default function CreateCasting() {
         </Card>
       )}
 
+      {!canEdit && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 rounded-md flex items-start gap-3">
+          <Zap className="w-5 h-5 text-amber-500 mt-0.5" />
+          <div>
+            <h3 className="text-amber-800 font-semibold">Read-Only Access</h3>
+            <p className="text-amber-700 text-sm mt-1">You have view-only access to this project. You cannot make any changes.</p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={(e) => handleSubmit(e)} onKeyDown={handleKeyDown}>
+        <fieldset disabled={!canEdit} className="space-y-6">
         {/* STEP 1: PROJECT BASICS & PRODUCTION DETAILS */}
         {step === 1 && (
           <Step1Basics
@@ -902,34 +917,36 @@ export default function CreateCasting() {
         )}
 
         {/* BOTTOM NAVIGATION ACTIONS */}
-        <div className="flex justify-between items-center mt-10 pt-6 border-t">
-          {step > 1 ? (
-            <Button type="button" variant="outline" onClick={prevStep}>
-              Back
-            </Button>
-          ) : (
-            <div></div> // Placeholder for flex spacing
-          )}
-
-          <div className="flex gap-3">
-            {step === 1 && (
-              <Button type="button" variant="ghost" onClick={(e) => handleSubmit(e, "draft")} disabled={isSubmitting}>
-                Save Draft
-              </Button>
-            )}
-            
-            {step < totalSteps ? (
-              <Button key="next-step-button" type="button" onClick={nextStep} className="gap-2">
-                Continue <ChevronRight className="w-4 h-4" />
+        {canEdit && (
+          <div className="flex justify-between items-center mt-10 pt-6 border-t">
+            {step > 1 ? (
+              <Button type="button" variant="outline" onClick={prevStep}>
+                Back
               </Button>
             ) : (
-              <Button key="submit-form-button" type="submit" disabled={isSubmitting} size="lg" className="min-w-32">
-                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (formData.featured_project || formData.instant_posting_addon ? "Pay & Publish" : "Publish Project")}
-              </Button>
+              <div></div> // Placeholder for flex spacing
             )}
-          </div>
-        </div>
 
+            <div className="flex gap-3">
+              {step === 1 && (
+                <Button type="button" variant="ghost" onClick={(e) => handleSubmit(e, "draft")} disabled={isSubmitting}>
+                  Save Draft
+                </Button>
+              )}
+              
+              {step < totalSteps ? (
+                <Button key="next-step-button" type="button" onClick={nextStep} className="gap-2">
+                  Continue <ChevronRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button key="submit-form-button" type="submit" disabled={isSubmitting} size="lg" className="min-w-32">
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (formData.featured_project || formData.instant_posting_addon ? "Pay & Publish" : "Publish Project")}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+        </fieldset>
       </form>
 
       <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>

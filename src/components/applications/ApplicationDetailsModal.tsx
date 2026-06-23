@@ -6,6 +6,7 @@ import { applicationAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { Loader2, MessageSquare, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
@@ -21,6 +22,9 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
   const [isLoading, setIsLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+
+  const { getPermissionsForProject } = useWorkspace();
+  const permissions = getPermissionsForProject(application?.castingCallId?._id || application?.castingCallId || application?.castingCall?._id);
 
   useEffect(() => {
     if (isOpen && applicationId) {
@@ -231,25 +235,34 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
             {/* Message Input - Only if not withdrawn */}
             {application.status !== "withdrawn" && (
               <div className="flex items-end gap-2 pt-4 border-t mt-auto">
-                <Textarea 
-                  placeholder="Type a message..."
-                  className="min-h-[40px] resize-none"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                />
-                <Button 
-                  onClick={handleSendMessage} 
-                  disabled={!newMessage.trim() || isSending}
-                  size="icon"
-                >
-                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                </Button>
+                {permissions.sendMessages ? (
+                  <>
+                    <Textarea 
+                      placeholder="Type a message..."
+                      className="min-h-[40px] resize-none"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <Button 
+                      onClick={handleSendMessage} 
+                      disabled={!newMessage.trim() || isSending}
+                      size="icon"
+                    >
+                      {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-md text-muted-foreground w-full">
+                    <MessageSquare className="w-4 h-4" />
+                    <p className="text-sm">You do not have permission to message this applicant.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

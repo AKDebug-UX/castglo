@@ -12,7 +12,7 @@ import {
   MessageSquare, Star, ThumbsDown, UserCheck, Video,
   FileText, Loader2, SlidersHorizontal, CheckSquare,
   FolderOpen, ArrowRight, ExternalLink, X, ListFilter,
-  CheckCircle, Clock, Send, Mic, Award, Sparkles
+  CheckCircle, Clock, Send, Mic, Award, Sparkles, ShieldAlert
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -191,6 +191,10 @@ export default function ApplicantsManagement() {
     if (roleParam)    setSelectedRole(roleParam);
   }, [searchParams]);
 
+  const viewableProjects = useMemo(() => {
+    return projects.filter(p => getPermissionsForProject(p._id).viewApplicants);
+  }, [projects, getPermissionsForProject]);
+
   // ── Filtered list ─────────────────────────────────────────────────────────
   const currentProject = projects.find(p => p._id === selectedProject);
   const filteredApplicants = useMemo(() => {
@@ -318,6 +322,19 @@ export default function ApplicantsManagement() {
     return (
       <div className="flex items-center justify-center h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (selectedProject !== "all" && !getPermissionsForProject(selectedProject).viewApplicants) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[400px] space-y-4">
+        <ShieldAlert className="w-12 h-12 text-destructive" />
+        <h2 className="text-xl font-bold">Not Authorized</h2>
+        <p className="text-muted-foreground">You do not have permission to view applicants for this project.</p>
+        <Button onClick={() => setSelectedProject("all")} variant="outline">
+          View All Authorized Applicants
+        </Button>
       </div>
     );
   }
@@ -463,7 +480,7 @@ export default function ApplicantsManagement() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Projects</SelectItem>
-              {projects.map(p => (
+              {viewableProjects.map(p => (
                 <SelectItem key={p._id} value={p._id}>{p.projectName || p.title}</SelectItem>
               ))}
             </SelectContent>

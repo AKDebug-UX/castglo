@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { collaboratorAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 interface Teammate {
   id: string;
@@ -64,6 +65,7 @@ const getPermissionsObject = (role: string) => {
 };
 
 export default function Collaborators() {
+  const { activeWorkspace } = useWorkspace();
   const [team, setTeam] = useState<Teammate[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [selectedRole, setSelectedRole] = useState<"admin" | "editor" | "viewer">("editor");
@@ -268,6 +270,16 @@ export default function Collaborators() {
     if (role === "editor") return <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />;
     return <ShieldEllipsis className="w-3.5 h-3.5 text-slate-500" />;
   };
+
+  if (activeWorkspace !== "Personal" && !activeWorkspace.permissions?.manageCollaborators) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[400px] space-y-4">
+        <ShieldAlert className="w-12 h-12 text-destructive" />
+        <h2 className="text-xl font-bold">Not Authorized</h2>
+        <p className="text-muted-foreground">You do not have permission to manage collaborators for this workspace.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">

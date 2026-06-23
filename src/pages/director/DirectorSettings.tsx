@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, KeyRound, Settings2, ShieldCheck, CreditCard, Bell } from "lucide-react";
+import { Loader2, KeyRound, Settings2, ShieldCheck, ShieldAlert, CreditCard, Bell } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { authAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +24,8 @@ export default function DirectorSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+
+  const { activeWorkspace } = useWorkspace();
 
   const [notificationSettings, setNotificationSettings] = useState({
     newApplicants: true,
@@ -154,6 +157,16 @@ export default function DirectorSettings() {
     return (
       <div className="flex items-center justify-center h-[400px]">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (activeWorkspace !== "Personal" && !activeWorkspace.permissions?.manageCollaborators) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[400px] space-y-4">
+        <ShieldAlert className="w-12 h-12 text-destructive" />
+        <h2 className="text-xl font-bold">Not Authorized</h2>
+        <p className="text-muted-foreground">You do not have permission to manage settings for this workspace.</p>
       </div>
     );
   }

@@ -16,6 +16,7 @@ import {
 import { projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { getProjectDeadline } from "@/lib/project.utils";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 interface RoleItem {
   id: string;
@@ -36,6 +37,8 @@ export default function DirectorRoles() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingId, setDeletingId]   = useState<string | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+
+  const { activeWorkspace, getPermissionsForProject } = useWorkspace();
 
   const load = async () => {
     setIsLoading(true);
@@ -153,9 +156,11 @@ export default function DirectorRoles() {
             Overview of all character roles across your active and past projects.
           </p>
         </div>
-        <Button asChild className="gap-2">
-          <Link to="/director/create"><Plus className="w-4 h-4" /> Add Role</Link>
-        </Button>
+        {activeWorkspace === "Personal" && (
+          <Button asChild className="gap-2">
+            <Link to="/director/create"><Plus className="w-4 h-4" /> Add Role</Link>
+          </Button>
+        )}
       </header>
 
       {/* Filters */}
@@ -241,38 +246,40 @@ export default function DirectorRoles() {
                          </Link>
                       </Button>
                       
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/director/projects/${role.projectId}/edit`}>Edit Role</Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDuplicateRole(role)}
-                            disabled={duplicatingId === role.id}
-                          >
-                            {duplicatingId === role.id
-                              ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              : <Copy className="w-4 h-4 mr-2" />}
-                            Duplicate Role
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => handleDeleteRole(role)}
-                            disabled={deletingId === role.id}
-                          >
-                            {deletingId === role.id
-                              ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              : <Trash2 className="w-4 h-4 mr-2" />}
-                            Remove Role
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {getPermissionsForProject(role.projectId).editRoles && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to={`/director/projects/${role.projectId}/edit`}>Edit Role</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDuplicateRole(role)}
+                              disabled={duplicatingId === role.id}
+                            >
+                              {duplicatingId === role.id
+                                ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                : <Copy className="w-4 h-4 mr-2" />}
+                              Duplicate Role
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => handleDeleteRole(role)}
+                              disabled={deletingId === role.id}
+                            >
+                              {deletingId === role.id
+                                ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                : <Trash2 className="w-4 h-4 mr-2" />}
+                              Remove Role
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </div>
                 </div>

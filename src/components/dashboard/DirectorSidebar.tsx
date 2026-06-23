@@ -15,6 +15,7 @@ import {
   User,
   Video
 } from "lucide-react";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 const navItems = [
   { title: "Dashboard", href: "/director", Icon: LayoutDashboard },
@@ -36,6 +37,17 @@ interface DirectorSidebarProps {
 
 export function DirectorSidebar({ className }: DirectorSidebarProps) {
   const location = useLocation();
+  const { activeWorkspace } = useWorkspace();
+
+  const filteredNavItems = navItems.filter(item => {
+    // If it's a settings or collaborators route, check global workspace permissions
+    if (item.title === "Settings" || item.title === "Collaborators") {
+      if (activeWorkspace !== "Personal") {
+        return !!activeWorkspace.permissions?.manageCollaborators;
+      }
+    }
+    return true;
+  });
 
   return (
     <aside className={cn("w-64 bg-card border-r border-border flex flex-col", className)}>
@@ -44,7 +56,7 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
       </div>
       
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const isActive = location.pathname === item.href || 
             (item.href !== "/director" && location.pathname.startsWith(item.href));
           
