@@ -40,10 +40,14 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
   const { activeWorkspace } = useWorkspace();
 
   const filteredNavItems = navItems.filter(item => {
-    // If it's a settings or collaborators route, check global workspace permissions
-    if (item.title === "Settings" || item.title === "Collaborators") {
-      if (activeWorkspace !== "Personal") {
+    if (activeWorkspace !== "Personal") {
+      // If settings or collaborators, check manageCollaborators
+      if (item.title === "Settings" || item.title === "Collaborators") {
         return !!activeWorkspace.permissions?.manageCollaborators;
+      }
+      // If applicants or matched, check viewApplicants
+      if (item.title === "Applicants" || item.title === "Matched") {
+        return !!activeWorkspace.permissions?.viewApplicants;
       }
     }
     return true;

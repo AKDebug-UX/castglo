@@ -13,9 +13,11 @@ import {
 import { castingCallAPI, applicationAPI, livestreamAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 export default function DirectorDashboard() {
   const { user: authUser } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [isLoading, setIsLoading]     = useState(true);
   const [listings, setListings]       = useState<any[]>([]);
   const [recentApps, setRecentApps]   = useState<any[]>([]);
@@ -28,8 +30,11 @@ export default function DirectorDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const isPersonal = activeWorkspace === "Personal";
         const [listingsRes, streamsRes] = await Promise.all([
-          projectAPI.getMe(),
+          isPersonal 
+            ? projectAPI.getMe() 
+            : projectAPI.getWorkspaceProjects(activeWorkspace.owner._id),
           livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
         ]);
 
@@ -104,7 +109,7 @@ export default function DirectorDashboard() {
       }
     };
     fetchData();
-  }, []);
+  }, [activeWorkspace]);
 
   const statusColors: Record<string, string> = {
     applied:             "bg-slate-100 text-slate-700",

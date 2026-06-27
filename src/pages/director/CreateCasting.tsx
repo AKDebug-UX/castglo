@@ -917,35 +917,35 @@ export default function CreateCasting() {
         )}
 
         {/* BOTTOM NAVIGATION ACTIONS */}
-        {canEdit && (
-          <div className="flex justify-between items-center mt-10 pt-6 border-t">
-            {step > 1 ? (
-              <Button type="button" variant="outline" onClick={prevStep}>
-                Back
+        <div className="flex justify-between items-center mt-10 pt-6 border-t">
+          {step > 1 ? (
+            <Button type="button" variant="outline" onClick={prevStep}>
+              Back
+            </Button>
+          ) : (
+            <div></div> // Placeholder for flex spacing
+          )}
+
+          <div className="flex gap-3">
+            {step === 1 && canEdit && (
+              <Button type="button" variant="ghost" onClick={(e) => handleSubmit(e, "draft")} disabled={isSubmitting}>
+                Save Draft
+              </Button>
+            )}
+            
+            {step < totalSteps ? (
+              <Button key="next-step-button" type="button" onClick={nextStep} className="gap-2">
+                Continue <ChevronRight className="w-4 h-4" />
               </Button>
             ) : (
-              <div></div> // Placeholder for flex spacing
-            )}
-
-            <div className="flex gap-3">
-              {step === 1 && (
-                <Button type="button" variant="ghost" onClick={(e) => handleSubmit(e, "draft")} disabled={isSubmitting}>
-                  Save Draft
-                </Button>
-              )}
-              
-              {step < totalSteps ? (
-                <Button key="next-step-button" type="button" onClick={nextStep} className="gap-2">
-                  Continue <ChevronRight className="w-4 h-4" />
-                </Button>
-              ) : (
+              canEdit && (
                 <Button key="submit-form-button" type="submit" disabled={isSubmitting} size="lg" className="min-w-32">
                   {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (formData.featured_project || formData.instant_posting_addon ? "Pay & Publish" : "Publish Project")}
                 </Button>
-              )}
-            </div>
+              )
+            )}
           </div>
-        )}
+        </div>
         </fieldset>
       </form>
 

@@ -307,12 +307,14 @@ export default function MyProjects() {
                     )
                   ) : (
                     <div className="flex gap-2 flex-1">
-                      <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
-                        <Link to={`/director/submissions/${project._id}`}>
-                          <Users className="w-3 h-3 mr-1" />
-                          Deliverables
-                        </Link>
-                      </Button>
+                      {projectPermissions.viewApplicants && (
+                        <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
+                          <Link to={`/director/submissions/${project._id}`}>
+                            <Users className="w-3 h-3 mr-1" />
+                            Deliverables
+                          </Link>
+                        </Button>
+                      )}
                       {projectPermissions.viewApplicants && (
                         <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
                           <Link to={`/director/applicants?project=${project._id}`}>
@@ -448,12 +450,14 @@ export default function MyProjects() {
                       )
                     ) : (
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link to={`/director/submissions/${project._id}`}>
-                            <Users className="w-3 h-3 mr-1" />
-                            Deliverables
-                          </Link>
-                        </Button>
+                        {projectPermissions.viewApplicants && (
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/director/submissions/${project._id}`}>
+                              <Users className="w-3 h-3 mr-1" />
+                              Deliverables
+                            </Link>
+                          </Button>
+                        )}
                         {projectPermissions.viewApplicants && (
                           <Button variant="outline" size="sm" asChild>
                             <Link to={`/director/applicants?project=${project._id}`}>

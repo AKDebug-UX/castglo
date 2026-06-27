@@ -11,12 +11,13 @@ import { toast } from "sonner";
 export default function AcceptInvitation() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, signOut } = useAuth();
   const { refreshCollaborations } = useWorkspace();
   const navigate = useNavigate();
 
   const [status, setStatus] = useState<"loading" | "success" | "error" | "idle">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isEmailMismatch, setIsEmailMismatch] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -27,13 +28,17 @@ export default function AcceptInvitation() {
       return;
     }
 
-    if (user) {
-      handleAccept(token);
+    if (!user) {
+      navigate(`/sign-in?redirect=${encodeURIComponent(`/collaborators/accept?token=${token}`)}`);
+      return;
     }
-  }, [user, authLoading, token]);
+
+    handleAccept(token);
+  }, [user, authLoading, token, navigate]);
 
   const handleAccept = async (invitationToken: string) => {
     setStatus("loading");
+    setIsEmailMismatch(false);
     try {
       const response = await collaboratorAPI.acceptInvitation(invitationToken);
       if (response.data?.success) {
@@ -49,9 +54,11 @@ export default function AcceptInvitation() {
       const msg = error?.response?.data?.message || "An error occurred while accepting the invitation.";
       setErrorMessage(msg);
       
-      // If error indicates email mismatch or unauthorized, maybe we show specific UI
+      // If error indicates email mismatch or unauthorized, show specific UI
       if (error?.response?.status === 403) {
-        setErrorMessage("This invitation was sent to a different email address. Please log in with the correct account.");
+        const invitedEmail = error?.response?.data?.email || error?.response?.data?.targetEmail || "another email address";
+        setErrorMessage(`This invite was sent to ${invitedEmail}, but you are logged in as ${user?.email}. Please switch accounts.`);
+        setIsEmailMismatch(true);
       }
     }
   };
@@ -60,38 +67,6 @@ export default function AcceptInvitation() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user && token) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-        <Card className="w-full max-w-md shadow-xl border-primary/20">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl font-bold">You've Been Invited!</CardTitle>
-            <CardDescription className="text-base mt-2">
-              You have been invited to collaborate on Castglo.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-4">
-            <p className="text-center text-muted-foreground text-sm">
-              Please log in or create an account to accept this invitation.
-            </p>
-            <div className="flex flex-col gap-3">
-              <Button asChild size="lg" className="w-full">
-                <Link to={`/register?collaboratorToken=${token}`}>
-                  Create an Account
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="w-full">
-                <Link to={`/sign-in?redirect=/collaborators/accept?token=${token}`}>
-                  Log In
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
@@ -129,22 +104,34 @@ export default function AcceptInvitation() {
               <p className="text-center text-destructive font-medium px-4">
                 {errorMessage}
               </p>
-              <div className="w-full flex gap-3 mt-6">
+              <div className="w-full flex flex-col gap-3 mt-6">
+                {isEmailMismatch ? (
+                  <Button 
+                    className="w-full"
+                    onClick={async () => {
+                      await signOut();
+                      navigate(`/sign-in?redirect=${encodeURIComponent(`/collaborators/accept?token=${token}`)}`);
+                    }}
+                  >
+                    Switch Accounts / Sign In
+                  </Button>
+                ) : (
+                  token && (
+                    <Button 
+                      className="w-full"
+                      onClick={() => handleAccept(token)}
+                    >
+                      Try Again
+                    </Button>
+                  )
+                )}
                 <Button 
                   variant="outline" 
-                  className="flex-1"
+                  className="w-full"
                   onClick={() => navigate("/")}
                 >
                   Go to Home
                 </Button>
-                {token && (
-                  <Button 
-                    className="flex-1"
-                    onClick={() => handleAccept(token)}
-                  >
-                    Try Again
-                  </Button>
-                )}
               </div>
             </>
           )}

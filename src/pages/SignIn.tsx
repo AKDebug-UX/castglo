@@ -56,17 +56,22 @@ export default function SignIn() {
         return;
       }
 
+      const searchParams = new URLSearchParams(location.search);
+      const redirect = searchParams.get("redirect");
+
       if (result.requiresTwoFactor && result.tempToken) {
         navigate("/auth/2fa", {
-          state: { tempToken: result.tempToken, email: data.email, returnTo: location.state?.from?.pathname }
+          state: { tempToken: result.tempToken, email: data.email, returnTo: redirect || location.state?.from?.pathname }
         });
         return;
       }
 
       toast.success("Welcome back!");
 
-      // Route based on user role returned from API
-      if (result.role) {
+      // Route based on redirect or user role returned from API
+      if (redirect) {
+        navigate(redirect);
+      } else if (result.role) {
         const roleRoutes: Record<string, string> = {
           talent: "/talent",
           casting_director: "/director",

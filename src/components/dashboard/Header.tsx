@@ -114,9 +114,9 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         {collaborations.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="hidden md:flex gap-2 mr-2">
+              <Button variant="outline" className="flex gap-2 mr-2">
                 <Briefcase className="w-4 h-4" />
-                <span className="truncate max-w-[150px]">
+                <span className="truncate max-w-[100px] md:max-w-[150px]">
                   {activeWorkspace === "Personal" 
                     ? "Personal Workspace" 
                     : `${activeWorkspace.owner?.fullName || "Collaborator"}'s Workspace`}

@@ -43,7 +43,11 @@ export default function DirectorRoles() {
   const load = async () => {
     setIsLoading(true);
     try {
-      const res = await projectAPI.getMe();
+      const isPersonal = activeWorkspace === "Personal";
+      const res = isPersonal 
+        ? await projectAPI.getMe() 
+        : await projectAPI.getWorkspaceProjects(activeWorkspace.owner._id);
+        
       if (!res.data.success) {
         setRoles([]);
         return;
@@ -84,7 +88,7 @@ export default function DirectorRoles() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [activeWorkspace]);
 
   const handleDeleteRole = async (role: RoleItem) => {
     if (!confirm(`Delete role "${role.roleName}"? This will also remove all its applicants.`)) return;
