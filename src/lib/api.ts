@@ -561,10 +561,10 @@ export const collaboratorAPI = {
     api.get(API_ENDPOINTS.COLLABORATORS.MY_INVITATIONS, { params }),
   getMyCollaborations: (params?) => 
     api.get(API_ENDPOINTS.COLLABORATORS.MY_COLLABORATIONS, { params }),
-  acceptInvitation: (data: string | { invitationId: string; id?: string }) => 
-    api.post(API_ENDPOINTS.COLLABORATORS.ACCEPT_INVITATION, typeof data === "string" ? { id: data, invitationId: data } : data),
-  declineInvitation: (data: string | { invitationId: string; id?: string }) => 
-    api.post(API_ENDPOINTS.COLLABORATORS.DECLINE_INVITATION, typeof data === "string" ? { id: data, invitationId: data } : data),
+  acceptInvitation: (data: string | { invitationId?: string; id?: string; token?: string }) => 
+    api.post(API_ENDPOINTS.COLLABORATORS.ACCEPT_INVITATION, typeof data === "string" ? { id: data, invitationId: data, token: data } : data),
+  declineInvitation: (data: string | { invitationId?: string; id?: string; token?: string }) => 
+    api.post(API_ENDPOINTS.COLLABORATORS.DECLINE_INVITATION, typeof data === "string" ? { id: data, invitationId: data, token: data } : data),
 };
 
 export const twoFactorAuthAPI = {
