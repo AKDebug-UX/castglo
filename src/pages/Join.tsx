@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { User, Video, Briefcase, ChevronRight, Sparkles, Zap, Shield } from "lucide-react";
 
 export default function Join() {
+  const [searchParams] = useSearchParams();
+  const searchStr = searchParams.toString();
+  const searchSuffix = searchStr ? `?${searchStr}` : "";
+
   const joinOptions = [
     {
       id: "talent",
@@ -65,7 +69,7 @@ export default function Join() {
                 </CardHeader>
                 <CardContent className="pb-10 pt-4 flex justify-center">
                   <Button asChild className="rounded-full px-8 py-6 h-auto text-lg font-bold bg-[#009698] hover:bg-[#009698]/90 text-white transition-all duration-300 group shadow-lg shadow-[#009698]/20">
-                    <Link to={option.link}>
+                    <Link to={`${option.link}${searchSuffix}`}>
                       Get Started
                       <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Link>
