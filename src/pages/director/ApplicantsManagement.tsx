@@ -120,13 +120,68 @@ export default function ApplicantsManagement() {
       setIsLoading(true);
       try {
         const isPersonal = activeWorkspace === "Personal";
-        const listingsRes = isPersonal 
-          ? await projectAPI.getMe() 
-          : await projectAPI.getWorkspaceProjects(activeWorkspace.owner._id);
-        const myProjects: Project[] = listingsRes.data?.success
-          ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [])
-          : [];
-        setProjects(myProjects);
+        let myProjects: Project[] = [];
+        try {
+          const ownerId = !isPersonal ? (
+            activeWorkspace.owner?._id || 
+            activeWorkspace.owner || 
+            activeWorkspace.inviter?._id || 
+            activeWorkspace.inviter
+          ) : null;
+
+          if (!isPersonal && !ownerId) {
+            throw new Error("Owner ID is undefined");
+          }
+
+          const listingsRes = isPersonal 
+            ? await projectAPI.getMe() 
+            : await projectAPI.getWorkspaceProjects(ownerId as string);
+
+          if (listingsRes.data?.success) {
+            myProjects = Array.isArray(listingsRes.data.data) 
+              ? listingsRes.data.data 
+              : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [];
+          }
+        } catch (apiError) {
+          if (!isPersonal) {
+            console.warn("Failed to fetch workspace projects from API, falling back to local data:", apiError);
+            let extractedProjects: any[] = [];
+            
+            if (activeWorkspace.projectGrants && activeWorkspace.projectGrants.length > 0) {
+              const promises = activeWorkspace.projectGrants.map(async (grant: any) => {
+                const p = grant.projectId;
+                if (p && typeof p === 'object' && p._id) return p;
+                if (typeof p === 'string') {
+                  const res = await projectAPI.getOne(p).catch(() => null);
+                  return res?.data?.data;
+                }
+                return null;
+              });
+              const results = await Promise.all(promises);
+              extractedProjects = results.filter(Boolean);
+            }
+            
+            if (extractedProjects.length === 0) {
+              let singleProject = activeWorkspace.project || activeWorkspace.castingCall;
+              if (singleProject && typeof singleProject === 'string') {
+                const res = await projectAPI.getOne(singleProject).catch(() => null);
+                singleProject = res?.data?.data;
+              }
+              if (singleProject && typeof singleProject === 'object' && (singleProject._id || singleProject.id)) {
+                extractedProjects = [singleProject];
+              }
+            }
+              
+            if (extractedProjects.length > 0) {
+              myProjects = extractedProjects;
+            } else {
+              console.warn("No populated projects found in grants or collaboration. Defaulting to empty list.");
+              myProjects = [];
+            }
+          } else {
+            throw apiError;
+          }
+        }
 
         if (myProjects.length > 0) {
           const roleQueries: { projId: string; roleId: string; projTitle: string; roleName: string }[] = [];

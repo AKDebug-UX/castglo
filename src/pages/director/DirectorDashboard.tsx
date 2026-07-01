@@ -31,21 +31,76 @@ export default function DirectorDashboard() {
     const fetchData = async () => {
       try {
         const isPersonal = activeWorkspace === "Personal";
-        const [listingsRes, streamsRes] = await Promise.all([
-          isPersonal 
-            ? projectAPI.getMe() 
-            : projectAPI.getWorkspaceProjects(activeWorkspace.owner._id),
-          livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
-        ]);
-
+        const streamsRes = await livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } }));
         if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
           setActiveStreams(streamsRes.data.data.filter((s: any) => s.status === "live").slice(0, 2));
         }
 
-        if (listingsRes.data.success) {
-          const myCastings = Array.isArray(listingsRes.data.data)
-            ? listingsRes.data.data
-            : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [];
+        let myCastings: any[] = [];
+        try {
+          const ownerId = !isPersonal ? (
+            activeWorkspace.owner?._id || 
+            activeWorkspace.owner || 
+            activeWorkspace.inviter?._id || 
+            activeWorkspace.inviter
+          ) : null;
+
+          if (!isPersonal && !ownerId) {
+            throw new Error("Owner ID is undefined");
+          }
+
+          const listingsRes = isPersonal 
+            ? await projectAPI.getMe() 
+            : await projectAPI.getWorkspaceProjects(ownerId as string);
+
+          if (listingsRes.data.success) {
+            myCastings = Array.isArray(listingsRes.data.data)
+              ? listingsRes.data.data
+              : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [];
+          }
+        } catch (apiError) {
+          if (!isPersonal) {
+            console.warn("Failed to fetch workspace projects from API, falling back to local data:", apiError);
+            let extractedProjects: any[] = [];
+            
+            if (activeWorkspace.projectGrants && activeWorkspace.projectGrants.length > 0) {
+              const promises = activeWorkspace.projectGrants.map(async (grant: any) => {
+                const p = grant.projectId;
+                if (p && typeof p === 'object' && p._id) return p;
+                if (typeof p === 'string') {
+                  const res = await projectAPI.getOne(p).catch(() => null);
+                  return res?.data?.data;
+                }
+                return null;
+              });
+              const results = await Promise.all(promises);
+              extractedProjects = results.filter(Boolean);
+            }
+            
+            if (extractedProjects.length === 0) {
+              let singleProject = activeWorkspace.project || activeWorkspace.castingCall;
+              if (singleProject && typeof singleProject === 'string') {
+                const res = await projectAPI.getOne(singleProject).catch(() => null);
+                singleProject = res?.data?.data;
+              }
+              if (singleProject && typeof singleProject === 'object' && (singleProject._id || singleProject.id)) {
+                extractedProjects = [singleProject];
+              }
+            }
+              
+            if (extractedProjects.length > 0) {
+              myCastings = extractedProjects;
+            } else {
+              // Instead of throwing and breaking the dashboard, just show 0 projects
+              console.warn("No populated projects found in grants or collaboration. Defaulting to empty list.");
+              myCastings = [];
+            }
+          } else {
+            throw apiError;
+          }
+        }
+
+        if (myCastings.length > 0 || isPersonal) {
           setListings(myCastings.slice(0, 5));
 
           // Calculate active projects (handle multiple possible statuses)

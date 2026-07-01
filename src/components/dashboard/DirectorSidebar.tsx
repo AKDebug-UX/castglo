@@ -43,11 +43,15 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
     if (activeWorkspace !== "Personal") {
       // If settings or collaborators, check manageCollaborators
       if (item.title === "Settings" || item.title === "Collaborators") {
-        return !!activeWorkspace.permissions?.manageCollaborators;
+        const hasGlobal = !!activeWorkspace.permissions?.manageCollaborators;
+        const hasProjectLevel = !!(activeWorkspace.projectGrants && activeWorkspace.projectGrants.some((g: any) => g.permissions?.manageCollaborators));
+        return hasGlobal || hasProjectLevel;
       }
       // If applicants or matched, check viewApplicants
       if (item.title === "Applicants" || item.title === "Matched") {
-        return !!activeWorkspace.permissions?.viewApplicants;
+        const hasGlobal = !!activeWorkspace.permissions?.viewApplicants;
+        const hasProjectLevel = !!(activeWorkspace.projectGrants && activeWorkspace.projectGrants.some((g: any) => g.permissions?.viewApplicants));
+        return hasGlobal || hasProjectLevel;
       }
     }
     return true;
