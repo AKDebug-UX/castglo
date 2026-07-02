@@ -626,8 +626,8 @@ export default function CreateCasting() {
   const handleSubmit = async (e: React.FormEvent, statusOverride?: string) => {
     e.preventDefault();
     
-    // Only allow final submission if on the last step
-    if (statusOverride !== "draft" && step !== totalSteps) {
+    // Only allow final submission if on the last step, unless explicitly updating from edit mode
+    if (statusOverride !== "draft" && statusOverride !== "edit_update" && step !== totalSteps) {
       return;
     }
 
@@ -927,9 +927,22 @@ export default function CreateCasting() {
           )}
 
           <div className="flex gap-3">
-            {step === 1 && canEdit && (
+            {step === 1 && canEdit && !isEditMode && (
               <Button type="button" variant="ghost" onClick={(e) => handleSubmit(e, "draft")} disabled={isSubmitting}>
                 Save Draft
+              </Button>
+            )}
+
+            {isEditMode && canEdit && step < totalSteps && (
+              <Button 
+                key="submit-form-button-edit" 
+                type="button" 
+                variant="outline"
+                onClick={(e) => handleSubmit(e as any, "edit_update")}
+                disabled={isSubmitting} 
+                className="min-w-32 border-primary text-primary hover:bg-primary/10"
+              >
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Publish Project"}
               </Button>
             )}
             
