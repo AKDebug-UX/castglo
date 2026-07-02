@@ -383,17 +383,17 @@ export default function CreateCasting() {
               ...metaTop,      // fill in all meta fields first
               // Then explicitly override with reliable backend/meta values:
               project_title: data.project_title || data.projectName || data.title || metaTop.project_title || "",
-              project_type: toProjectTypeLabel(data.project_type || data.projectType || metaTop.project_type) || "Film",
+              project_type: toProjectTypeLabel(data.project_type || data.projectType || data.productionType || metaTop.project_type) || "Film",
               full_project_description: data.full_project_description || data.description || metaTop.full_project_description || "",
               project_status: toProjectStatusLabel(data.project_status || data.status || metaTop.project_status) || "Open for Applications",
               short_project_summary: data.short_project_summary || metaTop.short_project_summary || "",
               internal_project_reference: data.internal_project_reference || metaTop.internal_project_reference || "",
               casting_company_name: data.casting_company_name || metaTop.casting_company_name || "",
-              production_company_name: data.production_company_name || metaTop.production_company_name || "",
-              project_website: data.project_website || metaTop.project_website || "",
-              director_name: data.director_name || metaTop.director_name || "",
-              producer_name: data.producer_name || metaTop.producer_name || "",
-              writer_name: data.writer_name || metaTop.writer_name || "",
+              production_company_name: data.production_company_name || data.productionCompany || metaTop.production_company_name || "",
+              project_website: data.project_website || data.projectWebsite || metaTop.project_website || "",
+              director_name: data.director_name || (data.personnel && data.personnel[0]) || metaTop.director_name || "",
+              producer_name: data.producer_name || (data.personnel && data.personnel[1]) || metaTop.producer_name || "",
+              writer_name: data.writer_name || (data.personnel && data.personnel[2]) || metaTop.writer_name || "",
               casting_director_name: data.casting_director_name || metaTop.casting_director_name || "",
               production_notes: data.production_notes || metaTop.production_notes || "",
               intended_audience_market: data.intended_audience_market || metaTop.intended_audience_market || "",
@@ -406,7 +406,7 @@ export default function CreateCasting() {
               // Arrays
               genre: toStringArray(data.genre || metaTop.genre || data.category),
               industry_areas: toStringArray(data.industry_areas || metaTop.industry_areas),
-              talent_types_needed: toStringArray(data.talent_types_needed || metaTop.talent_types_needed || data.talentTypes),
+              talent_types_needed: toStringArray(data.talent_types_needed || metaTop.talent_types_needed || data.talentTypesNeeded || data.talentTypes),
               media_required: Array.isArray(data.media_required) && data.media_required.length > 0
                 ? data.media_required
                 : Array.isArray(metaTop.media_required) && metaTop.media_required.length > 0
@@ -418,19 +418,20 @@ export default function CreateCasting() {
                   ? metaTop.pre_audition_questions
                   : prev.pre_audition_questions,
               // Location
-              talent_location_scope: data.talent_location_scope || metaTop.talent_location_scope || prev.talent_location_scope,
-              preferred_talent_base: data.preferred_talent_base || metaTop.preferred_talent_base || (typeof data.location === "string" ? data.location : prev.preferred_talent_base),
+              talent_location_scope: data.talent_location_scope || data.location?.locationType || metaTop.talent_location_scope || prev.talent_location_scope,
+              preferred_talent_base: data.preferred_talent_base || data.location?.city || data.location?.country || metaTop.preferred_talent_base || (typeof data.location === "string" ? data.location : prev.preferred_talent_base),
               // Images — use shared helper
               project_cover_image: getProjectCoverImage(data, metaTop) || prev.project_cover_image,
               additional_images: Array.isArray(data.additional_images) ? data.additional_images : (Array.isArray(metaTop.additional_images) ? metaTop.additional_images : prev.additional_images),
               moodboard_references: Array.isArray(data.moodboard_references) ? data.moodboard_references : (Array.isArray(metaTop.moodboard_references) ? metaTop.moodboard_references : prev.moodboard_references),
               // Audition settings
-              audition_type: data.audition_type || metaTop.audition_type || prev.audition_type,
+              audition_required: data.audition_required ?? data.auditionRequired ?? metaTop.audition_required ?? prev.audition_required,
+              audition_type: data.audition_type || data.auditionType || metaTop.audition_type || prev.audition_type,
               audition_instructions: data.audition_instructions || metaTop.audition_instructions || "",
               audition_location: data.audition_location || metaTop.audition_location || "",
               self_tape_accepted: data.self_tape_accepted ?? metaTop.self_tape_accepted ?? prev.self_tape_accepted,
               live_online_audition_available: data.live_online_audition_available ?? metaTop.live_online_audition_available ?? false,
-              interview_required: data.interview_required ?? metaTop.interview_required ?? false,
+              interview_required: data.interview_required ?? data.interviewRequired ?? metaTop.interview_required ?? false,
               interview_format: data.interview_format || metaTop.interview_format || "Online",
               // Publish settings
               visibility_level: data.visibility_level || metaTop.visibility_level || prev.visibility_level,
