@@ -140,6 +140,14 @@ export default function ProfessionalDashboard() {
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               No upcoming bookings found. Listings will appear here once booked.
+              <div className="mt-4">
+                <Button variant="outline" size="sm" onClick={() => setUpcomingBookings([
+                  { _id: 'mock1', serviceName: 'Headshot Photography', clientName: 'Jane Smith', date: new Date(Date.now() + 86400000).toISOString() },
+                  { _id: 'mock2', serviceName: 'Acting Coaching', clientName: 'Mike Johnson', date: new Date(Date.now() + 172800000).toISOString() }
+                ])}>
+                  Load Mock Bookings
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

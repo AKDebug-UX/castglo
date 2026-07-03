@@ -44,7 +44,33 @@ export default function CreateCasting() {
   const { getPermissionsForProject } = useWorkspace();
   const canEdit = !isEditMode || getPermissionsForProject(id).editProject;
 
-  // ── Form State ─────────────────────────────────────────────────────────────
+  const handleAutoFill = () => {
+    setFormData((prev: any) => ({
+      ...prev,
+      project_title: "The Midnight Heist (Mock)",
+      project_type: "Film",
+      genre: ["Action", "Thriller"],
+      project_status: "Open for Applications",
+      short_project_summary: "A thrilling action movie about a heist.",
+      full_project_description: "A thrilling action movie about a heist that goes wrong.",
+      casting_company_name: "Mock Casting Co",
+      production_company_name: "Mock Production Co",
+      director_name: "Jane Doe",
+      producer_name: "John Doe",
+      writer_name: "Jane Smith",
+      talent_types_needed: ["Actor", "Extra"],
+      application_deadline: "2024-12-31",
+      audition_date: "2024-01-15",
+      audition_required: true,
+      roles: [{
+        ...prev.roles[0],
+        role_name: "Lead Detective",
+        number_of_talents_needed: "1",
+        full_role_description: "Tough detective with a soft spot for cats."
+      }]
+    }));
+  };
+
   const [formData, setFormData] = useState<CastingFormData>({
     // Step 1: Project Basics & Production Details
     project_title: "",
@@ -644,6 +670,11 @@ export default function CreateCasting() {
           <h1 className="text-3xl font-bold">{isEditMode ? "Edit Project" : "Post a New Project"}</h1>
           <p className="text-muted-foreground">Find the perfect talent for your upcoming production</p>
         </div>
+        {!isEditMode && (
+          <Button variant="outline" onClick={handleAutoFill} type="button">
+            Auto-fill Mock Data
+          </Button>
+        )}
       </div>
 
       {/* Stepper */}

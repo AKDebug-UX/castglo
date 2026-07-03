@@ -70,6 +70,27 @@ export default function SubmitAudition() {
   const [useProfileHeadshot, setUseProfileHeadshot] = useState(false);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
 
+  const handleAutoFill = () => {
+    setFormData(prev => ({
+      ...prev,
+      cover_message: "I am extremely passionate about this project and believe I am a perfect fit for the role.",
+      why_suitable: "I have over 5 years of experience in similar productions and bring a unique energy.",
+      relevant_experience: "Lead actor in 'The Summer Stage', supporting role in 'Echoes of Tomorrow'.",
+      skills: availableSkills.slice(0, 2),
+      showreel_url: "https://youtube.com/watch?v=mock",
+      portfolio_links: "https://myportfolio.com",
+      height: "175",
+      age_range: "25-35",
+      location_override: "London, UK",
+      availability_date: "2024-06-01",
+      willing_to_travel: true,
+      compensation_expectation: "$500/day",
+      legal_consent: true,
+      previous_work_links: "https://vimeo.com/mock",
+      additional_notes: "Looking forward to hearing from you!"
+    }));
+  };
+
   const getProfileFieldValue = (key: string): any => {
     console.log(`getProfileFieldValue called for key: ${key}`);
     if (!userProfile) return null;
@@ -625,6 +646,9 @@ export default function SubmitAudition() {
           <h1 className="text-3xl font-bold">{isProfessional ? "Professional Service Proposal" : "Talent Application Form"}</h1>
           <p className="text-muted-foreground">{isProfessional ? "Submit your proposal and portfolio details to the Casting Director." : "Submit your application and portfolio for this role."}</p>
         </div>
+        <Button variant="outline" onClick={handleAutoFill} type="button">
+          Auto-fill Mock Data
+        </Button>
       </div>
 
       {/* Casting Info */}
