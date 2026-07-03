@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Eye, Ban, Trash2, Loader2, CheckCircle2, Gift } from "lucide-react";
+import { Eye, Ban, Trash2, Loader2, CheckCircle2, Gift, RefreshCcw } from "lucide-react";
 import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -72,6 +72,21 @@ export default function UsersManagement() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to suspend user");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleUnsuspend = async (userId: string) => {
+    setIsActionLoading(true);
+    try {
+      const response = await adminAPI.unsuspendUser(userId);
+      if (response.data.success) {
+        toast.success("User unsuspended successfully");
+        fetchUsers();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to unsuspend user");
     } finally {
       setIsActionLoading(false);
     }
@@ -235,15 +250,27 @@ export default function UsersManagement() {
                         <Button variant="ghost" size="icon-sm" onClick={() => setSelectedUser(user)}>
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon-sm" 
-                          onClick={() => handleSuspend(user._id)}
-                          disabled={isActionLoading || user.status === 'suspended'}
-                          title="Suspend User"
-                        >
-                          <Ban className="w-4 h-4" />
-                        </Button>
+                        {user.isSuspended ? (
+                          <Button 
+                            variant="ghost" 
+                            size="icon-sm" 
+                            onClick={() => handleUnsuspend(user._id)}
+                            disabled={isActionLoading}
+                            title="Unsuspend User"
+                          >
+                            <RefreshCcw className="w-4 h-4 text-green-600" />
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="icon-sm" 
+                            onClick={() => handleSuspend(user._id)}
+                            disabled={isActionLoading || user.status === 'suspended'}
+                            title="Suspend User"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="icon-sm" 

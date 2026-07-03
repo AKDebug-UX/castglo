@@ -390,22 +390,7 @@ export function UnifiedTalentProfileForm({
     );
   };
 
-  const handleAutoFill = () => {
-    const dummyData = generateDummyProfileData(UNIFIED_TALENT_PROFILE_FIELD_SPEC);
-    
-    // Auto-derive age group if DOB is present
-    if (dummyData.dateOfBirth) {
-      const derived = deriveAgeGroupFromDob(dummyData.dateOfBirth);
-      if (derived) {
-        dummyData.age_group = derived;
-      }
-    }
 
-    const nextUnified = { ...unified, ...dummyData };
-    const nextRoot = { ...rootData, ...dummyData, unifiedTalentProfile: nextUnified };
-    onChange(nextRoot);
-    toast.success("Full profile auto-filled with mock data across all sections");
-  };
 
   useEffect(() => {
     // Auto-detect and set country if not present, and default booleans to false
@@ -1063,18 +1048,7 @@ export function UnifiedTalentProfileForm({
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleAutoFill}
-          className="flex items-center gap-2 border-[#009698] text-[#009698] hover:bg-[#009698]/10 rounded-xl"
-        >
-          <Wand2 className="w-4 h-4" />
-          Auto-fill Mock Data
-        </Button>
-      </div>
+
       <Tabs
         value={activeTab}
         onValueChange={(value) => {

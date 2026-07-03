@@ -13,9 +13,10 @@ import {
   Eye,
   Loader2
 } from "lucide-react";
-import { profileAPI, authAPI } from "@/lib/api";
+import { profileAPI, authAPI, bookingAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { format } from "date-fns";
 
 import { Link } from "react-router-dom";
 
@@ -23,25 +24,38 @@ export default function ProfessionalDashboard() {
   const { user: authUser, formatPrice } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState(null);
-  const [stats, setStats] = useState([]);
+  const [stats, setStats] = useState<any[]>([]);
+  const [upcomingBookings, setUpcomingBookings] = useState<any[]>([]);
+  const [recentRequests, setRecentRequests] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [profileRes] = await Promise.all([
+        const [profileRes, statsRes, bookingsRes] = await Promise.all([
           profileAPI.getMe().catch(err => {
             console.error("Profile fetch error:", err);
             return { data: { success: false } };
-          })
+          }),
+          bookingAPI.getStats().catch(() => ({ data: { success: false } })),
+          bookingAPI.getProfessionalBookings().catch(() => ({ data: { success: false, data: [] } }))
         ]);
 
         const profileData = profileRes.data?.success ? profileRes.data.data : null;
         setProfile(profileData);
 
+        const statsData = statsRes.data?.success ? statsRes.data.data : {};
+        const bookingsList = bookingsRes.data?.success ? bookingsRes.data.data : [];
+
+        const upcoming = bookingsList.filter((b: any) => b.status === "confirmed" || b.status === "scheduled");
+        const requests = bookingsList.filter((b: any) => b.status === "pending");
+
+        setUpcomingBookings(upcoming);
+        setRecentRequests(requests);
+
         // Calculate stats with safe defaults
         setStats([
-          { label: "Total Bookings", value: "0", change: "Live data", Icon: Calendar },
-          { label: "Revenue", value: formatPrice(0), change: "This month", Icon: DollarSign },
+          { label: "Total Bookings", value: statsData.totalBookings?.toString() || "0", change: "Live data", Icon: Calendar },
+          { label: "Revenue", value: formatPrice(statsData.totalRevenue || 0), change: "This month", Icon: DollarSign },
           { label: "Profile Views", value: profileData?.views?.toString() || "0", change: "Total views", Icon: Eye },
           { label: "Rating", value: profileData?.rating?.toString() || "0.0", change: "From reviews", Icon: Star },
         ]);
@@ -104,16 +118,30 @@ export default function ProfessionalDashboard() {
         ))}
       </div>
 
-      {/* Upcoming Bookings - Mocked for now until Booking API is ready */}
+      {/* Upcoming Bookings */}
       <Card>
         <CardHeader>
           <CardTitle>Upcoming Bookings</CardTitle>
           <p className="text-sm text-muted-foreground">Your scheduled sessions with clients</p>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            No upcoming bookings found. Listings will appear here once booked.
-          </div>
+          {upcomingBookings.length > 0 ? (
+            <div className="space-y-4">
+              {upcomingBookings.map((booking: any) => (
+                <div key={booking._id || booking.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-semibold">{booking.serviceName || "Professional Service"}</p>
+                    <p className="text-sm text-muted-foreground">{booking.clientName || "Client"} - {booking.date ? format(new Date(booking.date), "PPP") : "TBD"}</p>
+                  </div>
+                  <Badge variant="outline" className="bg-primary/10 text-primary">Scheduled</Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No upcoming bookings found. Listings will appear here once booked.
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -124,9 +152,26 @@ export default function ProfessionalDashboard() {
           <p className="text-sm text-muted-foreground">New requests awaiting your response</p>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            No new booking requests.
-          </div>
+          {recentRequests.length > 0 ? (
+            <div className="space-y-4">
+              {recentRequests.map((request: any) => (
+                <div key={request._id || request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-semibold">{request.serviceName || "Professional Service"}</p>
+                    <p className="text-sm text-muted-foreground">Requested by {request.clientName || "Client"}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="text-green-600 border-green-200 hover:bg-green-50">Accept</Button>
+                    <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">Decline</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              No new booking requests.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

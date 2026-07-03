@@ -53,16 +53,7 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
   const unified = rootData?.unifiedCastingDirectorProfile || {};
   const values = { ...rootData, ...unified };
 
-  const handleAutoFill = () => {
-    const dummyData = generateDummyProfileData(
-      UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC,
-      getCastingDirectorReferenceOptions
-    );
-    const nextUnified = { ...unified, ...dummyData };
-    const nextRoot = { ...rootData, ...dummyData, unifiedCastingDirectorProfile: nextUnified };
-    onChange(nextRoot);
-    toast.success("Casting Director form auto-filled with mock data");
-  };
+
   
   useEffect(() => {
     const updates: Record<string, any> = {};
@@ -204,18 +195,7 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleAutoFill}
-          className="flex items-center gap-2 border-[#009698] text-[#009698] hover:bg-[#009698]/10 rounded-xl"
-        >
-          <Wand2 className="w-4 h-4" />
-          Auto-fill Mock Data
-        </Button>
-      </div>
+
       <div className="space-y-10">
       {sections.map(([section, fields]) => (
         <Card key={section}>

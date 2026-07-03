@@ -454,25 +454,6 @@ export default function SubmitAudition() {
     }
   };
 
-  const handleAutoFill = () => {
-    setFormData({
-      cover_message: "Hello, I am extremely interested in this project and believe I would be a great fit. I have reviewed the requirements and my background aligns perfectly.",
-      why_suitable: "I have 5 years of professional experience in similar genres and a strong passion for the subject matter explored in this production.",
-      relevant_experience: "Lead role in 'The Wanderer' (2022), Supporting in 'City Lights' (2023). Trained at the National Conservatory for Dramatic Arts.",
-      skills: ["Acting", "Voice over", "Presenting"],
-      showreel_url: "https://youtube.com/watch?v=mockreel",
-      portfolio_links: "https://instagram.com/mocktalent",
-      height: "5'9\"",
-      age_range: "20-30",
-      location_override: user?.location || "London, UK",
-      availability_date: new Date().toISOString().split('T')[0],
-      willing_to_travel: true,
-      compensation_expectation: "Standard union rate / Negotiable",
-      legal_consent: true,
-      previous_work_links: "https://vimeo.com/mockwork",
-      additional_notes: "Looking forward to the opportunity to audition in person!"
-    });
-  };
 
   const handleSubmit = async () => {
     if (!id) return;
@@ -644,15 +625,6 @@ export default function SubmitAudition() {
           <h1 className="text-3xl font-bold">{isProfessional ? "Professional Service Proposal" : "Talent Application Form"}</h1>
           <p className="text-muted-foreground">{isProfessional ? "Submit your proposal and portfolio details to the Casting Director." : "Submit your application and portfolio for this role."}</p>
         </div>
-        <Button
-          type="button"
-          onClick={handleAutoFill}
-          variant="outline"
-          className="self-start sm:self-center bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100/80 hover:text-teal-800 flex items-center gap-2 font-semibold shadow-sm transition-all duration-200"
-        >
-          <Zap className="w-4 h-4 text-teal-600 fill-teal-600 animate-pulse" />
-          Auto-fill Mock Data
-        </Button>
       </div>
 
       {/* Casting Info */}

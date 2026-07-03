@@ -13,6 +13,7 @@ import { Menu, Bell, Settings, LogOut, UserCircle } from "lucide-react";
 import userAvatar from "@/assets/user-avatar.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { socketService } from "@/lib/socket";
 import { notificationAPI } from "@/lib/api";
 import { getAvatarUrl, getInitials } from "@/lib/utils";
 import { Briefcase } from "lucide-react";
@@ -48,7 +49,33 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       fetchNotifications();
       // Increase to 2 minutes to reduce server load, as real-time updates should ideally come via socket
       const interval = setInterval(fetchNotifications, 120000); 
-      return () => clearInterval(interval);
+      
+      // Setup WebSockets for real-time notifications
+      const token = localStorage.getItem('token');
+      if (token) {
+        socketService.connect(token);
+        
+        const handleNewNotification = (data: any) => {
+          console.log("Real-time notification received:", data);
+          // Assuming the backend sends { notification: { ... } } or just the notification object
+          const newNotif = data.notification || data;
+          
+          setNotifications(prev => {
+            // Prevent duplicates
+            if (prev.some((n: any) => n._id === newNotif._id)) return prev;
+            return [newNotif, ...prev].slice(0, 5); // Keep top 5 in dropdown
+          });
+          
+          setUnreadCount(prev => prev + 1);
+        };
+
+        socketService.on('new_notification', handleNewNotification);
+      }
+      
+      return () => {
+        clearInterval(interval);
+        socketService.off('new_notification');
+      };
     }
   }, [user?.id]);
  

@@ -74,16 +74,7 @@ export function UnifiedProfessionalProfileForm({
   const unified = rootData?.unifiedProfessionalProfile || {};
   const values = { ...rootData, ...unified };
 
-  const handleAutoFill = () => {
-    const dummyData = generateDummyProfileData(
-      UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC,
-      getProfessionalReferenceOptions
-    );
-    const nextUnified = { ...unified, ...dummyData };
-    const nextRoot = { ...rootData, ...dummyData, unifiedProfessionalProfile: nextUnified };
-    onChange(nextRoot);
-    toast.success("Professional form auto-filled with mock data");
-  };
+
   
   useEffect(() => {
     const updates: Record<string, any> = {};
@@ -246,18 +237,7 @@ export function UnifiedProfessionalProfileForm({
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleAutoFill}
-          className="flex items-center gap-2 border-[#009698] text-[#009698] hover:bg-[#009698]/10 rounded-xl"
-        >
-          <Wand2 className="w-4 h-4" />
-          Auto-fill Mock Data
-        </Button>
-      </div>
+
 
       {activeTab === "media" && (
         <Card className="rounded-[2rem] border shadow-card overflow-hidden">

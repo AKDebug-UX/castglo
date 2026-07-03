@@ -580,10 +580,51 @@ export default function LivestreamPage() {
     const token = localStorage.getItem('token');
     if (token) {
       socketService.connect(token);
+
+      // Listen for real-time livestream chat messages
+      const handleNewMessage = (data: any) => {
+        const msg = data.message || data;
+        // Verify it belongs to the current livestream
+        if (msg.livestreamId === id || msg.streamId === id) {
+          setChatMessages((prev) => {
+            if (prev.some((m: any) => m.id === msg._id)) return prev;
+            
+            const senderId = msg.senderId || msg.sender?._id || msg.sender;
+            const isSelf = Boolean(user?.id && senderId && String(user.id) === String(senderId));
+            const displayName = isSelf 
+              ? (user?.fullName || "Me") 
+              : (msg.senderName || msg.sender?.fullName || "Participant");
+              
+            const formattedMessage = {
+              id: msg._id,
+              sender: displayName,
+              text: msg.message || msg.text,
+              createdAt: msg.createdAt || new Date().toISOString(),
+              timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              isSelf
+            };
+            return [...prev, formattedMessage];
+          });
+        }
+      };
+
+      // Listen for stream ended event
+      const handleStreamEnded = (data: any) => {
+        if ((data.streamId === id || data.livestreamId === id) && !isBroadcaster) {
+          toast.info("The host has ended the livestream.");
+          setTimeout(() => navigate(-1), 3000);
+        }
+      };
+
+      socketService.on('new_livestream_message', handleNewMessage);
+      socketService.on('livestream_ended', handleStreamEnded);
+
+      return () => {
+        socketService.off('new_livestream_message', handleNewMessage);
+        socketService.off('livestream_ended', handleStreamEnded);
+      };
     }
-    // We don't disconnect here as socket might be shared, 
-    // but we can join/leave rooms in specific stream effects
-  }, []);
+  }, [id, user?.id, user?.fullName, isBroadcaster, navigate]);
 
   useEffect(() => {
     const pollRef = { active: true };

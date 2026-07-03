@@ -1,0 +1,48 @@
+Listed directory castglo
+Viewed package.json:1-96
+Viewed README.md:1-65
+Viewed missing_endpoints.txt
+Viewed endpoints.txt:1-154
+Listed directory src
+Viewed swagger_endpoints.md:1-157
+Searched for "TODO"
+Searched for "mock"
+Listed directory lib
+Searched for "TODO"
+Searched for "mock"
+Ran command: `git status`
+Listed directory pages
+Viewed api.ts:1-100
+Ran command: `npm run lint`
+Searched for "MOCK"
+Searched for "MOCK_"
+Viewed BrowseTalent.tsx:1-100
+Listed directory tests
+
+Based on my review of the **Castglo** project, it looks like a solid platform built with React, Vite, TypeScript, Tailwind, and `shadcn-ui`. You already have a very comprehensive API setup mapped out in `src/lib/api.ts` pointing to your Render backend, and a lot of the core pages and routing are in place.
+
+Here are the key areas I think we should prioritize next:
+
+### 1. Removing Mock Data & Finalizing API Integration
+While many pages (like `BrowseTalent`) are already using real API calls, I noticed several complex user flows still rely on placeholders or "Auto-fill Mock Data" buttons. We should fully connect these to the backend:
+- **`CreateCasting`** (Director Flow)
+- **`SubmitAudition`** (Talent Flow)
+- **`ProfessionalDashboard`** (The "Upcoming Bookings" section is currently mocked)
+- **Unified Profile Forms** (`UnifiedTalentProfileForm`, `UnifiedProfessionalProfileForm`, etc.)
+
+### 2. Expanding End-to-End (E2E) Test Coverage
+You have Playwright configured and a couple of tests written (`talent-profile.spec.ts` and `two-factor.spec.ts`), but we are missing coverage for the platform's most critical paths. We should write E2E tests for:
+- The full Casting Director flow (creating a casting call -> reviewing applicants).
+- The Talent flow (browsing jobs -> submitting an application/audition).
+- The payment and subscription flows.
+
+### 3. Real-Time Features (Livestream & Messaging)
+I see endpoints in `api.ts` and documentation for Livestreaming and Messaging (`/livestream`, `/messaging/conversations`, etc.), as well as a `socket.ts` file. If these aren't fully integrated into the UI yet, we should wire up the WebSockets so users can have live chats and real-time notifications.
+
+### 4. Admin Dashboard & Moderation Tools
+There are numerous Admin endpoints defined (e.g., suspending users, reviewing pending casting calls, verifications, analytics). If the Admin interface (`src/pages/admin/*`) isn't fully built out to consume all these endpoints, that would be a high-priority task to ensure you can moderate the platform effectively.
+
+---
+
+**How would you like to proceed?** 
+We could start by **replacing the mock data in the dashboards with real API calls**, or if you have a specific priority in mind (like the Admin panel or real-time chat), let me know!
