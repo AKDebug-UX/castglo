@@ -1,14 +1,37 @@
 import { getReferenceOptions as getTalentOptions } from "./unifiedTalentProfile/referenceTables";
+import { getProfessionalReferenceOptions } from "./unifiedProfessionalProfile/referenceTables";
+import { getCastingDirectorReferenceOptions } from "./unifiedCastingDirectorProfile/referenceTables";
+
+import { UNIFIED_TALENT_PROFILE_FIELD_SPEC } from "./unifiedTalentProfile/fieldSpec";
+import { UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC } from "./unifiedProfessionalProfile/fieldSpec";
+import { UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC } from "./unifiedCastingDirectorProfile/fieldSpec";
 
 /**
  * Generates dummy data for a profile based on its field specifications.
  */
 export const generateDummyProfileData = (
-  fieldSpecs: any[],
+  typeOrFieldSpecs: string | any[],
   getOptionsOverride?: (source: string) => string[]
 ) => {
   const dummyData: Record<string, any> = {};
-  const getOptions = getOptionsOverride || getTalentOptions;
+  
+  let fieldSpecs: any[] = [];
+  let getOptions = getOptionsOverride || getTalentOptions;
+
+  if (typeof typeOrFieldSpecs === "string") {
+    if (typeOrFieldSpecs === "talent") {
+      fieldSpecs = UNIFIED_TALENT_PROFILE_FIELD_SPEC;
+      getOptions = getOptionsOverride || getTalentOptions;
+    } else if (typeOrFieldSpecs === "professional") {
+      fieldSpecs = UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC;
+      getOptions = getOptionsOverride || getProfessionalReferenceOptions;
+    } else if (typeOrFieldSpecs === "director") {
+      fieldSpecs = UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC;
+      getOptions = getOptionsOverride || getCastingDirectorReferenceOptions;
+    }
+  } else if (Array.isArray(typeOrFieldSpecs)) {
+    fieldSpecs = typeOrFieldSpecs;
+  }
 
   fieldSpecs.forEach((field) => {
     // Basic types
