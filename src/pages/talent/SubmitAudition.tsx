@@ -621,8 +621,8 @@ export default function SubmitAudition() {
               You have already submitted an application for this casting call.
             </p>
             <Button asChild>
-              <Link to="/talent/submissions">
-                View Deliverables
+              <Link to="/talent/applications">
+                View Applications
               </Link>
             </Button>
           </CardContent>

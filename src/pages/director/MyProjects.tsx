@@ -311,10 +311,10 @@ export default function MyProjects() {
                 <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{project.description}</p>
 
                 <div className="space-y-2 text-xs text-muted-foreground mb-4">
-                  <div className="flex justify-between">
+                  {/* <div className="flex justify-between">
                     <span>Deliverables:</span>
                     <span className="font-medium text-foreground">{project.applicationCount || 0}</span>
-                  </div>
+                  </div> */}
                   <div className="flex justify-between">
                     <span>Deadline:</span>
                     <span className="font-medium text-foreground">{getProjectDeadline(project)}</span>
@@ -361,14 +361,14 @@ export default function MyProjects() {
                     )
                   ) : (
                     <div className="flex gap-2 flex-1">
-                      {projectPermissions.viewApplicants && (
+                      {/* {projectPermissions.viewApplicants && (
                         <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
                           <Link to={`/director/submissions/${project._id}`}>
                             <Users className="w-3 h-3 mr-1" />
                             Deliverables
                           </Link>
                         </Button>
-                      )}
+                      )} */}
                       {projectPermissions.viewApplicants && (
                         <Button variant="outline" size="sm" className="flex-1 px-1 text-[10px]" asChild>
                           <Link to={`/director/applicants?project=${project._id}`}>
@@ -458,10 +458,10 @@ export default function MyProjects() {
                     </div>
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{project.description}</p>
                     <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
+                      {/* <span className="flex items-center gap-1">
                         <Users className="w-3 h-3" />
                         {project.applicationCount || 0} deliverables
-                      </span>
+                      </span> */}
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         Deadline: {getProjectDeadline(project)}
@@ -504,14 +504,14 @@ export default function MyProjects() {
                       )
                     ) : (
                       <div className="flex gap-2">
-                        {projectPermissions.viewApplicants && (
+                        {/* {projectPermissions.viewApplicants && (
                           <Button variant="outline" size="sm" asChild>
                             <Link to={`/director/submissions/${project._id}`}>
                               <Users className="w-3 h-3 mr-1" />
                               Deliverables
                             </Link>
                           </Button>
-                        )}
+                        )} */}
                         {projectPermissions.viewApplicants && (
                           <Button variant="outline" size="sm" asChild>
                             <Link to={`/director/applicants?project=${project._id}`}>

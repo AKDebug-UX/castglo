@@ -24,7 +24,7 @@ const mainNavItems = [
   { title: "Create Auditions", href: "/talent/create-audition", Icon: Video },
   { title: "Browse Casting Calls", href: "/talent/browse-cast", Icon: Search },
   { title: "My Applications", href: "/talent/applications", Icon: FileText },
-  { title: "Deliverables", href: "/talent/submissions", Icon: Send },
+  // { title: "Deliverables", href: "/talent/submissions", Icon: Send },
   { title: "Messages", href: "/talent/messages", Icon: MessageSquare },
   { title: "Notifications", href: "/talent/notifications", Icon: Bell },
   { title: "Audition", href: "/talent/audition", Icon: Video },
