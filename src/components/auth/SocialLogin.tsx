@@ -23,7 +23,7 @@ export function SocialLogin({ mode = 'signin', disabled = false }: SocialLoginPr
     const initGoogleSignIn = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "510800684128-placeholder.apps.googleusercontent.com",
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "646788710450-o42jophteghv5vir548jimltbm3vt3ef.apps.googleusercontent.com",
           callback: handleCredentialResponse
         });
         window.google.accounts.id.renderButton(
