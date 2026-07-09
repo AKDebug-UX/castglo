@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Send, MoreVertical, Loader2, MessageSquare, Search, ChevronLeft } from "lucide-react";
+import { Plus, Send, MoreVertical, Loader2, MessageSquare, Search, ChevronLeft, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { messagingAPI, userAPI } from "@/lib/api";
 import { socketService } from "@/lib/socket";
@@ -13,13 +13,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 
 // #region Sub-components
 
@@ -277,6 +270,34 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   const [selectedRecipientId, setSelectedRecipientId] = useState("");
   const [isMobileView, setIsMobileView] = useState(false);
   const [preselectedUser, setPreselectedUser] = useState<any>(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Reset modal state on close
+  useEffect(() => {
+    if (!isModalOpen) {
+      setUserSearch("");
+      setSearchResult([]);
+      setSelectedRecipientId("");
+      setSelectedRecipient(null);
+      setPreselectedUser(null);
+      setFormSubject("");
+      setFormMessage("");
+      setIsDropdownOpen(false);
+    }
+  }, [isModalOpen]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -311,7 +332,9 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
             try {
               const userRes = await userAPI.getOne(talentId);
               if (userRes.data?.success) {
-                setPreselectedUser(userRes.data.data);
+                const uData = userRes.data.data;
+                setPreselectedUser(uData);
+                setSelectedRecipient(uData);
               }
             } catch (err) {
               console.error("Failed to fetch preselected user:", err);
@@ -507,6 +530,7 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
           setFormSubject("");
           setFormMessage("");
           setSelectedRecipientId("");
+          setSelectedRecipient(null);
           toast.success("Message sent successfully!");
         }
       }
@@ -549,62 +573,98 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
               </div>
 
               <form onSubmit={handleFormSubmit} className="space-y-4">
-                <div className="space-y-2">
+                <div className="space-y-2 relative" ref={dropdownRef}>
                   <Label htmlFor="recipient" className="text-sm font-semibold">Recipient</Label>
-                  <Select value={selectedRecipientId} onValueChange={setSelectedRecipientId}>
-                    <SelectTrigger id="recipient" className="w-full bg-white border-slate-300 rounded-lg h-11">
-                      <SelectValue placeholder="Select recipient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div className="p-2 border-b border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full flex items-center justify-between bg-white border border-slate-300 rounded-lg h-11 px-3 text-sm text-left focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  >
+                    {selectedRecipient ? (
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-5 w-5">
+                          <AvatarImage src={selectedRecipient.profilePicture} />
+                          <AvatarFallback className="text-[10px]">{selectedRecipient.fullName?.[0] || "?"}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-slate-700">{selectedRecipient.fullName}</span>
+                        <span className="text-[10px] text-slate-400 uppercase">({selectedRecipient.role?.replace('_', ' ')})</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400">Select recipient</span>
+                    )}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </button>
+
+                  {isDropdownOpen && (
+                    <div className="absolute z-[100] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-[300px] overflow-hidden flex flex-col">
+                      <div className="p-2 border-b border-slate-100 flex-shrink-0">
                         <div className="relative">
-                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                           <Input 
                             placeholder="Search users..." 
-                            className="h-8 pl-8 text-xs bg-slate-50 border-none"
+                            className="h-9 pl-9 text-xs bg-slate-50 border-none rounded-md"
                             value={userSearch}
                             onChange={(e) => setUserSearch(e.target.value)}
+                            autoFocus
                           />
                         </div>
                       </div>
-                      {isSearching ? (
-                        <div className="p-4 text-center"><Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" /></div>
-                      ) : (
-                        <>
-                          {/* Show preselected user if not in search results */}
-                          {preselectedUser && !searchResult.some(u => u._id === preselectedUser._id) && (
-                            <SelectItem key={preselectedUser._id} value={preselectedUser._id}>
-                              <div className="flex items-center gap-2">
+                      <div className="overflow-y-auto flex-1 max-h-[220px]">
+                        {isSearching ? (
+                          <div className="p-4 text-center">
+                            <Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" />
+                          </div>
+                        ) : (
+                          <div className="p-1 space-y-0.5">
+                            {/* Show preselected user if not in search results */}
+                            {preselectedUser && !searchResult.some(u => u._id === preselectedUser._id) && (
+                              <button
+                                type="button"
+                                key={preselectedUser._id}
+                                onClick={() => {
+                                  setSelectedRecipientId(preselectedUser._id);
+                                  setSelectedRecipient(preselectedUser);
+                                  setIsDropdownOpen(false);
+                                }}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-50 rounded-md transition-colors"
+                              >
                                 <Avatar className="h-5 w-5">
                                   <AvatarImage src={preselectedUser.profilePicture} />
-                                  <AvatarFallback className="text-[10px]">{preselectedUser.fullName?.[0]}</AvatarFallback>
+                                  <AvatarFallback className="text-[10px]">{preselectedUser.fullName?.[0] || "?"}</AvatarFallback>
                                 </Avatar>
-                                <span>{preselectedUser.fullName}</span>
+                                <span className="font-medium text-slate-700">{preselectedUser.fullName}</span>
                                 <span className="text-[10px] text-slate-400 uppercase">({preselectedUser.role?.replace('_', ' ')})</span>
-                              </div>
-                            </SelectItem>
-                          )}
-                          
-                          {searchResult.length > 0 ? (
-                            searchResult.map((u) => (
-                              <SelectItem key={u._id} value={u._id}>
-                                <div className="flex items-center gap-2">
+                              </button>
+                            )}
+                            
+                            {searchResult.length > 0 ? (
+                              searchResult.map((u) => (
+                                <button
+                                  type="button"
+                                  key={u._id}
+                                  onClick={() => {
+                                    setSelectedRecipientId(u._id);
+                                    setSelectedRecipient(u);
+                                    setIsDropdownOpen(false);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-50 rounded-md transition-colors"
+                                >
                                   <Avatar className="h-5 w-5">
                                     <AvatarImage src={u.profilePicture} />
-                                    <AvatarFallback className="text-[10px]">{u.fullName?.[0]}</AvatarFallback>
+                                    <AvatarFallback className="text-[10px]">{u.fullName?.[0] || "?"}</AvatarFallback>
                                   </Avatar>
-                                  <span>{u.fullName}</span>
+                                  <span className="font-medium text-slate-700">{u.fullName}</span>
                                   <span className="text-[10px] text-slate-400 uppercase">({u.role?.replace('_', ' ')})</span>
-                                </div>
-                              </SelectItem>
-                            ))
-                          ) : !preselectedUser && (
-                            <div className="p-4 text-center text-xs text-slate-500">No users found</div>
-                          )}
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
+                                </button>
+                              ))
+                            ) : !preselectedUser && (
+                              <div className="p-4 text-center text-xs text-slate-500">No users found</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
