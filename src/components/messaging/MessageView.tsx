@@ -483,10 +483,10 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
         if (response.data.success && Array.isArray(response.data.data?.users)) {
           const users = response.data.data.users
             .map((item) => item.user)
-            .filter((u) => u && u._id !== user?.id);
+            .filter((u) => u && (u._id || u.id) !== user?.id);
           setSearchResult(users);
         } else if (response.data.success && Array.isArray(response.data.data)) {
-          setSearchResult(response.data.data.filter((u) => u._id !== user?.id));
+          setSearchResult(response.data.data.filter((u) => (u._id || u.id) !== user?.id));
         }
       } catch (error) {
         console.error("User search failed:", error);
@@ -617,12 +617,12 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
                         ) : (
                           <div className="p-1 space-y-0.5">
                             {/* Show preselected user if not in search results */}
-                            {preselectedUser && !searchResult.some(u => u._id === preselectedUser._id) && (
+                            {preselectedUser && !searchResult.some(u => (u._id || u.id) === (preselectedUser._id || preselectedUser.id)) && (
                               <button
                                 type="button"
-                                key={preselectedUser._id}
+                                key={preselectedUser._id || preselectedUser.id}
                                 onClick={() => {
-                                  setSelectedRecipientId(preselectedUser._id);
+                                  setSelectedRecipientId(preselectedUser._id || preselectedUser.id);
                                   setSelectedRecipient(preselectedUser);
                                   setIsDropdownOpen(false);
                                 }}
@@ -641,9 +641,9 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
                               searchResult.map((u) => (
                                 <button
                                   type="button"
-                                  key={u._id}
+                                  key={u._id || u.id}
                                   onClick={() => {
-                                    setSelectedRecipientId(u._id);
+                                    setSelectedRecipientId(u._id || u.id);
                                     setSelectedRecipient(u);
                                     setIsDropdownOpen(false);
                                   }}

@@ -120,7 +120,7 @@ export default function DirectorDashboard() {
           // Fetch apps for pipeline mini-stats and update stats
           if (myCastings.length > 0) {
             const allAppPromises = myCastings.slice(0, 5).map((c: any) =>
-              applicationAPI.getByCastingCall(c._id).catch(() => null)
+              applicationAPI.getByCastingCall(c._id || c.id).catch(() => null)
             );
             const results = await Promise.all(allAppPromises);
             const allApps: any[] = results.flatMap(res => {

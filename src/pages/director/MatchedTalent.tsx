@@ -206,7 +206,7 @@ export default function MatchedTalent() {
           // Fallback to loading applicants only if either project or role is selected
           const allAppsPromises = selectedProject !== "all" 
             ? [applicationAPI.getByCastingCall(selectedProject).catch(() => null)]
-            : projects.map(p => applicationAPI.getByCastingCall(p._id).catch(() => null));
+            : projects.map(p => applicationAPI.getByCastingCall(p._id || p.id).catch(() => null));
           const appsResults = await Promise.all(allAppsPromises);
           
           const allApps = appsResults.flatMap(res => 
@@ -220,7 +220,7 @@ export default function MatchedTalent() {
             const tId = String(app.talent.userId?._id || app.talent.userId || app.talent._id || "");
             if (!tId) return;
 
-            const projId = String(app.castingCall?._id || app.castingCall || "");
+            const projId = String(app.castingCall?._id || app.castingCall?.id || app.castingCall || "");
             const rId = String(app.roleId || "");
 
             // Filter by selectedRole if needed
