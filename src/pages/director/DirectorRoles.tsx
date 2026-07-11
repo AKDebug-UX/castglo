@@ -110,16 +110,16 @@ export default function DirectorRoles() {
       // Fan-out: fetch live roles for each project in parallel
       const roleResults = await Promise.all(
         listings.map(p =>
-          projectAPI.getRoles(p._id)
-            .then(r => ({ projectId: p._id, project: p, roles: r.data?.data || r.data?.data?.roles || [] }))
-            .catch(() => ({ projectId: p._id, project: p, roles: [] }))
+          projectAPI.getRoles(p._id || p.id)
+            .then(r => ({ projectId: p._id || p.id, project: p, roles: r.data?.data || r.data?.data?.roles || [] }))
+            .catch(() => ({ projectId: p._id || p.id, project: p, roles: [] }))
         )
       );
 
       const flattenedRoles: RoleItem[] = roleResults.flatMap(({ project, roles: pRoles }) =>
         (Array.isArray(pRoles) ? pRoles : []).map((r: any) => ({
           id: r.id || r._id,
-          projectId: project._id,
+          projectId: project.id || project._id,
           projectName: project.projectName || project.title || "Untitled",
           roleName: r.role_name || r.name || r.title || "Unnamed Role",
           roleType: r.roleType || r.role_type || r.type || "Other",

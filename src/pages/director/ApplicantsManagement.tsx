@@ -183,13 +183,15 @@ export default function ApplicantsManagement() {
           }
         }
 
+        setProjects(myProjects);
+
         if (myProjects.length > 0) {
           const roleQueries: { projId: string; roleId: string; projTitle: string; roleName: string }[] = [];
           myProjects.forEach(p => {
              const roles = p.roles || [];
              roles.forEach(r => {
                 roleQueries.push({ 
-                   projId: p._id, 
+                   projId: p._id || p.id, 
                    roleId: r.id || r._id, 
                    projTitle: p.projectName || p.title, 
                    roleName: r.role_name || r.name || r.title 
@@ -247,14 +249,14 @@ export default function ApplicantsManagement() {
   }, [searchParams]);
 
   const viewableProjects = useMemo(() => {
-    return projects.filter(p => getPermissionsForProject(p._id).viewApplicants);
+    return projects.filter(p => getPermissionsForProject(p._id || p.id).viewApplicants);
   }, [projects, getPermissionsForProject]);
 
   // ── Filtered list ─────────────────────────────────────────────────────────
-  const currentProject = projects.find(p => p._id === selectedProject);
+  const currentProject = projects.find(p => (p._id || p.id) === selectedProject);
   const filteredApplicants = useMemo(() => {
     return applicants.filter(a => {
-      if (selectedProject !== "all" && a.castingCall?._id !== selectedProject) return false;
+      if (selectedProject !== "all" && (a.castingCall?._id || a.castingCall?.id) !== selectedProject) return false;
       if (selectedRole !== "all" && a.roleName !== selectedRole) return false;
       if (selectedFolder !== "all" && a.folder_name !== selectedFolder) return false;
       if (searchQuery) {
@@ -281,7 +283,7 @@ export default function ApplicantsManagement() {
     try {
       // Use the role-level pipeline endpoint when project context is known
       const app = applicants.find(a => a._id === appId);
-      const projId = selectedProject !== "all" ? selectedProject : app?.castingCall?._id;
+      const projId = selectedProject !== "all" ? selectedProject : (app?.castingCall?._id || app?.castingCall?.id);
       const roleId  = app?.roleId as string | undefined;
 
       if (projId && roleId) {
@@ -395,9 +397,8 @@ export default function ApplicantsManagement() {
   }
 
   // ── Applicant card (reused in both kanban + list) ─────────────────────────
-  const ApplicantCard = ({ app, compact = false }: { app: Applicant; compact?: boolean }) => {
-    const stage = STAGE_MAP[app.status] || STAGE_MAP["review"];
-    const projectPermissions = getPermissionsForProject(app.castingCall?._id);
+  const ApplicantCard = ({ app }: { app: Applicant }) => {
+    const projectPermissions = getPermissionsForProject(app.castingCall?._id || app.castingCall?.id);
     
     return (
       <div
@@ -536,7 +537,7 @@ export default function ApplicantsManagement() {
             <SelectContent>
               <SelectItem value="all">All Projects</SelectItem>
               {viewableProjects.map(p => (
-                <SelectItem key={p._id} value={p._id}>{p.projectName || p.title}</SelectItem>
+                <SelectItem key={p._id || p.id} value={p._id || p.id}>{p.projectName || p.title}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -683,7 +684,7 @@ export default function ApplicantsManagement() {
                 </div>
                 {filteredApplicants.map(app => {
                   const stage = STAGE_MAP[app.status] || STAGE_MAP["review"];
-                  const projectPermissions = getPermissionsForProject(app.castingCall?._id);
+                  const projectPermissions = getPermissionsForProject(app.castingCall?._id || app.castingCall?.id);
                   return (
                     <div key={app._id} className={`grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center hover:bg-muted/30 transition-colors ${isSelected(app._id) ? "bg-primary/5" : ""}`}>
                       {projectPermissions.moveApplicants ? (

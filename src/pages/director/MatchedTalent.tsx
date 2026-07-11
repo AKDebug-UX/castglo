@@ -164,7 +164,7 @@ export default function MatchedTalent() {
       
       // If we have a project from URL, then select role from URL or default to first role
       const checkAndSelectRole = () => {
-        const selectedProj = projects.find(p => p._id === finalProjectId);
+        const selectedProj = projects.find(p => (p._id || p.id) === finalProjectId);
         const rolesForProject = liveRoles.length > 0 ? liveRoles : (selectedProj?.roles || []);
         
         if (!finalRoleId && rolesForProject.length > 0) {
@@ -204,9 +204,17 @@ export default function MatchedTalent() {
           }
         } else if (selectedProject !== "all" || selectedRole !== "all") {
           // Fallback to loading applicants only if either project or role is selected
+          const targetProj = selectedProject !== "all" ? projects.find(p => (p._id || p.id) === selectedProject) : null;
           const allAppsPromises = selectedProject !== "all" 
-            ? [applicationAPI.getByCastingCall(selectedProject).catch(() => null)]
-            : projects.map(p => applicationAPI.getByCastingCall(p._id || p.id).catch(() => null));
+            ? (targetProj && (targetProj.applicationCount === 0 || targetProj.applicantCount === 0)
+                ? [Promise.resolve({ data: { success: true, data: [] } } as any)]
+                : [applicationAPI.getByCastingCall(selectedProject).catch(() => null)])
+            : projects.map(p => {
+                if (p.applicationCount === 0 || p.applicantCount === 0) {
+                  return Promise.resolve({ data: { success: true, data: [] } } as any);
+                }
+                return applicationAPI.getByCastingCall(p._id || p.id).catch(() => null);
+              });
           const appsResults = await Promise.all(allAppsPromises);
           
           const allApps = appsResults.flatMap(res => 
@@ -286,7 +294,7 @@ export default function MatchedTalent() {
   }, [selectedProject]);
 
   // Derive active role object from liveRoles
-  const currentProject = projects.find(p => p._id === selectedProject);
+  const currentProject = projects.find(p => (p._id || p.id) === selectedProject);
   const activeRoles = liveRoles.length > 0 ? liveRoles : (currentProject?.roles || []);
   const currentRoleObj = activeRoles.find((r: any) => getRoleId(r) === selectedRole);
 
@@ -386,7 +394,7 @@ export default function MatchedTalent() {
             <SelectContent>
               <SelectItem value="all">All Projects</SelectItem>
               {projects.map(p => (
-                <SelectItem key={p._id} value={p._id}>{p.projectName || p.title}</SelectItem>
+                <SelectItem key={p._id || p.id} value={p._id || p.id}>{p.projectName || p.title}</SelectItem>
               ))}
             </SelectContent>
           </Select>

@@ -105,7 +105,12 @@ export default function DirectorSubmissions() {
           const myCastings = listingsRes.data.data;
           
           if (myCastings.length > 0) {
-            const allAppsPromises = myCastings.map((c) => applicationAPI.getByCastingCall(c._id || c.id).catch(() => null));
+            const allAppsPromises = myCastings.map((c) => {
+              if (c.applicationCount === 0 || c.applicantCount === 0) {
+                return Promise.resolve({ data: { success: true, data: [] } } as any);
+              }
+              return applicationAPI.getByCastingCall(c._id || c.id).catch(() => null);
+            });
             const appsResults = await Promise.all(allAppsPromises);
             const allApps = appsResults.flatMap(res => {
               if (!res || !res.data.success) return [];

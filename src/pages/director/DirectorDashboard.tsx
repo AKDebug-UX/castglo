@@ -114,34 +114,8 @@ export default function DirectorDashboard() {
             return acc + (c.applicationCount || c.applications?.length || 0);
           }, 0);
 
-          // Initialize tally with 0s in case we don't have apps to fetch
+          // Initialize tally with 0s since we don't query application details here anymore
           let tally = { review: 0, shortlisted: 0, audition: 0, offer: 0 };
-
-          // Fetch apps for pipeline mini-stats and update stats
-          if (myCastings.length > 0) {
-            const allAppPromises = myCastings.slice(0, 5).map((c: any) =>
-              applicationAPI.getByCastingCall(c._id || c.id).catch(() => null)
-            );
-            const results = await Promise.all(allAppPromises);
-            const allApps: any[] = results.flatMap(res => {
-              if (!res?.data?.success) return [];
-              // Handle both array responses and wrapped object responses
-              if (Array.isArray(res.data.data)) return res.data.data;
-              if (Array.isArray(res.data.data?.applications)) return res.data.data.applications;
-              return [];
-            });
-            setRecentApps(allApps.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5));
-
-            // Tally pipeline (handle more status variations)
-            allApps.forEach(a => {
-              const status = (a.status || "").toLowerCase();
-              if (["applied", "submitted"].includes(status))            tally.review++;
-              else if (["shortlisted", "shortlist"].includes(status))   tally.shortlisted++;
-              else if (["audition_requested", "self_tape_requested", "audition"].includes(status)) tally.audition++;
-              else if (["offer", "accepted", "hired"].includes(status)) tally.offer++;
-            });
-            setPipeline(tally);
-          }
 
           setStats([
             { label: "Active Projects",    value: activeCount.toString(),      change: "Live now",          Icon: Clapperboard, color: "text-blue-600",   bg: "bg-blue-50" },
