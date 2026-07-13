@@ -509,7 +509,7 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
       return;
     }
 
-    setIsSending(true);
+    setIsSending(true);                            
     try {
       const convRes = await messagingAPI.getOrCreateConversation(selectedRecipientId);
 
