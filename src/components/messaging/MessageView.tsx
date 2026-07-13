@@ -512,19 +512,48 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     setIsSending(true);
     try {
       const convRes = await messagingAPI.getOrCreateConversation(selectedRecipientId);
+
+      // DEBUG: log the actual shape so we can fix the extractor if needed
+      console.log("[MessageView] getOrCreateConversation response:", JSON.stringify(convRes.data, null, 2));
+
       if (convRes.data.success) {
-        const conversation = convRes.data.data;
+        const raw = convRes.data.data;
+
+        // Walk every known response shape to find the conversation object & its ID
+        const conversation =
+          raw?.conversation ??   // { data: { conversation: {...} } }
+          (raw?._id ? raw : null) ??  // { data: { _id, participants, ... } }
+          (raw?.id ? raw : null) ??   // { data: { id, participants, ... } }
+          null;
+
+        const conversationId =
+          conversation?._id ??
+          conversation?.id ??
+          raw?.conversationId ??   // { data: { conversationId: "..." } }
+          raw?._id ??
+          raw?.id ??
+          null;
+
+        console.log("[MessageView] resolved conversationId:", conversationId);
+
+        if (!conversationId) {
+          console.error("[MessageView] Could not extract conversation ID from:", raw);
+          toast.error("Could not identify conversation. Please try again.");
+          return;
+        }
+
         const messageText = formSubject ? `Subject: ${formSubject}\n\n${formMessage}` : formMessage;
         const msgRes = await messagingAPI.sendMessage({
-          conversationId: conversation._id,
+          conversationId,
           text: messageText,
         });
 
         if (msgRes.data.success) {
-          if (!conversations.some(c => c._id === conversation._id)) {
-            setConversations([conversation, ...conversations]);
+          const resolvedConversation = conversation ?? { _id: conversationId };
+          if (!conversations.some(c => c._id === conversationId)) {
+            setConversations([resolvedConversation, ...conversations]);
           }
-          setSelectedConversation(conversation);
+          setSelectedConversation(resolvedConversation);
           setMessages(prev => [...prev, msgRes.data.data]);
           setIsModalOpen(false);
           setFormSubject("");
@@ -535,11 +564,13 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
         }
       }
     } catch (error) {
+      console.error("[MessageView] handleFormSubmit error:", error);
       toast.error("Failed to send message");
     } finally {
       setIsSending(false);
     }
   };
+
 
   if (isLoading) {
     return (
