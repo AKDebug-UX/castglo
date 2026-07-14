@@ -57,9 +57,9 @@ export default function DirectorProjectPreview() {
         </Link>
       </Button>
       <Button variant="outline" asChild className="gap-2">
-        <Link to={`/director/submissions/${id}`}>
+        <Link to={`/director/applicants/?project=${id}`}>
           <Users className="w-4 h-4" />
-          Submissions
+          Applicants
         </Link>
       </Button>
     </>
