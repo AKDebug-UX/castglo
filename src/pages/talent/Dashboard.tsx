@@ -171,6 +171,7 @@ export default function Dashboard() {
           </Button>
         </CardHeader>
         <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {upcomingCastings.length > 0 ? upcomingCastings.map((casting, index) => (
               <div key={casting._id || casting.id || index} className="rounded-lg border border-border overflow-hidden card-elevated">
                 <div className="relative h-40">
