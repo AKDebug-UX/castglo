@@ -17,6 +17,7 @@ import { projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { getProjectDeadline } from "@/lib/project.utils";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 interface RoleItem {
   id: string;
@@ -32,6 +33,7 @@ interface RoleItem {
 }
 
 export default function DirectorRoles() {
+  const confirm = useConfirm();
   const [roles, setRoles]         = useState<RoleItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -141,7 +143,7 @@ export default function DirectorRoles() {
   useEffect(() => { load(); }, [activeWorkspace]);
 
   const handleDeleteRole = async (role: RoleItem) => {
-    if (!confirm(`Delete role "${role.roleName}"? This will also remove all its applicants.`)) return;
+    if (!await confirm(`Delete role "${role.roleName}"? This will also remove all its applicants.`)) return;
     setDeletingId(role.id);
     try {
       await projectAPI.deleteRole(role.projectId, role.id);

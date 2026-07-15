@@ -190,8 +190,8 @@ export default function DirectorDashboard() {
             <h2 className="text-xs font-bold uppercase tracking-wider text-red-500">Live Audition Rooms</h2>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {activeStreams.map(stream => (
-              <Card key={stream._id} className="border-red-200 bg-red-50/40 overflow-hidden group">
+            {activeStreams.map((stream, index) => (
+              <Card key={stream._id || stream.id || index} className="border-red-200 bg-red-50/40 overflow-hidden group">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
@@ -203,7 +203,7 @@ export default function DirectorDashboard() {
                     </div>
                   </div>
                   <Button size="sm" variant="destructive" asChild>
-                    <Link to={`/livestream/${stream._id}`}>Join</Link>
+                    <Link to={`/livestream/${stream._id || stream.id}`}>Join</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -271,8 +271,8 @@ export default function DirectorDashboard() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-2 pt-0">
-            {listings.length > 0 ? listings.map(casting => (
-              <div key={casting._id} className="flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors group">
+            {listings.length > 0 ? listings.map((casting, index) => (
+              <div key={casting._id || casting.id || index} className="flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors group">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold text-sm truncate">{casting.projectName || casting.title}</p>
@@ -292,7 +292,7 @@ export default function DirectorDashboard() {
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" asChild>
-                  <Link to={`/director/submissions/${casting._id}`}>
+                  <Link to={`/director/submissions/${casting._id || casting.id}`}>
                     <Eye className="w-4 h-4" />
                   </Link>
                 </Button>
@@ -320,8 +320,8 @@ export default function DirectorDashboard() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-2 pt-0">
-            {recentApps.length > 0 ? recentApps.map(app => (
-              <div key={app._id} className="flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors">
+            {recentApps.length > 0 ? recentApps.map((app, index) => (
+              <div key={app._id || app.id || index} className="flex items-center justify-between p-3 rounded-xl border hover:bg-muted/30 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
                   <Avatar className="h-9 w-9 shrink-0">
                     <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">

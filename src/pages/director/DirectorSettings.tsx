@@ -3,12 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, KeyRound, Settings2, ShieldCheck, ShieldAlert, CreditCard, Bell } from "lucide-react";
+import { Loader2, KeyRound, Settings2, ShieldCheck, ShieldAlert, CreditCard, Bell, UserMinus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { authAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirm } from "@/contexts/ConfirmContext";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,9 +21,12 @@ import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsP
 export default function DirectorSettings() {
   const { user: currentUser, updatePreferredCurrency, formatPrice } = useAuth();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState("preferences");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState("");
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
 
@@ -148,6 +153,32 @@ export default function DirectorSettings() {
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to update password");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAccountClick = () => {
+    setDeleteConfirmPassword("");
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirmPassword) {
+      toast.error("Password is required to delete account");
+      return;
+    }
+    if (!await confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) return;
+
+    setIsSaving(true);
+    try {
+      await userAPI.deleteAccount({ password: deleteConfirmPassword });
+      toast.success("Account deleted successfully");
+      setIsDeleteModalOpen(false);
+      localStorage.removeItem("token");
+      window.location.href = "/";
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "Failed to delete account");
     } finally {
       setIsSaving(false);
     }
@@ -409,8 +440,53 @@ export default function DirectorSettings() {
               </Button>
             </CardContent>
           </Card>
+
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden border border-red-100">
+            <CardHeader>
+              <CardTitle className="text-destructive flex items-center gap-2">
+                <UserMinus className="w-5 h-5 text-red-500" /> Danger Zone
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                Permanently delete your director account and all associated projects/data. This action is immediate and cannot be undone.
+              </p>
+              <Button variant="destructive" onClick={handleDeleteAccountClick} className="font-bold rounded-xl px-5 py-5 shadow-lg shadow-red-500/10">
+                Delete Account
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="rounded-2xl sm:max-w-md shadow-2xl">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-bold">Confirm Account Deletion</DialogTitle>
+            <DialogDescription className="text-slate-500 text-sm">
+              Please enter your password to confirm that you want to permanently delete your account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input 
+              type="password" 
+              placeholder="Enter your password" 
+              value={deleteConfirmPassword}
+              onChange={(e) => setDeleteConfirmPassword(e.target.value)}
+              className="rounded-xl h-11"
+            />
+          </div>
+          <DialogFooter className="gap-3 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)} className="rounded-xl h-11 px-5">
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isSaving} className="rounded-xl h-11 px-5">
+              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Delete Account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

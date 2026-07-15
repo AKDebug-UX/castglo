@@ -60,8 +60,8 @@ export default function VerifyTwoFactor() {
         admin: "/admin",
       };
       navigate(returnTo || roleRoutes[result.role || ""] || "/", { replace: true });
-    } catch {
-      setErrorMsg("Something went wrong. Please try again.");
+    } catch (err: any) {
+      setErrorMsg(err?.response?.data?.message || err?.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -76,8 +76,8 @@ export default function VerifyTwoFactor() {
         return;
       }
       toast.success("Verification code resent!");
-    } catch {
-      toast.error("Something went wrong. Please try again.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || "Something went wrong. Please try again.");
     } finally {
       setIsResending(false);
     }

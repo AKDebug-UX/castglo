@@ -12,12 +12,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsPanel";
+import { useConfirm } from "@/contexts/ConfirmContext";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export default function ProfessionalSettings() {
   const { user: currentUser, updatePreferredCurrency, formatPrice } = useAuth();
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState("");
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -139,27 +144,34 @@ export default function ProfessionalSettings() {
     }
   };
 
-  const deleteAccount = async () => {
-    const password = prompt("To confirm deletion, please enter your password:");
-    if (password === null) return;
-    if (!password) {
+  const handleDeleteAccountClick = () => {
+    setDeleteConfirmPassword("");
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirmPassword) {
       toast.error("Password is required to delete account");
       return;
     }
-    if (!confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) return;
+    if (!await confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) return;
 
+    setIsSaving(true);
     try {
-      await userAPI.deleteAccount({ password });
+      await userAPI.deleteAccount({ password: deleteConfirmPassword });
       toast.success("Account deleted successfully");
+      setIsDeleteModalOpen(false);
       localStorage.removeItem("token");
       window.location.href = "/";
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "Failed to delete account");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDeletePaymentMethod = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this payment method?")) return;
+    if (!await confirm("Are you sure you want to remove this payment method?")) return;
     setIsSaving(true);
     try {
       await subscriptionAPI.deletePaymentMethod(id);
@@ -536,13 +548,42 @@ export default function ProfessionalSettings() {
               <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                 Permanently delete your professional account and all associated data. This action is immediate and cannot be undone.
               </p>
-              <Button variant="destructive" onClick={deleteAccount} className="font-bold rounded-xl px-5 py-5 shadow-lg shadow-red-500/10">
+              <Button variant="destructive" onClick={handleDeleteAccountClick} className="font-bold rounded-xl px-5 py-5 shadow-lg shadow-red-500/10">
                 Delete Account
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="rounded-2xl sm:max-w-md shadow-2xl">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-bold">Confirm Account Deletion</DialogTitle>
+            <DialogDescription className="text-slate-500 text-sm">
+              Please enter your password to confirm that you want to permanently delete your account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input 
+              type="password" 
+              placeholder="Enter your password" 
+              value={deleteConfirmPassword}
+              onChange={(e) => setDeleteConfirmPassword(e.target.value)}
+              className="rounded-xl h-11"
+            />
+          </div>
+          <DialogFooter className="gap-3 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)} className="rounded-xl h-11 px-5">
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isSaving} className="rounded-xl h-11 px-5">
+              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Delete Account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

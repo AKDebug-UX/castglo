@@ -37,9 +37,11 @@ import { Separator } from "@/components/ui/separator";
 import { serviceAPI, uploadAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 export default function ProfessionalServices() {
   const { user, formatPrice } = useAuth();
+  const confirm = useConfirm();
   const [services, setServices] = useState([]);
   const [stats, setStats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -212,7 +214,7 @@ export default function ProfessionalServices() {
   };
 
   const handleDeleteService = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this service?")) return;
+    if (!await confirm("Are you sure you want to delete this service?")) return;
 
     try {
       const response = await serviceAPI.delete(id);

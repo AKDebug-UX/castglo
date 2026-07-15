@@ -45,21 +45,26 @@ export default function ResetPassword() {
 
     setIsLoading(true);
 
-    const { error } = await resetPassword({ 
-      token, 
-      newPassword: password, 
-      confirmPassword: confirmPassword 
-    });
+    try {
+      const { error } = await resetPassword({ 
+        token, 
+        newPassword: password, 
+        confirmPassword: confirmPassword 
+      });
 
-    if (error) {
-      toast.error(error);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+
+      setIsSuccess(true);
+      toast.success("Password reset successfully!");
+    } catch (error: any) {
+      console.error("ResetPassword error:", error);
+      toast.error(error?.response?.data?.message || error?.message || "An error occurred. Please try again.");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    setIsLoading(false);
-    setIsSuccess(true);
-    toast.success("Password reset successfully!");
   };
 
   if (isSuccess) {

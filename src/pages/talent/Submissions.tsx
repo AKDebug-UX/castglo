@@ -14,6 +14,7 @@ import { applicationAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
 import { ProjectSubmissionModal } from "@/components/submissions/ProjectSubmissionModal";
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const statusColors: Record<string, string> = {
   "submitted": "bg-slate-500 text-white hover:bg-slate-600 capitalize",
@@ -25,6 +26,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Submissions() {
+  const confirm = useConfirm();
   const [submissions, setSubmissions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState([]);
@@ -102,7 +104,7 @@ export default function Submissions() {
   }, []);
 
   const handleWithdraw = async (applicationId: string) => {
-    if (!window.confirm("Are you sure you want to withdraw this application? This action cannot be undone.")) return;
+    if (!await confirm("Are you sure you want to withdraw this application? This action cannot be undone.")) return;
     
     try {
       const res = await applicationAPI.withdraw(applicationId);

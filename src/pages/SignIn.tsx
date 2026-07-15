@@ -97,9 +97,9 @@ export default function SignIn() {
       } else {
         navigate("/");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Sign In catch block error:", err);
-      toast.error("Something went wrong. Please try again.");
+      toast.error(err?.response?.data?.message || err?.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }

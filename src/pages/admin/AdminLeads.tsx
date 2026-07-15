@@ -6,8 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, UserCheck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminLeadsAPI } from '@/lib/api';
+import { useConfirm } from '@/contexts/ConfirmContext';
 
 export default function AdminLeads() {
+  const confirm = useConfirm();
   const [leads, setLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -43,7 +45,7 @@ export default function AdminLeads() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this lead?')) return;
+    if (!await confirm('Are you sure you want to delete this lead?')) return;
     try {
       const response = await adminLeadsAPI.delete(id);
       if (response.data?.success) {

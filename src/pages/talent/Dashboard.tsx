@@ -120,8 +120,8 @@ export default function Dashboard() {
             <h2 className="text-sm font-bold uppercase tracking-wider text-destructive">My Active Sessions</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            {activeStreams.map((stream) => (
-              <Card key={stream._id} className="border-destructive/20 bg-destructive/5 overflow-hidden group">
+            {activeStreams.map((stream, index) => (
+              <Card key={stream._id || stream.id || index} className="border-destructive/20 bg-destructive/5 overflow-hidden group">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -133,7 +133,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <Button size="sm" variant="destructive" asChild>
-                    <Link to={`/livestream/${stream._id}`}>Join Room</Link>
+                    <Link to={`/livestream/${stream._id || stream.id}`}>Join Room</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -171,9 +171,8 @@ export default function Dashboard() {
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            {upcomingCastings.length > 0 ? upcomingCastings.map((casting) => (
-              <div key={casting._id} className="rounded-lg border border-border overflow-hidden card-elevated">
+            {upcomingCastings.length > 0 ? upcomingCastings.map((casting, index) => (
+              <div key={casting._id || casting.id || index} className="rounded-lg border border-border overflow-hidden card-elevated">
                 <div className="relative h-40">
                   <img 
                     src={resolveMediaUrl(getProjectCoverImage(casting)) || "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=400"} 
@@ -198,7 +197,7 @@ export default function Dashboard() {
                     )}
                   </div>
                   <Button size="sm" asChild>
-                    <Link to={`/talent/browse-cast/${casting._id}`}>
+                    <Link to={`/talent/browse-cast/${casting._id || casting.id}`}>
                       View Details
                       <ArrowUpRight className="w-3 h-3 ml-1" />
                     </Link>

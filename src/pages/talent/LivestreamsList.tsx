@@ -44,7 +44,7 @@ export default function LivestreamsList() {
           // Filter out private streams and the user's own streams (already in myStreams)
           const discovered = publicRes.data.data.filter((s) => 
             s.isPublic !== false && 
-            (s.hostId && (typeof s.hostId === 'object' ? s.hostId._id : s.hostId)) !== user?.id
+            (s.hostId && (typeof s.hostId === 'object' ? (s.hostId._id || s.hostId.id) : s.hostId)) !== (user?.id || user?._id)
           );
           setPublicStreams(discovered);
         }
@@ -61,8 +61,8 @@ export default function LivestreamsList() {
 
   const renderStreamGrid = (streams: any[], emptyTitle: string, emptyDesc: string) => (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {streams.length > 0 ? streams.map((stream) => (
-        <Card key={stream._id} className="overflow-hidden group card-elevated border-destructive/10">
+      {streams.length > 0 ? streams.map((stream, index) => (
+        <Card key={stream._id || stream.id || index} className="overflow-hidden group card-elevated border-destructive/10">
           <div className="relative aspect-video bg-slate-900 overflow-hidden">
             <div className="absolute inset-0 flex items-center justify-center opacity-40">
               <Video className="w-12 h-12 text-white" />
@@ -86,9 +86,9 @@ export default function LivestreamsList() {
               {stream.description || "Join this live session to perform your monologue and receive feedback."}
             </p>
             <Button className="w-full" size="sm" asChild>
-              <Link to={`/livestream/${stream._id}`}>
+              <Link to={`/livestream/${stream._id || stream.id}`}>
                 <Play className="w-3 h-3 mr-2" />
-                {(stream.hostId && (typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId)) === user?.id ? "Start Session" : "Join Session"}
+                {(stream.hostId && (typeof stream.hostId === 'object' ? (stream.hostId._id || stream.hostId.id) : stream.hostId)) === (user?.id || user?._id) ? "Start Session" : "Join Session"}
               </Link>
             </Button>
           </CardContent>
@@ -101,7 +101,7 @@ export default function LivestreamsList() {
           <h3 className="font-bold text-muted-foreground">{emptyTitle}</h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">{emptyDesc}</p>
           <Button variant="outline" className="mt-6" asChild>
-            <Link to={user?.role === "talent" ? "/talent/audition" : "/director/audition"}>
+            <Link to={user?.role === "talent" ? "/talent/create-audition" : "/director/audition"}>
               <Plus className="w-4 h-4 mr-2" />
               New Session
             </Link>
@@ -120,7 +120,7 @@ export default function LivestreamsList() {
         </div>
         {user?.role !== "admin" && (
           <Button asChild>
-            <Link to={user?.role === "talent" ? "/talent/audition" : "/director/audition"}>
+            <Link to={user?.role === "talent" ? "/talent/create-audition" : "/director/audition"}>
               <Plus className="w-4 h-4 mr-2" />
               New Audition
             </Link>

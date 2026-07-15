@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
+import { ConfirmProvider } from "@/contexts/ConfirmContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { Loader2 } from "lucide-react";
@@ -145,10 +146,11 @@ const App = () => {
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <WorkspaceProvider>
-        <TooltipProvider>
-          <Toaster />
-        <Sonner />
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <ConfirmProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <Routes>
@@ -312,7 +314,8 @@ const App = () => {
             </Routes>
           </Suspense>
         </BrowserRouter>
-        </TooltipProvider>
+          </TooltipProvider>
+        </ConfirmProvider>
       </WorkspaceProvider>
     </AuthProvider>
   </QueryClientProvider>

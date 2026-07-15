@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsPanel";
+import { useConfirm } from "@/contexts/ConfirmContext";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 type SettingsTab =
   | "overview"
@@ -26,6 +28,7 @@ type SettingsTab =
 
 export default function AccountSettings() {
   const location = useLocation();
+  const confirm = useConfirm();
   const tabFromQuery = useMemo(() => {
     const params = new URLSearchParams(location.search);
     return (params.get("tab") || "overview") as SettingsTab;
@@ -37,6 +40,8 @@ export default function AccountSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmPassword, setDeleteConfirmPassword] = useState("");
   const [isEnabling2FA, setIsEnabling2FA] = useState(false);
   const [isDisabling2FA, setIsDisabling2FA] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
@@ -115,6 +120,7 @@ export default function AccountSettings() {
     jobPostingAlerts: false,
     applicationAlerts: false,
     savedJobsRoundup: false,
+    marketingUpdates: false,
   });
 
   useEffect(() => {
@@ -202,27 +208,34 @@ export default function AccountSettings() {
     }
   };
 
-  const deleteAccount = async () => {
-    const password = prompt("To confirm deletion, please enter your password:");
-    if (password === null) return;
-    if (!password) {
+  const handleDeleteAccountClick = () => {
+    setDeleteConfirmPassword("");
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirmPassword) {
       toast.error("Password is required to delete account");
       return;
     }
-    if (!confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) return;
+    if (!await confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) return;
 
+    setIsSaving(true);
     try {
-      await userAPI.deleteAccount({ password });
+      await userAPI.deleteAccount({ password: deleteConfirmPassword });
       toast.success("Account deleted successfully");
+      setIsDeleteModalOpen(false);
       localStorage.removeItem("token");
       window.location.href = "/";
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "Failed to delete account");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDeletePaymentMethod = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this payment method?")) return;
+    if (!await confirm("Are you sure you want to remove this payment method?")) return;
     setIsSaving(true);
     try {
       await subscriptionAPI.deletePaymentMethod(id);
@@ -266,7 +279,7 @@ export default function AccountSettings() {
             <TabsTrigger value="overview" className="py-2 px-4">Overview</TabsTrigger>
             <TabsTrigger value="security" className="py-2 px-4">Security</TabsTrigger>
             <TabsTrigger value="subscriptions" className="py-2 px-4">Subscriptions</TabsTrigger>
-            <TabsTrigger value="payments" className="py-2 px-4">Payment Settings</TabsTrigger>
+
             <TabsTrigger value="payment-history" className="py-2 px-4">Payment History</TabsTrigger>
             <TabsTrigger value="notifications" className="py-2 px-4">Notifications</TabsTrigger>
           </TabsList>
@@ -407,7 +420,7 @@ export default function AccountSettings() {
               <p className="text-sm text-muted-foreground">Permanent actions for your account</p>
             </CardHeader>
             <CardContent>
-              <Button variant="destructive" className="w-full" onClick={deleteAccount}>
+              <Button variant="destructive" className="w-full" onClick={handleDeleteAccountClick}>
                 Delete Account
               </Button>
             </CardContent>
@@ -514,52 +527,6 @@ export default function AccountSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="payments" className="mt-6 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-primary" />
-                Payment Settings
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Manage saved cards and billing</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-            {paymentMethods.length > 0 ? (
-              <div className="grid gap-3">
-                {paymentMethods.map((card, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-6 bg-slate-200 rounded flex items-center justify-center">
-                        <CreditCard className="w-5 h-5 text-slate-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{card.brand ? card.brand.toUpperCase() : "CARD"} •••• {card.last4}</p>
-                        <p className="text-xs text-muted-foreground">Expires {card.expMonth}/{card.expYear}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeletePaymentMethod(card.id)} disabled={isSaving}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" asChild>
-                        <a href="/pricing">Update</a>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-                <div className="p-8 border-2 border-dashed rounded-xl text-center">
-                  <CreditCard className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
-                  <p className="text-sm text-muted-foreground mb-4">No payment cards added yet</p>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href="/pricing">Add Card</a>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="payment-history" className="mt-6 space-y-6">
           <Card>
@@ -700,6 +667,24 @@ export default function AccountSettings() {
                 </div>
               </div>
 
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-sm">Platform & Marketing</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-medium">Platform Updates & Offers</p>
+                      <p className="text-xs text-muted-foreground">Receive updates on new premium features, tools, and occasional discounts</p>
+                    </div>
+                    <Switch
+                      checked={!!notificationSettings.marketingUpdates}
+                      onCheckedChange={(v) => setNotificationSettings((s: any) => ({ ...s, marketingUpdates: v }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <Button onClick={saveNotifications} disabled={isSaving} className="w-full">
                 {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Save Notification Settings
@@ -736,6 +721,35 @@ export default function AccountSettings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="rounded-2xl sm:max-w-md shadow-2xl">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-xl font-bold">Confirm Account Deletion</DialogTitle>
+            <DialogDescription className="text-slate-500 text-sm">
+              Please enter your password to confirm that you want to permanently delete your account.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input 
+              type="password" 
+              placeholder="Enter your password" 
+              value={deleteConfirmPassword}
+              onChange={(e) => setDeleteConfirmPassword(e.target.value)}
+              className="rounded-xl h-11"
+            />
+          </div>
+          <DialogFooter className="gap-3 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)} className="rounded-xl h-11 px-5">
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isSaving} className="rounded-xl h-11 px-5">
+              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Delete Account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

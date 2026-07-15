@@ -70,29 +70,35 @@ export default function SignUp() {
 
     setIsLoading(true);
 
-    const { error } = await signUp({ 
-      email, 
-      password, 
-      role: config.role, 
-      fullName,
-      collaboratorToken
-    });
+    try {
+      const { error } = await signUp({ 
+        email, 
+        password, 
+        role: config.role, 
+        fullName,
+        collaboratorToken
+      });
 
-    if (error) {
-      toast.error(error);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+
+      // After successful registration, if they picked a plan, we might want to 
+      // redirect them to the checkout page once they've verified their email.
+      // For now, we'll store the plan info in session storage or just proceed to success page.
+      if (selectedPlan) {
+        sessionStorage.setItem('pendingPlan', JSON.stringify({ plan: selectedPlan, cycle: selectedCycle }));
+      }
+
+      setIsSuccess(true);
+      toast.success("Account created successfully!");
+    } catch (error: any) {
+      console.error("SignUp error:", error);
+      toast.error(error?.response?.data?.message || error?.message || "An error occurred during registration.");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    // After successful registration, if they picked a plan, we might want to 
-    // redirect them to the checkout page once they've verified their email.
-    // For now, we'll store the plan info in session storage or just proceed to success page.
-    if (selectedPlan) {
-      sessionStorage.setItem('pendingPlan', JSON.stringify({ plan: selectedPlan, cycle: selectedCycle }));
-    }
-
-    setIsSuccess(true);
-    toast.success("Account created successfully!");
   };
 
   if (isSuccess) {

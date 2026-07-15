@@ -21,6 +21,7 @@ import {
 import { Eye, Ban, Trash2, Loader2, CheckCircle2, Gift, RefreshCcw } from "lucide-react";
 import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const getRoleBadgeVariant = (role: string) => {
   switch (role?.toLowerCase()) {
@@ -36,6 +37,7 @@ const getRoleBadgeVariant = (role: string) => {
 };
 
 export default function UsersManagement() {
+  const confirm = useConfirm();
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -138,7 +140,7 @@ export default function UsersManagement() {
   };
 
   const handleDelete = async (userId: string) => {
-    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+    if (!await confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
     
     setIsActionLoading(true);
     try {

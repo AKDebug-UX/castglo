@@ -43,7 +43,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
       { title: "Overview", href: "/talent/account-settings", Icon: Settings },
       { title: "Security", href: "/talent/account-settings?tab=security", Icon: Shield },
       { title: "Subscriptions", href: "/talent/account-settings?tab=subscriptions", Icon: BadgeCheck },
-      { title: "Payment Settings", href: "/talent/account-settings?tab=payments", Icon: CreditCard },
+
       { title: "Payment History", href: "/talent/account-settings?tab=payment-history", Icon: CreditCard },
       { title: "Notification Settings", href: "/talent/account-settings?tab=notifications", Icon: Bell },
     ],

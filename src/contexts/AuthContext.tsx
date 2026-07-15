@@ -61,6 +61,17 @@ const buildUserObj = (userData: any): User => ({
   twoFactorEnabled: userData.twoFactorEnabled || userData.isTwoFactorEnabled || userData.is2FAEnabled || userData.twoFactorAuthEnabled || false,
 });
 
+const getErrorMessage = (data: any, fallback: string): string => {
+  if (!data) return fallback;
+  if (data.data && typeof data.data === "object") {
+    const values = Object.values(data.data);
+    if (values.length > 0 && typeof values[0] === "string") {
+      return values.join(", ");
+    }
+  }
+  return data.error || data.message || fallback;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {
     const storedUser = localStorage.getItem('userData');
@@ -111,9 +122,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('userData', JSON.stringify(userObj));
         return { role: userObj.role };
       }
-      return { error: response.data.message || "Sign in failed" };
+      return { error: getErrorMessage(response.data, "Sign in failed") };
     } catch (error: any) {
-      return { error: error.response?.data?.message || "An error occurred during sign in" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred during sign in") };
     }
   };
 
@@ -133,9 +144,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('userData', JSON.stringify(userObj));
         return { role: userObj.role };
       }
-      return { error: response.data.message || "Google authentication failed" };
+      return { error: getErrorMessage(response.data, "Google authentication failed") };
     } catch (error: any) {
-      return { error: error.response?.data?.message || "An error occurred during Google sign in" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred during Google sign in") };
     }
   };
 
@@ -143,9 +154,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await authAPI.register(data);
       if (response.data.success) return {};
-      return { error: response.data.message || "Registration failed" };
+      return { error: getErrorMessage(response.data, "Registration failed") };
     } catch (error: any) {
-      return { error: error.response?.data?.message || "An error occurred during registration" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred during registration") };
     }
   };
 
@@ -166,9 +177,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await authAPI.forgotPassword(email);
       if (response.data.success) return {};
-      return { error: response.data.message };
+      return { error: getErrorMessage(response.data, "An error occurred") };
     } catch (error: any) {
-      return { error: error.response?.data?.message || "An error occurred" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred") };
     }
   };
 
@@ -176,9 +187,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await authAPI.resetPassword(data);
       if (response.data.success) return {};
-      return { error: response.data.message };
+      return { error: getErrorMessage(response.data, "An error occurred") };
     } catch (error: any) {
-      return { error: error.response?.data?.message || "An error occurred" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred") };
     }
   };
 
@@ -193,9 +204,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return {};
       }
-      return { error: response.data.message };
+      return { error: getErrorMessage(response.data, "An error occurred") };
     } catch (error: any) {
-      return { error: error.response?.data?.message || "An error occurred" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred") };
     }
   };
 
@@ -203,9 +214,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await authAPI.resendVerification(email);
       if (response.data.success) return {};
-      return { error: response.data.message };
+      return { error: getErrorMessage(response.data, "An error occurred") };
     } catch (error: any) {
-      return { error: error.response?.data?.message || "An error occurred" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred") };
     }
   };
 
@@ -242,9 +253,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setPendingTwoFactor(null);
         return { role: userObj.role };
       }
-      return { error: response.data.message || "Two-factor verification failed" };
+      return { error: getErrorMessage(response.data, "Two-factor verification failed") };
     } catch (error: any) {
-      const msg: string = error?.response?.data?.message || "An error occurred while verifying two-factor code";
+      const msg: string = getErrorMessage(error.response?.data, "An error occurred while verifying two-factor code");
       // Expired temp token detection
       if (
         error?.response?.status === 401 ||
@@ -262,9 +273,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await twoFactorAuthAPI.resend({ email });
       if (response.data.success) return {};
-      return { error: response.data.message || "Failed to resend two-factor code" };
+      return { error: getErrorMessage(response.data, "Failed to resend two-factor code") };
     } catch (error: any) {
-      return { error: error?.response?.data?.message || "An error occurred while resending two-factor code" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred while resending two-factor code") };
     }
   };
 
@@ -321,7 +332,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         return { qrCode, secret };
       }
-      const errMsg = response.data.message || "Failed to start 2FA enrolment";
+      const errMsg = getErrorMessage(response.data, "Failed to start 2FA enrolment");
       if (errMsg.toLowerCase().includes("already enabled") && user) {
         const updated = { ...user, twoFactorEnabled: true };
         setUser(updated);
@@ -329,7 +340,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return { error: errMsg };
     } catch (error: any) {
-      const errMsg = error?.response?.data?.message || "An error occurred while starting 2FA enrolment";
+      const errMsg = getErrorMessage(error.response?.data, "An error occurred while starting 2FA enrolment");
       if (errMsg.toLowerCase().includes("already enabled") && user) {
         const updated = { ...user, twoFactorEnabled: true };
         setUser(updated);
@@ -351,9 +362,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await refreshUser(); // refresh user so twoFactorEnabled=true is reflected
         return { backupCodes: response.data.data?.backupCodes };
       }
-      return { error: response.data.message || "Failed to confirm 2FA setup" };
+      return { error: getErrorMessage(response.data, "Failed to confirm 2FA setup") };
     } catch (error: any) {
-      return { error: error?.response?.data?.message || "An error occurred while confirming 2FA" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred while confirming 2FA") };
     }
   };
 
@@ -368,9 +379,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return {};
       }
-      return { error: response.data.message || "Failed to disable two-factor authentication" };
+      return { error: getErrorMessage(response.data, "Failed to disable two-factor authentication") };
     } catch (error: any) {
-      return { error: error?.response?.data?.message || "An error occurred while disabling two-factor authentication" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred while disabling two-factor authentication") };
     }
   };
 
@@ -380,9 +391,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.data.success) {
         return { backupCodes: response.data.data?.backupCodes };
       }
-      return { error: response.data.message || "Failed to regenerate backup codes" };
+      return { error: getErrorMessage(response.data, "Failed to regenerate backup codes") };
     } catch (error: any) {
-      return { error: error?.response?.data?.message || "An error occurred while regenerating backup codes" };
+      return { error: getErrorMessage(error.response?.data, "An error occurred while regenerating backup codes") };
     }
   };
 

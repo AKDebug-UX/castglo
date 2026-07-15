@@ -60,6 +60,16 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 
 // Component to handle Agora remote tracks
@@ -95,6 +105,29 @@ export default function LivestreamPage() {
   const [participants, setParticipants] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
+
+  const triggerConfirm = (title: string, description: string, onConfirm: () => void) => {
+    setConfirmDialog({
+      isOpen: true,
+      title,
+      description,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
 
   // Set sidebar visibility based on screen size on mount
   useEffect(() => {
@@ -139,20 +172,23 @@ export default function LivestreamPage() {
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
   const [remoteUsers, setRemoteUsers] = useState<IRemoteUser[]>([]);
   const joinHostIdRef = useRef<string | undefined>(undefined);
+  const resolvedAppIdRef = useRef<string>("");
 
   const isOwner = Boolean(
-    streamData && user && 
-    (typeof streamData.hostId === 'object' 
-      ? (streamData.hostId?._id === user.id || streamData.hostId?.id === user.id)
-      : (streamData.hostId === user.id))
+    streamData && user && (() => {
+      const hostId = typeof streamData.hostId === 'object' ? (streamData.hostId?._id || streamData.hostId?.id) : streamData.hostId;
+      const userId = user.id || user._id;
+      return hostId && userId && String(hostId) === String(userId);
+    })()
   );
   const isCoHost = Boolean(
-    streamData &&
-    user &&
-    Array.isArray(streamData.coHosts) &&
-    streamData.coHosts.some((coHost) =>
-      (typeof coHost === "object" ? coHost?._id || coHost?.id : coHost) === user.id
-    )
+    streamData && user && Array.isArray(streamData.coHosts) && (() => {
+      const userId = user.id || user._id;
+      return streamData.coHosts.some((coHost) => {
+        const coHostId = typeof coHost === "object" ? coHost?._id || coHost?.id : coHost;
+        return coHostId && userId && String(coHostId) === String(userId);
+      });
+    })()
   );
   const isBroadcaster = isOwner || isCoHost;
 
@@ -271,7 +307,7 @@ export default function LivestreamPage() {
     if (!streamData) return;
     
     const realParticipants = [];
-    const currentUserId = user?.id;
+    const currentUserId = user?.id || user?._id;
 
     if (streamData.hostId) {
       const hostId = typeof streamData.hostId === 'object' ? (streamData.hostId?._id || streamData.hostId?.id) : streamData.hostId;
@@ -337,19 +373,34 @@ export default function LivestreamPage() {
 
   useEffect(() => {
     const fetchStream = async () => {
-      if (!id) return;
+      if (!id || id === 'undefined') {
+        setIsLoading(false);
+        navigate(-1);
+        return;
+      }
       try {
-        const [myRes, publicRes] = await Promise.all([
-          livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
-          livestreamAPI.getAll().catch(() => ({ data: { success: false } }))
-        ]);
-
         let stream = null;
-        if (myRes.data?.success && Array.isArray(myRes.data.data)) {
-          stream = myRes.data.data.find((s) => s._id === id);
+        try {
+          const directRes = await livestreamAPI.getOne(id);
+          if (directRes.data?.success && directRes.data.data) {
+            stream = directRes.data.data;
+          }
+        } catch (err) {
+          console.warn("Direct stream fetch failed, falling back to list scan:", err);
         }
-        if (!stream && publicRes.data?.success && Array.isArray(publicRes.data.data)) {
-          stream = publicRes.data.data.find((s) => s._id === id);
+
+        if (!stream) {
+          const [myRes, publicRes] = await Promise.all([
+            livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
+            livestreamAPI.getAll().catch(() => ({ data: { success: false } }))
+          ]);
+
+          if (myRes.data?.success && Array.isArray(myRes.data.data)) {
+            stream = myRes.data.data.find((s) => s._id === id || s.id === id);
+          }
+          if (!stream && publicRes.data?.success && Array.isArray(publicRes.data.data)) {
+            stream = publicRes.data.data.find((s) => s._id === id || s.id === id);
+          }
         }
 
         if (stream) {
@@ -368,7 +419,8 @@ export default function LivestreamPage() {
     fetchStream();
   }, [id, user?.id]); // Stabilized dependency by using user?.id instead of user object
 
-  const handleJoin = async () => {
+  const handleJoin = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (!id) return;
     if (streamData?.status === 'ended') {
       toast.error("This session has already ended.");
@@ -385,7 +437,7 @@ export default function LivestreamPage() {
       // Step A: Fetch Connection Details
       // You must call the join endpoint (for viewers) or start endpoint (for hosts)
       let response;
-      const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
+      const hostId = typeof streamData?.hostId === 'object' ? (streamData.hostId?._id || streamData.hostId?.id) : streamData?.hostId;
       joinHostIdRef.current = hostId ? String(hostId) : undefined;
 
       if (isBroadcaster) {
@@ -398,8 +450,10 @@ export default function LivestreamPage() {
         throw new Error(response.data.message || "Failed to get connection details from server");
       }
 
-      const { rtcToken, userId: resUserId, channelName: resChannelName, stream } = response.data.data;
-      const agoraAppId = import.meta.env.VITE_AGORA_APP_ID;
+      const rawData = response.data.data;
+      const { rtcToken, userId: resUserId, channelName: resChannelName, stream } = rawData;
+      const agoraAppId = rawData.appId || rawData.agoraAppId || response.data.appId || response.data.agoraAppId || import.meta.env.VITE_AGORA_APP_ID;
+      resolvedAppIdRef.current = agoraAppId;
 
       // Validate required details
       if (!agoraAppId) throw new Error("Agora App ID is not configured");
@@ -408,7 +462,7 @@ export default function LivestreamPage() {
       // Step C: Join with String User ID (Critical)
       // The Castglo backend generates Account Tokens tied to the MongoDB _id string.
       // You MUST pass this string as the uid.
-      const userId = String(resUserId || response.data.data.uid || response.data.data._id || user?.id);
+      const userId = String(resUserId || response.data.data.uid || response.data.data._id || user?.id || user?._id);
       const channelName = String(resChannelName || stream?.channelName || response.data.data.channel || id);
 
       console.log("Agora Connection Details:", { channelName, userId, hasToken: !!rtcToken });
@@ -452,7 +506,7 @@ export default function LivestreamPage() {
 
       client.on("user-left", (remoteUser) => {
         console.log(`Remote user ${remoteUser.uid} left`);
-        const hostId = typeof streamData?.hostId === 'object' ? streamData.hostId?._id : streamData?.hostId;
+        const hostId = typeof streamData?.hostId === 'object' ? (streamData.hostId?._id || streamData.hostId?.id) : streamData?.hostId;
         if (String(remoteUser.uid) === String(hostId)) {
           toast.info("The host has left the session.");
           // We don't necessarily end the session here because the host might be reconnecting
@@ -542,32 +596,39 @@ export default function LivestreamPage() {
     };
   }, [localVideoTrack, localAudioTrack]);
 
-  const handleLeave = async () => {
-    const confirmMsg = isOwner ? "End the audition for everyone?" : "Leave the audition?";
-    if (window.confirm(confirmMsg)) {
-      // Cleanup Agora
-      if (localVideoTrack) {
-        localVideoTrack.stop();
-        localVideoTrack.close();
-      }
-      if (localAudioTrack) {
-        localAudioTrack.stop();
-        localAudioTrack.close();
-      }
-      if (agoraClientRef.current) {
-        await agoraClientRef.current.leave();
-      }
-
-      if (id) {
-        try {
-          if (isOwner) await livestreamAPI.end(id);
-          else await livestreamAPI.leave(id);
-        } catch (error) {
-          console.error("Leave error:", error);
-        }
-      }
-      navigate(-1);
+  const handleLeave = async (bypassConfirm = false) => {
+    if (!bypassConfirm) {
+      const confirmMsg = isOwner ? "End the audition for everyone?" : "Leave the audition?";
+      triggerConfirm(
+        isOwner ? "End Audition" : "Leave Audition",
+        confirmMsg,
+        () => handleLeave(true)
+      );
+      return;
     }
+
+    // Cleanup Agora
+    if (localVideoTrack) {
+      localVideoTrack.stop();
+      localVideoTrack.close();
+    }
+    if (localAudioTrack) {
+      localAudioTrack.stop();
+      localAudioTrack.close();
+    }
+    if (agoraClientRef.current) {
+      await agoraClientRef.current.leave();
+    }
+
+    if (id) {
+      try {
+        if (isOwner) await livestreamAPI.end(id);
+        else await livestreamAPI.leave(id);
+      } catch (error) {
+        console.error("Leave error:", error);
+      }
+    }
+    navigate(-1);
   };
 
   const formatCount = (num: number) => {
@@ -578,7 +639,7 @@ export default function LivestreamPage() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && id && id !== 'undefined') {
       socketService.connect(token);
 
       // Listen for real-time livestream chat messages
@@ -590,7 +651,7 @@ export default function LivestreamPage() {
             if (prev.some((m: any) => m.id === msg._id)) return prev;
             
             const senderId = msg.senderId || msg.sender?._id || msg.sender;
-            const isSelf = Boolean(user?.id && senderId && String(user.id) === String(senderId));
+            const isSelf = Boolean((user?.id || user?._id) && senderId && String(user?.id || user?._id) === String(senderId));
             const displayName = isSelf 
               ? (user?.fullName || "Me") 
               : (msg.senderName || msg.sender?.fullName || "Participant");
@@ -624,15 +685,15 @@ export default function LivestreamPage() {
         socketService.off('livestream_ended', handleStreamEnded);
       };
     }
-  }, [id, user?.id, user?.fullName, isBroadcaster, navigate]);
+  }, [id, user?.id, user?._id, user?.fullName, isBroadcaster, navigate]);
 
   useEffect(() => {
     const pollRef = { active: true };
     let timeoutId: NodeJS.Timeout;
-    const currentUserId = user?.id;
+    const currentUserId = user?.id || user?._id;
 
     const fetchMessagesAndStatus = async () => {
-      if (!id || !pollRef.active) return;
+      if (!id || id === 'undefined' || !pollRef.active) return;
 
       // If socket is connected, we only poll occasionally (every 45s) as a sanity check
       const socketConnected = socketService.isConnected();
@@ -701,11 +762,22 @@ export default function LivestreamPage() {
         }
 
         let currentStream = null;
-        if (myRes.data?.success && Array.isArray(myRes.data.data)) {
-          currentStream = myRes.data.data.find((s) => s._id === id);
+        try {
+          const directRes = await livestreamAPI.getOne(id);
+          if (directRes.data?.success && directRes.data.data) {
+            currentStream = directRes.data.data;
+          }
+        } catch (err) {
+          console.warn("Direct polling stream fetch failed, falling back to list scan:", err);
         }
-        if (!currentStream && publicRes.data?.success && Array.isArray(publicRes.data.data)) {
-          currentStream = publicRes.data.data.find((s) => s._id === id);
+
+        if (!currentStream) {
+          if (myRes.data?.success && Array.isArray(myRes.data.data)) {
+            currentStream = myRes.data.data.find((s) => s._id === id || s.id === id);
+          }
+          if (!currentStream && publicRes.data?.success && Array.isArray(publicRes.data.data)) {
+            currentStream = publicRes.data.data.find((s) => s._id === id || s.id === id);
+          }
         }
 
         if (currentStream && currentStream.status === 'ended' && !isBroadcaster) {
@@ -730,7 +802,7 @@ export default function LivestreamPage() {
             id: String(p._id || p.id),
             name: p.fullName || p.name || "Unknown",
             role: p.role || "viewer",
-            isSelf: String(p._id || p.id) === String(user?.id),
+            isSelf: String(p._id || p.id) === String(user?.id || user?._id),
             isMicOn: p.isMicOn ?? (p.role === 'host' || p.role === 'co-host'),
             isCamOn: p.isCamOn ?? (p.role === 'host' || p.role === 'co-host'),
             headline: p.headline,
@@ -754,7 +826,7 @@ export default function LivestreamPage() {
     fetchMessagesAndStatus();
 
     // Socket listeners for livestream
-    if (id) {
+    if (id && id !== 'undefined') {
       const handleConnect = () => {
         console.log("Socket connected/reconnected, joining livestream room:", id);
         socketService.emit('join_livestream', id);
@@ -820,7 +892,7 @@ export default function LivestreamPage() {
             id: String(newUser._id || newUser.id),
             name: newUser.fullName,
             role: newUser.role || "viewer",
-            isSelf: String(user?.id) === String(newUser._id || newUser.id),
+            isSelf: String(user?.id || user?._id) === String(newUser._id || newUser.id),
             isMicOn: false,
             isCamOn: false,
             headline: newUser.headline,
@@ -849,9 +921,9 @@ export default function LivestreamPage() {
               const { token, channelName } = startRes.data.data;
               // Leave current channel and join as publisher
               if (agoraClientRef.current) {
-                const appId = import.meta.env.VITE_AGORA_APP_ID;
+                const appId = startRes.data.data?.appId || startRes.data.data?.agoraAppId || resolvedAppIdRef.current || import.meta.env.VITE_AGORA_APP_ID;
                 await agoraClientRef.current.leave();
-                await agoraClientRef.current.join(appId, channelName, token, String(user?.id));
+                await agoraClientRef.current.join(appId, channelName, token, String(user?.id || user?._id));
                 // Create and publish local tracks
                 const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
                 setLocalAudioTrack(audioTrack);
@@ -912,9 +984,9 @@ export default function LivestreamPage() {
             if (joinRes.data.success) {
               const { token, channelName } = joinRes.data.data;
               if (agoraClientRef.current) {
-                const appId = import.meta.env.VITE_AGORA_APP_ID;
+                const appId = joinRes.data.data?.appId || joinRes.data.data?.agoraAppId || resolvedAppIdRef.current || import.meta.env.VITE_AGORA_APP_ID;
                 await agoraClientRef.current.leave();
-                await agoraClientRef.current.join(appId, channelName, token, String(user?.id));
+                await agoraClientRef.current.join(appId, channelName, token, String(user?.id || user?._id));
                 setIsJoined(true);
               }
             }
@@ -993,7 +1065,7 @@ export default function LivestreamPage() {
         socketService.emit('leave_livestream', id);
       };
     }
-  }, [id, user?.id, isBroadcaster]);
+  }, [id, user?.id, user?._id, isBroadcaster]);
 
   const [chatInput, setChatInput] = useState("");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -1173,11 +1245,17 @@ export default function LivestreamPage() {
     }
   };
 
-  const handleKickUser = (userId: string, userName: string) => {
-    if (window.confirm(`Remove ${userName}?`)) {
-      setParticipants(prev => prev.filter(p => p.id !== userId));
-      toast.success(`${userName} removed`);
+  const handleKickUser = (userId: string, userName: string, bypassConfirm = false) => {
+    if (!bypassConfirm) {
+      triggerConfirm(
+        "Remove Participant",
+        `Are you sure you want to remove ${userName}?`,
+        () => handleKickUser(userId, userName, true)
+      );
+      return;
     }
+    setParticipants(prev => prev.filter(p => p.id !== userId));
+    toast.success(`${userName} removed`);
   };
 
   const handleMuteUser = (userId: string, userName: string) => {
@@ -1185,52 +1263,64 @@ export default function LivestreamPage() {
     toast.success(`Toggled mute for ${userName}`);
   };
 
-  const handleMakeCoHost = async (userId: string, userName: string) => {
+  const handleMakeCoHost = async (userId: string, userName: string, bypassConfirm = false) => {
     if (!id) return;
-    if (window.confirm(`Promote ${userName} to Co-Host?`)) {
-      try {
-        // Optimistic UI/Socket emit
-        socketService.emit('assign_cohost', { streamId: id, userId });
-        
-        // API Call
-        const response = await livestreamAPI.promoteCohost(id, userId);
-        if (response.data.success) {
-          toast.success(`${userName} is now a Co-Host`);
-          // Refresh stream data to get updated coHosts array
-          const myRes = await livestreamAPI.getMyStreams();
-          if (myRes.data.success) {
-            const stream = myRes.data.data.find((s) => s._id === id);
-            if (stream) setStreamData(stream);
-          }
+    if (!bypassConfirm) {
+      triggerConfirm(
+        "Promote to Co-Host",
+        `Are you sure you want to promote ${userName} to Co-Host?`,
+        () => handleMakeCoHost(userId, userName, true)
+      );
+      return;
+    }
+    try {
+      // Optimistic UI/Socket emit
+      socketService.emit('assign_cohost', { streamId: id, userId });
+      
+      // API Call
+      const response = await livestreamAPI.promoteCohost(id, userId);
+      if (response.data.success) {
+        toast.success(`${userName} is now a Co-Host`);
+        // Refresh stream data to get updated coHosts array
+        const myRes = await livestreamAPI.getMyStreams();
+        if (myRes.data.success) {
+          const stream = myRes.data.data.find((s) => s._id === id || s.id === id);
+          if (stream) setStreamData(stream);
         }
-      } catch (error) {
-        console.error("Co-host promotion error:", error);
-        toast.error(error.response?.data?.message || "Failed to assign co-host");
       }
+    } catch (error) {
+      console.error("Co-host promotion error:", error);
+      toast.error(error.response?.data?.message || "Failed to assign co-host");
     }
   };
 
-  const handleRemoveCoHost = async (userId: string, userName: string) => {
+  const handleRemoveCoHost = async (userId: string, userName: string, bypassConfirm = false) => {
     if (!id) return;
-    if (window.confirm(`Remove ${userName} from Co-Hosts?`)) {
-      try {
-        const response = await livestreamAPI.removeCohost(id, userId);
-        if (response.data.success) {
-          toast.success(`${userName} removed from Co-Hosts`);
-          // Emit socket event for real-time update
-          socketService.emit('remove_cohost', { streamId: id, userId });
-          
-          // Refresh stream data
-          const myRes = await livestreamAPI.getMyStreams();
-          if (myRes.data.success) {
-            const stream = myRes.data.data.find((s) => s._id === id);
-            if (stream) setStreamData(stream);
-          }
+    if (!bypassConfirm) {
+      triggerConfirm(
+        "Remove Co-Host",
+        `Are you sure you want to remove ${userName} from Co-Hosts?`,
+        () => handleRemoveCoHost(userId, userName, true)
+      );
+      return;
+    }
+    try {
+      const response = await livestreamAPI.removeCohost(id, userId);
+      if (response.data.success) {
+        toast.success(`${userName} removed from Co-Hosts`);
+        // Emit socket event for real-time update
+        socketService.emit('remove_cohost', { streamId: id, userId });
+        
+        // Refresh stream data
+        const myRes = await livestreamAPI.getMyStreams();
+        if (myRes.data.success) {
+          const stream = myRes.data.data.find((s) => s._id === id || s.id === id);
+          if (stream) setStreamData(stream);
         }
-      } catch (error) {
-        console.error("Co-host removal error:", error);
-        toast.error(error.response?.data?.message || "Failed to remove co-host");
       }
+    } catch (error) {
+      console.error("Co-host removal error:", error);
+      toast.error(error.response?.data?.message || "Failed to remove co-host");
     }
   };
 
@@ -1246,7 +1336,7 @@ export default function LivestreamPage() {
           id: String(p._id || p.id),
           name: p.fullName || p.name || "Unknown",
           role: p.role || "viewer",
-          isSelf: String(p._id || p.id) === String(user?.id),
+          isSelf: String(p._id || p.id) === String(user?.id || user?._id),
           isMicOn: p.isMicOn ?? (p.role === 'host' || p.role === 'co-host'),
           isCamOn: p.isCamOn ?? (p.role === 'host' || p.role === 'co-host')
         }));
@@ -1328,8 +1418,8 @@ export default function LivestreamPage() {
               </div>
             </div>
             <div className="flex flex-col gap-3">
-              <Button size="lg" className="h-14 rounded-2xl text-lg font-black uppercase shadow-xl shadow-primary/20" onClick={handleJoin}>{isOwner ? "Start session" : streamData?.status === 'live' ? "Join now" : "Join waiting room"}</Button>
-              <Button variant="ghost" size="lg" className="h-14 rounded-2xl text-slate-500 font-bold uppercase hover:text-white" onClick={() => navigate(-1)}>Cancel</Button>
+              <Button type="button" size="lg" className="h-14 rounded-2xl text-lg font-black uppercase shadow-xl shadow-primary/20" onClick={(e) => { e.preventDefault(); handleJoin(e); }}>{isOwner ? "Start session" : streamData?.status === 'live' ? "Join now" : "Join waiting room"}</Button>
+              <Button type="button" variant="ghost" size="lg" className="h-14 rounded-2xl text-slate-500 font-bold uppercase hover:text-white" onClick={(e) => { e.preventDefault(); navigate(-1); }}>Cancel</Button>
             </div>
           </div>
         </div>
@@ -2136,6 +2226,29 @@ export default function LivestreamPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Alert Dialog */}
+      <AlertDialog open={confirmDialog.isOpen} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, isOpen: open }))}>
+        <AlertDialogContent className="bg-[#12141A] border-white/10 text-white rounded-[2rem] sm:max-w-md shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-black uppercase tracking-tight text-white">{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400 text-sm">
+              {confirmDialog.description}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-3 sm:gap-0 mt-4">
+            <AlertDialogCancel className="bg-transparent border-white/10 text-white hover:bg-white/5 hover:text-white rounded-2xl h-12 font-bold px-6">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDialog.onConfirm}
+              className="bg-destructive hover:bg-destructive/80 text-white rounded-2xl h-12 font-bold px-6 border-none"
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

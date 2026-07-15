@@ -25,6 +25,7 @@ import { formatLocation } from "@/lib/utils";
 import { getStripe } from "@/lib/stripe";
 import { getStatusLabel, getStatusClass, isOpenStatus, isDraftStatus, getProjectDeadline } from "@/lib/project.utils";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useConfirm } from "@/contexts/ConfirmContext";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -34,6 +35,7 @@ import {
 
 export default function MyProjects() {
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState("all");
   const [projects, setProjects] = useState([]);
@@ -127,7 +129,7 @@ export default function MyProjects() {
   }, [activeWorkspace]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this casting call?")) return;
+    if (!await confirm("Are you sure you want to delete this casting call?")) return;
     try {
       const response = await projectAPI.delete(id);
       if (response.data.success) {
@@ -141,7 +143,7 @@ export default function MyProjects() {
   };
 
   const handleCloseProject = async (id: string) => {
-    if (!confirm("Are you sure you want to close this casting call? No new deliverables will be accepted.")) return;
+    if (!await confirm("Are you sure you want to close this casting call? No new deliverables will be accepted.")) return;
     try {
       const response = await castingCallAPI.close(id);
       if (response.data.success) {

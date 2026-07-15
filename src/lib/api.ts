@@ -296,6 +296,7 @@ export const verificationAPI = {
 export const livestreamAPI = {
   create: (data) => api.post(API_ENDPOINTS.LIVESTREAM.CREATE, data),
   getAll: (params?) => api.get(API_ENDPOINTS.LIVESTREAM.GET_ALL, { params }),
+  getOne: (id: string) => api.get(`/livestream/${id}`),
   getActive: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_ACTIVE),
   getMyStreams: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_MY_STREAMS),
   postMessage: (id: string, message: string) => api.post(API_ENDPOINTS.LIVESTREAM.POST_MESSAGE(id), { text: message }),

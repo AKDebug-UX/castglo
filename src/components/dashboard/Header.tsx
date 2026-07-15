@@ -165,9 +165,9 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
               >
                 Personal Workspace
               </DropdownMenuItem>
-              {collaborations.map(collab => (
+              {collaborations.map((collab, index) => (
                 <DropdownMenuItem 
-                  key={collab._id} 
+                  key={collab._id || collab.id || index} 
                   onClick={() => {
                     switchWorkspace(collab._id);
                     navigate("/director"); // Force to CD dashboard for collaborator workspaces
@@ -197,8 +197,8 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             <div className="p-2 font-medium">Notifications</div>
             <DropdownMenuSeparator />
              {notifications.length > 0 ? (
-               notifications.map((notification: any) => (
-                 <DropdownMenuItem key={notification._id} asChild>
+               notifications.map((notification: any, index: number) => (
+                 <DropdownMenuItem key={notification._id || notification.id || index} asChild>
                    <Link to={notification.metadata?.link || "/notifications"} className="flex items-start gap-3 p-2 cursor-pointer">
                      <div className={`mt-1 h-2 w-2 rounded-full ${(typeof notification.isRead === 'boolean' ? notification.isRead : notification.read) ? "bg-transparent" : "bg-primary"}`} />
                      <div className="flex-1">

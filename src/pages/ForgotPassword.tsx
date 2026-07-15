@@ -23,17 +23,22 @@ export default function ForgotPassword() {
 
     setIsLoading(true);
 
-    const { error } = await forgotPassword(email);
+    try {
+      const { error } = await forgotPassword(email);
 
-    if (error) {
-      toast.error(error);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+
+      setIsSubmitted(true);
+      toast.success("Reset link sent! Check your email.");
+    } catch (error: any) {
+      console.error("ForgotPassword error:", error);
+      toast.error(error?.response?.data?.message || error?.message || "An error occurred. Please try again.");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    setIsLoading(false);
-    setIsSubmitted(true);
-    toast.success("Reset link sent! Check your email.");
   };
 
   if (isSubmitted) {
