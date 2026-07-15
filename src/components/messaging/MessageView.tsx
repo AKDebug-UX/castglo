@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Send, MoreVertical, Loader2, MessageSquare, Search, ChevronLeft, ChevronDown } from "lucide-react";
+import { Plus, Send, Loader2, MessageSquare, Search, ChevronLeft, ChevronDown, Smile, Paperclip, Phone, Video, MoreHorizontal, Check, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { messagingAPI, userAPI } from "@/lib/api";
 import { socketService } from "@/lib/socket";
@@ -13,84 +12,104 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
-// #region Sub-components
+// Helper to extract an ID from any conversation/user object
+const getId = (obj: any): string | undefined => obj?._id || obj?.id;
 
-const Sidebar = ({ 
-  conversations, 
-  selectedConversation, 
-  onSelectConversation, 
-  user, 
-  isMobileView,
-  title
-}) => {
-  const [conversationSearch, setConversationSearch] = useState("");
+// ─── Sidebar ────────────────────────────────────────────────────────────────
 
-  const filteredConversations = conversations.filter(conv => {
-    const otherParticipant = conv.participants?.find((p) => p._id !== user?.id);
-    return (otherParticipant?.fullName || "").toLowerCase().includes(conversationSearch.toLowerCase());
+const Sidebar = ({ conversations, selectedConversation, onSelectConversation, user, isMobileView, onNewMessage }) => {
+  const [search, setSearch] = useState("");
+
+  const filtered = conversations.filter(conv => {
+    const other = conv.participants?.find(p => p._id !== user?.id && p.id !== user?.id);
+    return (other?.fullName || "").toLowerCase().includes(search.toLowerCase());
   });
 
   return (
     <div className={cn(
-      "flex flex-col border-r border-slate-200 bg-white",
+      "flex flex-col bg-white border-r border-slate-100",
       isMobileView && selectedConversation && "hidden"
     )}>
-      <div className="p-3 border-b border-slate-200 bg-slate-50/50">
+      {/* Header */}
+      <div className="px-4 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-slate-900">Messages</h2>
+          <button
+            onClick={onNewMessage}
+            className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-200"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            New
+          </button>
+        </div>
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input 
-            placeholder="Search conversations..." 
-            className="h-9 pl-9 bg-white border-slate-200 text-sm rounded-lg"
-            value={conversationSearch}
-            onChange={(e) => setConversationSearch(e.target.value)}
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <Input
+            placeholder="Search conversations…"
+            className="h-9 pl-9 bg-slate-50 border-none rounded-xl text-xs focus-visible:ring-1 focus-visible:ring-primary/30"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
           />
         </div>
       </div>
+
+      {/* Conversation list */}
       <ScrollArea className="flex-1">
-        <div className="space-y-1 p-2">
-          {filteredConversations.length > 0 ? filteredConversations.map((conv) => {
-            const otherParticipant = conv.participants?.find((p) => p._id !== user?.id);
-            const isSelected = selectedConversation?._id === conv._id;
+        <div className="py-1">
+          {filtered.length > 0 ? filtered.map(conv => {
+            const other = conv.participants?.find(p => p._id !== user?.id && p.id !== user?.id);
+            const isSelected = getId(selectedConversation) === getId(conv);
+            const convId = getId(conv);
             return (
               <button
-                key={conv._id}
+                key={convId}
                 onClick={() => onSelectConversation(conv)}
                 className={cn(
-                  "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200",
-                  isSelected 
-                    ? "bg-[#F0F7FF] shadow-sm" 
-                    : "hover:bg-slate-50"
+                  "w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-150 relative group",
+                  isSelected ? "bg-primary/5 border-r-2 border-primary" : "hover:bg-slate-50"
                 )}
               >
-                <div className="relative">
-                  <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                    <AvatarImage src={otherParticipant?.profilePicture} />
-                    <AvatarFallback className="bg-slate-100 text-slate-600 font-bold">
-                      {otherParticipant?.fullName?.[0] || "C"}
+                <div className="relative flex-shrink-0">
+                  <Avatar className="h-11 w-11 ring-2 ring-white shadow-sm">
+                    <AvatarImage src={other?.profilePicture} />
+                    <AvatarFallback className={cn(
+                      "text-sm font-bold",
+                      isSelected ? "bg-primary/10 text-primary" : "bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600"
+                    )}>
+                      {other?.fullName?.[0] || "?"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full" />
                 </div>
-                <div className="min-w-0 flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
-                    <p className={cn("font-bold truncate text-sm", isSelected ? "text-blue-600" : "text-slate-800")}>
-                      {otherParticipant?.fullName || "Casting Team"}
+                    <p className={cn(
+                      "text-sm truncate",
+                      isSelected ? "font-bold text-primary" : "font-semibold text-slate-800"
+                    )}>
+                      {other?.fullName || "Casting Team"}
                     </p>
-                    <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">
-                      {conv.lastMessage ? new Date(conv.lastMessage.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' }) : ""}
-                    </span>
+                    {conv.lastMessage && (
+                      <span className="text-[10px] text-slate-400 ml-2 flex-shrink-0">
+                        {new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                    {conv.lastMessage?.text || "No messages yet"}
+                  <p className="text-xs text-slate-500 truncate leading-relaxed">
+                    {conv.lastMessage?.text || <span className="text-slate-400 italic">No messages yet</span>}
                   </p>
                 </div>
               </button>
             );
           }) : (
-            <div className="p-8 text-center">
-              <MessageSquare className="w-10 h-10 mx-auto text-slate-200 mb-3" />
-              <p className="text-sm text-slate-400">No conversations found</p>
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3">
+                <MessageSquare className="w-6 h-6 text-slate-300" />
+              </div>
+              <p className="text-sm font-medium text-slate-500">No conversations</p>
+              <p className="text-xs text-slate-400 mt-1">Start by tapping "New"</p>
             </div>
           )}
         </div>
@@ -99,142 +118,180 @@ const Sidebar = ({
   );
 };
 
-const ChatView = ({ 
-  selectedConversation, 
-  messages, 
-  user, 
-  isMobileView, 
-  onDeselectConversation, 
-  isSending, 
-  newMessage, 
-  onNewMessageChange, 
-  onSendMessage 
-}) => {
+// ─── Chat View ───────────────────────────────────────────────────────────────
+
+const ChatView = ({ selectedConversation, messages, user, isMobileView, onDeselectConversation, isSending, newMessage, onNewMessageChange, onSendMessage }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const other = selectedConversation?.participants?.find(p => p._id !== user?.id && p.id !== user?.id);
 
   return (
     <div className={cn(
-      "flex flex-col bg-[#E6F7FF] h-full overflow-hidden",
+      "flex flex-col bg-[#F7F9FC] h-full overflow-hidden",
       isMobileView && !selectedConversation && "hidden"
     )}>
       {selectedConversation ? (
         <>
-          <div className="h-[72px] flex-shrink-0 flex items-center justify-between px-4 md:px-6 border-b border-slate-200 bg-white shadow-sm z-10 sticky top-0">
+          {/* Chat Header */}
+          <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 bg-white border-b border-slate-100 shadow-[0_1px_0_rgba(0,0,0,0.05)]">
             <div className="flex items-center gap-3">
               {isMobileView && (
-                <Button variant="ghost" size="icon" className="mr-2" onClick={onDeselectConversation}>
+                <button onClick={onDeselectConversation} className="p-1.5 -ml-1.5 rounded-lg hover:bg-slate-100 transition-colors">
                   <ChevronLeft className="w-5 h-5 text-slate-600" />
-                </Button>
+                </button>
               )}
-              {(() => {
-                const otherParticipant = selectedConversation.participants?.find((p) => p._id !== user?.id);
-                return (
-                  <>
-                    <Avatar className="h-10 w-10 border border-slate-100">
-                      <AvatarImage src={otherParticipant?.profilePicture} />
-                      <AvatarFallback className="bg-slate-100 text-slate-600 font-bold">
-                        {otherParticipant?.fullName?.[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-bold text-slate-800 text-sm leading-none mb-1">{otherParticipant?.fullName || "Casting Team"}</p>
-                      <p className="text-[11px] text-slate-500 font-medium">{otherParticipant?.role?.replace('_', ' ') || "Producer"}</p>
-                    </div>
-                  </>
-                );
-              })()}
+              <div className="relative">
+                <Avatar className="h-10 w-10 ring-2 ring-white shadow-sm">
+                  <AvatarImage src={other?.profilePicture} />
+                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/30 text-primary font-bold text-sm">
+                    {other?.fullName?.[0] || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full" />
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900 text-sm leading-none mb-0.5">{other?.fullName || "Casting Team"}</p>
+                <p className="text-[11px] text-emerald-500 font-medium">Active now</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button className="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700">
+                <Phone className="w-4 h-4" />
+              </button>
+              <button className="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700">
+                <Video className="w-4 h-4" />
+              </button>
+              <button className="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700">
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          <ScrollArea className="flex-1 bg-blue-50/50 overflow-y-auto">
-            <div className="p-4 md:p-6 space-y-6">
-              {messages.map((msg, idx: number) => {
+          {/* Messages area */}
+          <ScrollArea className="flex-1 overflow-y-auto">
+            <div className="px-4 py-6 space-y-1">
+              {messages.map((msg, idx) => {
                 const senderId = msg.senderId?._id || msg.senderId;
                 const isSelf = senderId === user?.id;
+                const prevMsg = messages[idx - 1];
+                const prevSenderId = prevMsg?.senderId?._id || prevMsg?.senderId;
+                const isGrouped = prevMsg && prevSenderId === senderId;
+                const isLast = idx === messages.length - 1 || (messages[idx + 1]?.senderId?._id || messages[idx + 1]?.senderId) !== senderId;
+
                 return (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={msg._id || idx}
                     className={cn(
-                      "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
-                      isSelf ? "justify-end" : "justify-start"
+                      "flex items-end gap-2",
+                      isSelf ? "justify-end" : "justify-start",
+                      !isGrouped && "mt-4"
                     )}
                   >
-                    <div className={cn(
-                      "max-w-[85%] md:max-w-[75%] space-y-1",
-                      isSelf ? "items-end" : "items-start"
-                    )}>
-                      <div className={cn(
-                        "px-4 py-3 rounded-2xl text-sm shadow-sm",
-                        isSelf 
-                          ? "bg-primary text-white rounded-br-none" 
-                          : "bg-white text-slate-800 rounded-bl-none border border-slate-100"
-                      )}>
-                        <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                    {/* Avatar for other user */}
+                    {!isSelf && (
+                      <div className="flex-shrink-0 w-7">
+                        {isLast ? (
+                          <Avatar className="h-7 w-7">
+                            <AvatarImage src={other?.profilePicture} />
+                            <AvatarFallback className="text-[10px] bg-slate-200 text-slate-600 font-bold">
+                              {other?.fullName?.[0] || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : null}
                       </div>
-                      <p className={cn(
-                        "text-[10px] font-medium px-1",
-                        isSelf ? "text-slate-500 text-right" : "text-slate-400 text-left"
+                    )}
+
+                    <div className={cn("flex flex-col max-w-[72%] md:max-w-[60%]", isSelf ? "items-end" : "items-start")}>
+                      <div className={cn(
+                        "px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words",
+                        isSelf
+                          ? cn(
+                              "bg-primary text-white shadow-sm shadow-primary/20",
+                              !isGrouped ? "rounded-2xl rounded-br-sm" : isLast ? "rounded-2xl rounded-br-sm" : "rounded-2xl"
+                            )
+                          : cn(
+                              "bg-white text-slate-800 border border-slate-100 shadow-sm",
+                              !isGrouped ? "rounded-2xl rounded-bl-sm" : isLast ? "rounded-2xl rounded-bl-sm" : "rounded-2xl"
+                            )
                       )}>
-                        {new Date(msg.createdAt).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                      </p>
+                        {msg.text}
+                      </div>
+                      {isLast && (
+                        <div className={cn("flex items-center gap-1 mt-1 px-1", isSelf ? "flex-row-reverse" : "flex-row")}>
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          {isSelf && <CheckCheck className="w-3 h-3 text-primary/60" />}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })}
-              <div ref={scrollRef} />
+
+              {/* Empty state */}
               {messages.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 text-slate-400 opacity-60">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100">
-                    <MessageSquare className="w-8 h-8" />
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="w-16 h-16 bg-white rounded-2xl border border-slate-100 flex items-center justify-center mb-4 shadow-sm">
+                    <MessageSquare className="w-7 h-7 text-primary/40" />
                   </div>
-                  <p className="text-sm font-medium">Start the conversation</p>
+                  <p className="text-sm font-semibold text-slate-600 mb-1">Start the conversation</p>
+                  <p className="text-xs text-slate-400">Send your first message below</p>
                 </div>
               )}
+              <div ref={scrollRef} />
             </div>
           </ScrollArea>
 
-          <div className="p-2 md:p-4 bg-white border-t border-slate-200 flex-shrink-0 sticky bottom-0">
-            <div className="max-w-4xl mx-auto relative flex items-center gap-2">
-              <div className="relative flex-1 group">
-                <Input 
-                  placeholder="Type your message..." 
+          {/* Input area */}
+          <div className="flex-shrink-0 px-4 py-3 bg-white border-t border-slate-100">
+            <div className="flex items-end gap-2">
+              <button className="flex-shrink-0 p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600 mb-0.5">
+                <Paperclip className="w-5 h-5" />
+              </button>
+              <div className="flex-1 relative">
+                <Input
+                  ref={inputRef}
+                  placeholder="Type a message…"
                   value={newMessage}
-                  onChange={(e) => onNewMessageChange(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), onSendMessage())}
-                  className="h-12 rounded-2xl bg-slate-50 border-slate-200 focus-visible:bg-white focus-visible:ring-1 focus-visible:ring-blue-400 focus-visible:border-blue-400 transition-all pr-12 text-sm"
+                  onChange={e => onNewMessageChange(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), onSendMessage())}
                   disabled={isSending}
+                  className="h-11 rounded-2xl bg-slate-50 border-slate-200 pr-10 text-sm focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40 transition-all"
                 />
-                <Button 
-                  size="icon" 
-                  onClick={onSendMessage}
-                  disabled={isSending || !newMessage.trim()}
-                  className={cn(
-                    "absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl transition-all duration-300",
-                    newMessage.trim() 
-                      ? "bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/20" 
-                      : "bg-slate-100 text-slate-300"
-                  )}
-                >
-                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                </Button>
+                <button className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                  <Smile className="w-4 h-4" />
+                </button>
               </div>
+              <button
+                onClick={onSendMessage}
+                disabled={isSending || !newMessage.trim()}
+                className={cn(
+                  "flex-shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-200 mb-0",
+                  newMessage.trim()
+                    ? "bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/30 scale-100"
+                    : "bg-slate-100 text-slate-300 cursor-not-allowed"
+                )}
+              >
+                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </button>
             </div>
           </div>
         </>
       ) : (
-        <div className="flex-col items-center justify-center h-full text-center p-8 bg-white/50 backdrop-blur-sm hidden md:flex">
-          <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-blue-100 border border-white">
-            <MessageSquare className="w-10 h-10 text-blue-500" />
+        /* Empty state when no conversation selected */
+        <div className="hidden md:flex flex-col items-center justify-center h-full text-center px-8">
+          <div className="w-24 h-24 bg-white rounded-3xl border border-slate-100 flex items-center justify-center mb-6 shadow-lg shadow-slate-100">
+            <MessageSquare className="w-11 h-11 text-primary/50" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Select a conversation</h2>
-          <p className="text-slate-500 max-w-xs mx-auto leading-relaxed">
-            Choose from your existing chats on the left or start a new conversation to get started.
+          <h3 className="text-xl font-bold text-slate-800 mb-2">Your messages</h3>
+          <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
+            Select a conversation from the sidebar to start chatting, or compose a new message.
           </p>
         </div>
       )}
@@ -242,7 +299,7 @@ const ChatView = ({
   );
 };
 
-// #endregion
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 interface MessageViewProps {
   title?: string;
@@ -253,14 +310,16 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const talentId = searchParams.get("talentId");
-  
+
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
+  const [isMobileView, setIsMobileView] = useState(false);
 
+  // New message modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userSearch, setUserSearch] = useState("");
   const [searchResult, setSearchResult] = useState([]);
@@ -268,16 +327,29 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   const [formSubject, setFormSubject] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [selectedRecipientId, setSelectedRecipientId] = useState("");
-  const [isMobileView, setIsMobileView] = useState(false);
   const [preselectedUser, setPreselectedUser] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on click outside
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  const getConvId = (conv: any) => getId(conv);
+
+  // ── Responsive ────────────────────────────────────────────────────────────
+
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    const check = () => setIsMobileView(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // ── Click outside dropdown ──────────────────────────────────────────────
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsDropdownOpen(false);
       }
     };
@@ -285,7 +357,8 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Reset modal state on close
+  // ── Reset modal on close ────────────────────────────────────────────────
+
   useEffect(() => {
     if (!isModalOpen) {
       setUserSearch("");
@@ -299,14 +372,7 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     }
   }, [isModalOpen]);
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobileView(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  // ── Fetch conversations ─────────────────────────────────────────────────
 
   const fetchConversations = async () => {
     try {
@@ -314,34 +380,26 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
       if (response.data.success && Array.isArray(response.data.data)) {
         const convs = response.data.data;
         setConversations(convs);
-        
-        // Handle talentId from URL
+
         if (talentId) {
-          const existingConv = convs.find(c => 
-            c.participants?.some(p => p._id === talentId)
+          const existingConv = convs.find(c =>
+            c.participants?.some(p => getId(p) === talentId)
           );
-          
           if (existingConv) {
             setSelectedConversation(existingConv);
           } else {
-            // No existing conversation, open modal and pre-select user
             setSelectedRecipientId(talentId);
             setIsModalOpen(true);
-            
-            // Fetch user info to show in the select if not in results
             try {
               const userRes = await userAPI.getOne(talentId);
               if (userRes.data?.success) {
-                const uData = userRes.data.data;
-                setPreselectedUser(uData);
-                setSelectedRecipient(uData);
+                setPreselectedUser(userRes.data.data);
+                setSelectedRecipient(userRes.data.data);
               }
             } catch (err) {
               console.error("Failed to fetch preselected user:", err);
             }
           }
-          
-          // Clear the param after handling it to avoid re-triggering
           const newParams = new URLSearchParams(searchParams);
           newParams.delete("talentId");
           setSearchParams(newParams, { replace: true });
@@ -351,119 +409,128 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
       } else {
         setConversations([]);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to load conversations");
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchConversations();
-  }, []);
+  useEffect(() => { fetchConversations(); }, []);
+
+  // ── Socket ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      socketService.connect(token);
-    }
-    
+    const token = localStorage.getItem("token");
+    if (token) socketService.connect(token);
+
+    // new_message: fired on the RECIPIENT's socket when someone else sends a message
     const handleNewMessage = (data: any) => {
-      console.log("Socket message received:", data);
-      const message = data.message;
-      if (message && selectedConversation?._id === message.conversationId) {
+      const message = data.message ?? data;
+      if (!message) return;
+      if (getConvId(selectedConversation) === message.conversationId) {
         setMessages(prev => {
-          if (prev.some(m => m._id === message._id)) return prev;
+          if (prev.some((m: any) => m._id === message._id)) return prev;
           return [...prev, message];
         });
       }
-      
-      // Also update conversations list to show last message
-      setConversations(prev => prev.map(conv => 
-        conv._id === message.conversationId ? { ...conv, lastMessage: message } : conv
-      ));
-    }
-
-    socketService.on('new_message', handleNewMessage);
-
-    return () => {
-      socketService.off('new_message', handleNewMessage);
+      setConversations(prev =>
+        prev.map((conv: any) =>
+          getConvId(conv) === message.conversationId ? { ...conv, lastMessage: message } : conv
+        )
+      );
     };
-  }, [selectedConversation?._id]);
+
+    // message_sent: fired on the SENDER's socket as a delivery confirmation
+    const handleMessageSent = (data: any) => {
+      const message = data.message ?? data;
+      if (!message) return;
+      // Add to the message list if not already present (deduplication)
+      if (getConvId(selectedConversation) === message.conversationId) {
+        setMessages(prev => {
+          if (prev.some((m: any) => m._id === message._id)) return prev;
+          return [...prev, message];
+        });
+      }
+      // Always update the conversation's lastMessage for the sender too
+      setConversations(prev =>
+        prev.map((conv: any) =>
+          getConvId(conv) === message.conversationId ? { ...conv, lastMessage: message } : conv
+        )
+      );
+    };
+
+    socketService.on("new_message", handleNewMessage);
+    socketService.on("message_sent", handleMessageSent);
+    return () => {
+      socketService.off("new_message", handleNewMessage);
+      socketService.off("message_sent", handleMessageSent);
+    };
+  }, [selectedConversation]);
+
+  // ── Message polling ────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!selectedConversation?._id) return;
+    const convId = getConvId(selectedConversation);
+    if (!convId) return;
 
-    let isPolling = true;
+    let active = true;
     let timeoutId: NodeJS.Timeout;
-    let isRequesting = false;
+    let requesting = false;
 
-    // Fetch initial messages and set up fallback polling
-    const fetchMessagesAndPoll = async () => {
-      // If socket is connected, we rely on it for real-time updates
-      // and only poll occasionally (every 60s) as a sanity check
-      const socketConnected = socketService.isConnected();
-      const interval = socketConnected ? 60000 : 20000;
-
-      if (!isPolling || isRequesting) return;
-
-      isRequesting = true;
+    const poll = async () => {
+      if (!active || requesting) return;
+      requesting = true;
       try {
-        const response = await messagingAPI.getMessages(selectedConversation._id, { limit: 50 });
+        const response = await messagingAPI.getMessages(convId, { limit: 50 });
         if (response.data.success && Array.isArray(response.data.data)) {
-          const newMessages = response.data.data.reverse();
+          const msgs = response.data.data.reverse();
           setMessages(prev => {
-            // Use a more robust check to avoid unnecessary state updates
-            if (prev.length === newMessages.length && 
-                prev[prev.length - 1]?._id === newMessages[newMessages.length - 1]?._id) {
-              return prev;
-            }
-            return newMessages;
+            if (
+              prev.length === msgs.length &&
+              (prev as any[])[prev.length - 1]?._id === msgs[msgs.length - 1]?._id
+            ) return prev;
+            return msgs;
           });
         }
-      } catch (error) {
-        console.error("Failed to fetch messages:", error);
+      } catch (err) {
+        console.error("Failed to fetch messages:", err);
       } finally {
-        isRequesting = false;
-        if (isPolling) {
-          timeoutId = setTimeout(fetchMessagesAndPoll, interval);
+        requesting = false;
+        if (active) {
+          const interval = socketService.isConnected() ? 60000 : 20000;
+          timeoutId = setTimeout(poll, interval);
         }
       }
     };
 
-    fetchMessagesAndPoll();
-
-    // The logic below is redundant now that we have it in the separate useEffect
-    // removing to avoid multiple listeners
+    poll();
     return () => {
-      isPolling = false;
+      active = false;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [selectedConversation?._id]); // Depend on ID instead of object reference
+  }, [selectedConversation]);
+
+  // ── Send message (existing conversation) ──────────────────────────────
 
   const handleSendMessage = async () => {
-    if (!selectedConversation || !newMessage.trim()) return;
+    const convId = getConvId(selectedConversation);
+    if (!convId || !newMessage.trim()) return;
 
     setIsSending(true);
     try {
-      const response = await messagingAPI.sendMessage({
-        conversationId: selectedConversation._id,
-        text: newMessage,
-      });
-
+      const response = await messagingAPI.sendMessage({ conversationId: convId, text: newMessage });
       if (response.data.success) {
-        // Optimistically update messages if the socket hasn't yet
         setMessages(prev => {
-          if (prev.some(m => m._id === response.data.data._id)) return prev;
+          if (prev.some((m: any) => m._id === response.data.data._id)) return prev;
           return [...prev, response.data.data];
         });
         setNewMessage("");
-        
-        setConversations(conversations.map(c => 
-          c._id === selectedConversation._id ? { ...c, lastMessage: response.data.data } : c
-        ));
+        setConversations((prev: any[]) =>
+          prev.map(c => getConvId(c) === convId ? { ...c, lastMessage: response.data.data } : c)
+        );
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.status === 403) {
         toast.error("You can only message casting directors if your application is shortlisted or accepted.");
       } else {
@@ -474,33 +541,33 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     }
   };
 
+  // ── User search for new message modal ─────────────────────────────────
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      if (!isModalOpen) return;
-      setIsSearching(true);
+    if (!isModalOpen) return;
+    setIsSearching(true);
+    const id = setTimeout(async () => {
       try {
         const response = await userAPI.search({ query: userSearch, limit: 20 });
         if (response.data.success && Array.isArray(response.data.data?.users)) {
-          const users = response.data.data.users
-            .map((item) => item.user)
-            .filter((u) => u && (u._id || u.id) !== user?.id);
-          setSearchResult(users);
+          setSearchResult(
+            response.data.data.users
+              .map((item: any) => item.user)
+              .filter((u: any) => u && getId(u) !== user?.id)
+          );
         } else if (response.data.success && Array.isArray(response.data.data)) {
-          setSearchResult(response.data.data.filter((u) => (u._id || u.id) !== user?.id));
+          setSearchResult(response.data.data.filter((u: any) => getId(u) !== user?.id));
         }
-      } catch (error) {
-        console.error("User search failed:", error);
+      } catch {
+        console.error("User search failed");
       } finally {
         setIsSearching(false);
       }
-    };
-
-    const debounceId = setTimeout(() => {
-      fetchUsers();
     }, 500);
-
-    return () => clearTimeout(debounceId);
+    return () => clearTimeout(id);
   }, [isModalOpen, userSearch, user?.id]);
+
+  // ── Send first message (new conversation via modal) ────────────────────
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -509,29 +576,24 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
       return;
     }
 
-    setIsSending(true);                            
+    setIsSending(true);
     try {
       const convRes = await messagingAPI.getOrCreateConversation(selectedRecipientId);
-
-      // DEBUG: log the actual shape so we can fix the extractor if needed
       console.log("[MessageView] getOrCreateConversation response:", JSON.stringify(convRes.data, null, 2));
 
       if (convRes.data.success) {
         const raw = convRes.data.data;
 
-        // Walk every known response shape to find the conversation object & its ID
+        // Walk every known response shape to resolve conversation & its ID
         const conversation =
-          raw?.conversation ??   // { data: { conversation: {...} } }
-          (raw?._id ? raw : null) ??  // { data: { _id, participants, ... } }
-          (raw?.id ? raw : null) ??   // { data: { id, participants, ... } }
+          (raw?.conversation?._id || raw?.conversation?.id ? raw.conversation : null) ??
+          (raw?._id || raw?.id ? raw : null) ??
           null;
 
         const conversationId =
-          conversation?._id ??
-          conversation?.id ??
-          raw?.conversationId ??   // { data: { conversationId: "..." } }
-          raw?._id ??
-          raw?.id ??
+          getId(conversation) ??
+          raw?.conversationId ??
+          getId(raw) ??
           null;
 
         console.log("[MessageView] resolved conversationId:", conversationId);
@@ -543,15 +605,12 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
         }
 
         const messageText = formSubject ? `Subject: ${formSubject}\n\n${formMessage}` : formMessage;
-        const msgRes = await messagingAPI.sendMessage({
-          conversationId,
-          text: messageText,
-        });
+        const msgRes = await messagingAPI.sendMessage({ conversationId, text: messageText });
 
         if (msgRes.data.success) {
           const resolvedConversation = conversation ?? { _id: conversationId };
-          if (!conversations.some(c => c._id === conversationId)) {
-            setConversations([resolvedConversation, ...conversations]);
+          if (!conversations.some((c: any) => getConvId(c) === conversationId)) {
+            setConversations((prev: any[]) => [resolvedConversation, ...prev]);
           }
           setSelectedConversation(resolvedConversation);
           setMessages(prev => [...prev, msgRes.data.data]);
@@ -571,6 +630,7 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     }
   };
 
+  // ── Render ─────────────────────────────────────────────────────────────
 
   if (isLoading) {
     return (
@@ -581,178 +641,155 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   }
 
   return (
-    <div className="flex flex-col h-full md:h-screen md:gap-4">
-      <div className="flex items-center justify-between mb-2 px-4 pt-4 md:px-0 md:pt-0">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
-          {subtitle && <p className="text-slate-500 text-sm">{subtitle}</p>}
-        </div>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 text-white gap-2 shadow-md shadow-primary/20">
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New Message</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-[#F1FBFB] border-none">
-            <div className="p-6 space-y-6">
-              <div className="space-y-1">
-                <DialogTitle className="text-xl font-bold">Start New Conversation</DialogTitle>
-                <DialogDescription className="text-sm text-slate-600">
-                  Send a message to a industry professional
-                </DialogDescription>
-              </div>
+    <div className="flex flex-col h-full md:h-screen">
+      {/* New Message Dialog */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogTrigger className="hidden" />
+        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border-none rounded-2xl">
+          <div className="bg-gradient-to-br from-primary/5 to-primary/10 px-6 pt-6 pb-4 border-b border-slate-100">
+            <DialogTitle className="text-lg font-bold text-slate-900">New Message</DialogTitle>
+            <DialogDescription className="text-sm text-slate-500 mt-0.5">
+              Start a conversation with an industry professional
+            </DialogDescription>
+          </div>
+          <div className="p-6 space-y-4 bg-white">
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              {/* Recipient picker */}
+              <div className="space-y-1.5 relative" ref={dropdownRef}>
+                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">To</Label>
+                <button
+                  type="button"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl h-11 px-3.5 text-sm text-left hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                >
+                  {selectedRecipient ? (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={selectedRecipient.profilePicture} />
+                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">
+                          {selectedRecipient.fullName?.[0] || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-semibold text-slate-800">{selectedRecipient.fullName}</span>
+                      <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full capitalize">
+                        {selectedRecipient.role?.replace("_", " ")}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-slate-400">Select recipient…</span>
+                  )}
+                  <ChevronDown className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                </button>
 
-              <form onSubmit={handleFormSubmit} className="space-y-4">
-                <div className="space-y-2 relative" ref={dropdownRef}>
-                  <Label htmlFor="recipient" className="text-sm font-semibold">Recipient</Label>
-                  <button
-                    type="button"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full flex items-center justify-between bg-white border border-slate-300 rounded-lg h-11 px-3 text-sm text-left focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                  >
-                    {selectedRecipient ? (
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-5 w-5">
-                          <AvatarImage src={selectedRecipient.profilePicture} />
-                          <AvatarFallback className="text-[10px]">{selectedRecipient.fullName?.[0] || "?"}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium text-slate-700">{selectedRecipient.fullName}</span>
-                        <span className="text-[10px] text-slate-400 uppercase">({selectedRecipient.role?.replace('_', ' ')})</span>
-                      </div>
-                    ) : (
-                      <span className="text-slate-400">Select recipient</span>
-                    )}
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </button>
-
-                  {isDropdownOpen && (
-                    <div className="absolute z-[100] mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-lg max-h-[300px] overflow-hidden flex flex-col">
-                      <div className="p-2 border-b border-slate-100 flex-shrink-0">
-                        <div className="relative">
-                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                          <Input 
-                            placeholder="Search users..." 
-                            className="h-9 pl-9 text-xs bg-slate-50 border-none rounded-md"
-                            value={userSearch}
-                            onChange={(e) => setUserSearch(e.target.value)}
-                            autoFocus
-                          />
-                        </div>
-                      </div>
-                      <div className="overflow-y-auto flex-1 max-h-[220px]">
-                        {isSearching ? (
-                          <div className="p-4 text-center">
-                            <Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" />
-                          </div>
-                        ) : (
-                          <div className="p-1 space-y-0.5">
-                            {/* Show preselected user if not in search results */}
-                            {preselectedUser && !searchResult.some(u => (u._id || u.id) === (preselectedUser._id || preselectedUser.id)) && (
-                              <button
-                                type="button"
-                                key={preselectedUser._id || preselectedUser.id}
-                                onClick={() => {
-                                  setSelectedRecipientId(preselectedUser._id || preselectedUser.id);
-                                  setSelectedRecipient(preselectedUser);
-                                  setIsDropdownOpen(false);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-50 rounded-md transition-colors"
-                              >
-                                <Avatar className="h-5 w-5">
-                                  <AvatarImage src={preselectedUser.profilePicture} />
-                                  <AvatarFallback className="text-[10px]">{preselectedUser.fullName?.[0] || "?"}</AvatarFallback>
-                                </Avatar>
-                                <span className="font-medium text-slate-700">{preselectedUser.fullName}</span>
-                                <span className="text-[10px] text-slate-400 uppercase">({preselectedUser.role?.replace('_', ' ')})</span>
-                              </button>
-                            )}
-                            
-                            {searchResult.length > 0 ? (
-                              searchResult.map((u) => (
-                                <button
-                                  type="button"
-                                  key={u._id || u.id}
-                                  onClick={() => {
-                                    setSelectedRecipientId(u._id || u.id);
-                                    setSelectedRecipient(u);
-                                    setIsDropdownOpen(false);
-                                  }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-slate-50 rounded-md transition-colors"
-                                >
-                                  <Avatar className="h-5 w-5">
-                                    <AvatarImage src={u.profilePicture} />
-                                    <AvatarFallback className="text-[10px]">{u.fullName?.[0] || "?"}</AvatarFallback>
-                                  </Avatar>
-                                  <span className="font-medium text-slate-700">{u.fullName}</span>
-                                  <span className="text-[10px] text-slate-400 uppercase">({u.role?.replace('_', ' ')})</span>
-                                </button>
-                              ))
-                            ) : !preselectedUser && (
-                              <div className="p-4 text-center text-xs text-slate-500">No users found</div>
-                            )}
-                          </div>
-                        )}
+                {isDropdownOpen && (
+                  <div className="absolute z-[100] mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+                    <div className="p-2 border-b border-slate-100">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                        <Input
+                          placeholder="Search users…"
+                          className="h-8 pl-8 text-xs bg-slate-50 border-none rounded-lg focus-visible:ring-0"
+                          value={userSearch}
+                          onChange={e => setUserSearch(e.target.value)}
+                          autoFocus
+                        />
                       </div>
                     </div>
-                  )}
-                </div>
+                    <div className="max-h-[200px] overflow-y-auto p-1">
+                      {isSearching ? (
+                        <div className="p-4 text-center">
+                          <Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" />
+                        </div>
+                      ) : (
+                        <>
+                          {preselectedUser && !searchResult.some((u: any) => getId(u) === getId(preselectedUser)) && (
+                            <RecipientOption
+                              user={preselectedUser}
+                              onClick={() => {
+                                setSelectedRecipientId(getId(preselectedUser));
+                                setSelectedRecipient(preselectedUser);
+                                setIsDropdownOpen(false);
+                              }}
+                            />
+                          )}
+                          {searchResult.length > 0 ? (
+                            searchResult.map((u: any) => (
+                              <RecipientOption
+                                key={getId(u)}
+                                user={u}
+                                onClick={() => {
+                                  setSelectedRecipientId(getId(u));
+                                  setSelectedRecipient(u);
+                                  setIsDropdownOpen(false);
+                                }}
+                              />
+                            ))
+                          ) : !preselectedUser ? (
+                            <p className="text-center text-xs text-slate-400 py-4">No users found</p>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="subject" className="text-sm font-semibold">Subject</Label>
-                  <Input 
-                    id="subject"
-                    placeholder="Enter Subject" 
-                    className="bg-white border-slate-300 rounded-lg h-11"
-                    value={formSubject}
-                    onChange={(e) => setFormSubject(e.target.value)}
-                  />
-                </div>
+              {/* Subject */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Subject</Label>
+                <Input
+                  placeholder="e.g. Regarding your casting call…"
+                  className="h-11 bg-slate-50 border-slate-200 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40"
+                  value={formSubject}
+                  onChange={e => setFormSubject(e.target.value)}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="message" className="text-sm font-semibold">Message</Label>
-                  <Textarea 
-                    id="message"
-                    placeholder="Type your message" 
-                    className="bg-white border-slate-300 rounded-xl min-h-[120px] resize-none"
-                    value={formMessage}
-                    onChange={(e) => setFormMessage(e.target.value)}
-                  />
-                </div>
+              {/* Message */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Message</Label>
+                <Textarea
+                  placeholder="Write your message…"
+                  className="bg-slate-50 border-slate-200 rounded-xl min-h-[110px] resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40"
+                  value={formMessage}
+                  onChange={e => setFormMessage(e.target.value)}
+                />
+              </div>
 
-                <div className="flex justify-end gap-3 pt-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg px-6"
-                    onClick={() => setIsModalOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    className="bg-primary hover:bg-primary/90 text-white rounded-lg px-6"
-                    disabled={isSending}
-                  >
-                    {isSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Send Message
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="h-screen grid md:grid-cols-[320px_1fr] flex-1 animate-fade-in md:border md:border-slate-200 md:rounded-xl overflow-hidden md:shadow-sm bg-white">
-        <Sidebar 
+              <div className="flex gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="flex-1 h-11 rounded-xl text-slate-600 hover:bg-slate-100"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 h-11 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold shadow-md shadow-primary/20"
+                  disabled={isSending}
+                >
+                  {isSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                  Send
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Main layout */}
+      <div className="flex-1 grid md:grid-cols-[300px_1fr] overflow-hidden rounded-xl border border-slate-200 shadow-sm bg-white animate-fade-in">
+        <Sidebar
           conversations={conversations}
           selectedConversation={selectedConversation}
           onSelectConversation={setSelectedConversation}
           user={user}
           isMobileView={isMobileView}
-          title={title}
+          onNewMessage={() => setIsModalOpen(true)}
         />
-        <ChatView 
+        <ChatView
           selectedConversation={selectedConversation}
           messages={messages}
           user={user}
@@ -765,5 +802,28 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
         />
       </div>
     </div>
+  );
+}
+
+// ─── Recipient Option (small reusable piece) ─────────────────────────────────
+
+function RecipientOption({ user, onClick }: { user: any; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-slate-50 rounded-lg transition-colors"
+    >
+      <Avatar className="h-7 w-7 flex-shrink-0">
+        <AvatarImage src={user.profilePicture} />
+        <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">
+          {user.fullName?.[0] || "?"}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0">
+        <p className="font-semibold text-slate-800 truncate text-sm">{user.fullName}</p>
+        <p className="text-[10px] text-slate-400 capitalize">{user.role?.replace("_", " ")}</p>
+      </div>
+    </button>
   );
 }

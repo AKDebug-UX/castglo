@@ -32,12 +32,14 @@ export default function Notifications() {
   }, []);
 
   const handleMarkAsRead = async (id: string) => {
+    if (!id) return; // guard against undefined
     try {
       const response = await notificationAPI.markRead(id);
       if (response.data.success && Array.isArray(notifications)) {
-        setNotifications(notifications.map(n => 
-          n._id === id ? { ...n, isRead: true } : n
-        ));
+        setNotifications(notifications.map(n => {
+          const nId = n._id || n.id;
+          return nId === id ? { ...n, isRead: true } : n;
+        }));
       }
     } catch (error) {
       toast.error("Failed to mark notification as read");
@@ -93,7 +95,7 @@ export default function Notifications() {
             <div className="divide-y divide-border">
               {notifications.map((notification) => (
                 <div 
-                  key={notification._id} 
+                  key={notification._id || notification.id} 
                   className={cn(
                     "flex items-start gap-4 p-4 transition-colors hover:bg-muted/50",
                     !notification.isRead && "bg-primary/5"
@@ -127,7 +129,7 @@ export default function Notifications() {
                           variant="ghost" 
                           size="sm" 
                           className="h-8 text-xs text-primary hover:text-primary hover:bg-primary/10 p-0"
-                          onClick={() => handleMarkAsRead(notification._id)}
+                          onClick={() => handleMarkAsRead(notification._id || notification.id)}
                         >
                           Mark as read
                         </Button>
