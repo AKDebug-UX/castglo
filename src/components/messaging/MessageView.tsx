@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Send, Loader2, MessageSquare, Search, ChevronLeft, ChevronDown, Smile, Paperclip, Phone, Video, MoreHorizontal, Check, CheckCheck } from "lucide-react";
+import { Plus, Send, Loader2, MessageSquare, Search, ChevronLeft, ChevronDown, Smile, Paperclip, Phone, Video, MoreHorizontal, Check, CheckCheck, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { messagingAPI, userAPI } from "@/lib/api";
 import { socketService } from "@/lib/socket";
@@ -19,7 +19,7 @@ const getId = (obj: any): string | undefined => obj?._id || obj?.id;
 
 // ─── Sidebar ────────────────────────────────────────────────────────────────
 
-const Sidebar = ({ conversations, selectedConversation, onSelectConversation, user, isMobileView, onNewMessage }) => {
+const Sidebar = ({ conversations, selectedConversation, onSelectConversation, user, isMobileView, onNewMessage, onRefresh, isRefreshing }) => {
   const [search, setSearch] = useState("");
 
   const filtered = conversations.filter(conv => {
@@ -36,13 +36,23 @@ const Sidebar = ({ conversations, selectedConversation, onSelectConversation, us
       <div className="px-4 py-4 border-b border-slate-100">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-slate-900">Messages</h2>
-          <button
-            onClick={onNewMessage}
-            className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-200"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            New
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="flex items-center justify-center p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+              title="Refresh messages"
+            >
+              <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+            </button>
+            <button
+              onClick={onNewMessage}
+              className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold px-3 py-1.5 rounded-full transition-all duration-200"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              New
+            </button>
+          </div>
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
@@ -120,7 +130,7 @@ const Sidebar = ({ conversations, selectedConversation, onSelectConversation, us
 
 // ─── Chat View ───────────────────────────────────────────────────────────────
 
-const ChatView = ({ selectedConversation, messages, user, isMobileView, onDeselectConversation, isSending, newMessage, onNewMessageChange, onSendMessage }) => {
+const ChatView = ({ selectedConversation, messages, user, isMobileView, onDeselectConversation, isSending, newMessage, onNewMessageChange, onSendMessage, onRefresh, isRefreshing }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -160,6 +170,14 @@ const ChatView = ({ selectedConversation, messages, user, isMobileView, onDesele
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <button
+                onClick={onRefresh}
+                disabled={isRefreshing}
+                className="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700"
+                title="Refresh messages"
+              >
+                <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+              </button>
               <button className="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700">
                 <Phone className="w-4 h-4" />
               </button>
@@ -318,6 +336,32 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
   const [isSending, setIsSending] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [isMobileView, setIsMobileView] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    const convId = getConvId(selectedConversation);
+    setIsRefreshing(true);
+    try {
+      const convResponse = await messagingAPI.getMyConversations();
+      if (convResponse.data.success && Array.isArray(convResponse.data.data)) {
+        setConversations(convResponse.data.data);
+      }
+
+      if (convId) {
+        const msgResponse = await messagingAPI.getMessages(convId, { limit: 50 });
+        if (msgResponse.data.success && Array.isArray(msgResponse.data.data)) {
+          const msgs = msgResponse.data.data.reverse();
+          setMessages(msgs);
+        }
+      }
+      toast.success("Messages refreshed");
+    } catch (err) {
+      console.error("Failed to refresh messages:", err);
+      toast.error("Failed to refresh messages");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // New message modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -788,6 +832,8 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
           user={user}
           isMobileView={isMobileView}
           onNewMessage={() => setIsModalOpen(true)}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
         />
         <ChatView
           selectedConversation={selectedConversation}
@@ -799,6 +845,8 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
           newMessage={newMessage}
           onNewMessageChange={setNewMessage}
           onSendMessage={handleSendMessage}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
         />
       </div>
     </div>
