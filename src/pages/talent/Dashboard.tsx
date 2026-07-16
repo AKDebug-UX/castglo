@@ -172,40 +172,42 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {upcomingCastings.length > 0 ? upcomingCastings.map((casting, index) => (
-              <div key={casting._id || casting.id || index} className="rounded-lg border border-border overflow-hidden card-elevated">
-                <div className="relative h-40">
-                  <img 
-                    src={resolveMediaUrl(getProjectCoverImage(casting)) || "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=400"} 
-                    alt={casting.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <Badge className="absolute top-2 right-2 bg-primary">{casting.category}</Badge>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold mb-1">{casting.title}</h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{casting.description || "No description available"}</p>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {formatLocation(casting.location)}
-                    </span>
-                    {casting.deadline && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        Deadline: {new Date(casting.deadline).toLocaleDateString()}
-                      </span>
-                    )}
+            {upcomingCastings.length > 0 ? (
+              upcomingCastings.map((casting, index) => (
+                <div key={casting._id || casting.id || index} className="rounded-lg border border-border overflow-hidden card-elevated">
+                  <div className="relative h-40">
+                    <img 
+                      src={resolveMediaUrl(getProjectCoverImage(casting)) || "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=400"} 
+                      alt={casting.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <Badge className="absolute top-2 right-2 bg-primary">{casting.category}</Badge>
                   </div>
-                  <Button size="sm" asChild>
-                    <Link to={`/talent/browse-cast/${casting._id || casting.id}`}>
-                      View Details
-                      <ArrowUpRight className="w-3 h-3 ml-1" />
-                    </Link>
-                  </Button>
+                  <div className="p-4">
+                    <h3 className="font-semibold mb-1">{casting.title}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{casting.description || "No description available"}</p>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {formatLocation(casting.location)}
+                      </span>
+                      {casting.deadline && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          Deadline: {new Date(casting.deadline).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    <Button size="sm" asChild>
+                      <Link to={`/talent/browse-cast/${casting._id || casting.id}`}>
+                        View Details
+                        <ArrowUpRight className="w-3 h-3 ml-1" />
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )) : (
+              ))
+            ) : (
               <div className="col-span-full py-8 text-center border-2 border-dashed border-muted rounded-lg">
                 <p className="text-muted-foreground">No upcoming casting calls at the moment.</p>
                 <Button variant="link" size="sm" asChild>

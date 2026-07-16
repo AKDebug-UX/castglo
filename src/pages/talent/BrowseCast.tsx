@@ -39,18 +39,11 @@ export default function BrowseCast() {
       const params: any = { 
         page: pageNumber,
         limit: 12,
-        sortBy: "createdAt",
-        order: "desc",
       };
       
       if (search && search.trim()) params.search = search.trim();
-      if (status !== "all") {
-        if (status === "newest") {
-          params.sortBy = "createdAt";
-          params.order = "desc";
-        } else {
-          params.status = status;
-        }
+      if (status !== "all" && status !== "newest") {
+        params.status = status;
       }
       if (location !== "all") params.location = location;
       if (genre !== "all") params.productionType = genre; // Backend often uses productionType for genre/category
@@ -219,7 +212,6 @@ export default function BrowseCast() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="newest">Newest</SelectItem>
                   <SelectItem value="open">Open</SelectItem>
                   <SelectItem value="closing">Closing Soon</SelectItem>
                   <SelectItem value="closed">Closed</SelectItem>

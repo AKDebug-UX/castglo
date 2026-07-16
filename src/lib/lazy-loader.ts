@@ -15,17 +15,15 @@ export function safeLazy<T extends ComponentType<any>>(
     } catch (error) {
       console.error("Chunk load error detected, attempting to reload...", error);
       
-      // We only want to reload if we haven't already reloaded for this session
-      // to avoid infinite loops if the chunk is truly missing or server is down.
-      const hasReloaded = window.sessionStorage.getItem("chunk_load_reload");
+      // Prevent infinite loops by only reloading if the last reload was more than 10 seconds ago.
+      const now = Date.now();
+      const lastReloadTime = window.sessionStorage.getItem("chunk_load_reload_time");
       
-      if (!hasReloaded) {
-        window.sessionStorage.setItem("chunk_load_reload", "true");
+      if (!lastReloadTime || now - parseInt(lastReloadTime, 10) > 10000) {
+        window.sessionStorage.setItem("chunk_load_reload_time", now.toString());
         window.location.reload();
       }
       
-      // Fallback: If it's still failing after reload, we let the error bubble
-      // up to be caught by an ErrorBoundary if one exists.
       throw error;
     }
   });

@@ -18,7 +18,7 @@ export const API_ENDPOINTS = {
     UNSUSPEND_USER: (userId: string) => `/admin/users/${userId}/unsuspend`,
     LEADS: '/admin/leads',
     SUBSCRIPTIONS: '/admin/subscriptions',
-    CASTING_CALLS_PENDING: '/admin/casting-calls/pending',
+    CASTING_CALLS_PENDING: '/admin/casting-calls',
     APPROVE_CASTING_CALL: (id: string) => `/admin/casting-calls/${id}/approve`,
     REJECT_CASTING_CALL: (id: string) => `/admin/casting-calls/${id}/reject`,
   },
