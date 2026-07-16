@@ -205,7 +205,7 @@ export default function ProfessionalSettings() {
             <TabsTrigger value="overview" className="flex-1 rounded-xl text-sm font-semibold transition-all">Overview</TabsTrigger>
             <TabsTrigger value="notifications" className="flex-1 rounded-xl text-sm font-semibold transition-all">Notifications</TabsTrigger>
             <TabsTrigger value="subscription" className="flex-1 rounded-xl text-sm font-semibold transition-all">Subscription</TabsTrigger>
-            <TabsTrigger value="payments" className="flex-1 rounded-xl text-sm font-semibold transition-all">Payments</TabsTrigger>
+
             <TabsTrigger value="history" className="flex-1 rounded-xl text-sm font-semibold transition-all">History</TabsTrigger>
             <TabsTrigger value="security" className="flex-1 rounded-xl text-sm font-semibold transition-all">Security</TabsTrigger>
           </TabsList>
@@ -399,52 +399,7 @@ export default function ProfessionalSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="payments" className="mt-6">
-          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-primary" />
-                Payment Methods
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Manage your saved cards and billing information</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {paymentMethods.length > 0 ? (
-                <div className="grid gap-3">
-                  {paymentMethods.map((card, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 rounded-xl border bg-slate-50/50">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-6 bg-slate-200 rounded flex items-center justify-center">
-                          <CreditCard className="w-5 h-5 text-slate-500" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">{card.brand ? card.brand.toUpperCase() : "CARD"} •••• {card.last4}</p>
-                          <p className="text-xs text-muted-foreground">Expires {card.expMonth}/{card.expYear}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDeletePaymentMethod(card.id)} disabled={isSaving}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" asChild>
-                          <a href="/pricing">Update</a>
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-8 border-2 border-dashed rounded-xl text-center">
-                  <CreditCard className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
-                  <p className="text-sm text-muted-foreground mb-4">No payment cards added yet</p>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href="/pricing">Add Card</a>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+
 
         <TabsContent value="history" className="mt-6">
           <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">

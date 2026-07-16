@@ -155,7 +155,7 @@ export default function BrowseTalents() {
                     </div>
 
                     <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
-                      {talent.talentProfile.shortBio || "No bio provided."}
+                      {talent.talentProfile?.shortBio || "No bio provided."}
                     </p>
 
                     <div className="flex gap-2 mt-4">
@@ -194,7 +194,7 @@ export default function BrowseTalents() {
 
                               <div>
                                 <h4 className="font-medium mb-1">About</h4>
-                                <p className="text-sm text-muted-foreground">{selectedTalent.talentProfile.shortBio || "No bio provided."}</p>
+                                <p className="text-sm text-muted-foreground">{selectedTalent.talentProfile?.shortBio || "No bio provided."}</p>
                               </div>
 
                               {selectedTalent.skills?.length > 0 && (
