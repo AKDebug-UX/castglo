@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Check, X, Inbox } from 'lucide-react';
+import { Loader2, Check, X, Inbox, Zap, Send, Trash2, Archive } from 'lucide-react';
 import { toast } from 'sonner';
-import { adminAPI } from '@/lib/api';
+import { adminAPI, castingCallAPI } from '@/lib/api';
 
 export default function AdminCastingCallsPending() {
   const [castingCalls, setCastingCalls] = useState([]);
@@ -81,6 +81,55 @@ export default function AdminCastingCallsPending() {
     }
   };
 
+  const handleClose = async (id: string) => {
+    try {
+      const response = await castingCallAPI.close(id);
+      if (response.data?.success) {
+        toast.success('Casting call taken down / closed');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to close casting call');
+    }
+  };
+
+  const handleBoost = async (id: string) => {
+    try {
+      const response = await castingCallAPI.boost(id);
+      if (response.data?.success) {
+        toast.success('Casting call boosted successfully');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to boost casting call');
+    }
+  };
+
+  const handleInstantPost = async (id: string) => {
+    try {
+      const response = await castingCallAPI.instantPost(id);
+      if (response.data?.success) {
+        toast.success('Casting call published instantly');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to instantly publish casting call');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to permanently delete this casting call?')) return;
+    try {
+      const response = await castingCallAPI.delete(id);
+      if (response.data?.success) {
+        toast.success('Casting call deleted successfully');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete casting call');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -148,30 +197,46 @@ export default function AdminCastingCallsPending() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-2">
-                              {/* Show Approve button if it's pending, pending_approval, or rejected */}
-                              {(isPending || statusLower === 'rejected' || statusLower === 'disapproved') && (
-                                <Button variant="ghost" size="icon" onClick={() => handleApprove(call._id || call.id)} title="Approve">
+                            <div className="flex gap-1.5 items-center">
+                              {/* Approve Button (Approve Pending / Rejected / Closed) */}
+                              {(isPending || statusLower === 'rejected' || statusLower === 'closed') && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-green-50" onClick={() => handleApprove(call._id || call.id)} title="Approve / Re-activate">
                                   <Check className="w-4 h-4 text-green-600" />
                                 </Button>
                               )}
-                              {/* Show Reject/Disapprove button if it's pending, pending_approval, approved, open, published, active, or live */}
-                              {(isPending || statusLower === 'open' || statusLower === 'approved' || statusLower === 'published' || statusLower === 'active' || statusLower === 'live') && (
-                                <Button variant="ghost" size="icon" onClick={() => handleReject(call._id || call.id)} title="Reject / Disapprove">
+
+                              {/* Reject Button (Only for Pending) */}
+                              {isPending && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-red-50" onClick={() => handleReject(call._id || call.id)} title="Reject">
                                   <X className="w-4 h-4 text-red-600" />
                                 </Button>
                               )}
-                              {/* Fallback if no actions are available */}
-                              {!(isPending || 
-                                 statusLower === 'rejected' || 
-                                 statusLower === 'disapproved' ||
-                                 statusLower === 'open' || 
-                                 statusLower === 'approved' || 
-                                 statusLower === 'published' || 
-                                 statusLower === 'active' || 
-                                 statusLower === 'live') && (
-                                <span className="text-xs text-muted-foreground">N/A</span>
+
+                              {/* Close / Take Down Button (For active/published/open) */}
+                              {(statusLower === 'open' || statusLower === 'approved' || statusLower === 'published' || statusLower === 'active' || statusLower === 'live') && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-amber-50" onClick={() => handleClose(call._id || call.id)} title="Close / Take Down">
+                                  <Archive className="w-4 h-4 text-amber-600" />
+                                </Button>
                               )}
+
+                              {/* Instant Post Button (For Pending) */}
+                              {isPending && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-50" onClick={() => handleInstantPost(call._id || call.id)} title="Instant Publish">
+                                  <Send className="w-4 h-4 text-blue-600" />
+                                </Button>
+                              )}
+
+                              {/* Boost Button (For active/published/open) */}
+                              {(statusLower === 'open' || statusLower === 'approved' || statusLower === 'published' || statusLower === 'active' || statusLower === 'live') && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-yellow-50" onClick={() => handleBoost(call._id || call.id)} title="Boost Listing">
+                                  <Zap className="w-4 h-4 text-yellow-600 fill-yellow-600" />
+                                </Button>
+                              )}
+
+                              {/* Delete Button (Always available to Admin) */}
+                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-red-50" onClick={() => handleDelete(call._id || call.id)} title="Delete Casting Call">
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
