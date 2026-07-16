@@ -65,7 +65,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to approve casting call');
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to approve casting call');
     }
   };
 
@@ -77,7 +77,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to reject casting call');
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to reject casting call');
     }
   };
 
@@ -89,7 +89,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to close casting call');
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to close casting call');
     }
   };
 
@@ -101,7 +101,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to boost casting call');
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to boost casting call');
     }
   };
 
@@ -113,7 +113,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to instantly publish casting call');
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to instantly publish casting call');
     }
   };
 
@@ -126,7 +126,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to delete casting call');
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to delete casting call');
     }
   };
 
