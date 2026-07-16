@@ -137,7 +137,7 @@ export default function AdminCastingCallsPending() {
                           <TableCell>
                             <Badge 
                               className={
-                                statusLower === 'open' || statusLower === 'approved' ? 'bg-green-100 text-green-800 hover:bg-green-200 border-none' :
+                                statusLower === 'open' || statusLower === 'approved' || statusLower === 'published' || statusLower === 'active' || statusLower === 'live' ? 'bg-green-100 text-green-800 hover:bg-green-200 border-none' :
                                 isPending ? 'bg-amber-100 text-amber-800 hover:bg-amber-200 border-none' :
                                 statusLower === 'rejected' ? 'bg-red-100 text-red-800 hover:bg-red-200 border-none' :
                                 'bg-slate-100 text-slate-800 hover:bg-slate-200 border-none'
@@ -150,19 +150,26 @@ export default function AdminCastingCallsPending() {
                           <TableCell>
                             <div className="flex gap-2">
                               {/* Show Approve button if it's pending, pending_approval, or rejected */}
-                              {(isPending || statusLower === 'rejected') && (
+                              {(isPending || statusLower === 'rejected' || statusLower === 'disapproved') && (
                                 <Button variant="ghost" size="icon" onClick={() => handleApprove(call._id || call.id)} title="Approve">
                                   <Check className="w-4 h-4 text-green-600" />
                                 </Button>
                               )}
-                              {/* Show Reject/Disapprove button if it's pending, pending_approval, approved, or open */}
-                              {(isPending || statusLower === 'open' || statusLower === 'approved') && (
+                              {/* Show Reject/Disapprove button if it's pending, pending_approval, approved, open, published, active, or live */}
+                              {(isPending || statusLower === 'open' || statusLower === 'approved' || statusLower === 'published' || statusLower === 'active' || statusLower === 'live') && (
                                 <Button variant="ghost" size="icon" onClick={() => handleReject(call._id || call.id)} title="Reject / Disapprove">
                                   <X className="w-4 h-4 text-red-600" />
                                 </Button>
                               )}
                               {/* Fallback if no actions are available */}
-                              {!(isPending || statusLower === 'rejected' || statusLower === 'open' || statusLower === 'approved') && (
+                              {!(isPending || 
+                                 statusLower === 'rejected' || 
+                                 statusLower === 'disapproved' ||
+                                 statusLower === 'open' || 
+                                 statusLower === 'approved' || 
+                                 statusLower === 'published' || 
+                                 statusLower === 'active' || 
+                                 statusLower === 'live') && (
                                 <span className="text-xs text-muted-foreground">N/A</span>
                               )}
                             </div>
