@@ -18,7 +18,16 @@ export default function AdminLeads() {
     try {
       const response = await adminLeadsAPI.getAll();
       if (response.data?.success) {
-        setLeads(response.data.data || []);
+        const rawData = response.data.data;
+        if (Array.isArray(rawData)) {
+          setLeads(rawData);
+        } else if (rawData && Array.isArray(rawData.leads)) {
+          setLeads(rawData.leads);
+        } else if (rawData && Array.isArray(rawData.data)) {
+          setLeads(rawData.data);
+        } else {
+          setLeads([]);
+        }
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to fetch leads');

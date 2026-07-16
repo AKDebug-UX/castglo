@@ -92,6 +92,7 @@ const AdminBookings = lazy(() => import("./pages/admin/AdminBookings"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const VerificationManagement = lazy(() => import("./pages/admin/VerificationManagement"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminSubscriptions = lazy(() => import("./pages/admin/AdminSubscriptions"));
 const AdminCastingCallsPending = lazy(() => import("./pages/admin/AdminCastingCallsPending"));
@@ -294,6 +295,7 @@ const App = () => {
                 }
               >
                 <Route index element={<AdminDashboard />} />
+                <Route path="profile" element={<AdminProfile />} />
                 <Route path="moderation" element={<ModerationQueue />} />
                 <Route path="analytics" element={<AdminAnalytics />} />
                 <Route path="users" element={<UsersManagement />} />

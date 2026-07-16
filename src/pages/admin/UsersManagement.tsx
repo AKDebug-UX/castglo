@@ -205,8 +205,8 @@ export default function UsersManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user._id}>
+                {users.map((user, index) => (
+                  <TableRow key={user._id || user.id || index}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">

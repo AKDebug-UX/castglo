@@ -15,7 +15,16 @@ export default function AdminSubscriptions() {
     try {
       const response = await adminAPI.getSubscriptions();
       if (response.data?.success) {
-        setSubscriptions(response.data.data || []);
+        const rawData = response.data.data;
+        if (Array.isArray(rawData)) {
+          setSubscriptions(rawData);
+        } else if (rawData && Array.isArray(rawData.subscriptions)) {
+          setSubscriptions(rawData.subscriptions);
+        } else if (rawData && Array.isArray(rawData.data)) {
+          setSubscriptions(rawData.data);
+        } else {
+          setSubscriptions([]);
+        }
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to fetch subscriptions');
@@ -64,8 +73,8 @@ export default function AdminSubscriptions() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {subscriptions.map((sub: any) => (
-                  <TableRow key={sub._id || sub.id}>
+                {subscriptions.map((sub: any, index: number) => (
+                  <TableRow key={sub._id || sub.id || index}>
                     <TableCell className="font-medium">{sub.user?.name || sub.userId || 'N/A'}</TableCell>
                     <TableCell>{sub.plan?.name || sub.planId || 'Standard'}</TableCell>
                     <TableCell>

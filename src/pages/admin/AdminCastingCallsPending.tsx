@@ -15,7 +15,18 @@ export default function AdminCastingCallsPending() {
     try {
       const response = await adminAPI.getPendingCastingCalls();
       if (response.data?.success) {
-        setCastingCalls(response.data.data || []);
+        const rawData = response.data.data;
+        if (Array.isArray(rawData)) {
+          setCastingCalls(rawData);
+        } else if (rawData && Array.isArray(rawData.castingCalls)) {
+          setCastingCalls(rawData.castingCalls);
+        } else if (rawData && Array.isArray(rawData.pendingCastingCalls)) {
+          setCastingCalls(rawData.pendingCastingCalls);
+        } else if (rawData && Array.isArray(rawData.data)) {
+          setCastingCalls(rawData.data);
+        } else {
+          setCastingCalls([]);
+        }
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to fetch pending casting calls');
@@ -86,8 +97,8 @@ export default function AdminCastingCallsPending() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {castingCalls.map((call: any) => (
-                  <TableRow key={call._id || call.id}>
+                {castingCalls.map((call: any, index: number) => (
+                  <TableRow key={call._id || call.id || index}>
                     <TableCell className="font-medium">{call.title || 'Untitled Project'}</TableCell>
                     <TableCell>{call.director?.name || call.createdBy?.name || 'Unknown'}</TableCell>
                     <TableCell>{call.projectType || 'N/A'}</TableCell>

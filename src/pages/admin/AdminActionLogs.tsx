@@ -15,7 +15,18 @@ export default function AdminActionLogs() {
       // Fetching up to 50 logs for the full page view
       const response = await adminAPI.getActionLogs({ limit: 50 });
       if (response.data?.success) {
-        setLogs(response.data.data || []);
+        const rawData = response.data.data;
+        if (Array.isArray(rawData)) {
+          setLogs(rawData);
+        } else if (rawData && Array.isArray(rawData.logs)) {
+          setLogs(rawData.logs);
+        } else if (rawData && Array.isArray(rawData.actionLogs)) {
+          setLogs(rawData.actionLogs);
+        } else if (rawData && Array.isArray(rawData.data)) {
+          setLogs(rawData.data);
+        } else {
+          setLogs([]);
+        }
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to fetch action logs');

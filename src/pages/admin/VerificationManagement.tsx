@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Check, X, Download } from 'lucide-react';
+import { Loader2, Check, X, Download, Inbox } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminAPI } from '@/lib/api';
 
@@ -109,36 +109,50 @@ export default function VerificationManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {requests.map(req => (
-                <TableRow key={req.id}>
-                  <TableCell>{req.user}</TableCell>
-                  <TableCell>{req.userType}</TableCell>
-                  <TableCell>{req.verificationType}</TableCell>
-                  <TableCell>{new Date(req.submittedAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge variant={req.status === 'Pending' ? 'secondary' : req.status === 'Approved' ? 'default' : 'destructive'}>
-                      {req.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="flex gap-2">
-                    <Button variant="outline" size="icon" asChild>
-                      <a href={req.documentUrl} target="_blank" rel="noopener noreferrer">
-                        <Download className="w-4 h-4" />
-                      </a>
-                    </Button>
-                    {req.status === 'Pending' && (
-                      <>
-                        <Button variant="ghost" size="icon" onClick={() => handleVerification(req.id, 'Approved')}>
-                          <Check className="w-4 h-4 text-green-500" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleVerification(req.id, 'Rejected')}>
-                          <X className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </>
-                    )}
+              {requests.length > 0 ? (
+                requests.map(req => (
+                  <TableRow key={req.id}>
+                    <TableCell>{req.user}</TableCell>
+                    <TableCell>{req.userType}</TableCell>
+                    <TableCell>{req.verificationType}</TableCell>
+                    <TableCell>{new Date(req.submittedAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge variant={req.status === 'Pending' ? 'secondary' : req.status === 'Approved' ? 'default' : 'destructive'}>
+                        {req.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="flex gap-2">
+                      <Button variant="outline" size="icon" asChild>
+                        <a href={req.documentUrl} target="_blank" rel="noopener noreferrer">
+                          <Download className="w-4 h-4" />
+                        </a>
+                      </Button>
+                      {req.status === 'Pending' && (
+                        <>
+                          <Button variant="ghost" size="icon" onClick={() => handleVerification(req.id, 'Approved')}>
+                            <Check className="w-4 h-4 text-green-500" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleVerification(req.id, 'Rejected')}>
+                            <X className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-48 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="p-3 bg-slate-50 text-slate-400 rounded-full">
+                        <Inbox className="w-6 h-6 text-slate-400" />
+                      </div>
+                      <p className="text-sm font-semibold text-slate-600">No verification requests</p>
+                      <p className="text-xs text-slate-400">All submitted verification requests have been processed.</p>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

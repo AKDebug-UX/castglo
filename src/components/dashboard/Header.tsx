@@ -103,7 +103,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     if (!user) return "/";
     switch (user.role) {
       case "admin":
-        return "/admin/settings";
+        return "/admin/profile";
       case "casting_director":
         return "/director/profile";
       case "industry_professional":
@@ -114,6 +114,21 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     }
   };
  
+  const getSettingsPath = () => {
+    if (!user) return "/";
+    switch (user.role) {
+      case "admin":
+        return "/admin/settings";
+      case "casting_director":
+        return "/director/settings";
+      case "industry_professional":
+        return "/professional/settings";
+      case "talent":
+      default:
+        return "/talent/account-settings";
+    }
+  };
+
   const getInitials = (name: string) => {
     if (!name) return "U";
     return name
@@ -241,7 +256,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={user?.role === 'casting_director' ? '/director/settings' : user?.role === 'talent' ? '/talent/account-settings' : '/settings'} className="cursor-pointer">
+              <Link to={getSettingsPath()} className="cursor-pointer">
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </Link>

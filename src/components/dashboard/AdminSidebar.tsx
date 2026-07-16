@@ -16,10 +16,12 @@
    CreditCard,
    Film,
    Activity,
+   User,
  } from "lucide-react";
  
  const navItems = [
    { Icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
+   { Icon: User, label: "Profile", href: "/admin/profile" },
    { Icon: Shield, label: "Moderation Queue", href: "/admin/moderation" },
    { Icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
    { Icon: Users, label: "Users Management", href: "/admin/users" },
