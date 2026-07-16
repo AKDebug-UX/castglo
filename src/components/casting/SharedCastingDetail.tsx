@@ -33,7 +33,7 @@ export default function SharedCastingDetail({
 
   // ── Cover Image ────────────────────────────────────────────────
   const coverImage = useMemo(() => {
-    const rawImage = casting?.project_cover_image || casting?.image || casting?.coverImage;
+    const rawImage = casting?.project_image || casting?.project_cover_image || casting?.image || casting?.coverImage;
     if (rawImage) {
       return resolveMediaUrl(rawImage);
     }

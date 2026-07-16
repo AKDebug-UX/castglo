@@ -4,9 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  MapPin, 
+import {
+  Search,
+  MapPin,
   Calendar,
   DollarSign,
   ArrowUpRight,
@@ -27,7 +27,7 @@ export function BrowseCastSection() {
     setIsLoading(true);
     try {
       const response = await castingCallAPI.getAll({
-        search, 
+        search,
         status: "open",
         limit: 6
       });
@@ -65,8 +65,8 @@ export function BrowseCastSection() {
           <form onSubmit={handleSearch} className="flex gap-2 max-w-xl mx-auto">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search casting calls..." 
+              <Input
+                placeholder="Search casting calls..."
                 className="pl-10 h-12 bg-muted/50 border-none rounded-xl"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -88,8 +88,8 @@ export function BrowseCastSection() {
             {castings.length > 0 ? castings.map((casting) => (
               <Card key={casting._id || casting.id} className="overflow-hidden border-none shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl bg-white flex flex-col group">
                 <div className="relative aspect-video overflow-hidden">
-                  <img 
-                    src={resolveMediaUrl(getProjectCoverImage(casting)) || castingIndieDrama} 
+                  <img
+                    src={resolveMediaUrl(casting.project_image || casting.project_cover_image || casting.image || casting.coverImage) || castingIndieDrama}
                     alt={casting.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
@@ -101,21 +101,13 @@ export function BrowseCastSection() {
                 </div>
                 <CardContent className="p-6 flex-1 flex flex-col">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Badge variant="secondary" className="bg-[#E9B3D3]/20 text-[#D98EB3] border-none font-semibold px-2 py-0.5 text-[10px] uppercase tracking-wider">
-                        {casting.type || casting.category || "Film"}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground font-medium">
-                        {casting.company || "Industry Production"}
-                      </span>
-                    </div>
                     <h3 className="font-bold text-xl text-slate-800 mb-2 group-hover:text-primary transition-colors line-clamp-1">
                       {casting.title}
                     </h3>
                     <p className="text-sm text-slate-500 line-clamp-2 mb-6 leading-relaxed">
                       {casting.description}
                     </p>
-                    
+
                     <div className="space-y-3 text-sm text-slate-600 mb-8">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">

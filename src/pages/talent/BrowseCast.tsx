@@ -240,7 +240,7 @@ export default function BrowseCast() {
             <Card key={casting._id || casting.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 rounded-xl bg-white flex flex-col group">
               <div className="relative aspect-video overflow-hidden">
                 <img 
-                  src={resolveMediaUrl(casting.project_image || casting.image || casting.coverImage) || castingIndieDrama} 
+                  src={resolveMediaUrl(casting.project_image || casting.project_cover_image || casting.image || casting.coverImage) || castingIndieDrama} 
                   alt={casting.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
@@ -299,7 +299,7 @@ export default function BrowseCast() {
                 <div className="flex gap-6">
                   <div className="relative w-32 h-32 flex-shrink-0 overflow-hidden rounded-lg">
                     <img 
-                      src={resolveMediaUrl(casting.project_cover_image || casting.image || casting.coverImage) || castingIndieDrama} 
+                      src={resolveMediaUrl(casting.project_image || casting.project_cover_image || casting.image || casting.coverImage) || castingIndieDrama} 
                       alt={casting.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
