@@ -66,17 +66,17 @@ export default function Dashboard() {
           const shortlisted = apps.filter((a) => a.status === "shortlisted").length;
           
           setStats([
-            { label: "Active Applications", value: activeApps.toString(), change: "In progress", Icon: FileText },
-            { label: "Shortlisted", value: shortlisted.toString(), change: "Next steps", Icon: Star },
-            { label: "Accepted", value: accepted.toString(), change: "Hired", Icon: Phone },
-            { label: "Success Rate", value: apps.length > 0 ? `${Math.round((accepted / apps.length) * 100)}%` : "0%", change: "Total efficiency", Icon: TrendingUp },
+            { label: "Active Applications", value: activeApps.toString(), change: "In progress", Icon: FileText, circleClass: "bg-primary/10 text-primary" },
+            { label: "Shortlisted", value: shortlisted.toString(), change: "Next steps", Icon: Star, circleClass: "bg-secondary/10 text-secondary" },
+            { label: "Accepted", value: accepted.toString(), change: "Hired", Icon: Phone, circleClass: "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400" },
+            { label: "Success Rate", value: apps.length > 0 ? `${Math.round((accepted / apps.length) * 100)}%` : "0%", change: "Total efficiency", Icon: TrendingUp, circleClass: "bg-accent/10 text-accent dark:bg-accent/20 dark:text-accent-foreground" },
           ]);
         } else {
           setStats([
-            { label: "Active Applications", value: "0", change: "In progress", Icon: FileText },
-            { label: "Shortlisted", value: "0", change: "Next steps", Icon: Star },
-            { label: "Accepted", value: "0", change: "Hired", Icon: Phone },
-            { label: "Success Rate", value: "0%", change: "Total efficiency", Icon: TrendingUp },
+            { label: "Active Applications", value: "0", change: "In progress", Icon: FileText, circleClass: "bg-primary/10 text-primary" },
+            { label: "Shortlisted", value: "0", change: "Next steps", Icon: Star, circleClass: "bg-secondary/10 text-secondary" },
+            { label: "Accepted", value: "0", change: "Hired", Icon: Phone, circleClass: "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400" },
+            { label: "Success Rate", value: "0%", change: "Total efficiency", Icon: TrendingUp, circleClass: "bg-accent/10 text-accent dark:bg-accent/20 dark:text-accent-foreground" },
           ]);
         }
 
@@ -153,7 +153,7 @@ export default function Dashboard() {
                   <p className="text-2xl font-bold mt-1">{stat.value}</p>
                   <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
                 </div>
-                <div className="icon-circle-primary w-10 h-10">
+                <div className={`icon-circle w-10 h-10 ${stat.circleClass || 'icon-circle-primary'}`}>
                   <stat.Icon className="w-5 h-5" />
                 </div>
               </div>

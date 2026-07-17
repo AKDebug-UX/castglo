@@ -68,7 +68,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive 
-                  ? "bg-primary text-primary-foreground" 
+                  ? "bg-gradient-to-r from-primary to-secondary text-white shadow-sm font-semibold" 
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
@@ -84,7 +84,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
               className={cn(
                 "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 location.pathname.startsWith("/talent/account-settings")
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-gradient-to-r from-primary to-secondary text-white shadow-sm font-semibold"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
@@ -104,7 +104,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
                     to={item.href}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-colors",
-                      isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      isActive ? "bg-primary text-white shadow-sm font-semibold" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                     )}
                   >
                     <item.Icon className="w-4 h-4" />

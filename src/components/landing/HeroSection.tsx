@@ -260,8 +260,8 @@ export function HeroSection() {
 
             {/* Feature Cards */}
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-xl bg-[#F1FBFB] p-5 text-center shadow-card card-elevated">
-                <div className="feature-icon-teal mx-auto mb-3">
+              <div className="rounded-xl bg-primary/5 p-5 text-center shadow-card card-elevated">
+                <div className="feature-icon-violet mx-auto mb-3">
                   <User className="w-6 h-6" />
                 </div>
                 <h4 className="font-semibold mb-1.5 text-sm">For Talent</h4>
@@ -269,8 +269,8 @@ export function HeroSection() {
                   Showcase your skills, build your portfolio, and connect with industry professionals.
                 </p>
               </div>
-              <div className="rounded-xl bg-[#F9F3FF] p-5 text-center shadow-card card-elevated">
-                <div className="feature-icon-purple mx-auto mb-3">
+              <div className="rounded-xl bg-accent/5 p-5 text-center shadow-card card-elevated">
+                <div className="feature-icon-navy mx-auto mb-3">
                   <Search className="w-6 h-6" />
                 </div>
                 <h4 className="font-semibold mb-1.5 text-sm">For Casting Directors</h4>
@@ -278,8 +278,8 @@ export function HeroSection() {
                   Discover exceptional talent, streamline your casting process, and manage auditions.
                 </p>
               </div>
-              <div className="rounded-xl bg-[#FFF2E0] p-5 text-center shadow-card card-elevated">
-                <div className="feature-icon-orange mx-auto mb-3">
+              <div className="rounded-xl bg-secondary/5 p-5 text-center shadow-card card-elevated">
+                <div className="feature-icon-coral mx-auto mb-3">
                   <Video className="w-6 h-6" />
                 </div>
                 <h4 className="font-semibold mb-1.5 text-sm">For Everyone</h4>

@@ -19,20 +19,20 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 10%;
 
-    /* Primary - Teal */
-    --primary: 185 100% 30%;
+    /* Primary - Royal Violet */
+    --primary: 250 84% 52%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Pink */
-    --secondary: 317 56% 70%;
-    --secondary-foreground: 220 20% 10%;
+    /* Secondary - Coral Glow */
+    --secondary: 358 100% 68%;
+    --secondary-foreground: 0 0% 100%;
 
     /* Muted */
     --muted: 210 20% 96%;
     --muted-foreground: 220 10% 45%;
 
-    /* Accent - Purple/Pink gradient start */
-    --accent: 280 70% 60%;
+    /* Accent - Deep Navy */
+    --accent: 248 65% 17%;
     --accent-foreground: 0 0% 100%;
 
     /* Destructive */
@@ -42,16 +42,16 @@
     /* Borders and inputs */
     --border: 214 20% 88%;
     --input: 214 20% 88%;
-    --ring: 185 100% 30%;
+    --ring: 250 84% 52%;
 
     --radius: 0.625rem;
 
     /* Custom tokens */
-    --gradient-logo: linear-gradient(135deg, hsl(320, 80%, 60%) 0%, hsl(280, 70%, 60%) 50%, hsl(200, 80%, 50%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(180, 40%, 96%) 0%, hsl(210, 20%, 98%) 100%);
+    --gradient-logo: linear-gradient(135deg, hsl(250, 84%, 52%) 0%, hsl(358, 100%, 68%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(250, 84%, 98%) 0%, hsl(210, 20% , 98%) 100%);
     --shadow-card: 0 2px 8px -2px hsl(220 20% 10% / 0.08);
     --shadow-card-hover: 0 8px 24px -4px hsl(220 20% 10% / 0.12);
-    --shadow-button: 0 2px 4px -1px hsl(174 62% 47% / 0.3);
+    --shadow-button: 0 2px 4px -1px hsl(250 84% 52% / 0.3);
 
     /* Status colors */
     --success: 142 70% 45%;
@@ -64,12 +64,12 @@
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 10% 40%;
-    --sidebar-primary: 185 100% 30%;
+    --sidebar-primary: 250 84% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 317 56% 70%;
+    --sidebar-accent: 358 100% 68%;
     --sidebar-accent-foreground: 220 20% 10%;
     --sidebar-border: 214 20% 92%;
-    --sidebar-ring: 185 100% 30%;
+    --sidebar-ring: 250 84% 52%;
   }
 
   .dark {
@@ -82,16 +82,16 @@
     --popover: 220 15% 15%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 185 80% 50%;
+    --primary: 250 84% 65%;
     --primary-foreground: 220 20% 10%;
 
-    --secondary: 317 40% 30%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 358 100% 68%;
+    --secondary-foreground: 220 20% 10%;
 
     --muted: 220 15% 20%;
     --muted-foreground: 220 10% 60%;
 
-    --accent: 280 70% 65%;
+    --accent: 248 65% 25%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62% 45%;
@@ -195,16 +195,16 @@
     @apply w-14 h-14 rounded-full flex items-center justify-center;
   }
 
-  .feature-icon-teal {
+  .feature-icon-violet {
     @apply feature-icon bg-primary text-primary-foreground;
   }
 
-  .feature-icon-purple {
-    @apply feature-icon bg-[hsl(320,70%,55%)] text-white;
+  .feature-icon-navy {
+    @apply feature-icon bg-accent text-accent-foreground;
   }
 
-  .feature-icon-orange {
-    @apply feature-icon bg-[hsl(25,95%,53%)] text-white;
+  .feature-icon-coral {
+    @apply feature-icon bg-secondary text-secondary-foreground;
   }
 }
 
@@ -261,3 +261,109 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+/* --- Brand Color Overrides for Hardcoded Arbitrary Tailwind Classes --- */
+@layer utilities {
+  /* Teal overrides (#009698) mapped to Royal Violet (--primary) */
+  .bg-\[\#009698\] {
+    background-color: hsl(var(--primary)) !important;
+  }
+  .hover\:bg-\[\#009698\]\/90:hover {
+    background-color: hsla(var(--primary), 0.9) !important;
+  }
+  .bg-\[\#009698\]\/10 {
+    background-color: hsla(var(--primary), 0.1) !important;
+  }
+  .bg-\[\#009698\]\/5 {
+    background-color: hsla(var(--primary), 0.05) !important;
+  }
+  .text-\[\#009698\] {
+    color: hsl(var(--primary)) !important;
+  }
+  .hover\:text-\[\#009698\]:hover {
+    color: hsl(var(--primary)) !important;
+  }
+  .border-\[\#009698\]\/20 {
+    border-color: hsla(var(--primary), 0.2) !important;
+  }
+  .border-\[\#009698\]\/10 {
+    border-color: hsla(var(--primary), 0.1) !important;
+  }
+  .shadow-\[\#009698\]\/10 {
+    --tw-shadow-color: hsla(var(--primary), 0.1) !important;
+  }
+  .shadow-\[\#009698\]\/20 {
+    --tw-shadow-color: hsla(var(--primary), 0.2) !important;
+  }
+  .data-\[state\=active\]\:bg-\[\#009698\]\[data-state=active\] {
+    background-color: hsl(var(--primary)) !important;
+  }
+  .from-\[\#009698\] {
+    --tw-gradient-from: hsl(var(--primary)) !important;
+    --tw-gradient-to: hsla(var(--primary), 0) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .to-\[\#006b6d\] {
+    --tw-gradient-to: hsl(var(--primary)) !important;
+  }
+
+  /* Teal Hover overrides (#007A7C) */
+  .hover\:bg-\[\#007A7C\]:hover {
+    background-color: hsla(var(--primary), 0.9) !important;
+  }
+  .hover\:text-\[\#007A7C\]:hover {
+    color: hsl(var(--primary)) !important;
+  }
+
+  /* Pink/Coral overrides (#D98EB3 / #E9B3D3) mapped to Coral Glow (--secondary) */
+  .bg-\[\#D98EB3\] {
+    background-color: hsl(var(--secondary)) !important;
+  }
+  .hover\:bg-\[\#D98EB3\]\/90:hover {
+    background-color: hsla(var(--secondary), 0.9) !important;
+  }
+  .bg-\[\#D98EB3\]\/20 {
+    background-color: hsla(var(--secondary), 0.2) !important;
+  }
+  .text-\[\#D98EB3\] {
+    color: hsl(var(--secondary)) !important;
+  }
+  .border-\[\#D98EB3\]\/30 {
+    border-color: hsla(var(--secondary), 0.3) !important;
+  }
+  .bg-\[\#E9B3D3\]\/20 {
+    background-color: hsla(var(--secondary), 0.2) !important;
+  }
+  .from-\[\#D98EB3\] {
+    --tw-gradient-from: hsl(var(--secondary)) !important;
+    --tw-gradient-to: hsla(var(--secondary), 0) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .to-\[\#C97EA3\] {
+    --tw-gradient-to: hsl(var(--secondary)) !important;
+  }
+
+  /* Cyan background overrides (#DEFCFE) mapped to new soft brand coral glow */
+  .bg-\[\#DEFCFE\] {
+    background-color: hsl(358 100% 98%) !important;
+  }
+  .bg-\[\#DEFCFE\]\/50 {
+    background-color: hsla(358, 100%, 98%, 0.5) !important;
+  }
+  .bg-\[\#DEFCFE\]\/30 {
+    background-color: hsla(358, 100%, 98%, 0.3) !important;
+  }
+  .bg-\[\#DEFCFE\]\/20 {
+    background-color: hsla(358, 100%, 98%, 0.2) !important;
+  }
+  .border-\[\#DEFCFE\] {
+    border-color: hsl(358 100% 94%) !important;
+  }
+  .from-\[\#DEFCFE\] {
+    --tw-gradient-from: hsl(358 100% 98%) !important;
+    --tw-gradient-to: hsla(358, 100%, 98%, 0) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+}
+
+

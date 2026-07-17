@@ -1,4 +1,5 @@
  import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Users, FileText, ThumbsUp, Calendar, TrendingUp, Loader2 } from "lucide-react";
@@ -104,21 +105,44 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-muted-foreground">{stat.label}</span>
-                <stat.Icon className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                <TrendingUp className="w-4 h-4 text-success" />
-                <span className="font-medium text-slate-900">{stat.change}</span> {stat.changeLabel}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {stats.map((stat) => {
+          const isTotalCastings = stat.label === "Total Castings";
+          return (
+            <Card 
+              key={stat.label}
+              className={cn(
+                isTotalCastings && "bg-secondary border-secondary text-secondary-foreground"
+              )}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={cn(
+                    "text-sm",
+                    isTotalCastings ? "text-secondary-foreground/85" : "text-muted-foreground"
+                  )}>{stat.label}</span>
+                  <stat.Icon className={cn(
+                    "w-5 h-5",
+                    isTotalCastings ? "text-secondary-foreground" : "text-muted-foreground"
+                  )} />
+                </div>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="flex items-center gap-1 text-sm mt-1">
+                  <TrendingUp className={cn(
+                    "w-4 h-4",
+                    isTotalCastings ? "text-secondary-foreground" : "text-success"
+                  )} />
+                  <span className={cn(
+                    "font-medium",
+                    isTotalCastings ? "text-secondary-foreground" : "text-slate-900"
+                  )}>{stat.change}</span>{" "}
+                  <span className={isTotalCastings ? "text-secondary-foreground/85" : "text-muted-foreground"}>
+                    {stat.changeLabel}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Charts */}
@@ -142,7 +166,7 @@ export default function AdminDashboard() {
                       borderRadius: "8px",
                     }}
                   />
-                  <Bar dataKey="value" fill="hsl(var(--foreground))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -171,8 +195,8 @@ export default function AdminDashboard() {
                   <Area
                     type="monotone"
                     dataKey="value"
-                    stroke="hsl(var(--primary))"
-                    fill="hsl(var(--primary) / 0.2)"
+                    stroke="hsl(var(--secondary))"
+                    fill="hsl(var(--secondary) / 0.2)"
                   />
                 </AreaChart>
               </ResponsiveContainer>

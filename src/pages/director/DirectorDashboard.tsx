@@ -118,17 +118,17 @@ export default function DirectorDashboard() {
           let tally = { review: 0, shortlisted: 0, audition: 0, offer: 0 };
 
           setStats([
-            { label: "Active Projects",    value: activeCount.toString(),      change: "Live now",          Icon: Clapperboard, color: "text-blue-600",   bg: "bg-blue-50" },
-            { label: "Total Applicants",   value: totalSubmissions.toString(), change: "Across all roles",  Icon: Users,        color: "text-purple-600", bg: "bg-purple-50" },
-            { label: "Pending Reviews",    value: tally.review.toString(),      change: "Open in Applicants",Icon: Clock,        color: "text-orange-600", bg: "bg-orange-50" },
-            { label: "Roles Filled",       value: tally.offer.toString(),       change: "This quarter",      Icon: CheckCircle,  color: "text-green-600",  bg: "bg-green-50" },
+            { label: "Active Projects",    value: activeCount.toString(),      change: "Live now",          Icon: Clapperboard, color: "text-primary",   bg: "bg-primary/10" },
+            { label: "Total Applicants",   value: totalSubmissions.toString(), change: "Across all roles",  Icon: Users,        color: "text-secondary", bg: "bg-secondary/10" },
+            { label: "Pending Reviews",    value: tally.review.toString(),      change: "Open in Applicants",Icon: Clock,        color: "text-accent",    bg: "bg-accent/10" },
+            { label: "Roles Filled",       value: tally.offer.toString(),       change: "This quarter",      Icon: CheckCircle,  color: "text-green-600",  bg: "bg-green-50 dark:bg-green-950/20 dark:text-green-400" },
           ]);
         } else {
           setStats([
-            { label: "Active Projects",  value: "0", change: "Live now",          Icon: Clapperboard, color: "text-blue-600",   bg: "bg-blue-50" },
-            { label: "Total Applicants", value: "0", change: "Across all roles",  Icon: Users,        color: "text-purple-600", bg: "bg-purple-50" },
-            { label: "Pending Reviews",  value: "0", change: "Needs attention",   Icon: Clock,        color: "text-orange-600", bg: "bg-orange-50" },
-            { label: "Roles Filled",     value: "0", change: "This quarter",      Icon: CheckCircle,  color: "text-green-600",  bg: "bg-green-50" },
+            { label: "Active Projects",  value: "0", change: "Live now",          Icon: Clapperboard, color: "text-primary",   bg: "bg-primary/10" },
+            { label: "Total Applicants", value: "0", change: "Across all roles",  Icon: Users,        color: "text-secondary", bg: "bg-secondary/10" },
+            { label: "Pending Reviews",  value: "0", change: "Needs attention",   Icon: Clock,        color: "text-accent",    bg: "bg-accent/10" },
+            { label: "Roles Filled",     value: "0", change: "This quarter",      Icon: CheckCircle,  color: "text-green-600",  bg: "bg-green-50 dark:bg-green-950/20 dark:text-green-400" },
           ]);
         }
       } catch {
@@ -245,10 +245,10 @@ export default function DirectorDashboard() {
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "In Review",   value: pipeline.review,     color: "text-slate-700",  bg: "bg-slate-100" },
-              { label: "Shortlisted", value: pipeline.shortlisted, color: "text-blue-700",   bg: "bg-blue-100" },
-              { label: "Audition",    value: pipeline.audition,    color: "text-orange-700", bg: "bg-orange-100" },
-              { label: "Offer / Hire",value: pipeline.offer,       color: "text-green-700",  bg: "bg-green-100" },
+              { label: "In Review",   value: pipeline.review,     color: "text-slate-700 dark:text-slate-300",  bg: "bg-slate-100 dark:bg-slate-800/40" },
+              { label: "Shortlisted", value: pipeline.shortlisted, color: "text-secondary", bg: "bg-secondary/10" },
+              { label: "Audition",    value: pipeline.audition,    color: "text-accent",    bg: "bg-accent/10" },
+              { label: "Offer / Hire",value: pipeline.offer,       color: "text-green-700 dark:text-green-400",  bg: "bg-green-100 dark:bg-green-950/20" },
             ].map(item => (
               <div key={item.label} className={`p-4 rounded-xl text-center ${item.bg}`}>
                 <p className={`text-3xl font-bold ${item.color}`}>{item.value}</p>
