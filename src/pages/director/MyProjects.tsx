@@ -51,6 +51,42 @@ export default function MyProjects() {
       const isPersonal = activeWorkspace === "Personal";
       let projectData: any[] = [];
       
+      const getLocalProjects = async () => {
+        let extractedProjects: any[] = [];
+        if (activeWorkspace !== "Personal") {
+          if (activeWorkspace.projectGrants && activeWorkspace.projectGrants.length > 0) {
+            const promises = activeWorkspace.projectGrants.map(async (grant: any) => {
+              const p = grant.projectId;
+              if (p && typeof p === 'object' && (p._id || p.id)) {
+                return p.castingCall || p.project || p;
+              }
+              if (typeof p === 'string') {
+                const res = await projectAPI.getOne(p).catch(() => null);
+                const data = res?.data?.data;
+                return data?.castingCall || data?.project || data;
+              }
+              return null;
+            });
+            const results = await Promise.all(promises);
+            extractedProjects = results.filter(Boolean);
+          }
+          
+          if (extractedProjects.length === 0) {
+            let singleProject = activeWorkspace.project || activeWorkspace.castingCall;
+            if (singleProject && typeof singleProject === 'string') {
+              const res = await projectAPI.getOne(singleProject).catch(() => null);
+              const data = res?.data?.data;
+              singleProject = data?.castingCall || data?.project || data;
+            }
+            if (singleProject && typeof singleProject === 'object' && (singleProject._id || singleProject.id)) {
+              const unwrapped = singleProject.castingCall || singleProject.project || singleProject;
+              extractedProjects = [unwrapped];
+            }
+          }
+        }
+        return extractedProjects;
+      };
+
       try {
         const ownerId = !isPersonal ? (
           activeWorkspace.owner?._id || 
@@ -73,42 +109,14 @@ export default function MyProjects() {
             ? response.data.data 
             : response.data.data.projects || response.data.data.castingCalls || [];
         }
+
+        if (!isPersonal && projectData.length === 0) {
+          projectData = await getLocalProjects();
+        }
       } catch (apiError) {
         if (!isPersonal) {
           console.warn("Failed to fetch workspace projects from API, falling back to local data:", apiError);
-          let extractedProjects: any[] = [];
-          
-          if (activeWorkspace.projectGrants && activeWorkspace.projectGrants.length > 0) {
-            const promises = activeWorkspace.projectGrants.map(async (grant: any) => {
-              const p = grant.projectId;
-              if (p && typeof p === 'object' && p._id) return p;
-              if (typeof p === 'string') {
-                const res = await projectAPI.getOne(p).catch(() => null);
-                return res?.data?.data;
-              }
-              return null;
-            });
-            const results = await Promise.all(promises);
-            extractedProjects = results.filter(Boolean);
-          }
-          
-          if (extractedProjects.length === 0) {
-            let singleProject = activeWorkspace.project || activeWorkspace.castingCall;
-            if (singleProject && typeof singleProject === 'string') {
-              const res = await projectAPI.getOne(singleProject).catch(() => null);
-              singleProject = res?.data?.data;
-            }
-            if (singleProject && typeof singleProject === 'object' && (singleProject._id || singleProject.id)) {
-              extractedProjects = [singleProject];
-            }
-          }
-            
-          if (extractedProjects.length > 0) {
-            projectData = extractedProjects;
-          } else {
-            console.warn("No populated projects found in grants or collaboration. Defaulting to empty list.");
-            projectData = [];
-          }
+          projectData = await getLocalProjects();
         } else {
           throw apiError;
         }

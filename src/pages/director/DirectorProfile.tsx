@@ -425,13 +425,12 @@ export default function DirectorProfile() {
           <TabsList className="h-auto p-1 gap-1 inline-flex">
             <TabsTrigger value="overview" className="py-2 px-4">Overview</TabsTrigger>
             <TabsTrigger value="hiring" className="py-2 px-4">Hiring Tools</TabsTrigger>
-            <TabsTrigger value="audition" className="py-2 px-4">Pre-Audition</TabsTrigger>
             <TabsTrigger value="commercial" className="py-2 px-4">Commercial</TabsTrigger>
             <TabsTrigger value="summary" className="py-2 px-4">Summary</TabsTrigger>
           </TabsList>
         </div>
 
-        {(["overview", "hiring", "audition", "commercial"] as const).map((tab) => (
+        {(["overview", "hiring", "commercial"] as const).map((tab) => (
           <TabsContent key={tab} value={tab} className="mt-6 space-y-6">
             <UnifiedCastingDirectorProfileForm rootData={profileData} onChange={setProfileData} onSave={handleSave} isSaving={isSaving} activeTab={tab} />
           </TabsContent>
