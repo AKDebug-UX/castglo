@@ -131,7 +131,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     // 2. Override with project specific grants if a projectId is provided
     if (projectId && activeWorkspace.projectGrants) {
       const grant = activeWorkspace.projectGrants.find(g => {
-        const id = typeof g.projectId === 'string' ? g.projectId : g.projectId?._id;
+        const id = typeof g.projectId === 'string' ? g.projectId : (g.projectId?._id || g.projectId?.id);
         return id === projectId;
       });
       if (grant && grant.permissions) {
