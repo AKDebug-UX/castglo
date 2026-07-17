@@ -190,7 +190,7 @@ export function HeroSection() {
               </Button>
               <Button 
                 variant={"tab-outline"}
-                className="bg-secondary text-white hover:text-secondary-foreground"
+                className="bg-secondary text-white hover:text-secondary"
                 size="sm"
                 onClick={() => {
                   const element = document.getElementById('browse-castings');

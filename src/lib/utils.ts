@@ -18,7 +18,7 @@ export function getAvatarUrl(fullName: string | undefined, seed?: string) {
   // Using the 'initials' style for a professional look, 
   // or 'adventurer-neutral' for a more friendly character look.
   // Options can be customized here.
-  return `https://api.dicebear.com/7.x/initials/svg?seed=${nameSeed}&backgroundColor=009698,5849D7,FF7A30&fontFamily=Arial&fontWeight=600`;
+  return `https://api.dicebear.com/7.x/initials/svg?seed=${nameSeed}&backgroundColor=5849D7,FF5C62&fontFamily=Arial&fontWeight=600`;
 }
 
 /**
