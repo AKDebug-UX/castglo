@@ -19,7 +19,7 @@ const getId = (obj: any): string | undefined => obj?._id || obj?.id;
 
 // ─── Sidebar ────────────────────────────────────────────────────────────────
 
-const Sidebar = ({ conversations, selectedConversation, onSelectConversation, user, isMobileView, onNewMessage, onRefresh, isRefreshing }) => {
+const Sidebar = ({ conversations, selectedConversation, onSelectConversation, user, isMobileView, onNewMessage, onRefresh, isRefreshing, isCollaboratorMode, collaboratorLabel, directorName }) => {
   const [search, setSearch] = useState("");
 
   const filtered = conversations.filter(conv => {
@@ -54,6 +54,26 @@ const Sidebar = ({ conversations, selectedConversation, onSelectConversation, us
             </button>
           </div>
         </div>
+
+        {/* Collaborator context banner */}
+        {isCollaboratorMode && collaboratorLabel && (
+          <div className="mb-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+            <span className="mt-0.5 text-amber-500 flex-shrink-0" aria-hidden>
+              {/* shield icon inline so we don't need an extra import */}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-amber-700 leading-tight">Collaborator mode</p>
+              <p className="text-[10px] text-amber-600 leading-tight mt-0.5 truncate">
+                Messaging as&nbsp;<span className="font-semibold">{collaboratorLabel}</span>
+                {directorName && <>&nbsp;· workspace of&nbsp;<span className="font-semibold">{directorName}</span></>}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           <Input
@@ -130,7 +150,7 @@ const Sidebar = ({ conversations, selectedConversation, onSelectConversation, us
 
 // ─── Chat View ───────────────────────────────────────────────────────────────
 
-const ChatView = ({ selectedConversation, messages, user, isMobileView, onDeselectConversation, isSending, newMessage, onNewMessageChange, onSendMessage, onRefresh, isRefreshing }) => {
+const ChatView = ({ selectedConversation, messages, user, isMobileView, onDeselectConversation, isSending, newMessage, onNewMessageChange, onSendMessage, onRefresh, isRefreshing, isCollaboratorMode, collaboratorLabel, directorName }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -240,11 +260,19 @@ const ChatView = ({ selectedConversation, messages, user, isMobileView, onDesele
                         {msg.text}
                       </div>
                       {isLast && (
-                        <div className={cn("flex items-center gap-1 mt-1 px-1", isSelf ? "flex-row-reverse" : "flex-row")}>
-                          <span className="text-[10px] text-slate-400">
-                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                          {isSelf && <CheckCheck className="w-3 h-3 text-primary/60" />}
+                        <div className={cn("flex flex-col mt-1 px-1", isSelf ? "items-end" : "items-start")}>
+                          <div className={cn("flex items-center gap-1", isSelf ? "flex-row-reverse" : "flex-row")}>
+                            <span className="text-[10px] text-slate-400">
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                            {isSelf && <CheckCheck className="w-3 h-3 text-primary/60" />}
+                          </div>
+                          {/* Attribution badge — visible only in collaborator mode on outgoing messages */}
+                          {isSelf && isCollaboratorMode && collaboratorLabel && (
+                            <span className="mt-0.5 text-[9px] text-slate-400 italic leading-tight max-w-[220px] text-right">
+                              {collaboratorLabel}{directorName ? ` · on behalf of ${directorName}` : ""}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -322,9 +350,25 @@ const ChatView = ({ selectedConversation, messages, user, isMobileView, onDesele
 interface MessageViewProps {
   title?: string;
   subtitle?: string;
+  /** True when a collaborator is acting in a director's workspace */
+  isCollaboratorMode?: boolean;
+  /** Project IDs the collaborator has been granted access to.
+   *  Empty array = workspace-wide access (show all conversations). */
+  grantedProjectIds?: string[];
+  /** Display label for the collaborator: e.g. "Jane Smith (Collaborator)" */
+  collaboratorLabel?: string;
+  /** The director's full name, used in attribution: "on behalf of [directorName]" */
+  directorName?: string;
 }
 
-export default function MessageView({ title = "Messages", subtitle }: MessageViewProps) {
+export default function MessageView({
+  title = "Messages",
+  subtitle,
+  isCollaboratorMode = false,
+  grantedProjectIds = [],
+  collaboratorLabel,
+  directorName,
+}: MessageViewProps) {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const talentId = searchParams.get("talentId");
@@ -422,7 +466,30 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     try {
       const response = await messagingAPI.getMyConversations();
       if (response.data.success && Array.isArray(response.data.data)) {
-        const convs = response.data.data;
+        let convs = response.data.data;
+
+        // ── Collaborator scoping ─────────────────────────────────────────────
+        // If the collaborator has specific project grants, filter conversations
+        // to only those linked to one of the granted projects.
+        // We check several fields backends commonly attach: projectId,
+        // castingCallId, metadata.projectId, and the project sub-object.
+        if (isCollaboratorMode && grantedProjectIds.length > 0) {
+          convs = convs.filter((c: any) => {
+            const pid =
+              c.projectId ||
+              c.castingCallId ||
+              c.metadata?.projectId ||
+              c.project?._id ||
+              c.project?.id ||
+              c.castingCall?._id ||
+              c.castingCall?.id;
+            return pid && grantedProjectIds.includes(pid);
+          });
+        }
+        // If isCollaboratorMode but grantedProjectIds is empty it means
+        // workspace-wide access — show all conversations unchanged.
+        // ────────────────────────────────────────────────────────────────────
+
         setConversations(convs);
 
         if (talentId) {
@@ -561,9 +628,17 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
     const convId = getConvId(selectedConversation);
     if (!convId || !newMessage.trim()) return;
 
+    // In collaborator mode, prepend attribution so the recipient
+    // can see who actually sent the message on the director's behalf.
+    const attribution =
+      isCollaboratorMode && collaboratorLabel
+        ? `[Sent by ${collaboratorLabel}${directorName ? ` on behalf of ${directorName}` : ""}]\n`
+        : "";
+    const messageText = attribution + newMessage;
+
     setIsSending(true);
     try {
-      const response = await messagingAPI.sendMessage({ conversationId: convId, text: newMessage });
+      const response = await messagingAPI.sendMessage({ conversationId: convId, text: messageText });
       if (response.data.success) {
         setMessages(prev => {
           if (prev.some((m: any) => m._id === response.data.data._id)) return prev;
@@ -648,7 +723,12 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
           return;
         }
 
-        const messageText = formSubject ? `Subject: ${formSubject}\n\n${formMessage}` : formMessage;
+        const attribution =
+          isCollaboratorMode && collaboratorLabel
+            ? `[Sent by ${collaboratorLabel}${directorName ? ` on behalf of ${directorName}` : ""}]\n`
+            : "";
+        const subjectPrefix = formSubject ? `Subject: ${formSubject}\n\n` : "";
+        const messageText = attribution + subjectPrefix + formMessage;
         const msgRes = await messagingAPI.sendMessage({ conversationId, text: messageText });
 
         if (msgRes.data.success) {
@@ -834,6 +914,9 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
           onNewMessage={() => setIsModalOpen(true)}
           onRefresh={handleRefresh}
           isRefreshing={isRefreshing}
+          isCollaboratorMode={isCollaboratorMode}
+          collaboratorLabel={collaboratorLabel}
+          directorName={directorName}
         />
         <ChatView
           selectedConversation={selectedConversation}
@@ -847,6 +930,9 @@ export default function MessageView({ title = "Messages", subtitle }: MessageVie
           onSendMessage={handleSendMessage}
           onRefresh={handleRefresh}
           isRefreshing={isRefreshing}
+          isCollaboratorMode={isCollaboratorMode}
+          collaboratorLabel={collaboratorLabel}
+          directorName={directorName}
         />
       </div>
     </div>

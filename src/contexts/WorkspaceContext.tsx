@@ -36,6 +36,9 @@ interface WorkspaceContextType {
   switchWorkspace: (workspaceId: string | "Personal") => void;
   refreshCollaborations: () => Promise<void>;
   getPermissionsForProject: (projectId?: string) => WorkspacePermissions;
+  /** Returns the list of project IDs the collaborator has been granted access to.
+   *  Returns an empty array when in Personal workspace (meaning all projects are accessible). */
+  getGrantedProjectIds: () => string[];
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -142,6 +145,14 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     return perms;
   };
 
+  const getGrantedProjectIds = (): string[] => {
+    if (activeWorkspace === "Personal") return [];
+    if (!activeWorkspace.projectGrants || activeWorkspace.projectGrants.length === 0) return [];
+    return activeWorkspace.projectGrants
+      .map(g => (typeof g.projectId === "string" ? g.projectId : (g.projectId?._id || g.projectId?.id || "")))
+      .filter(Boolean);
+  };
+
   return (
     <WorkspaceContext.Provider value={{
       activeWorkspace,
@@ -149,7 +160,8 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       isLoading,
       switchWorkspace,
       refreshCollaborations: fetchCollaborations,
-      getPermissionsForProject
+      getPermissionsForProject,
+      getGrantedProjectIds,
     }}>
       {children}
     </WorkspaceContext.Provider>
