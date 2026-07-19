@@ -18,32 +18,59 @@ export default function AdminCastingCallsPending() {
     try {
       const params = activeTab === 'pending' ? { status: 'pending' } : {};
       const response = await adminAPI.getPendingCastingCalls(params);
-      if (response.data?.success) {
-        const rawData = response.data.data;
-        let list = [];
-        if (Array.isArray(rawData)) {
-          list = rawData;
-        } else if (rawData && Array.isArray(rawData.castingCalls)) {
-          list = rawData.castingCalls;
-        } else if (rawData && Array.isArray(rawData.pendingCastingCalls)) {
-          list = rawData.pendingCastingCalls;
-        } else if (rawData && Array.isArray(rawData.data)) {
-          list = rawData.data;
-        } else {
-          list = [];
+      
+      const responseData = response.data;
+      if (!responseData) {
+        setCastingCalls([]);
+        return;
+      }
+
+      // Safe retrieval of raw data
+      const rawData = responseData.success && responseData.data !== undefined 
+        ? responseData.data 
+        : responseData;
+
+      let list = [];
+      if (Array.isArray(rawData)) {
+        list = rawData;
+      } else if (rawData && typeof rawData === 'object') {
+        // Safe extraction with fallback keys
+        list = rawData.castingCalls || 
+               rawData.pendingCastingCalls || 
+               rawData.listings || 
+               rawData.data || 
+               rawData.results || 
+               rawData.items || 
+               rawData.calls ||
+               [];
+
+        if (list.length === 0) {
+          const firstArrayKey = Object.keys(rawData).find(key => Array.isArray(rawData[key]) && rawData[key].length > 0);
+          if (firstArrayKey) {
+            list = rawData[firstArrayKey];
+          } else {
+            const anyArrayKey = Object.keys(rawData).find(key => Array.isArray(rawData[key]));
+            if (anyArrayKey) list = rawData[anyArrayKey];
+          }
         }
-        
-        if (activeTab === 'pending') {
-          // Filter to only display casting calls that are actually pending approval
-          const pendingCalls = list.filter((call: any) => 
-            call.status === 'pending' || 
-            call.status === 'pending_approval' ||
-            !call.status
+      }
+
+      if (activeTab === 'pending') {
+        // Filter to display casting calls that are pending approval (case-insensitive)
+        const pendingCalls = list.filter((call: any) => {
+          const statusLower = String(call.status || '').toLowerCase().trim();
+          return (
+            !statusLower ||
+            statusLower === 'pending' ||
+            statusLower === 'pending_approval' ||
+            statusLower === 'pending_review' ||
+            statusLower === 'in_review' ||
+            statusLower.includes('pending')
           );
-          setCastingCalls(pendingCalls);
-        } else {
-          setCastingCalls(list);
-        }
+        });
+        setCastingCalls(pendingCalls);
+      } else {
+        setCastingCalls(list);
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to fetch casting calls');
@@ -167,7 +194,7 @@ export default function AdminCastingCallsPending() {
                     <TableRow>
                       <TableHead>Title</TableHead>
                       <TableHead>Director/Creator</TableHead>
-                      <TableHead>Project Type</TableHead>
+                      <TableHead>Payment Type</TableHead>
                       <TableHead>Date Submitted</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
@@ -175,13 +202,19 @@ export default function AdminCastingCallsPending() {
                   </TableHeader>
                   <TableBody>
                     {castingCalls.map((call: any, index: number) => {
-                      const statusLower = String(call.status || '').toLowerCase();
-                      const isPending = statusLower === 'pending' || statusLower === 'pending_approval' || !call.status;
+                      const statusLower = String(call.status || '').toLowerCase().trim();
+                      const isPending = 
+                        !statusLower ||
+                        statusLower === 'pending' ||
+                        statusLower === 'pending_approval' ||
+                        statusLower === 'pending_review' ||
+                        statusLower === 'in_review' ||
+                        statusLower.includes('pending');
                       return (
                         <TableRow key={call._id || call.id || index}>
                           <TableCell className="font-medium">{call.title || 'Untitled Project'}</TableCell>
-                          <TableCell>{call.director?.name || call.createdBy?.name || 'Unknown'}</TableCell>
-                          <TableCell className="capitalize">{call.projectType || 'N/A'}</TableCell>
+                          <TableCell>{call.creator?.fullName || call.createdBy?.name || 'Unknown'}</TableCell>
+                          <TableCell className="capitalize">{call.compensation.type || 'N/A'}</TableCell>
                           <TableCell>{call.createdAt ? new Date(call.createdAt).toLocaleDateString() : 'N/A'}</TableCell>
                           <TableCell>
                             <Badge 

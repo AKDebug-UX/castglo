@@ -23,18 +23,18 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-black">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-white">
       <div className="container flex h-14 items-center justify-between">
         <Logo />
         
         <nav className="hidden md:flex items-center gap-6">
-          <Link to="/news" className="text-sm text-white hover:text-primary transition-colors">
+          <Link to="/news" className="text-sm text-black hover:text-primary transition-colors">
             News
           </Link>
-          <Link to="/about" className="text-sm text-white hover:text-primary transition-colors">
+          <Link to="/about" className="text-sm text-black hover:text-primary transition-colors">
             About
           </Link>
-          <Link to="/contact" className="text-sm text-white hover:text-primary transition-colors">
+          <Link to="/contact" className="text-sm text-black hover:text-primary transition-colors">
             Contact
           </Link>
         </nav>

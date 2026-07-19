@@ -409,17 +409,6 @@ export default function MyProjects() {
                             Edit Project
                           </DropdownMenuItem>
                           <DropdownMenuItem 
-                            onClick={() => handleDuplicate(project)}
-                            disabled={isDuplicating === (project.id || project._id)}
-                          >
-                            {isDuplicating === (project.id || project._id) ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                              <Copy className="w-4 h-4 mr-2" />
-                            )}
-                            Duplicate as Draft
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
                             className="text-destructive" 
                             onClick={() => handleDelete(project.id || project._id)}
                           >

@@ -171,7 +171,7 @@ export function HeroSection() {
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                 Where Talent
                 <br />
-                Meets <span className="text-gradient">Opportunity</span>
+                Meets <span className="text-primary">Opportunity</span>
               </h1>
               <p className="text-sm text-muted-foreground max-w-md">
                 Connect casting directors with exceptional talent. Discover your next role or find the perfect performer for your production.

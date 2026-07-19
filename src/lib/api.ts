@@ -319,10 +319,10 @@ export const livestreamAPI = {
 
 // --- MESSAGING ENDPOINTS ---
 export const messagingAPI = {
-  getOrCreateConversation: (participantId: string, castingCallId?: string) => 
+  getOrCreateConversation: (participantId: string, castingCallId?: string) =>
     api.post(API_ENDPOINTS.MESSAGING.GET_OR_CREATE_CONVERSATION, { participantId, castingCallId }),
   getMyConversations: () => api.get(API_ENDPOINTS.MESSAGING.GET_MY_CONVERSATIONS),
-  sendMessage: (data: { conversationId: string, text: string, mediaUrl?: string }) => 
+  sendMessage: (data: { conversationId: string, text: string, mediaUrl?: string }) =>
     api.post(API_ENDPOINTS.MESSAGING.SEND_MESSAGE, data),
   getMessages: (id: string, params) => api.get(API_ENDPOINTS.MESSAGING.GET_MESSAGES(id), { params }),
 };
@@ -450,22 +450,22 @@ export const adminAPI = {
   getActionLogs: (params) => api.get(API_ENDPOINTS.ADMIN.ACTION_LOGS, { params }),
   getAnalytics: (params?) => api.get(API_ENDPOINTS.ADMIN.ANALYTICS, { params }),
   getModerationQueue: (params?) => api.get(API_ENDPOINTS.ADMIN.MODERATION, { params }),
-  updateModerationStatus: (id: string, status: string, notes?: string) => 
+  updateModerationStatus: (id: string, status: string, notes?: string) =>
     api.patch(`${API_ENDPOINTS.ADMIN.MODERATION}/${id}`, { status, notes }),
   getSettings: () => api.get(API_ENDPOINTS.ADMIN.SETTINGS),
   setFreeTier: (data: { days: number, role: string }) => api.post(API_ENDPOINTS.ADMIN.SET_FREE_TIER, data),
   getVerifications: (params?) => api.get(API_ENDPOINTS.VERIFICATIONS.GET_ALL, { params }),
-  updateVerificationStatus: (id: string, status: string, notes?: string) => 
+  updateVerificationStatus: (id: string, status: string, notes?: string) =>
     api.patch(API_ENDPOINTS.VERIFICATIONS.UPDATE_STATUS(id), { status, notes }),
   getVerificationStats: () => api.get(API_ENDPOINTS.VERIFICATIONS.STATS),
   getSubmissions: (params?) => api.get(API_ENDPOINTS.SUBMISSIONS.GET_ALL, { params }),
-  updateSubmissionStatus: (id: string, status: string, feedback?: string) => 
+  updateSubmissionStatus: (id: string, status: string, feedback?: string) =>
     api.patch(API_ENDPOINTS.SUBMISSIONS.UPDATE_STATUS(id), { status, feedback }),
   getSubmissionStats: () => api.get(API_ENDPOINTS.SUBMISSIONS.STATS),
   getAdminBookings: (params?) => api.get(API_ENDPOINTS.BOOKINGS.ADMIN_GET_ALL, { params }),
   updateAdminBookingStatus: (id: string, status: string) => api.patch(API_ENDPOINTS.BOOKINGS.ADMIN_UPDATE_STATUS(id), { status }),
   getAdminBookingStats: () => api.get(API_ENDPOINTS.BOOKINGS.ADMIN_STATS),
-  grantTrial: (userId: string, days: number) => 
+  grantTrial: (userId: string, days: number) =>
     api.post(API_ENDPOINTS.ADMIN.GRANT_TRIAL(userId), { days }),
   unsuspendUser: (id: string) => api.put(API_ENDPOINTS.ADMIN.UNSUSPEND_USER(id)),
   getLeads: (params?) => api.get(API_ENDPOINTS.ADMIN.LEADS, { params }),
@@ -543,28 +543,28 @@ export const adminLeadsAPI = {
 
 // --- COLLABORATORS ENDPOINTS ---
 export const collaboratorAPI = {
-  invite: (data: { 
-    inviteEmail: string; 
+  invite: (data: {
+    inviteEmail: string;
     projectGrants?: Array<{ projectId: string; permissions: string | { role: string } | string[] }>;
-    permissions?: string | { role: string } | string[]; 
-    projectId?: string 
-  }) => 
+    permissions?: string | { role: string } | string[];
+    projectId?: string
+  }) =>
     api.post(API_ENDPOINTS.COLLABORATORS.INVITE, data),
   getAll: (params?) => api.get(API_ENDPOINTS.COLLABORATORS.GET_ALL, { params }),
   getOne: (collaboratorId: string) => api.get(API_ENDPOINTS.COLLABORATORS.GET_ONE(collaboratorId)),
-  updatePermissions: (collaboratorId: string, data: { permissions: string | { role: string } | string[] }) => 
+  updatePermissions: (collaboratorId: string, data: { permissions: string | { role: string } | string[] }) =>
     api.patch(API_ENDPOINTS.COLLABORATORS.UPDATE(collaboratorId), data),
-  revoke: (collaboratorId: string) => 
+  revoke: (collaboratorId: string) =>
     api.delete(API_ENDPOINTS.COLLABORATORS.REVOKE(collaboratorId)),
-  resendInvitation: (collaboratorId: string) => 
+  resendInvitation: (collaboratorId: string) =>
     api.post(API_ENDPOINTS.COLLABORATORS.RESEND(collaboratorId)),
-  getMyInvitations: (params?) => 
+  getMyInvitations: (params?) =>
     api.get(API_ENDPOINTS.COLLABORATORS.MY_INVITATIONS, { params }),
-  getMyCollaborations: (params?) => 
+  getMyCollaborations: (params?) =>
     api.get(API_ENDPOINTS.COLLABORATORS.MY_COLLABORATIONS, { params }),
-  acceptInvitation: (data: string | { invitationId?: string; id?: string; token?: string }) => 
+  acceptInvitation: (data: string | { invitationId?: string; id?: string; token?: string }) =>
     api.post(API_ENDPOINTS.COLLABORATORS.ACCEPT_INVITATION, typeof data === "string" ? { id: data, invitationId: data, token: data } : data),
-  declineInvitation: (data: string | { invitationId?: string; id?: string; token?: string }) => 
+  declineInvitation: (data: string | { invitationId?: string; id?: string; token?: string }) =>
     api.post(API_ENDPOINTS.COLLABORATORS.DECLINE_INVITATION, typeof data === "string" ? { id: data, invitationId: data, token: data } : data),
 };
 
