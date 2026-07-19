@@ -34,7 +34,11 @@ export default function AdminDashboard() {
           setAnalytics(analyticsRes.data.data);
         }
         if (logsRes.data && logsRes.data.success) {
-          setLogs(logsRes.data.data || []);
+          const raw = logsRes.data.data;
+          const list = Array.isArray(raw)
+            ? raw
+            : raw?.logs || raw?.actionLogs || raw?.data || [];
+          setLogs(list);
         }
       } catch (error) {
         toast.error(error.response?.data?.message || "Failed to load dashboard data");
@@ -212,22 +216,27 @@ export default function AdminDashboard() {
           <p className="text-sm text-muted-foreground">Latest platform actions</p>
         </CardHeader>
         <CardContent className="space-y-4">
-          {logs.length > 0 ? logs.map((log, i) => (
-            <div key={log._id || i} className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-muted">{log.adminName?.[0] || "A"}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm">
-                  <span className="font-medium">{log.adminName || "Admin"}</span> {log.action}{" "}
-                  <span className="text-muted-foreground">{log.target}</span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {log.createdAt ? new Date(log.createdAt).toLocaleString() : "Recently"}
-                </p>
+          {logs.length > 0 ? logs.map((log: any, i: number) => {
+            const adminName = log.adminName || log.adminEmail || log.adminId || "Admin";
+            const actionText = (log.actionType || log.action || "performed action").replace(/_/g, " ");
+            const targetText = log.previousState?.title || log.newState?.title || log.targetType || log.targetId || log.target || "";
+            return (
+              <div key={log._id || log.id || i} className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback className="bg-muted font-bold text-xs">{adminName[0]?.toUpperCase() || "A"}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm">
+                    <span className="font-medium">{adminName}</span> <span className="text-foreground capitalize">{actionText}</span>{" "}
+                    {targetText && <span className="text-muted-foreground font-normal">({targetText})</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {log.createdAt ? new Date(log.createdAt).toLocaleString() : "Recently"}
+                  </p>
+                </div>
               </div>
-            </div>
-          )) : (
+            );
+          }) : (
             <p className="text-sm text-muted-foreground text-center py-4">No recent activity logs.</p>
           )}
         </CardContent>
