@@ -41,18 +41,8 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
 
   const filteredNavItems = navItems.filter(item => {
     if (activeWorkspace !== "Personal") {
-      // If settings or collaborators, check manageCollaborators
-      if (item.title === "Settings" || item.title === "Collaborators") {
-        const hasGlobal = !!activeWorkspace.permissions?.manageCollaborators;
-        const hasProjectLevel = !!(activeWorkspace.projectGrants && activeWorkspace.projectGrants.some((g: any) => g.permissions?.manageCollaborators));
-        return hasGlobal || hasProjectLevel;
-      }
-      // If applicants or matched, check viewApplicants
-      if (item.title === "Applicants" || item.title === "Matched") {
-        const hasGlobal = !!activeWorkspace.permissions?.viewApplicants;
-        const hasProjectLevel = !!(activeWorkspace.projectGrants && activeWorkspace.projectGrants.some((g: any) => g.permissions?.viewApplicants));
-        return hasGlobal || hasProjectLevel;
-      }
+      // For collaborator workspace, allow Dashboard, Projects, Messages, and Applicants unconditionally
+      return ["Dashboard", "Projects", "Messages", "Applicants"].includes(item.title);
     }
     return true;
   });

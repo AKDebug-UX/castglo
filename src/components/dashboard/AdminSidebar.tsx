@@ -22,7 +22,6 @@ import {
 const navItems = [
   { Icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
   { Icon: User, label: "Profile", href: "/admin/profile" },
-  { Icon: Shield, label: "Moderation Queue", href: "/admin/moderation" },
   { Icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
   { Icon: Film, label: "Casting Calls", href: "/admin/casting-calls" },
   { Icon: Users, label: "Users Management", href: "/admin/users" },

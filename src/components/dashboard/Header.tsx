@@ -99,6 +99,41 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     }
   };
 
+  const getNotificationLink = (notification: any) => {
+    if (notification.type === "message") {
+      if (!user) return "/";
+      switch (user.role) {
+        case "casting_director":
+          return "/director/messages";
+        case "industry_professional":
+          return "/professional/messages";
+        case "talent":
+        default:
+          return "/talent/messages";
+      }
+    }
+    return notification.metadata?.link || getNotificationPath();
+  };
+
+  const handleNotificationClick = async (notification: any) => {
+    const isRead = typeof notification.isRead === 'boolean' ? notification.isRead : notification.read;
+    if (!isRead) {
+      try {
+        const notifId = notification._id || notification.id;
+        const response = await notificationAPI.markRead(notifId);
+        if (response.data.success) {
+          setNotifications(prev => prev.map(n => {
+            const id = n._id || n.id;
+            return id === notifId ? { ...n, isRead: true, read: true } : n;
+          }));
+          setUnreadCount(prev => Math.max(0, prev - 1));
+        }
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
+    }
+  };
+
   const getProfilePath = () => {
     if (!user) return "/";
     switch (user.role) {
@@ -213,15 +248,19 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             <DropdownMenuSeparator />
              {notifications.length > 0 ? (
                notifications.map((notification: any, index: number) => (
-                 <DropdownMenuItem key={notification._id || notification.id || index} asChild>
-                   <Link to={notification.metadata?.link || "/notifications"} className="flex items-start gap-3 p-2 cursor-pointer">
-                     <div className={`mt-1 h-2 w-2 rounded-full ${(typeof notification.isRead === 'boolean' ? notification.isRead : notification.read) ? "bg-transparent" : "bg-primary"}`} />
-                     <div className="flex-1">
-                       <p className="text-sm font-medium">{notification.title}</p>
-                       <p className="text-xs text-muted-foreground">{notification.message}</p>
-                     </div>
-                   </Link>
-                 </DropdownMenuItem>
+                  <DropdownMenuItem key={notification._id || notification.id || index} asChild>
+                    <Link 
+                      to={getNotificationLink(notification)} 
+                      onClick={() => handleNotificationClick(notification)}
+                      className="flex items-start gap-3 p-2 cursor-pointer"
+                    >
+                      <div className={`mt-1 h-2 w-2 rounded-full ${(typeof notification.isRead === 'boolean' ? notification.isRead : notification.read) ? "bg-transparent" : "bg-primary"}`} />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{notification.title}</p>
+                        <p className="text-xs text-muted-foreground">{notification.message}</p>
+                      </div>
+                    </Link>
+                  </DropdownMenuItem>
                ))
             ) : (
               <div className="p-4 text-sm text-center text-muted-foreground">No new notifications</div>
