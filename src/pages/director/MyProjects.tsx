@@ -242,7 +242,10 @@ export default function MyProjects() {
     if (activeTab === "open") return isOpenStatus(project.status);
     if (activeTab === "closed") return ["closed", "cancelled", "filled"].includes((project.status || "").toLowerCase());
     if (activeTab === "drafts") return isDraftStatus(project.status);
-    if (activeTab === "pending") return (project.status || "").toLowerCase() === "pending";
+    if (activeTab === "pending") {
+      const s = (project.status || "").toLowerCase();
+      return s === "pending" || s === "pending_review" || s === "pending_approval";
+    }
     return true;
   });
 

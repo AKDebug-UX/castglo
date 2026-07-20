@@ -15,7 +15,7 @@ import { UnifiedTalentProfileForm } from "@/components/profile/UnifiedTalentProf
 import { UNIFIED_FIELD_IDS, validateUnifiedTalentProfile, isMinorFromAgeGroup, UNIFIED_TALENT_PROFILE_FIELD_SPEC } from "@/lib/unifiedTalentProfile";
 
 export default function Profile() {
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
@@ -674,13 +674,13 @@ export default function Profile() {
     // 1. Proactive "Healing" of other profiles to prevent validation blockers
     try {
       await profileAPI.updateProfessional({
-        fullName: user?.fullName || profileData.fullName,
-        displayName: user?.stageName || profileData.fullName,
+        fullName: profileData.fullName || user?.fullName,
+        displayName: (user as any)?.stageName || profileData.fullName,
         email: user?.email || profileData.email,
-        phoneNumber: user?.phone || profileData.phone || profileData.phoneNumber,
+        phoneNumber: (user as any)?.phone || profileData.phone || profileData.phoneNumber,
         professionalTitle: "Talent",
-        city: user?.address?.city || profileData.city || "",
-        country: user?.address?.country || profileData.country || "",
+        city: (user as any)?.address?.city || profileData.city || "",
+        country: (user as any)?.address?.country || profileData.country || "",
         shortBio: profileData.bio || "",
         availabilityType: "Part-time",
         preferredContactMethod: "Castglo",

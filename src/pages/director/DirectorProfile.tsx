@@ -232,11 +232,11 @@ export default function DirectorProfile() {
       });
 
       // Explicitly ensure core fields are mapped to root expected names if different
-      payload.fullName = unifiedPayload.full_name || profileData?.fullName || user?.fullName || "";
-      payload.email = unifiedPayload.email || profileData?.email || user?.email || "";
-      payload.phoneNumber = unifiedPayload.phone_number || profileData?.phoneNumber || user?.phone || "";
+      payload.fullName = unifiedPayload.full_name || profileData?.fullName || authUser?.fullName || "";
+      payload.email = unifiedPayload.email || profileData?.email || authUser?.email || "";
+      payload.phoneNumber = unifiedPayload.phone_number || profileData?.phoneNumber || (authUser as any)?.phone || "";
       payload.professionalTitle = unifiedPayload.professional_title || profileData?.professional_title || "";
-      payload.displayName = unifiedPayload.display_name || user?.stageName || "";
+      payload.displayName = unifiedPayload.display_name || (authUser as any)?.stageName || "";
       payload.companyName = unifiedPayload.company_name || profileData?.companyName || "";
       payload.city = unifiedPayload.city || profileData?.city || "";
       payload.country = unifiedPayload.country || profileData?.country || "";
@@ -349,12 +349,7 @@ export default function DirectorProfile() {
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-4 gap-y-2 text-[#e0f1f1] text-lg opacity-90">
               <div className="flex items-center gap-1.5">
                 <span className="font-semibold">{profileData?.unifiedCastingDirectorProfile?.professional_title || profileData?.professionalTitle || "Casting Director"}</span>
-                {profileData?.unifiedCastingDirectorProfile?.company_name && (
-                  <>
-                    <span className="opacity-50">•</span>
-                    <span>{profileData.unifiedCastingDirectorProfile.company_name}</span>
-                  </>
-                )}
+               
               </div>
               {(profileData?.unifiedCastingDirectorProfile?.city || profileData?.unifiedCastingDirectorProfile?.country) && (
                 <div className="flex items-center gap-1.5 text-sm opacity-80">
@@ -395,7 +390,7 @@ export default function DirectorProfile() {
             <Button
               size="lg"
               className="w-full bg-white text-[#009698] hover:bg-gray-100 font-bold shadow-lg transition-all duration-300 hover:-translate-y-1"
-              onClick={handleSave}
+              onClick={() => handleSave()}
               disabled={isSaving}
             >
               {isSaving ? (

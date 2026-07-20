@@ -79,10 +79,11 @@ export interface FormRole {
 export function getStatusLabel(status: string): string {
   const s = (status || "").toLowerCase();
   if (s === "active" || s === "open" || s === "open_for_applications") return "Open";
+  if (s === "published") return "Published";
   if (s === "draft") return "Draft";
   if (s === "closed" || s === "cancelled") return "Closed";
   if (s === "paused") return "Paused";
-  if (s === "pending") return "Pending";
+  if (s === "pending" || s === "pending_review" || s === "pending_approval") return "Pending";
   if (s === "filled") return "Filled";
   return status ? status.charAt(0).toUpperCase() + status.slice(1) : "Draft";
 }
@@ -90,15 +91,16 @@ export function getStatusLabel(status: string): string {
 /** Returns the Tailwind badge className for a given backend status. */
 export function getStatusClass(status: string): string {
   const s = (status || "").toLowerCase();
-  if (s === "active" || s === "open" || s === "open_for_applications")
+  if (s === "active" || s === "open" || s === "open_for_applications" || s === "published")
     return "bg-success text-success-foreground";
-  if (s === "pending") return "bg-blue-500 hover:bg-blue-600 text-white";
+  if (s === "pending" || s === "pending_review" || s === "pending_approval")
+    return "bg-blue-500 hover:bg-blue-600 text-white";
   if (s === "draft") return "bg-warning text-warning-foreground";
   return "bg-muted text-muted-foreground";
 }
 
 export const isOpenStatus = (status: string) =>
-  ["active", "open", "open_for_applications"].includes((status || "").toLowerCase());
+  ["active", "open", "open_for_applications", "published"].includes((status || "").toLowerCase());
 
 export const isDraftStatus = (status: string) =>
   (status || "").toLowerCase() === "draft";

@@ -156,13 +156,16 @@ export default function SharedCastingDetail({
     (isInternal && info.internal_project_reference);
 
   // ── Status badge color ──────────────────────────────────────────
+  const statusLower = (status || "").toLowerCase();
   const statusClass =
-    status === "open" || status === "open_for_applications" ? "bg-success text-success-foreground" :
-    status === "pending" ? "bg-blue-500 hover:bg-blue-600 text-white" :
-    status === "draft" ? "bg-warning text-warning-foreground" :
+    statusLower === "open" || statusLower === "open_for_applications" || statusLower === "active" || statusLower === "published" ? "bg-success text-success-foreground" :
+    statusLower === "pending" || statusLower === "pending_review" || statusLower === "pending_approval" ? "bg-blue-500 hover:bg-blue-600 text-white" :
+    statusLower === "draft" ? "bg-warning text-warning-foreground" :
     "bg-muted text-muted-foreground";
 
-  const displayStatus = status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+  const displayStatus = (statusLower === "pending" || statusLower === "pending_review" || statusLower === "pending_approval")
+    ? "Pending"
+    : status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 
   const toLocalDate = (v: any) => {
     if (!v) return "—";

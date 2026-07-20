@@ -57,8 +57,6 @@ const CORE_FIELDS: CastingDirectorFieldSpec[] = [
   { id: "display_name", label: "Display Name", section: "Basic Information", type: "text", required: true, searchable: true },
   { id: "company_name", label: "Company / Agency Name", section: "Basic Information", type: "text", required: false, searchable: true },
   { id: "professional_title", label: "Professional Title", section: "Basic Information", type: "text", required: true, searchable: true },
-  { id: "profile_photo", label: "Profile Photo / Company Logo", section: "Basic Information", type: "file", required: true, searchable: false },
-  { id: "cover_image", label: "Cover Image / Banner", section: "Basic Information", type: "file", required: false, searchable: false },
   { id: "short_bio", label: "Short Bio", section: "Basic Information", type: "textarea", required: true, searchable: true, validation: "50-300 chars" },
   { id: "full_about", label: "Full About Description", section: "Basic Information", type: "textarea", required: false, searchable: true, validation: "Max 3000 chars" },
   { id: "city", label: "City", section: "Basic Information", type: "text", required: true, searchable: true },
