@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, KeyRound, Settings2, ShieldCheck, ShieldAlert, CreditCard, Bell, UserMinus } from "lucide-react";
+import { Loader2, KeyRound, Settings2, ShieldCheck, ShieldAlert, CreditCard, Bell, UserMinus, History, Download } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { authAPI, subscriptionAPI, userAPI } from "@/lib/api";
@@ -28,6 +28,7 @@ export default function DirectorSettings() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmPassword, setDeleteConfirmPassword] = useState("");
   const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
 
   const { activeWorkspace } = useWorkspace();
@@ -42,11 +43,13 @@ export default function DirectorSettings() {
 
   const fetchSettingsData = async () => {
     try {
-      const [subRes, authRes] = await Promise.all([
+      const [subRes, authRes, invRes] = await Promise.all([
         subscriptionAPI.getStatus().catch(() => ({ data: { success: false } })),
         authAPI.getMe().catch(() => ({ data: { success: false } })),
+        subscriptionAPI.getInvoices().catch(() => ({ data: { success: false } })),
       ]);
       if (subRes.data?.success) setSubscriptionInfo(subRes.data.data);
+      if (invRes.data?.success) setInvoices(invRes.data.data.invoices || []);
       if (authRes.data?.success) {
         setNotificationSettings((s: any) => ({
           ...s,
@@ -210,7 +213,7 @@ export default function DirectorSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 rounded-2xl p-1 bg-slate-100/80 border">
+        <TabsList className="grid w-full grid-cols-5 rounded-2xl p-1 bg-slate-100/80 border">
           <TabsTrigger value="preferences" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
             <Settings2 className="w-4 h-4" /> Preferences
           </TabsTrigger>
@@ -219,6 +222,9 @@ export default function DirectorSettings() {
           </TabsTrigger>
           <TabsTrigger value="subscription" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
             <CreditCard className="w-4 h-4" /> Subscription
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
+            <History className="w-4 h-4" /> History
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
             <ShieldCheck className="w-4 h-4" /> Security
@@ -399,6 +405,62 @@ export default function DirectorSettings() {
               >
                 Upgrade Plan
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-6">
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="w-5 h-5 text-primary" />
+                Payment History
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Your past receipts and invoices</p>
+            </CardHeader>
+            <CardContent>
+              {invoices.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-muted-foreground uppercase bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Date</th>
+                        <th className="px-4 py-3 font-medium">Description</th>
+                        <th className="px-4 py-3 font-medium">Amount</th>
+                        <th className="px-4 py-3 font-medium">Status</th>
+                        <th className="px-4 py-3 font-medium text-right">Receipt</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {invoices.map((inv, i) => (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3">{new Date(inv.date * 1000).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 font-medium">{inv.description || "Subscription"}</td>
+                          <td className="px-4 py-3">{formatPrice(inv.amount / 100)}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant={inv.status === "paid" ? "default" : "outline"} className={inv.status === "paid" ? "bg-emerald-500" : ""}>
+                              {inv.status}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {inv.receiptUrl && (
+                              <Button variant="ghost" size="sm" asChild>
+                                <a href={inv.receiptUrl} target="_blank" rel="noreferrer">
+                                  <Download className="w-4 h-4" />
+                                </a>
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground text-center py-8">
+                  No payment history found.
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
