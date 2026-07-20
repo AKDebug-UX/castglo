@@ -93,11 +93,13 @@ export function BrowseCastSection() {
                     alt={casting.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute top-4 right-4">
-                    <Badge className="bg-success text-white border-none px-3 py-1">
-                      Active
-                    </Badge>
-                  </div>
+                  {(casting.status === "published" || casting.status === "active" || casting.status === "open" || casting.status === "open_for_applications") && (
+                    <div className="absolute top-4 right-4">
+                      <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white border-none px-3 py-1 font-bold shadow-sm">
+                        Active
+                      </Badge>
+                    </div>
+                  )}
                 </div>
                 <CardContent className="p-6 flex-1 flex flex-col">
                   <div className="flex-1">
@@ -131,7 +133,7 @@ export function BrowseCastSection() {
                   </div>
 
                   <Button className="w-full bg-[#009698] hover:bg-[#009698]/90 text-white rounded-xl h-12 font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#009698]/20 transition-all active:scale-[0.98]" asChild>
-                    <Link to={casting._id ? `/cast/${casting._id}` : "/sign-in"}>
+                    <Link to={(casting._id || casting.id) ? `/cast/${casting._id || casting.id}` : "/sign-in"}>
                       View Details
                       <ArrowUpRight className="w-5 h-5" />
                     </Link>

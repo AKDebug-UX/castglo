@@ -210,9 +210,13 @@ export default function BrowseCast() {
                   alt={casting.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute top-3 right-3 flex gap-2">
-                  <div className="w-6 h-1.5 rounded-full bg-success shadow-sm" />
-                </div>
+                {(casting.status === "published" || casting.status === "active" || casting.status === "open" || casting.status === "open_for_applications") && (
+                  <div className="absolute top-3 right-3">
+                    <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white border-none px-2.5 py-0.5 text-[10px] font-bold shadow-sm">
+                      Active
+                    </Badge>
+                  </div>
+                )}
               </div>
               <CardContent className="p-5 flex-1 flex flex-col">
                 <div className="flex-1">
@@ -269,7 +273,9 @@ export default function BrowseCast() {
                       alt={casting.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
-                    <div className="absolute top-2 right-2 w-4 h-1 rounded-full bg-success shadow-sm" />
+                    {(casting.status === "published" || casting.status === "active" || casting.status === "open" || casting.status === "open_for_applications") && (
+                      <div className="absolute top-2 right-2 w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-sm border border-white" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0 py-1">
                     <div className="flex items-start justify-between gap-4">

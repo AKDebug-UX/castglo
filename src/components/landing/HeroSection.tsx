@@ -139,26 +139,29 @@ export function HeroSection() {
                 </div>
               ) : (
                 <div className="space-y-3 pb-10">
-                  {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : []).map((call, index) => (
-                    <div key={`${call._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
-                      <div className="relative h-48">
-                        <img 
-                          src={call.project_image || newsProduction} 
-                          alt={call.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                          <h4 className="font-semibold text-white text-xs line-clamp-1">{call.title}</h4>
-                          <p className="text-[10px] text-white/80">{formatLocation(call.location)} • {call.category}</p>
+                  {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : []).map((call, index) => {
+                    const castingId = call._id || call.id;
+                    return (
+                      <div key={`${castingId || index}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
+                        <div className="relative h-48">
+                          <img 
+                            src={call.project_image || newsProduction} 
+                            alt={call.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                            <h4 className="font-semibold text-white text-xs line-clamp-1">{call.title}</h4>
+                            <p className="text-[10px] text-white/80">{formatLocation(call.location)} • {call.category}</p>
+                          </div>
+                        </div>
+                        <div className="p-2">
+                          <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
+                            <Link to={castingId ? `/cast/${castingId}` : "/sign-in"}>View Details</Link>
+                          </Button>
                         </div>
                       </div>
-                      <div className="p-2">
-                        <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
-                          <Link to={call._id ? `/cast/${call._id}` : "/sign-in"}>View Details</Link>
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
