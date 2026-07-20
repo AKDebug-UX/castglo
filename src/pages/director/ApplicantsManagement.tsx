@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { castingCallAPI, applicationAPI, projectAPI } from "@/lib/api";
+import { castingCallAPI, applicationAPI, projectAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -201,50 +201,68 @@ export default function ApplicantsManagement() {
         setProjects(myProjects);
 
         if (myProjects.length > 0) {
-          const roleQueries: { projId: string; roleId: string; projTitle: string; roleName: string }[] = [];
-          myProjects.forEach(p => {
-             const roles = p.roles || [];
-             roles.forEach(r => {
-                roleQueries.push({ 
-                   projId: p._id || p.id, 
-                   roleId: r.id || r._id, 
-                   projTitle: p.projectName || p.title, 
-                   roleName: r.role_name || r.name || r.title 
-                });
-             });
-          });
+          const projectQueries = myProjects.map(p => ({
+            projId: p._id || p.id,
+            projTitle: p.projectName || p.title
+          }));
 
           const results = await Promise.all(
-            roleQueries.map(q => projectAPI.getApplicants(q.projId, q.roleId).catch(() => null))
+            projectQueries.map(q => applicationAPI.getByCastingCall(q.projId).catch(() => null))
           );
           
-          const allApps: Applicant[] = results.flatMap((res, i) => {
+          const allAppsPromises = results.flatMap((res, i) => {
             if (!res || !res.data?.success) return [];
             const payload = res.data.data;
             const list = Array.isArray(payload) ? payload : (payload?.applicants || payload?.applications || []);
-            return list.map((a: any) => {
+            
+            return list.map(async (a: any) => {
               const userObj = (typeof a.userId === "object" ? a.userId : null) || 
                               (typeof a.talentId === "object" ? a.talentId : null) || 
                               (typeof a.talentUserId === "object" ? a.talentUserId : null) ||
                               a.talentUser || a.talent || a.user;
                               
+              let resolvedUser: any = userObj;
+              
+              if (!resolvedUser) {
+                const tId = (typeof a.talentId === "string" ? a.talentId : null) ||
+                            (typeof a.userId === "string" ? a.userId : null) ||
+                            (typeof a.talentUserId === "string" ? a.talentUserId : null);
+                if (tId) {
+                  try {
+                    const uRes = await userAPI.getOne(tId);
+                    if (uRes.data?.success) {
+                      resolvedUser = uRes.data.data;
+                    }
+                  } catch (err) {
+                    console.error("Failed to load talent profile in ApplicantsManagement:", tId, err);
+                  }
+                }
+              }
+                              
               const talentData = {
-                _id: userObj?._id || userObj?.id || (typeof a.userId === "string" ? a.userId : (typeof a.talentUserId === "string" ? a.talentUserId : a.talentId)),
-                fullName: userObj?.fullName || a.fullName || a.displayName || a.display_name,
-                profilePicture: userObj?.profilePicture || a.profilePicture,
-                email: userObj?.email || a.email || a.talentEmail || a.userId?.email || a.talentId?.email || "",
+                _id: resolvedUser?._id || resolvedUser?.id || (typeof a.userId === "string" ? a.userId : (typeof a.talentUserId === "string" ? a.talentUserId : a.talentId)),
+                fullName: resolvedUser?.fullName || resolvedUser?.name || a.fullName || a.displayName || "Unknown Talent",
+                profilePicture: resolvedUser?.profilePicture || resolvedUser?.profile_photo || a.profilePicture,
+                email: resolvedUser?.email || a.email || a.talentEmail || "",
               };
+
+              const resolvedRoleName = a.appliedRole || a.role?.role_name || a.role?.title || "General Application";
+              const resolvedRoleId = a.roleId || a.role?._id || a.role?.id || "general";
 
               return {
                 ...a, 
+                _id: a._id || a.id,
+                id: a._id || a.id,
                 talent: talentData,
-                roleId: roleQueries[i].roleId,
-                roleName: roleQueries[i].roleName,
-                castingCall: { ...a.castingCall, _id: roleQueries[i].projId, title: roleQueries[i].projTitle } 
+                roleId: resolvedRoleId,
+                roleName: resolvedRoleName,
+                castingCall: { ...a.castingCall, _id: projectQueries[i].projId, title: projectQueries[i].projTitle } 
               };
             });
           });
-          setApplicants(allApps);
+          
+          const resolvedApps = await Promise.all(allAppsPromises);
+          setApplicants(resolvedApps.filter(Boolean));
         }
       } catch {
         toast.error("Failed to load applicants.");
@@ -414,6 +432,7 @@ export default function ApplicantsManagement() {
   // ── Applicant card (reused in both kanban + list) ─────────────────────────
   const ApplicantCard = ({ app }: { app: Applicant }) => {
     const projectPermissions = getPermissionsForProject(app.castingCall?._id || app.castingCall?.id);
+    const stage = STAGE_MAP[app.status as PipelineStage] || STAGE_MAP["review"];
     
     return (
       <div
@@ -667,7 +686,7 @@ export default function ApplicantsManagement() {
                         No applicants
                       </div>
                     ) : (
-                      cards.map(app => <ApplicantCard key={app._id} app={app} />)
+                      cards.map(app => <ApplicantCard key={app._id || app.id} app={app} />)
                     )}
                   </div>
                 </div>

@@ -671,43 +671,6 @@ export default function Profile() {
   const handleSave = async (skipValidation: boolean = false) => {
     if (!profileData) return;
 
-    // 1. Proactive "Healing" of other profiles to prevent validation blockers
-    try {
-      await profileAPI.updateProfessional({
-        fullName: profileData.fullName || user?.fullName,
-        displayName: (user as any)?.stageName || profileData.fullName,
-        email: user?.email || profileData.email,
-        phoneNumber: (user as any)?.phone || profileData.phone || profileData.phoneNumber,
-        professionalTitle: "Talent",
-        city: (user as any)?.address?.city || profileData.city || "",
-        country: (user as any)?.address?.country || profileData.country || "",
-        shortBio: profileData.bio || "",
-        availabilityType: "Part-time",
-        preferredContactMethod: "Castglo",
-        bookingMethod: "Direct",
-        servesClientTypes: [],
-        certifications: "",
-        professionalMemberships: ""
-      });
-    } catch (e) {
-      console.warn("Professional healing skipped:", e);
-    }
-
-    try {
-      await userAPI.updateProfile({
-        fullName: profileData.fullName,
-        bio: profileData.bio,
-        professionalProfile: { certifications: "", professionalMemberships: "" },
-        professional_profile: { certifications: "", professional_memberships: "" },
-        "professionalProfile.certifications": "",
-        "professionalProfile.professionalMemberships": "",
-        "professional_profile.certifications": "",
-        "professional_profile.professional_memberships": ""
-      });
-    } catch (e) {
-      console.warn("Core profile healing failed:", e);
-    }
-
     setIsSaving(true);
     try {
       const unifiedPayload: any = {

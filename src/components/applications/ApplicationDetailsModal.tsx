@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { applicationAPI } from "@/lib/api";
+import { applicationAPI, castingCallAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { Loader2, MessageSquare, Send } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,18 +19,27 @@ interface ApplicationDetailsModalProps {
 export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: ApplicationDetailsModalProps) {
   const { user } = useAuth();
   const [application, setApplication] = useState<any>(null);
+  const [resolvedCastingCall, setResolvedCastingCall] = useState<any>(null);
+  const [resolvedTalent, setResolvedTalent] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
 
   const { getPermissionsForProject } = useWorkspace();
-  const permissions = getPermissionsForProject(application?.castingCallId?._id || application?.castingCallId || application?.castingCall?._id);
+  const permissions = getPermissionsForProject(
+    application?.castingCallId?._id || 
+    application?.castingCallId || 
+    application?.castingCall?._id ||
+    resolvedCastingCall?._id
+  );
 
   useEffect(() => {
     if (isOpen && applicationId) {
       fetchApplicationDetails();
     } else {
       setApplication(null);
+      setResolvedCastingCall(null);
+      setResolvedTalent(null);
     }
   }, [isOpen, applicationId]);
 
@@ -39,7 +48,37 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
     try {
       const res = await applicationAPI.getDetails(applicationId as string);
       if (res.data?.success) {
-        setApplication(res.data.data);
+        const app = res.data.data;
+        setApplication(app);
+        
+        // Resolve casting call details
+        if (app.castingCallId && typeof app.castingCallId === "object") {
+          setResolvedCastingCall(app.castingCallId);
+        } else if (typeof app.castingCallId === "string") {
+          try {
+            const ccRes = await castingCallAPI.getOne(app.castingCallId);
+            if (ccRes.data?.success) {
+              setResolvedCastingCall(ccRes.data.data?.castingCall || ccRes.data.data);
+            }
+          } catch (err) {
+            console.error("Failed to load casting call details for modal:", app.castingCallId, err);
+          }
+        }
+        
+        // Resolve talent user details
+        const tId = app.talentId || app.talentUserId;
+        if (tId && typeof tId === "object") {
+          setResolvedTalent(tId);
+        } else if (typeof tId === "string") {
+          try {
+            const tRes = await userAPI.getOne(tId);
+            if (tRes.data?.success) {
+              setResolvedTalent(tRes.data.data);
+            }
+          } catch (err) {
+            console.error("Failed to load talent details for modal:", tId, err);
+          }
+        }
       } else {
         toast.error("Failed to load application details");
       }
@@ -73,6 +112,7 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
   };
 
   const statusColors: Record<string, string> = {
+    "pending": "bg-blue-500 text-white",
     "submitted": "bg-slate-500 text-white",
     "viewed": "bg-blue-400 text-white",
     "shortlisted": "bg-amber-500 text-white",
@@ -128,11 +168,11 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">{isProfessionalApplicant ? "Project / Casting Call" : "Casting Call"}</p>
-                      <p className="font-medium">{application.castingCallId?.project_title || application.castingCallId?.title || application.project?.title || application.project?.projectName || application.castingCall?.title || "Unknown"}</p>
+                      <p className="font-medium">{resolvedCastingCall?.project_title || resolvedCastingCall?.title || application.project?.title || application.project?.projectName || application.castingCall?.title || "Unknown"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">{isProfessionalApplicant ? "Professional Provider" : "Applicant"}</p>
-                      <p className="font-medium">{application.talentId?.fullName || application.talentUser?.fullName || "Unknown"}</p>
+                      <p className="font-medium">{resolvedTalent?.fullName || application.talentId?.fullName || application.talentUser?.fullName || "Unknown"}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Date Submitted</p>
@@ -140,7 +180,7 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
                     </div>
                     <div>
                       <p className="text-muted-foreground">Applied Role / Category</p>
-                      <p className="font-medium">{application.appliedRole || application.role?.role_name || application.role?.name || application.role?.title || application.castingCallId?.category || application.castingCall?.category || "Unknown"}</p>
+                      <p className="font-medium">{application.appliedRole || application.role?.role_name || application.role?.name || application.role?.title || resolvedCastingCall?.category || application.project?.category || "Unknown"}</p>
                     </div>
                   </div>
 
