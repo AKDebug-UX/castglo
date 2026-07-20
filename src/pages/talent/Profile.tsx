@@ -90,12 +90,12 @@ export default function Profile() {
       });
 
       // 2. Explicit mappings for root and special fields (ensures priority for core identity)
-      if (!unified.full_name) unified.full_name = combinedData.fullName;
-      if (!unified.display_name) unified.display_name = combinedData.stageName || tp.displayName;
-      if (!unified.email) unified.email = combinedData.email;
-      if (!unified.phone_number) unified.phone_number = combinedData.phone || combinedData.phoneNumber || combinedData.user?.phoneNumber || tp.phoneNumber || tp.phone;
+      if (!unified.full_name) unified.full_name = tp.fullName || combinedData.fullName;
+      if (!unified.display_name) unified.display_name = tp.displayName || combinedData.stageName;
+      if (!unified.email) unified.email = tp.email || combinedData.email;
+      if (!unified.phone_number) unified.phone_number = tp.phoneNumber || tp.phone || combinedData.phone || combinedData.phoneNumber || combinedData.user?.phoneNumber;
 
-      const addrRaw = combinedData.address || combinedData.user?.address || tp.address || combinedData.location || {};
+      const addrRaw = tp.address || combinedData.address || combinedData.user?.address || combinedData.location || {};
       if (!unified.address) {
         unified.address = typeof addrRaw === 'string' ? addrRaw : (addrRaw?.fullAddress || addrRaw?.street || "");
       }
@@ -114,7 +114,7 @@ export default function Profile() {
       
       if (!unified.age_group) unified.age_group = tp.ageGroup;
       if (!unified.nationality) unified.nationality = tp.nationality;
-      if (!unified.short_bio) unified.short_bio = combinedData.bio || tp.shortBio;
+      if (!unified.short_bio) unified.short_bio = tp.shortBio || combinedData.bio;
       if (!unified.full_bio) unified.full_bio = tp.fullBio;
       if (!unified.career_goals) unified.career_goals = typeof tp.careerGoals === 'string' ? tp.careerGoals : (Array.isArray(tp.careerGoals) ? tp.careerGoals.join(', ') : "");
       if (!unified.years_of_experience) unified.years_of_experience = tp.yearsOfExperience;
@@ -1121,6 +1121,10 @@ export default function Profile() {
     return Math.round((filled / coreFields.length) * 100);
   }, [profileData]);
 
+  const profileName = useMemo(() => {
+    return profileData?.talentProfile?.fullName || profileData?.fullName || "Your Profile";
+  }, [profileData]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
@@ -1144,12 +1148,12 @@ export default function Profile() {
                   pendingProfilePhoto?.preview ||
                   profileData?.profilePicture ||
                   profileData?.talent?.headshots?.[0]?.url ||
-                  getAvatarUrl(profileData?.fullName)
+                  getAvatarUrl(profileName)
                 }
                 className="object-cover"
               />
               <AvatarFallback className="bg-white/20 text-white font-bold text-3xl backdrop-blur-md">
-                {getInitials(profileData?.fullName)}
+                {getInitials(profileName)}
               </AvatarFallback>
             </Avatar>
             {pendingProfilePhoto && (
@@ -1173,7 +1177,7 @@ export default function Profile() {
           <div className="flex-1 text-center md:text-left space-y-4">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">{profileData?.fullName || "Your Profile"}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{profileName}</h1>
                 {profileData?.isVerified && (
                   <Badge className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-md px-3 py-1">
                     <ShieldCheck className="w-4 h-4 mr-2" />

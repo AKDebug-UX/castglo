@@ -49,17 +49,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const buildUserObj = (userData: any): User => ({
-  id: userData._id || userData.id,
-  email: userData.email,
-  role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
-  fullName: userData.fullName,
-  profilePicture: userData.profilePicture,
-  isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-  isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
-  preferredCurrency: userData.preferredCurrency || "GBP",
-  twoFactorEnabled: userData.twoFactorEnabled || userData.isTwoFactorEnabled || userData.is2FAEnabled || userData.twoFactorAuthEnabled || false,
-});
+const buildUserObj = (userData: any): User => {
+  const tp = userData.talentProfile || {};
+  const cp = userData.castingDirectorProfile || userData.castingProfile || {};
+  const pp = userData.professionalProfile || userData.professional || {};
+
+  const resolvedFullName = cp.fullName || tp.fullName || pp.fullName || userData.fullName || "";
+
+  return {
+    id: userData._id || userData.id,
+    email: userData.email,
+    role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
+    fullName: resolvedFullName,
+    profilePicture: userData.profilePicture,
+    isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
+    isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
+    preferredCurrency: userData.preferredCurrency || "GBP",
+    twoFactorEnabled: userData.twoFactorEnabled || userData.isTwoFactorEnabled || userData.is2FAEnabled || userData.twoFactorAuthEnabled || false,
+  };
+};
 
 const getErrorMessage = (data: any, fallback: string): string => {
   if (!data) return fallback;

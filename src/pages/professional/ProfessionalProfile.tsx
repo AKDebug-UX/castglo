@@ -44,6 +44,10 @@ export default function ProfessionalProfile() {
     return Math.round(((filled + (hasPhoto ? 1 : 0)) / (coreFields.length + 1)) * 100);
   }, [profileData]);
 
+  const profileName = useMemo(() => {
+    return profileData?.professionalProfile?.fullName || profileData?.fullName || "Your Profile";
+  }, [profileData]);
+
   const fetchProfile = async () => {
     try {
       const [authRes, profileRes] = await Promise.all([
@@ -63,12 +67,12 @@ export default function ProfessionalProfile() {
       const unified = combinedData.unifiedProfessionalProfile || {};
 
       // Map root and nested API properties back to unified field IDs
-      if (!unified.full_name) unified.full_name = combinedData.fullName || pp.fullName;
-      if (!unified.display_name) unified.display_name = combinedData.displayName || pp.displayName;
-      if (!unified.email) unified.email = combinedData.email || pp.email;
-      if (!unified.phone_number) unified.phone_number = combinedData.phoneNumber || combinedData.phone || pp.phoneNumber || pp.phone;
-      if (!unified.short_bio) unified.short_bio = combinedData.shortBio || combinedData.bio || pp.shortBio || pp.bio;
-      if (!unified.full_bio) unified.full_bio = combinedData.fullBio || combinedData.full_bio || pp.fullBio || pp.fullAbout;
+      if (!unified.full_name) unified.full_name = pp.fullName || combinedData.fullName;
+      if (!unified.display_name) unified.display_name = pp.displayName || combinedData.displayName;
+      if (!unified.email) unified.email = pp.email || combinedData.email;
+      if (!unified.phone_number) unified.phone_number = pp.phoneNumber || pp.phone || combinedData.phoneNumber || combinedData.phone;
+      if (!unified.short_bio) unified.short_bio = pp.shortBio || pp.bio || combinedData.shortBio || combinedData.bio;
+      if (!unified.full_bio) unified.full_bio = pp.fullBio || pp.fullAbout || combinedData.fullBio || combinedData.full_bio;
       
       // Map specialized professional information
       const bd = pp.businessDetails || {};
@@ -547,12 +551,12 @@ export default function ProfessionalProfile() {
                 src={
                   pendingProfilePhoto?.preview ||
                   profileData?.profilePicture ||
-                  getAvatarUrl(profileData?.fullName)
+                  getAvatarUrl(profileName)
                 }
                 className="object-cover"
               />
               <AvatarFallback className="bg-white/20 text-white font-bold text-3xl backdrop-blur-md">
-                {getInitials(profileData?.fullName)}
+                {getInitials(profileName)}
               </AvatarFallback>
             </Avatar>
             <label
@@ -590,7 +594,7 @@ export default function ProfessionalProfile() {
           <div className="flex-1 text-center md:text-left space-y-4">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                <h1 className="text-3xl font-bold tracking-tight">{profileData?.fullName || "Your Profile"}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{profileName}</h1>
                 {profileData?.isVerified && (
                   <Badge className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-md px-3 py-1">
                     Verified Professional

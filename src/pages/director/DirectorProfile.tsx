@@ -38,6 +38,10 @@ export default function DirectorProfile() {
     return Math.round(((filled + (hasPhoto ? 1 : 0)) / (coreFields.length + 1)) * 100);
   }, [profileData]);
 
+  const profileName = useMemo(() => {
+    return profileData?.castingDirectorProfile?.fullName || profileData?.fullName || "Director Profile";
+  }, [profileData]);
+
   const fetchProfileData = async () => {
     try {
       const [profileRes] = await Promise.all([
@@ -93,22 +97,22 @@ export default function DirectorProfile() {
       });
 
       // 2. Explicit mappings for root and special fields (ensures priority for core identity)
-      if (combinedData.fullName) unified.full_name = combinedData.fullName;
-      if (combinedData.displayName || cp.displayName) unified.display_name = combinedData.displayName || cp.displayName;
-      if (combinedData.company_name || cp.companyName) unified.company_name = combinedData.company_name || cp.companyName;
-      if (combinedData.professional_title || cp.professionalTitle || combinedData.jobTitle) unified.professional_title = combinedData.professional_title || cp.professionalTitle || combinedData.jobTitle;
-      if (combinedData.email) unified.email = combinedData.email;
-      if (combinedData.phone || combinedData.phoneNumber) unified.phone_number = combinedData.phone || combinedData.phoneNumber;
+      if (!unified.full_name) unified.full_name = cp.fullName || combinedData.fullName;
+      if (!unified.display_name) unified.display_name = cp.displayName || combinedData.displayName;
+      if (!unified.company_name) unified.company_name = cp.companyName || combinedData.company_name;
+      if (!unified.professional_title) unified.professional_title = cp.professionalTitle || combinedData.professional_title || combinedData.jobTitle;
+      if (!unified.email) unified.email = cp.email || combinedData.email;
+      if (!unified.phone_number) unified.phone_number = cp.phoneNumber || cp.phone || combinedData.phone || combinedData.phoneNumber;
 
-      const addr = combinedData.address || cp.location || {};
-      if (addr.city || combinedData.city) unified.city = addr.city || combinedData.city;
-      if (addr.state) unified.state = addr.state;
-      if (addr.country || combinedData.country) unified.country = addr.country || combinedData.country;
+      const addr = cp.location || combinedData.address || {};
+      if (!unified.city) unified.city = addr.city || combinedData.city;
+      if (!unified.state) unified.state = addr.state;
+      if (!unified.country) unified.country = addr.country || combinedData.country;
 
-      if (cp.accountType || combinedData.primaryAccountType) unified.primary_account_type = cp.accountType || combinedData.primaryAccountType;
-      if (cp.additionalAccountTypes || combinedData.additionalAccountTypes) unified.additional_account_types = cp.additionalAccountTypes || combinedData.additionalAccountTypes;
-      if (cp.industryAreas || combinedData.industryAreas) unified.industry_areas = cp.industryAreas || combinedData.industryAreas;
-      if (cp.applicantStatuses || combinedData.applicantStatuses) unified.applicant_statuses = cp.applicantStatuses || combinedData.applicantStatuses;
+      if (!unified.primary_account_type) unified.primary_account_type = cp.accountType || combinedData.primaryAccountType;
+      if (!unified.additional_account_types) unified.additional_account_types = cp.additionalAccountTypes || combinedData.additionalAccountTypes;
+      if (!unified.industry_areas) unified.industry_areas = cp.industryAreas || combinedData.industryAreas;
+      if (!unified.applicant_statuses) unified.applicant_statuses = cp.applicantStatuses || combinedData.applicantStatuses;
       if (cp.socialLinks || combinedData.socialLinks) unified.social_links = cp.socialLinks || combinedData.socialLinks;
       if (cp.website || combinedData.website) unified.website = cp.website || combinedData.website;
 
@@ -294,12 +298,12 @@ export default function DirectorProfile() {
                 src={
                   pendingProfilePhoto?.preview ||
                   profileData?.profilePicture ||
-                  getAvatarUrl(profileData?.fullName)
+                  getAvatarUrl(profileName)
                 }
                 className="object-cover"
               />
               <AvatarFallback className="bg-white/20 text-white font-bold text-3xl backdrop-blur-md">
-                {getInitials(profileData?.fullName)}
+                {getInitials(profileName)}
               </AvatarFallback>
             </Avatar>
             <label
@@ -336,7 +340,7 @@ export default function DirectorProfile() {
 
           <div className="flex-1 text-center md:text-left space-y-4">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">{profileData?.fullName || "Director Profile"}</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{profileName}</h1>
               {profileData?.isVerified && (
                 <Badge className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-md px-3 py-1">
                   Verified Director
