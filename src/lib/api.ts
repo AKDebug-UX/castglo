@@ -87,6 +87,8 @@ export const API_ENDPOINTS = {
     GET_MY_CONVERSATIONS: '/messaging/conversations',
     SEND_MESSAGE: '/messaging/messages',
     GET_MESSAGES: (id: string) => `/messaging/conversations/${id}/messages`,
+    PROJECT_CONVERSATION: '/messaging/project-conversation',
+    PROJECT_PARTICIPANTS: (projectId: string) => `/messaging/project-conversation/${projectId}/participants`,
   },
   NOTIFICATIONS: {
     GET_ALL: '/notifications',
@@ -325,6 +327,10 @@ export const messagingAPI = {
   sendMessage: (data: { conversationId: string, text: string, mediaUrl?: string }) =>
     api.post(API_ENDPOINTS.MESSAGING.SEND_MESSAGE, data),
   getMessages: (id: string, params) => api.get(API_ENDPOINTS.MESSAGING.GET_MESSAGES(id), { params }),
+  getOrCreateProjectConversation: (projectId: string) =>
+    api.post(API_ENDPOINTS.MESSAGING.PROJECT_CONVERSATION, { projectId }),
+  getProjectParticipants: (projectId: string) =>
+    api.get(API_ENDPOINTS.MESSAGING.PROJECT_PARTICIPANTS(projectId)),
 };
 
 // --- NOTIFICATION ENDPOINTS ---

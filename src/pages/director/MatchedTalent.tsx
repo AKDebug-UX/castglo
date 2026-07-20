@@ -19,6 +19,8 @@ import {
 import { castingCallAPI, messagingAPI, profileAPI, applicationAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { resolveMediaUrl } from "@/lib/utils";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
+
 
 interface TalentProfile {
   _id: string;
@@ -69,6 +71,7 @@ const getMatchColor = (score: number) => {
 
 export default function MatchedTalent() {
   const navigate = useNavigate();
+  const { activeWorkspace } = useWorkspace();
   
   // Helper functions (defined first so they can be used in any useEffect
   const getRoleId = (r: any) => String(r?.id || r?._id || r?.roleId || r?.role_id || r?.uuid || "");
@@ -138,10 +141,23 @@ export default function MatchedTalent() {
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const listingsRes = await projectAPI.getMe();
-        const myProjects: Project[] = listingsRes.data?.success
-          ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [])
-          : [];
+        let myProjects: Project[] = [];
+        if (activeWorkspace === "Personal") {
+          const listingsRes = await projectAPI.getMe();
+          myProjects = listingsRes.data?.success
+            ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [])
+            : [];
+        } else {
+          myProjects = (activeWorkspace.projectGrants || [])
+            .map((g: any) => g.projectId)
+            .filter((p: any) => p && typeof p === "object")
+            .map((p: any) => ({
+              _id: p._id || p.id,
+              title: p.title || p.projectName,
+              projectName: p.projectName || p.title,
+              roles: p.roles || []
+            }));
+        }
         setProjects(myProjects);
 
         // Auto-select the first project as default if there are projects and no URL query params
@@ -160,7 +176,7 @@ export default function MatchedTalent() {
       }
     };
     loadProjects();
-  }, [searchParams]);
+  }, [searchParams, activeWorkspace]);
 
   // 2. Initialize selectedProject and selectedRole from URL params ONLY (no auto-select first project/role)
   useEffect(() => {

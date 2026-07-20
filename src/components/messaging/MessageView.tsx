@@ -3,9 +3,9 @@ import { useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Send, Loader2, MessageSquare, Search, ChevronLeft, ChevronDown, Smile, Paperclip, Phone, Video, MoreHorizontal, Check, CheckCheck, RefreshCw } from "lucide-react";
+import { Plus, Send, Loader2, MessageSquare, Search, ChevronLeft, ChevronDown, Smile, Paperclip, Phone, Video, MoreHorizontal, Check, CheckCheck, RefreshCw, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { messagingAPI, userAPI } from "@/lib/api";
+import { messagingAPI, userAPI, projectAPI } from "@/lib/api";
 import { socketService } from "@/lib/socket";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 // Helper to extract an ID from any conversation/user object
 const getId = (obj: any): string | undefined => obj?._id || obj?.id;
@@ -23,8 +26,12 @@ const Sidebar = ({ conversations, selectedConversation, onSelectConversation, us
   const [search, setSearch] = useState("");
 
   const filtered = conversations.filter(conv => {
-    const other = conv.participants?.find(p => p._id !== user?.id && p.id !== user?.id);
-    return (other?.fullName || "").toLowerCase().includes(search.toLowerCase());
+    const isProjectChat = conv.isGroup || conv.isProjectChat || !!conv.project || !!conv.projectId;
+    const other = !isProjectChat ? conv.participants?.find(p => p._id !== user?.id && p.id !== user?.id) : null;
+    const chatName = isProjectChat
+      ? (conv.project?.projectName || conv.project?.title || conv.projectName || conv.title || "Project Group Chat")
+      : (other?.fullName || "Casting Team");
+    return chatName.toLowerCase().includes(search.toLowerCase());
   });
 
   return (
@@ -89,7 +96,11 @@ const Sidebar = ({ conversations, selectedConversation, onSelectConversation, us
       <ScrollArea className="flex-1">
         <div className="py-1">
           {filtered.length > 0 ? filtered.map(conv => {
-            const other = conv.participants?.find(p => p._id !== user?.id && p.id !== user?.id);
+            const isProjectChat = conv.isGroup || conv.isProjectChat || !!conv.project || !!conv.projectId;
+            const other = !isProjectChat ? conv.participants?.find(p => p._id !== user?.id && p.id !== user?.id) : null;
+            const chatName = isProjectChat
+              ? (conv.project?.projectName || conv.project?.title || conv.projectName || conv.title || "Project Group Chat")
+              : (other?.fullName || "Casting Team");
             const isSelected = getId(selectedConversation) === getId(conv);
             const convId = getId(conv);
             return (
@@ -103,15 +114,23 @@ const Sidebar = ({ conversations, selectedConversation, onSelectConversation, us
               >
                 <div className="relative flex-shrink-0">
                   <Avatar className="h-11 w-11 ring-2 ring-white shadow-sm">
-                    <AvatarImage src={other?.profilePicture} />
-                    <AvatarFallback className={cn(
-                      "text-sm font-bold",
-                      isSelected ? "bg-primary/10 text-primary" : "bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600"
-                    )}>
-                      {other?.fullName?.[0] || "?"}
-                    </AvatarFallback>
+                    {isProjectChat ? (
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
+                        <Users className="w-5 h-5" />
+                      </AvatarFallback>
+                    ) : (
+                      <>
+                        <AvatarImage src={other?.profilePicture} />
+                        <AvatarFallback className={cn(
+                          "text-sm font-bold",
+                          isSelected ? "bg-primary/10 text-primary" : "bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600"
+                        )}>
+                          {other?.fullName?.[0] || "?"}
+                        </AvatarFallback>
+                      </>
+                    )}
                   </Avatar>
-                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full" />
+                  {!isProjectChat && <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-0.5">
@@ -119,7 +138,7 @@ const Sidebar = ({ conversations, selectedConversation, onSelectConversation, us
                       "text-sm truncate",
                       isSelected ? "font-bold text-primary" : "font-semibold text-slate-800"
                     )}>
-                      {other?.fullName || "Casting Team"}
+                      {chatName}
                     </p>
                     {conv.lastMessage && (
                       <span className="text-[10px] text-slate-400 ml-2 flex-shrink-0">
@@ -158,7 +177,37 @@ const ChatView = ({ selectedConversation, messages, user, isMobileView, onDesele
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const other = selectedConversation?.participants?.find(p => p._id !== user?.id && p.id !== user?.id);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+
+  const isProjectChat = selectedConversation?.isGroup || selectedConversation?.isProjectChat || !!selectedConversation?.project || !!selectedConversation?.projectId;
+
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      if (!isProjectChat || !selectedConversation) return;
+      const pid = selectedConversation.project?._id || selectedConversation.project?.id || selectedConversation.projectId;
+      if (!pid) return;
+      
+      setLoadingParticipants(true);
+      try {
+        const res = await messagingAPI.getProjectParticipants(pid);
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          setParticipants(res.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to load project participants:", err);
+      } finally {
+        setLoadingParticipants(false);
+      }
+    };
+    fetchParticipants();
+  }, [selectedConversation, isProjectChat]);
+
+  const other = !isProjectChat ? selectedConversation?.participants?.find(p => p._id !== user?.id && p.id !== user?.id) : null;
+  const chatName = isProjectChat
+    ? (selectedConversation?.project?.projectName || selectedConversation?.project?.title || selectedConversation?.projectName || selectedConversation?.title || "Project Group Chat")
+    : (other?.fullName || "Casting Team");
 
   return (
     <div className={cn(
@@ -177,16 +226,34 @@ const ChatView = ({ selectedConversation, messages, user, isMobileView, onDesele
               )}
               <div className="relative">
                 <Avatar className="h-10 w-10 ring-2 ring-white shadow-sm">
-                  <AvatarImage src={other?.profilePicture} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/30 text-primary font-bold text-sm">
-                    {other?.fullName?.[0] || "?"}
-                  </AvatarFallback>
+                  {isProjectChat ? (
+                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
+                      <Users className="w-5 h-5" />
+                    </AvatarFallback>
+                  ) : (
+                    <>
+                      <AvatarImage src={other?.profilePicture} />
+                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/30 text-primary font-bold text-sm">
+                        {other?.fullName?.[0] || "?"}
+                      </AvatarFallback>
+                    </>
+                  )}
                 </Avatar>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full" />
+                {!isProjectChat && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full" />}
               </div>
               <div>
-                <p className="font-semibold text-slate-900 text-sm leading-none mb-0.5">{other?.fullName || "Casting Team"}</p>
-                <p className="text-[11px] text-emerald-500 font-medium">Active now</p>
+                <p className="font-semibold text-slate-900 text-sm leading-none mb-0.5">{chatName}</p>
+                {isProjectChat ? (
+                  <button 
+                    onClick={() => setShowParticipantsModal(true)}
+                    className="text-[11px] text-emerald-600 hover:text-emerald-700 font-semibold hover:underline flex items-center gap-1 transition-all focus:outline-none"
+                  >
+                    <Users className="w-3 h-3" />
+                    {participants.length > 0 ? `${participants.length} participants` : "View participants"}
+                  </button>
+                ) : (
+                  <p className="text-[11px] text-emerald-500 font-medium">Active now</p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -233,11 +300,18 @@ const ChatView = ({ selectedConversation, messages, user, isMobileView, onDesele
                     {/* Avatar for other user */}
                     {!isSelf && (
                       <div className="flex-shrink-0 w-7">
-                        {isLast ? (
+                        {isLast && !isProjectChat ? (
                           <Avatar className="h-7 w-7">
                             <AvatarImage src={other?.profilePicture} />
                             <AvatarFallback className="text-[10px] bg-slate-200 text-slate-600 font-bold">
                               {other?.fullName?.[0] || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                        ) : isLast && isProjectChat ? (
+                          <Avatar className="h-7 w-7">
+                            <AvatarImage src={msg.senderId?.profilePicture} />
+                            <AvatarFallback className="text-[10px] bg-slate-200 text-slate-600 font-bold">
+                              {msg.senderId?.fullName?.[0] || "?"}
                             </AvatarFallback>
                           </Avatar>
                         ) : null}
@@ -245,7 +319,12 @@ const ChatView = ({ selectedConversation, messages, user, isMobileView, onDesele
                     )}
 
                     <div className={cn("flex flex-col max-w-[72%] md:max-w-[60%]", isSelf ? "items-end" : "items-start")}>
-                      <div className={cn(
+                      {isProjectChat && !isSelf && !isGrouped && (
+                        <span className="text-[10px] text-slate-400 font-medium ml-1 mb-0.5">
+                          {msg.senderId?.fullName || "Participant"}
+                        </span>
+                      )}
+                       <div className={cn(
                         "px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words",
                         isSelf
                           ? cn(
@@ -328,6 +407,55 @@ const ChatView = ({ selectedConversation, messages, user, isMobileView, onDesele
               </button>
             </div>
           </div>
+
+          {/* Group Participants Dialog Modal */}
+          <Dialog open={showParticipantsModal} onOpenChange={setShowParticipantsModal}>
+            <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden border-none rounded-2xl">
+              <div className="bg-gradient-to-br from-primary/5 to-primary/10 px-6 py-5 border-b border-slate-100">
+                <DialogTitle className="text-base font-bold text-slate-900">Project Chat Participants</DialogTitle>
+                <DialogDescription className="text-xs text-slate-500 mt-0.5">
+                  People participating in this project group conversation
+                </DialogDescription>
+              </div>
+              <div className="p-6 max-h-[350px] overflow-y-auto space-y-4 bg-white">
+                {loadingParticipants ? (
+                  <div className="py-8 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                  </div>
+                ) : participants.length > 0 ? (
+                  <div className="space-y-3.5">
+                    {participants.map((p: any) => {
+                      const pUser = p.user || p;
+                      const isOwner = p.isOwner || p.role === "casting_director";
+                      return (
+                        <div key={pUser._id || pUser.id} className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <Avatar className="h-8 w-8 flex-shrink-0">
+                              <AvatarImage src={pUser.profilePicture || pUser.profile_photo} />
+                              <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">
+                                {pUser.fullName?.[0] || "?"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-slate-800 text-xs truncate leading-snug">{pUser.fullName}</p>
+                              <p className="text-[10px] text-slate-400 capitalize">{pUser.role?.replace("_", " ") || "Member"}</p>
+                            </div>
+                          </div>
+                          {isOwner && (
+                            <Badge className="bg-primary/10 text-primary border-none hover:bg-primary/15 text-[9px] font-bold py-0.5 px-2 rounded-full">
+                              Owner
+                            </Badge>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-center text-xs text-slate-400 py-6">No participants found</p>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </>
       ) : (
         /* Empty state when no conversation selected */
@@ -420,6 +548,58 @@ export default function MessageView({
   const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Group chat specific states
+  const [newChatType, setNewChatType] = useState<"direct" | "project">("direct");
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [myProjects, setMyProjects] = useState<any[]>([]);
+
+  // Safe Workspace retrieval
+  const workspaceCtx = useWorkspace();
+  const activeWorkspace = workspaceCtx?.activeWorkspace ?? "Personal";
+
+  const fetchProjectsForChat = async () => {
+    try {
+      const isPersonal = activeWorkspace === "Personal";
+      if (!isPersonal) {
+        const collab = activeWorkspace as any;
+        const projectsFromGrants = (collab.projectGrants || [])
+          .map((grant: any) => {
+            const p = grant.projectId;
+            if (p && typeof p === "object") {
+              return {
+                ...p,
+                _id: p._id || p.id,
+                title: p.title || p.projectName,
+                projectName: p.projectName || p.title,
+                roles: p.roles || []
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
+        setMyProjects(projectsFromGrants);
+        return;
+      }
+      
+      const response = await projectAPI.getMe();
+      if (response.data?.success) {
+        const rawList = response.data.data;
+        const list = Array.isArray(rawList)
+          ? rawList
+          : (rawList?.projects || rawList?.castingCalls || []);
+        setMyProjects(list);
+      }
+    } catch (err) {
+      console.error("Failed to load projects for chat:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isModalOpen) {
+      fetchProjectsForChat();
+    }
+  }, [isModalOpen]);
+
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   const getConvId = (conv: any) => getId(conv);
@@ -457,6 +637,8 @@ export default function MessageView({
       setFormSubject("");
       setFormMessage("");
       setIsDropdownOpen(false);
+      setNewChatType("direct");
+      setSelectedProjectId("");
     }
   }, [isModalOpen]);
 
@@ -492,7 +674,36 @@ export default function MessageView({
 
         setConversations(convs);
 
-        if (talentId) {
+        const queryProjectId = searchParams.get("projectId") || searchParams.get("project");
+        if (queryProjectId) {
+          const existingConv = convs.find(c =>
+            c.project?._id === queryProjectId ||
+            c.project?.id === queryProjectId ||
+            c.projectId === queryProjectId ||
+            c.metadata?.projectId === queryProjectId
+          );
+          if (existingConv) {
+            setSelectedConversation(existingConv);
+          } else {
+            try {
+              const res = await messagingAPI.getOrCreateProjectConversation(queryProjectId);
+              if (res.data?.success) {
+                const newConv = res.data.data;
+                setConversations(prev => {
+                  if (prev.some(c => getId(c) === getId(newConv))) return prev;
+                  return [newConv, ...prev];
+                });
+                setSelectedConversation(newConv);
+              }
+            } catch (err) {
+              console.error("Failed to auto-create project conversation:", err);
+            }
+          }
+          const newParams = new URLSearchParams(searchParams);
+          newParams.delete("projectId");
+          newParams.delete("project");
+          setSearchParams(newParams, { replace: true });
+        } else if (talentId) {
           const existingConv = convs.find(c =>
             c.participants?.some(p => getId(p) === talentId)
           );
@@ -690,6 +901,51 @@ export default function MessageView({
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newChatType === "project") {
+      if (!selectedProjectId || !formMessage.trim()) {
+        toast.error("Please select a project and enter a message");
+        return;
+      }
+      setIsSending(true);
+      try {
+        const convRes = await messagingAPI.getOrCreateProjectConversation(selectedProjectId);
+        if (convRes.data.success) {
+          const conversation = convRes.data.data;
+          const conversationId = getId(conversation);
+          
+          if (!conversationId) {
+            toast.error("Could not retrieve project conversation ID");
+            return;
+          }
+          
+          const attribution =
+            isCollaboratorMode && collaboratorLabel
+              ? `[Sent by ${collaboratorLabel}${directorName ? ` on behalf of ${directorName}` : ""}]\n`
+              : "";
+          const messageText = attribution + formMessage;
+          const msgRes = await messagingAPI.sendMessage({ conversationId, text: messageText });
+          
+          if (msgRes.data.success) {
+            if (!conversations.some((c: any) => getConvId(c) === conversationId)) {
+              setConversations((prev: any[]) => [conversation, ...prev]);
+            }
+            setSelectedConversation(conversation);
+            setMessages(prev => [...prev, msgRes.data.data]);
+            setIsModalOpen(false);
+            setFormMessage("");
+            setSelectedProjectId("");
+            toast.success("Project group chat created successfully!");
+          }
+        }
+      } catch (err: any) {
+        console.error("Failed to create project chat:", err);
+        toast.error(err.response?.data?.message || "Failed to create project chat");
+      } finally {
+        setIsSending(false);
+      }
+      return;
+    }
+
     if (!selectedRecipientId || !formMessage.trim()) {
       toast.error("Please select a recipient and enter a message");
       return;
@@ -773,112 +1029,169 @@ export default function MessageView({
           <div className="bg-gradient-to-br from-primary/5 to-primary/10 px-6 pt-6 pb-4 border-b border-slate-100">
             <DialogTitle className="text-lg font-bold text-slate-900">New Message</DialogTitle>
             <DialogDescription className="text-sm text-slate-500 mt-0.5">
-              Start a conversation with an industry professional
+              Start a conversation with a professional or launch a project group chat
             </DialogDescription>
           </div>
           <div className="p-6 space-y-4 bg-white">
             <form onSubmit={handleFormSubmit} className="space-y-4">
-              {/* Recipient picker */}
-              <div className="space-y-1.5 relative" ref={dropdownRef}>
-                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">To</Label>
+              {/* Tab Selector */}
+              <div className="flex bg-slate-100 p-1 rounded-xl">
                 <button
                   type="button"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl h-11 px-3.5 text-sm text-left hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                >
-                  {selectedRecipient ? (
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={selectedRecipient.profilePicture} />
-                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">
-                          {selectedRecipient.fullName?.[0] || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-semibold text-slate-800">{selectedRecipient.fullName}</span>
-                      <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full capitalize">
-                        {selectedRecipient.role?.replace("_", " ")}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-slate-400">Select recipient…</span>
+                  className={cn(
+                    "flex-1 text-center py-2 text-xs font-semibold rounded-lg transition-all",
+                    newChatType === "direct" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-750"
                   )}
-                  <ChevronDown className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                  onClick={() => setNewChatType("direct")}
+                >
+                  Direct Message
                 </button>
+                <button
+                  type="button"
+                  className={cn(
+                    "flex-1 text-center py-2 text-xs font-semibold rounded-lg transition-all",
+                    newChatType === "project" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-750"
+                  )}
+                  onClick={() => setNewChatType("project")}
+                >
+                  Project Group Chat
+                </button>
+              </div>
 
-                {isDropdownOpen && (
-                  <div className="absolute z-[100] mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
-                    <div className="p-2 border-b border-slate-100">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                        <Input
-                          placeholder="Search users…"
-                          className="h-8 pl-8 text-xs bg-slate-50 border-none rounded-lg focus-visible:ring-0"
-                          value={userSearch}
-                          onChange={e => setUserSearch(e.target.value)}
-                          autoFocus
-                        />
-                      </div>
-                    </div>
-                    <div className="max-h-[200px] overflow-y-auto p-1">
-                      {isSearching ? (
-                        <div className="p-4 text-center">
-                          <Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" />
+              {newChatType === "project" ? (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Select Project</Label>
+                    <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                      <SelectTrigger className="w-full bg-slate-50 border border-slate-200 rounded-xl h-11 px-3.5 text-slate-800">
+                        <SelectValue placeholder="Choose a project…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {myProjects.map((p: any) => (
+                          <SelectItem key={p._id || p.id} value={p._id || p.id}>
+                            {p.projectName || p.title || "Untitled Project"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* First message for the project chat */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">First Message</Label>
+                    <Textarea
+                      placeholder="Write your welcome message to the project group chat…"
+                      className="bg-slate-50 border-slate-200 rounded-xl min-h-[110px] resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40"
+                      value={formMessage}
+                      onChange={e => setFormMessage(e.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Recipient picker */}
+                  <div className="space-y-1.5 relative" ref={dropdownRef}>
+                    <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">To</Label>
+                    <button
+                      type="button"
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl h-11 px-3.5 text-sm text-left hover:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                    >
+                      {selectedRecipient ? (
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={selectedRecipient.profilePicture} />
+                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">
+                              {selectedRecipient.fullName?.[0] || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-semibold text-slate-800">{selectedRecipient.fullName}</span>
+                          <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full capitalize">
+                            {selectedRecipient.role?.replace("_", " ")}
+                          </span>
                         </div>
                       ) : (
-                        <>
-                          {preselectedUser && !searchResult.some((u: any) => getId(u) === getId(preselectedUser)) && (
-                            <RecipientOption
-                              user={preselectedUser}
-                              onClick={() => {
-                                setSelectedRecipientId(getId(preselectedUser));
-                                setSelectedRecipient(preselectedUser);
-                                setIsDropdownOpen(false);
-                              }}
-                            />
-                          )}
-                          {searchResult.length > 0 ? (
-                            searchResult.map((u: any) => (
-                              <RecipientOption
-                                key={getId(u)}
-                                user={u}
-                                onClick={() => {
-                                  setSelectedRecipientId(getId(u));
-                                  setSelectedRecipient(u);
-                                  setIsDropdownOpen(false);
-                                }}
-                              />
-                            ))
-                          ) : !preselectedUser ? (
-                            <p className="text-center text-xs text-slate-400 py-4">No users found</p>
-                          ) : null}
-                        </>
+                        <span className="text-slate-400">Select recipient…</span>
                       )}
-                    </div>
+                      <ChevronDown className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                    </button>
+
+                    {isDropdownOpen && (
+                      <div className="absolute z-[100] mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
+                        <div className="p-2 border-b border-slate-100">
+                          <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                            <Input
+                              placeholder="Search users…"
+                              className="h-8 pl-8 text-xs bg-slate-50 border-none rounded-lg focus-visible:ring-0"
+                              value={userSearch}
+                              onChange={e => setUserSearch(e.target.value)}
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-[200px] overflow-y-auto p-1">
+                          {isSearching ? (
+                            <div className="p-4 text-center">
+                              <Loader2 className="w-4 h-4 animate-spin mx-auto text-primary" />
+                            </div>
+                          ) : (
+                            <>
+                              {preselectedUser && !searchResult.some((u: any) => getId(u) === getId(preselectedUser)) && (
+                                <RecipientOption
+                                  user={preselectedUser}
+                                  onClick={() => {
+                                    setSelectedRecipientId(getId(preselectedUser));
+                                    setSelectedRecipient(preselectedUser);
+                                    setIsDropdownOpen(false);
+                                  }}
+                                />
+                              )}
+                              {searchResult.length > 0 ? (
+                                searchResult.map((u: any) => (
+                                  <RecipientOption
+                                    key={getId(u)}
+                                    user={u}
+                                    onClick={() => {
+                                      setSelectedRecipientId(getId(u));
+                                      setSelectedRecipient(u);
+                                      setIsDropdownOpen(false);
+                                    }}
+                                  />
+                                ))
+                              ) : !preselectedUser ? (
+                                <p className="text-center text-xs text-slate-400 py-4">No users found</p>
+                              ) : null}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Subject */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Subject</Label>
-                <Input
-                  placeholder="e.g. Regarding your casting call…"
-                  className="h-11 bg-slate-50 border-slate-200 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40"
-                  value={formSubject}
-                  onChange={e => setFormSubject(e.target.value)}
-                />
-              </div>
+                  {/* Subject */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Subject</Label>
+                    <Input
+                      placeholder="e.g. Regarding your casting call…"
+                      className="h-11 bg-slate-50 border-slate-200 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40"
+                      value={formSubject}
+                      onChange={e => setFormSubject(e.target.value)}
+                    />
+                  </div>
 
-              {/* Message */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Message</Label>
-                <Textarea
-                  placeholder="Write your message…"
-                  className="bg-slate-50 border-slate-200 rounded-xl min-h-[110px] resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40"
-                  value={formMessage}
-                  onChange={e => setFormMessage(e.target.value)}
-                />
-              </div>
+                  {/* Message */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Message</Label>
+                    <Textarea
+                      placeholder="Write your message…"
+                      className="bg-slate-50 border-slate-200 rounded-xl min-h-[110px] resize-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/40"
+                      value={formMessage}
+                      onChange={e => setFormMessage(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="flex gap-2 pt-1">
                 <Button

@@ -24,8 +24,8 @@ export default function DirectorMessages() {
 
   return (
     <MessageView
-      title="Director Messages"
-      subtitle="Communicate with talent regarding their applications"
+      title={isCollaboratorMode ? "Collaborator Chat" : "Director Messages"}
+      subtitle={isCollaboratorMode ? "Discuss projects and collaborate with workspace owners and other participants" : "Communicate with talent regarding their applications"}
       isCollaboratorMode={isCollaboratorMode}
       grantedProjectIds={grantedProjectIds}
       collaboratorLabel={collaboratorLabel}

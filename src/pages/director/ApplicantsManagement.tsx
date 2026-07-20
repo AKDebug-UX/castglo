@@ -182,6 +182,13 @@ export default function ApplicantsManagement() {
           if (!isPersonal && myProjects.length === 0) {
             myProjects = await getLocalProjects();
           }
+
+          if (!isPersonal && activeWorkspace.projectGrants && activeWorkspace.projectGrants.length > 0) {
+            const grantedIds = activeWorkspace.projectGrants.map((g: any) => 
+              typeof g.projectId === "object" ? g.projectId._id || g.projectId.id : g.projectId
+            );
+            myProjects = myProjects.filter((p: any) => grantedIds.includes(p._id || p.id));
+          }
         } catch (apiError) {
           if (!isPersonal) {
             console.warn("Failed to fetch workspace projects from API, falling back to local data:", apiError);

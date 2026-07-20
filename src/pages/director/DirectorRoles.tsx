@@ -108,6 +108,13 @@ export default function DirectorRoles() {
         if (!isPersonal && listings.length === 0) {
           listings = await getLocalProjects();
         }
+
+        if (!isPersonal && activeWorkspace.projectGrants && activeWorkspace.projectGrants.length > 0) {
+          const grantedIds = activeWorkspace.projectGrants.map((g: any) => 
+            typeof g.projectId === "object" ? g.projectId._id || g.projectId.id : g.projectId
+          );
+          listings = listings.filter((p: any) => grantedIds.includes(p._id || p.id));
+        }
       } catch (apiError) {
         if (!isPersonal) {
           console.warn("Failed to fetch workspace projects from API, falling back to local data:", apiError);

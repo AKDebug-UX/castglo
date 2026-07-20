@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 
-export default function MyProjects() {
+export function DirectorProjects() {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -112,6 +112,13 @@ export default function MyProjects() {
 
         if (!isPersonal && projectData.length === 0) {
           projectData = await getLocalProjects();
+        }
+
+        if (!isPersonal && activeWorkspace.projectGrants && activeWorkspace.projectGrants.length > 0) {
+          const grantedIds = activeWorkspace.projectGrants.map((g: any) => 
+            typeof g.projectId === "object" ? g.projectId._id || g.projectId.id : g.projectId
+          );
+          projectData = projectData.filter((p: any) => grantedIds.includes(p._id || p.id));
         }
       } catch (apiError) {
         if (!isPersonal) {
@@ -562,4 +569,15 @@ export default function MyProjects() {
       )}
     </div>
   );
+}
+
+import CollaboratorProjects from "./CollaboratorProjects";
+
+export default function MyProjects() {
+  const { activeWorkspace } = useWorkspace();
+  
+  if (activeWorkspace !== "Personal") {
+    return <CollaboratorProjects />;
+  }
+  return <DirectorProjects />;
 }
