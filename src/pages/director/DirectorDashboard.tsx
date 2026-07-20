@@ -121,8 +121,48 @@ export default function DirectorDashboard() {
             return acc + (c.applicationCount || c.applications?.length || 0);
           }, 0);
 
-          // Initialize tally with 0s since we don't query application details here anymore
-          let tally = { review: 0, shortlisted: 0, audition: 0, offer: 0 };
+          // Collect all role queries
+          const roleQueries: { projId: string; roleId: string }[] = [];
+          myCastings.forEach((p) => {
+            const roles = p.roles || p.castingCallRoles || [];
+            roles.forEach((r: any) => {
+              const roleId = r._id || r.id;
+              const projId = p._id || p.id;
+              if (projId && roleId) {
+                roleQueries.push({ projId, roleId });
+              }
+            });
+          });
+
+          let allApps: any[] = [];
+          if (roleQueries.length > 0) {
+            const results = await Promise.all(
+              roleQueries.map(q => projectAPI.getApplicants(q.projId, q.roleId).catch(() => null))
+            );
+            results.forEach((res) => {
+              if (res?.data?.success && Array.isArray(res.data.data)) {
+                allApps = [...allApps, ...res.data.data];
+              }
+            });
+          }
+
+          // Sort by creation date (most recent first)
+          allApps.sort((a, b) => new Date(b.createdAt || b.appliedAt || 0).getTime() - new Date(a.createdAt || a.appliedAt || 0).getTime());
+
+          const reviewCount = allApps.filter((a: any) => (a.status || "").toLowerCase() === "applied" || !(a.status)).length;
+          const shortlistedCount = allApps.filter((a: any) => (a.status || "").toLowerCase() === "shortlisted").length;
+          const auditionCount = allApps.filter((a: any) => ["audition_requested", "self_tape_requested"].includes((a.status || "").toLowerCase())).length;
+          const offerCount = allApps.filter((a: any) => ["offer", "accepted"].includes((a.status || "").toLowerCase())).length;
+
+          let tally = {
+            review: reviewCount,
+            shortlisted: shortlistedCount,
+            audition: auditionCount,
+            offer: offerCount
+          };
+
+          setPipeline(tally);
+          setRecentApps(allApps.slice(0, 5));
 
           setStats([
             { label: "Active Projects",    value: activeCount.toString(),      change: "Live now",          Icon: Clapperboard, color: "text-primary",   bg: "bg-primary/10" },

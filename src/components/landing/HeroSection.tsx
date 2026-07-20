@@ -143,7 +143,7 @@ export function HeroSection() {
                     <div key={`${call._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
                       <div className="relative h-48">
                         <img 
-                          src={call.image || newsProduction} 
+                          src={call.project_image || newsProduction} 
                           alt={call.title}
                           className="w-full h-full object-cover"
                         />
