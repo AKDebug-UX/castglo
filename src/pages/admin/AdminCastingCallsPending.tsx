@@ -65,6 +65,7 @@ export default function AdminCastingCallsPending() {
             statusLower === 'pending_approval' ||
             statusLower === 'pending_review' ||
             statusLower === 'in_review' ||
+            statusLower === 'draft' ||
             statusLower.includes('pending')
           );
         });
@@ -231,15 +232,15 @@ export default function AdminCastingCallsPending() {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1.5 items-center">
-                              {/* Approve Button (Approve Pending / Rejected / Closed) */}
-                              {(isPending || statusLower === 'rejected' || statusLower === 'closed') && (
+                              {/* Approve Button (Approve Pending / Rejected / Closed / Draft) */}
+                              {(isPending || statusLower === 'rejected' || statusLower === 'closed' || statusLower === 'draft') && (
                                 <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-green-50" onClick={() => handleApprove(call._id || call.id)} title="Approve / Re-activate">
                                   <Check className="w-4 h-4 text-green-600" />
                                 </Button>
                               )}
 
-                              {/* Reject Button (Only for Pending) */}
-                              {isPending && (
+                              {/* Reject Button (Only for Pending / Draft) */}
+                              {(isPending || statusLower === 'draft') && (
                                 <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-red-50" onClick={() => handleReject(call._id || call.id)} title="Reject">
                                   <X className="w-4 h-4 text-red-600" />
                                 </Button>
@@ -252,8 +253,8 @@ export default function AdminCastingCallsPending() {
                                 </Button>
                               )}
 
-                              {/* Instant Post Button (For Pending) */}
-                              {isPending && (
+                              {/* Instant Post Button (For Pending / Draft) */}
+                              {(isPending || statusLower === 'draft') && (
                                 <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-50" onClick={() => handleInstantPost(call._id || call.id)} title="Instant Publish">
                                   <Send className="w-4 h-4 text-blue-600" />
                                 </Button>

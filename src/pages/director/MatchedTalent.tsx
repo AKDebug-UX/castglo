@@ -143,6 +143,16 @@ export default function MatchedTalent() {
           ? (Array.isArray(listingsRes.data.data) ? listingsRes.data.data : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [])
           : [];
         setProjects(myProjects);
+
+        // Auto-select the first project as default if there are projects and no URL query params
+        const finalProjectId = searchParams.get("projectId") || searchParams.get("project");
+        if (!finalProjectId && myProjects.length > 0) {
+          const firstProj = myProjects[0];
+          const firstProjId = firstProj._id || firstProj.id;
+          if (firstProjId) {
+            setSelectedProject(firstProjId);
+          }
+        }
       } catch {
         toast.error("Failed to load projects.");
       } finally {
@@ -150,7 +160,7 @@ export default function MatchedTalent() {
       }
     };
     loadProjects();
-  }, []);
+  }, [searchParams]);
 
   // 2. Initialize selectedProject and selectedRole from URL params ONLY (no auto-select first project/role)
   useEffect(() => {
@@ -292,6 +302,16 @@ export default function MatchedTalent() {
       .catch(() => setLiveRoles([]))
       .finally(() => setRolesLoading(false));
   }, [selectedProject]);
+
+  // Auto-select the first role when liveRoles load and selectedRole is "all"
+  useEffect(() => {
+    if (selectedProject !== "all" && liveRoles.length > 0 && selectedRole === "all") {
+      const firstRoleId = getRoleId(liveRoles[0]);
+      if (firstRoleId) {
+        setSelectedRole(firstRoleId);
+      }
+    }
+  }, [selectedProject, liveRoles, selectedRole]);
 
   // Derive active role object from liveRoles
   const currentProject = projects.find(p => (p._id || p.id) === selectedProject);
@@ -489,11 +509,20 @@ export default function MatchedTalent() {
       )}
 
       {/* Results grid */}
-      {selectedProject === "all" && selectedRole === "all" ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-30" />
-          <p className="text-lg font-semibold">Select a project and role</p>
-          <p className="text-sm mt-1">Choose a project and role to see matched talent.</p>
+      {projects.length === 0 ? (
+        <div className="text-center py-20 text-muted-foreground max-w-md mx-auto bg-slate-50 rounded-2xl p-8 border border-dashed">
+          <Sparkles className="w-12 h-12 mx-auto mb-4 text-[#009698] opacity-75" />
+          <p className="text-lg font-bold text-slate-800">No Projects Found</p>
+          <p className="text-sm mt-2 text-slate-500 mb-6">You need to create a project with casting roles to start matching with talent.</p>
+          <Button className="bg-[#009698] hover:bg-[#009698]/90" asChild>
+            <Link to="/director/create">Create a Project</Link>
+          </Button>
+        </div>
+      ) : (selectedProject === "all" || selectedRole === "all") ? (
+        <div className="text-center py-20 text-muted-foreground max-w-md mx-auto bg-slate-50 rounded-2xl p-8 border border-dashed">
+          <SlidersHorizontal className="w-12 h-12 mx-auto mb-4 text-[#009698] opacity-75" />
+          <p className="text-lg font-bold text-slate-800">Select Project & Role</p>
+          <p className="text-sm mt-2 text-slate-500">Please choose a project and a specific casting role from the dropdowns above to display matching talent results.</p>
         </div>
       ) : displayedTalents.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
