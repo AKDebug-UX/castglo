@@ -32,7 +32,7 @@ export default function CollaboratorProjects() {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [projects, setProjects] = useState<any[]>([]);
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, isLoading: contextLoading } = useWorkspace();
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,56 +42,49 @@ export default function CollaboratorProjects() {
     : "Director";
 
   useEffect(() => {
-    const fetchCollaboratorProjects = async () => {
-      if (isPersonal) return;
+    const resolveProjects = async () => {
+      if (contextLoading) return;
+      if (isPersonal) {
+        setProjects([]);
+        setIsLoading(false);
+        return;
+      }
+      
       setIsLoading(true);
       try {
-        const response = await collaboratorAPI.getMyCollaborations();
-        if (response.data?.success) {
-          const data = Array.isArray(response.data.data) 
-            ? response.data.data 
-            : (response.data.data?.collaborations || []);
-            
-          // Find the active collaboration workspace
-          const activeCollab = data.find((c: any) => 
-            c._id === (activeWorkspace as any)?._id || 
-            c.owner?._id === (activeWorkspace as any)?.owner?._id
-          );
-          
-          const grants = (activeCollab || activeWorkspace)?.projectGrants || [];
-          const promises = grants.map(async (grant: any) => {
-            const p = grant.projectId;
-            let projectDetails: any = null;
-            if (p && typeof p === "object") {
-              projectDetails = p;
-            } else if (typeof p === "string") {
-              try {
-                const res = await projectAPI.getOne(p);
-                if (res.data?.success) {
-                  projectDetails = res.data.data?.castingCall || res.data.data?.project || res.data.data;
-                }
-              } catch (err) {
-                console.error("Failed to fetch project details for collaborator:", p, err);
+        const grants = (activeWorkspace as any)?.projectGrants || [];
+        const promises = grants.map(async (grant: any) => {
+          const p = grant.projectId;
+          let projectDetails: any = null;
+          if (p && typeof p === "object") {
+            projectDetails = p;
+          } else if (typeof p === "string") {
+            try {
+              const res = await projectAPI.getOne(p);
+              if (res.data?.success) {
+                projectDetails = res.data.data?.castingCall || res.data.data?.project || res.data.data;
               }
+            } catch (err) {
+              console.error("Failed to fetch project details for collaborator:", p, err);
             }
-            
-            if (projectDetails) {
-              return {
-                ...projectDetails,
-                _id: projectDetails._id || projectDetails.id,
-                id: projectDetails._id || projectDetails.id,
-                title: projectDetails.title || projectDetails.projectName,
-                projectName: projectDetails.projectName || projectDetails.title,
-                roles: projectDetails.roles || [],
-                permissions: grant.permissions || {}
-              };
-            }
-            return null;
-          });
+          }
           
-          const results = await Promise.all(promises);
-          setProjects(results.filter(Boolean));
-        }
+          if (projectDetails) {
+            return {
+              ...projectDetails,
+              _id: projectDetails._id || projectDetails.id,
+              id: projectDetails._id || projectDetails.id,
+              title: projectDetails.title || projectDetails.projectName,
+              projectName: projectDetails.projectName || projectDetails.title,
+              roles: projectDetails.roles || [],
+              permissions: grant.permissions || {}
+            };
+          }
+          return null;
+        });
+        
+        const results = await Promise.all(promises);
+        setProjects(results.filter(Boolean));
       } catch (error) {
         console.error("Failed to load collaborator projects:", error);
         toast.error("Failed to load collaborator projects.");
@@ -99,8 +92,8 @@ export default function CollaboratorProjects() {
         setIsLoading(false);
       }
     };
-    fetchCollaboratorProjects();
-  }, [activeWorkspace]);
+    resolveProjects();
+  }, [activeWorkspace, contextLoading, isPersonal]);
 
   // Filter project listings
   const filteredProjects = projects.filter((project: any) => {

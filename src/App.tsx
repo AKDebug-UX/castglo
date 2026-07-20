@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
 import { ConfirmProvider } from "@/contexts/ConfirmContext";
@@ -142,6 +142,11 @@ const NotificationRedirect = () => {
   }
 };
 
+const CastingCallRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={`/cast/${id}`} replace />;
+};
+
 const App = () => {
   return (
   <QueryClientProvider client={queryClient}>
@@ -195,7 +200,7 @@ const App = () => {
               <Route path="/browse-cast" element={<PublicCasting />} />
               <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
               <Route path="/cast/:id" element={<PublicCastingDetail />} />
-              <Route path="/casting-calls/:id" element={<Navigate to="/cast/:id" replace />} />
+              <Route path="/casting-calls/:id" element={<CastingCallRedirect />} />
               <Route path="/livestream/:id" element={<Livestream />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/community-guidelines" element={<CommunityGuidelines />} />

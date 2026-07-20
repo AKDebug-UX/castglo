@@ -10,7 +10,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { applicationAPI } from "@/lib/api";
+import { applicationAPI, castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
 import { useConfirm } from "@/contexts/ConfirmContext";
@@ -27,6 +27,7 @@ const statusColors: Record<string, string> = {
   "declined": "bg-rose-500 text-white hover:bg-rose-600 capitalize",
   "matched": "bg-indigo-500 text-white hover:bg-indigo-600 capitalize",
   // Legacy backups
+  "pending": "bg-blue-500 text-white hover:bg-blue-600 capitalize",
   "submitted": "bg-slate-500 text-white hover:bg-slate-600 capitalize",
   "viewed": "bg-blue-400 text-white hover:bg-blue-500 capitalize",
   "shortlisted": "bg-amber-500 text-white hover:bg-amber-600 capitalize",
@@ -60,27 +61,48 @@ export default function Applications() {
         }
 
         if (appsData && Array.isArray(appsData)) {
-          // Filter to only include project applications (which typically have appliedRole)
-          const projectApps = appsData.filter(app => !!app.appliedRole);
-
-          const apps = projectApps.map((app: any) => ({
-            _id: app._id,
-            status: app.status,
-            createdAt: app.createdAt,
-            project: {
-              title: app.castingCallId?.project_title || app.castingCallId?.title || app.project?.projectName || "Unknown Project",
-              role: app.appliedRole || app.role?.role_name || app.role?.title || "Unknown Role",
-              postedBy: {
-                fullName: app.castingCallId?.castingDirectorId?.fullName || app.project?.postedBy?.fullName || "Casting Team"
+          const promises = appsData.map(async (app: any) => {
+            let castingCall: any = null;
+            if (app.castingCallId && typeof app.castingCallId === "object") {
+              castingCall = app.castingCallId;
+            } else if (typeof app.castingCallId === "string") {
+              try {
+                const res = await castingCallAPI.getOne(app.castingCallId);
+                if (res.data?.success) {
+                  castingCall = res.data.data?.castingCall || res.data.data;
+                }
+              } catch (err) {
+                console.error("Failed to load casting call details for application:", app.castingCallId, err);
               }
             }
-          }));
+
+            const projectObj = app.project || castingCall?.project;
+            const directorName = castingCall?.castingDirectorId?.fullName || projectObj?.postedBy?.fullName || "Casting Team";
+            const projectTitle = castingCall?.project_title || castingCall?.title || projectObj?.projectName || "Unknown Project";
+            const roleName = app.appliedRole || app.role?.role_name || app.role?.title || "General Application";
+
+            return {
+              _id: app._id || app.id,
+              id: app._id || app.id,
+              status: app.status,
+              createdAt: app.createdAt,
+              project: {
+                title: projectTitle,
+                role: roleName,
+                postedBy: {
+                  fullName: directorName
+                }
+              }
+            };
+          });
+
+          const apps = await Promise.all(promises);
           setApplications(apps);
 
           // Calculate stats
           setStats([
             { label: "Total Applications", value: apps.length.toString(), sublabel: "All time", Icon: FileText },
-            { label: "Under Review", value: apps.filter((a: { status: string; }) => ["review", "submitted", "viewed"].includes(a.status)).length.toString(), sublabel: "Pending Review", Icon: Eye },
+            { label: "Under Review", value: apps.filter((a: { status: string; }) => ["review", "submitted", "viewed", "pending"].includes(a.status)).length.toString(), sublabel: "Pending Review", Icon: Eye },
             { label: "Shortlisted", value: apps.filter((a: { status: string; }) => ["shortlist", "shortlisted"].includes(a.status)).length.toString(), sublabel: "Callbacks Pending", Icon: Star },
           ]);
         } else {
