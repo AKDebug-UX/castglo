@@ -25,6 +25,9 @@ export interface Collaboration {
     permissions: WorkspacePermissions;
   }>;
   status: string;
+  project?: string | any;
+  castingCall?: string | any;
+  inviter?: string | any;
 }
 
 export type ActiveWorkspace = "Personal" | Collaboration;

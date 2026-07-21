@@ -244,7 +244,7 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
                   ) : (
                     <div className="space-y-4">
                       {application.communications.map((comm: any, idx: number) => {
-                        const isMe = comm.sender?._id === user?._id || comm.sender?.id === user?._id;
+                        const isMe = comm.sender?._id === user?.id || comm.sender?.id === user?.id;
                         return (
                           <div key={idx} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                             <div 

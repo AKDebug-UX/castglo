@@ -57,9 +57,12 @@ interface Role {
 
 interface Project {
   _id: string;
+  id?: string;
   title?: string;
   projectName?: string;
   roles?: Role[];
+  applicationCount?: number;
+  applicantCount?: number;
 }
 
 const getMatchColor = (score: number) => {
