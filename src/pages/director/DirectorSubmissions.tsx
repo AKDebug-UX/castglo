@@ -89,6 +89,8 @@ export default function DirectorSubmissions() {
           const apps = Array.isArray(payload) ? payload : (payload?.applications || []);
           const mappedApps = apps.map((app: any) => ({ 
             ...app, 
+            _id: app._id || app.id || app.applicationId,
+            id: app._id || app.id || app.applicationId,
             talent: app.talentUserId || app.talentId || app.talentUser || app.talent 
           }));
           setSubmissions(mappedApps);
@@ -120,6 +122,8 @@ export default function DirectorSubmissions() {
             
             const mappedApps = allApps.map((app: any) => ({ 
               ...app, 
+              _id: app._id || app.id || app.applicationId,
+              id: app._id || app.id || app.applicationId,
               talent: app.talentUserId || app.talentId || app.talentUser || app.talent 
             }));
             
@@ -148,6 +152,10 @@ export default function DirectorSubmissions() {
   }, [id]);
 
   const handleAction = async (appId: string, action: 'shortlist' | 'accept' | 'reject') => {
+    if (!appId || appId === "undefined") {
+      toast.error(`Invalid application ID`);
+      return;
+    }
     setActionLoading(appId);
     try {
       let response;
@@ -157,7 +165,7 @@ export default function DirectorSubmissions() {
 
       if (response.data.success) {
         toast.success(`Application ${action}ed`);
-        setSubmissions(prev => prev.map(s => s._id === appId ? { ...s, status: action === 'shortlist' ? 'shortlisted' : action === 'accept' ? 'accepted' : 'rejected' } : s));
+        setSubmissions(prev => prev.map(s => (s._id || s.id) === appId ? { ...s, status: action === 'shortlist' ? 'shortlisted' : action === 'accept' ? 'accepted' : 'rejected' } : s));
       }
     } catch (error) {
       toast.error(`Failed to ${action} application`);
@@ -186,24 +194,27 @@ export default function DirectorSubmissions() {
   };
 
   const handleSaveReview = async () => {
-    if (!selectedSubmission) return;
+    const targetId = selectedSubmission?._id || selectedSubmission?.id;
+    if (!targetId) {
+      toast.error("Invalid submission ID");
+      return;
+    }
     
     setIsReviewSaving(true);
     try {
-      const response = await applicationAPI.update(selectedSubmission._id, {
+      const response = await applicationAPI.update(targetId, {
         directorNotes: reviewNotes,
         directorScore: reviewScore
       });
       
       if (response.data.success) {
         toast.success("Review saved successfully");
-        setSubmissions(prev => prev.map(s => s._id === selectedSubmission._id ? { ...s, directorNotes: reviewNotes, directorScore: reviewScore } : s));
+        setSubmissions(prev => prev.map(s => (s._id || s.id) === targetId ? { ...s, directorNotes: reviewNotes, directorScore: reviewScore } : s));
         setSelectedSubmission(null);
       }
     } catch (error) {
       toast.error("Failed to save review");
     } finally {
-      setIsReviewSaving(true); // Should be false but wait...
       setIsReviewSaving(false);
     }
   };
@@ -423,16 +434,16 @@ export default function DirectorSubmissions() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setDetailsModalAppId(submission._id)}>
+                      <DropdownMenuItem onClick={() => setDetailsModalAppId(submission._id || submission.id)}>
                         <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleAction(submission._id, 'shortlist')}>
+                      <DropdownMenuItem onClick={() => handleAction(submission._id || submission.id, 'shortlist')}>
                         <Star className="w-4 h-4 mr-2" /> Shortlist
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleAction(submission._id, 'accept')}>
+                      <DropdownMenuItem onClick={() => handleAction(submission._id || submission.id, 'accept')}>
                         <CheckCircle className="w-4 h-4 mr-2" /> Accept
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleAction(submission._id, 'reject')} className="text-destructive">
+                      <DropdownMenuItem onClick={() => handleAction(submission._id || submission.id, 'reject')} className="text-destructive">
                         <XCircle className="w-4 h-4 mr-2" /> Reject
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -464,15 +475,17 @@ export default function DirectorSubmissions() {
                 <div className="w-24 text-center">Score</div>
                 <div className="w-24">Actions</div>
               </div>
-              {filteredSubmissions.map((submission) => (
+              {filteredSubmissions.map((submission) => {
+                const subId = submission._id || submission.id;
+                return (
                 <div 
-                  key={submission._id} 
-                  className={`flex items-center gap-4 p-3 border-t hover:bg-muted/30 transition-colors ${selectedIds.includes(submission._id) ? 'bg-primary/5' : ''}`}
+                  key={subId} 
+                  className={`flex items-center gap-4 p-3 border-t hover:bg-muted/30 transition-colors ${selectedIds.includes(subId) ? 'bg-primary/5' : ''}`}
                 >
                   <div className="w-6">
                     <Checkbox 
-                      checked={selectedIds.includes(submission._id)}
-                      onCheckedChange={() => toggleSelect(submission._id)}
+                      checked={selectedIds.includes(subId)}
+                      onCheckedChange={() => toggleSelect(subId)}
                     />
                   </div>
                   <div className="flex-1 flex items-center gap-3 min-w-0">
@@ -515,23 +528,24 @@ export default function DirectorSubmissions() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setDetailsModalAppId(submission._id)}>
+                        <DropdownMenuItem onClick={() => setDetailsModalAppId(submission._id || submission.id)}>
                           <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAction(submission._id, 'shortlist')}>
+                        <DropdownMenuItem onClick={() => handleAction(submission._id || submission.id, 'shortlist')}>
                           <Star className="w-4 h-4 mr-2" /> Shortlist
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAction(submission._id, 'accept')}>
+                        <DropdownMenuItem onClick={() => handleAction(submission._id || submission.id, 'accept')}>
                           <CheckCircle className="w-4 h-4 mr-2" /> Accept
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleAction(submission._id, 'reject')} className="text-destructive">
+                        <DropdownMenuItem onClick={() => handleAction(submission._id || submission.id, 'reject')} className="text-destructive">
                           <XCircle className="w-4 h-4 mr-2" /> Reject
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           ) : (
             <div className="text-center py-12 text-muted-foreground">
@@ -671,15 +685,15 @@ export default function DirectorSubmissions() {
                   <Button 
                     variant="outline" 
                     className="rounded-xl font-bold border-slate-200 h-10"
-                    onClick={() => handleAction(selectedSubmission._id, 'shortlist')}
+                    onClick={() => handleAction(selectedSubmission._id || selectedSubmission.id, 'shortlist')}
                     disabled={!!actionLoading}
                   >
-                    {actionLoading === selectedSubmission?._id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Shortlist"}
+                    {actionLoading === (selectedSubmission?._id || selectedSubmission?.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : "Shortlist"}
                   </Button>
                   <Button 
                     variant="outline" 
                     className="rounded-xl font-bold border-red-100 text-red-500 hover:bg-red-50 h-10"
-                    onClick={() => handleAction(selectedSubmission._id, 'reject')}
+                    onClick={() => handleAction(selectedSubmission._id || selectedSubmission.id, 'reject')}
                     disabled={!!actionLoading}
                   >
                     Reject
@@ -690,7 +704,7 @@ export default function DirectorSubmissions() {
               <div className="pt-4">
                 <Button 
                   className="w-full h-12 rounded-2xl font-bold bg-slate-900 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20"
-                  onClick={() => handleAction(selectedSubmission._id, 'accept')}
+                  onClick={() => handleAction(selectedSubmission._id || selectedSubmission.id, 'accept')}
                   disabled={!!actionLoading}
                 >
                   <Award className="w-5 h-5 mr-2" />
@@ -705,7 +719,7 @@ export default function DirectorSubmissions() {
                   className="text-xs text-muted-foreground flex items-center gap-1"
                   asChild
                 >
-                  <Link to={`/director/audition?talentId=${selectedSubmission?.talent?._id}`}>
+                  <Link to={`/director/audition?talentId=${selectedSubmission?.talent?._id || selectedSubmission?.talent?.id}`}>
                     <CalendarDays className="w-3.5 h-3.5" />
                     Schedule Interview
                   </Link>

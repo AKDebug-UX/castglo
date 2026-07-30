@@ -216,7 +216,7 @@ export default function Submissions() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-[180px]">
-                            <DropdownMenuItem onClick={() => handleViewDetails(submission._id)} className="cursor-pointer">
+                            <DropdownMenuItem onClick={() => handleViewDetails(submission._id || submission.id)} className="cursor-pointer">
                               <Info className="w-4 h-4 mr-2" /> Details
                             </DropdownMenuItem>
                             {submission.status === "accepted" && (
@@ -226,7 +226,7 @@ export default function Submissions() {
                             )}
                             {["submitted", "viewed"].includes(submission.status) && (
                               <DropdownMenuItem 
-                                onClick={() => handleWithdraw(submission._id)} 
+                                onClick={() => handleWithdraw(submission._id || submission.id)} 
                                 className="cursor-pointer text-destructive focus:text-destructive"
                               >
                                 <Trash2 className="w-4 h-4 mr-2" /> Withdraw

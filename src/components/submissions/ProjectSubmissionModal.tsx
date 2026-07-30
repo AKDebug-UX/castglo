@@ -44,7 +44,7 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
             setAcceptedProjects(projectsToShow);
             
             if (projectsToShow.length > 0) {
-              setSelectedProjectId(projectsToShow[0]._id);
+              setSelectedProjectId(projectsToShow[0]._id || projectsToShow[0].id || "");
             }
           }
         } catch (error) {
@@ -65,7 +65,7 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const targetSubmissionId = submission?._id || selectedProjectId;
+    const targetSubmissionId = submission?._id || submission?.id || selectedProjectId;
     
     if (!targetSubmissionId) {
       toast.error("Please select a project to submit work for.");

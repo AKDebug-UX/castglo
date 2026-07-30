@@ -40,6 +40,7 @@ export const API_ENDPOINTS = {
     ME: '/applications/me',
     BY_CASTING_CALL: (castingCallId: string) => `/applications/${castingCallId}`,
     DETAILS: (applicationId: string) => `/applications/details/${applicationId}`,
+    UPDATE: (applicationId: string) => `/applications/${applicationId}`,
     SHORTLIST: (applicationId: string) => `/applications/${applicationId}/shortlist`,
     REJECT: (applicationId: string) => `/applications/${applicationId}/reject`,
     ACCEPT: (applicationId: string) => `/applications/${applicationId}/accept`,
@@ -402,19 +403,26 @@ export const castingCallAPI = {
 };
 
 // --- APPLICATION ENDPOINTS ---
+const ensureValidId = (id: string, label = "Application ID"): string => {
+  if (!id || id === "undefined" || id === "null") {
+    throw new Error(`Invalid ${label}`);
+  }
+  return id;
+};
+
 export const applicationAPI = {
   create: (data: FormData | any) => api.post(API_ENDPOINTS.APPLICATIONS.CREATE, data, {
     headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {}
   }),
   getMe: () => api.get(API_ENDPOINTS.APPLICATIONS.ME),
-  getByCastingCall: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.BY_CASTING_CALL(id)),
-  getDetails: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.DETAILS(id)),
-  shortlist: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.SHORTLIST(id)),
-  reject: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.REJECT(id)),
-  accept: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.ACCEPT(id)),
-  update: (id: string, data: any) => api.patch(API_ENDPOINTS.APPLICATIONS.DETAILS(id), data),
-  addCommunication: (id: string, message: string) => api.post(API_ENDPOINTS.APPLICATIONS.COMMUNICATION(id), { message }),
-  withdraw: (id: string) => api.delete(API_ENDPOINTS.APPLICATIONS.WITHDRAW(id)),
+  getByCastingCall: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.BY_CASTING_CALL(ensureValidId(id, "Casting Call ID"))),
+  getDetails: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.DETAILS(ensureValidId(id))),
+  shortlist: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.SHORTLIST(ensureValidId(id))),
+  reject: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.REJECT(ensureValidId(id))),
+  accept: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.ACCEPT(ensureValidId(id))),
+  update: (id: string, data: any) => api.patch(API_ENDPOINTS.APPLICATIONS.UPDATE(ensureValidId(id)), data),
+  addCommunication: (id: string, message: string) => api.post(API_ENDPOINTS.APPLICATIONS.COMMUNICATION(ensureValidId(id)), { message }),
+  withdraw: (id: string) => api.delete(API_ENDPOINTS.APPLICATIONS.WITHDRAW(ensureValidId(id))),
 };
 
 // --- BOOKING ENDPOINTS ---
