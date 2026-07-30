@@ -4,22 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { 
-  Users, Mail, Shield, UserPlus, 
-  MoreVertical, Trash2, ShieldCheck, 
-  ShieldAlert, ShieldEllipsis, X, FolderOpen,
-  RefreshCw
+  Users, Mail, UserPlus, 
+  MoreVertical, Trash2, FolderOpen,
+  RefreshCw, ShieldAlert
 } from "lucide-react";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { 
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
-} from "@/components/ui/select";
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription 
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { collaboratorAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -34,6 +32,9 @@ interface Teammate {
   status: "active" | "pending";
   lastActive?: string;
   assignedProject?: string;
+  accessScope?: "all_projects" | "selected_projects";
+  projectIds?: string[];
+  raw?: any;
 }
 
 const getInitials = (name: string) =>
@@ -59,16 +60,10 @@ const timeAgo = (dateInput: string | Date | undefined) => {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 };
 
-// Try "role" key!
-const getPermissionsObject = (role: string) => {
-  return { role };
-};
-
 export default function Collaborators() {
   const { activeWorkspace } = useWorkspace();
   const [team, setTeam] = useState<Teammate[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"admin" | "editor" | "viewer">("editor");
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [customProjectName, setCustomProjectName] = useState("");
@@ -78,24 +73,11 @@ export default function Collaborators() {
   const [projectsFetched, setProjectsFetched] = useState(false);
   const [accessScope, setAccessScope] = useState<"all_projects" | "selected_projects">("all_projects");
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
-  const [globalPermissions, setGlobalPermissions] = useState({
-    viewApplicants: true,
-    moveApplicants: true,
-    addNotes: true,
-    sendMessages: true,
-    editProject: false,
-    editRoles: false,
-    manageCollaborators: false,
-  });
-  const [projectPermissions, setProjectPermissions] = useState<Record<string, {
-    viewApplicants: boolean;
-    moveApplicants: boolean;
-    addNotes: boolean;
-    sendMessages: boolean;
-    editProject: boolean;
-    editRoles: boolean;
-    manageCollaborators: boolean;
-  }>>({});
+
+  const [editingCollaborator, setEditingCollaborator] = useState<Teammate | null>(null);
+  const [editScope, setEditScope] = useState<"all_projects" | "selected_projects">("all_projects");
+  const [editProjectIds, setEditProjectIds] = useState<string[]>([]);
+  const [isUpdatingScope, setIsUpdatingScope] = useState(false);
 
   const fetchCollaborators = async () => {
     setIsLoadingCollaborators(true);
@@ -107,15 +89,47 @@ export default function Collaborators() {
       
       const mapped = data.map((collab: any) => {
         const email = collab.email || collab.user?.email || collab.invitedUser?.email || collab.inviteEmail || "";
+        
+        // Extract project grants or project IDs
+        const grants = Array.isArray(collab.projectGrants) ? collab.projectGrants : [];
+        const projectIds: string[] = grants
+          .map((g: any) => (typeof g.projectId === "object" ? g.projectId._id || g.projectId.id : g.projectId))
+          .filter(Boolean);
+        
+        if (collab.project) {
+          const singleId = typeof collab.project === "object" ? collab.project._id || collab.project.id : collab.project;
+          if (singleId && !projectIds.includes(singleId)) projectIds.push(singleId);
+        }
+
+        if (collab.projectId) {
+          const singleId = typeof collab.projectId === "object" ? collab.projectId._id || collab.projectId.id : collab.projectId;
+          if (singleId && !projectIds.includes(singleId)) projectIds.push(singleId);
+        }
+
+        const isSelectedScope = collab.accessScope === "selected_projects" || (collab.accessScope ? collab.accessScope !== "all_projects" : projectIds.length > 0);
+
+        let assignedProject = "All Projects";
+        if (isSelectedScope && projectIds.length > 0) {
+          if (projectIds.length === 1) {
+            const foundProj = projects.find((p: any) => (p._id || p.id) === projectIds[0]);
+            assignedProject = foundProj?.projectName || foundProj?.title || collab.project?.title || collab.projectName || "1 Project";
+          } else {
+            assignedProject = `${projectIds.length} Projects`;
+          }
+        }
+
         return {
           id: collab._id || collab.id || collab.userId || "",
+          raw: collab,
           name: collab.user?.fullName || collab.name || collab.invitedUser?.fullName || email.split('@')[0] || "Unknown",
           email: email,
           role: (collab.role || collab.permission || collab.roleName || "viewer") as any,
           avatar: collab.user?.profilePicture || collab.invitedUser?.profilePicture,
           status: collab.status === "accepted" ? "active" : (collab.status || "pending"),
           lastActive: timeAgo(collab.updatedAt || collab.lastActiveAt),
-          assignedProject: collab.project?.title || collab.projectName || "All Projects"
+          assignedProject: assignedProject,
+          accessScope: isSelectedScope ? "selected_projects" : "all_projects",
+          projectIds: projectIds
         };
       });
       setTeam(mapped);
@@ -165,33 +179,11 @@ export default function Collaborators() {
   }, [customProjectName, projects, selectedProjectId]);
 
   const toggleProjectSelection = (projectId: string) => {
-    setSelectedProjectIds(prev => {
-      const isSelected = prev.includes(projectId);
-      const newSelected = isSelected 
+    setSelectedProjectIds(prev => 
+      prev.includes(projectId)
         ? prev.filter(id => id !== projectId)
-        : [...prev, projectId];
-      
-      // Initialize permissions for newly selected projects
-      setProjectPermissions(prevPerm => {
-        const newPerm = { ...prevPerm };
-        if (!isSelected) {
-          newPerm[projectId] = {
-            viewApplicants: true,
-            moveApplicants: true,
-            addNotes: true,
-            sendMessages: true,
-            editProject: false,
-            editRoles: false,
-            manageCollaborators: false,
-          };
-        } else {
-          delete newPerm[projectId];
-        }
-        return newPerm;
-      });
-      
-      return newSelected;
-    });
+        : [...prev, projectId]
+    );
   };
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -209,12 +201,9 @@ export default function Collaborators() {
     try {
       const inviteData: any = {
         inviteEmail: email,
-        // permissions: accessScope === "all_projects" ? { role: selectedRole } : undefined,
+        accessScope: accessScope,
         projectGrants: accessScope === "selected_projects" 
-          ? selectedProjectIds.map(projectId => ({
-              projectId,
-              permissions: { role: selectedRole }
-            }))
+          ? selectedProjectIds.map(projectId => ({ projectId }))
           : []
       };
       
@@ -224,7 +213,6 @@ export default function Collaborators() {
       toast.success(`Invitation sent to ${email}`);
       setInviteEmail("");
       setSelectedProjectIds([]);
-      setProjectPermissions({});
       // Refresh collaborators list
       fetchCollaborators();
     } catch (err: any) {
@@ -244,18 +232,6 @@ export default function Collaborators() {
     }
   };
 
-  const updateRole = async (id: string, newRole: "admin" | "editor" | "viewer") => {
-    try {
-      await collaboratorAPI.updatePermissions(id, { 
-        permissions: { role: newRole } 
-      });
-      toast.success("Role updated successfully.");
-      fetchCollaborators();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to update role.");
-    }
-  };
-
   const resendInvitation = async (id: string) => {
     try {
       await collaboratorAPI.resendInvitation(id);
@@ -265,10 +241,44 @@ export default function Collaborators() {
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    if (role === "admin") return <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />;
-    if (role === "editor") return <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />;
-    return <ShieldEllipsis className="w-3.5 h-3.5 text-slate-500" />;
+  const openEditScopeModal = (member: Teammate) => {
+    setEditingCollaborator(member);
+    setEditScope(member.accessScope || "all_projects");
+    setEditProjectIds(member.projectIds || []);
+  };
+
+  const handleSaveAccessScope = async () => {
+    if (!editingCollaborator) return;
+    
+    if (editScope === "selected_projects" && editProjectIds.length === 0) {
+      toast.error("Please select at least one project.");
+      return;
+    }
+
+    setIsUpdatingScope(true);
+    try {
+      const projectGrants = editScope === "selected_projects" 
+        ? editProjectIds.map(pId => ({ projectId: pId })) 
+        : [];
+
+      const payload: any = {
+        accessScope: editScope,
+        projectGrants: projectGrants,
+      };
+      if (editScope === "selected_projects" && editProjectIds[0]) {
+        payload.projectId = editProjectIds[0];
+      }
+
+      await collaboratorAPI.updatePermissions(editingCollaborator.id, payload);
+
+      toast.success("Access scope updated successfully.");
+      setEditingCollaborator(null);
+      fetchCollaborators();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update access scope.");
+    } finally {
+      setIsUpdatingScope(false);
+    }
   };
 
   if (activeWorkspace !== "Personal" && !activeWorkspace.permissions?.manageCollaborators) {
@@ -334,23 +344,25 @@ export default function Collaborators() {
                   </div>
                   <p className="text-xs text-slate-500 truncate mt-0.5">{member.email}</p>
                   {member.assignedProject && (
-                    <div className="text-[11px] text-[#009698] font-bold mt-1 flex items-center gap-1">
+                    <button 
+                      type="button"
+                      onClick={() => openEditScopeModal(member)}
+                      className="text-[11px] text-[#009698] font-bold mt-1 flex items-center gap-1 hover:underline cursor-pointer text-left"
+                      title="Click to change access scope"
+                    >
                       <FolderOpen className="w-3.5 h-3.5 text-[#009698]" />
                       <span className="truncate">{member.assignedProject}</span>
-                    </div>
+                    </button>
                   )}
                 </div>
                       </div>
 
                       <div className="flex items-center gap-4 shrink-0">
-                        <div className="hidden sm:flex flex-col items-end">
-                          <div className="flex items-center gap-1.5 text-xs font-bold capitalize bg-slate-50 border px-2.5 py-1 rounded-full text-slate-700">
-                            {getRoleIcon(member.role)} {member.role}
+                        {member.lastActive && (
+                          <div className="hidden sm:flex flex-col items-end">
+                            <p className="text-[10px] text-muted-foreground">Active {member.lastActive}</p>
                           </div>
-                          {member.lastActive && (
-                            <p className="text-[10px] text-muted-foreground mt-1">Active {member.lastActive}</p>
-                          )}
-                        </div>
+                        )}
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -358,14 +370,13 @@ export default function Collaborators() {
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44 rounded-xl shadow-xl border-slate-100">
-                            <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => updateRole(member.id, "admin")}>Set as Admin</DropdownMenuItem>
-                            <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => updateRole(member.id, "editor")}>Set as Editor</DropdownMenuItem>
-                            <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => updateRole(member.id, "viewer")}>Set as Viewer</DropdownMenuItem>
+                          <DropdownMenuContent align="end" className="w-52 rounded-xl shadow-xl border-slate-100">
+                            <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => openEditScopeModal(member)}>
+                              <FolderOpen className="w-4 h-4 mr-2 text-[#009698]" /> Change Access Scope
+                            </DropdownMenuItem>
                             {member.status === "pending" && (
                               <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => resendInvitation(member.id)}>Resend Invitation</DropdownMenuItem>
                             )}
-                            <div className="h-px bg-muted my-1" />
                             <DropdownMenuItem className="text-destructive font-medium cursor-pointer" onClick={() => removeTeammate(member.id)}>
                               <Trash2 className="w-4 h-4 mr-2" /> Remove
                             </DropdownMenuItem>
@@ -466,27 +477,6 @@ export default function Collaborators() {
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-slate-500">Role Permissions</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {["admin", "editor", "viewer"].map((r) => (
-                      <Badge 
-                        key={r} 
-                        variant={selectedRole === r ? "default" : "outline"} 
-                        className={cn(
-                          "justify-center cursor-pointer py-1.5 capitalize rounded-xl transition-all border-slate-200 text-xs font-bold shadow-sm",
-                          selectedRole === r 
-                            ? "bg-[#009698] text-white border-transparent hover:bg-[#009698]/90" 
-                            : "bg-background text-slate-600 hover:bg-slate-50"
-                        )}
-                        onClick={() => !inviting && setSelectedRole(r as any)}
-                      >
-                        {r}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
                 <Button 
                   type="submit" 
                   className="w-full bg-[#009698] hover:bg-[#009698]/90 text-white font-bold rounded-xl py-5 shadow-lg shadow-[#009698]/10 transition-transform active:scale-[0.99]"
@@ -497,24 +487,102 @@ export default function Collaborators() {
               </form>
             </CardContent>
           </Card>
-
-          <Card className="shadow-none border-dashed border-2 border-slate-200 bg-transparent rounded-3xl">
-            <CardContent className="p-5 space-y-3">
-              <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold text-slate-900">Permission Details</p>
-                  <div className="text-[11px] text-slate-500 leading-relaxed mt-1 space-y-1">
-                    <p><strong>Admin</strong>: Full access to all projects, editing, and billing.</p>
-                    <p><strong>Editor</strong>: Can edit assigned projects and manage incoming applications.</p>
-                    <p><strong>Viewer</strong>: View-only access to browse, rate, and leave notes on applicants.</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
+
+      {/* Edit Access Scope Modal */}
+      <Dialog open={!!editingCollaborator} onOpenChange={(open) => !open && setEditingCollaborator(null)}>
+        <DialogContent className="sm:max-w-md rounded-3xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-slate-900">Manage Access Scope</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Update project access permissions for <span className="font-semibold text-slate-900">{editingCollaborator?.name}</span> ({editingCollaborator?.email})
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase text-slate-500">Access Scope</label>
+              <div className="grid grid-cols-2 gap-2">
+                <Badge 
+                  variant={editScope === "all_projects" ? "default" : "outline"} 
+                  className={cn(
+                    "justify-center cursor-pointer py-2 rounded-xl transition-all border-slate-200 text-xs font-bold shadow-sm",
+                    editScope === "all_projects" 
+                      ? "bg-[#009698] text-white border-transparent hover:bg-[#009698]/90" 
+                      : "bg-background text-slate-600 hover:bg-slate-50"
+                  )}
+                  onClick={() => setEditScope("all_projects")}
+                >
+                  All Projects
+                </Badge>
+                <Badge 
+                  variant={editScope === "selected_projects" ? "default" : "outline"} 
+                  className={cn(
+                    "justify-center cursor-pointer py-2 rounded-xl transition-all border-slate-200 text-xs font-bold shadow-sm",
+                    editScope === "selected_projects" 
+                      ? "bg-[#009698] text-white border-transparent hover:bg-[#009698]/90" 
+                      : "bg-background text-slate-600 hover:bg-slate-50"
+                  )}
+                  onClick={() => setEditScope("selected_projects")}
+                >
+                  Selected Projects
+                </Badge>
+              </div>
+            </div>
+
+            {editScope === "selected_projects" && (
+              <div className="space-y-3">
+                <label className="text-xs font-bold uppercase text-slate-500">Select Projects</label>
+                {isLoadingProjects ? (
+                  <div className="h-20 bg-slate-100 animate-pulse rounded-xl" />
+                ) : projects.length > 0 ? (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {projects.map((p) => {
+                      const projectId = p._id || p.id;
+                      const isSelected = editProjectIds.includes(projectId);
+                      return (
+                        <div key={projectId} className="flex items-center gap-3 p-3 rounded-xl bg-white border">
+                          <Checkbox 
+                            id={`edit-proj-${projectId}`} 
+                            checked={isSelected}
+                            onCheckedChange={() => {
+                              setEditProjectIds(prev => 
+                                prev.includes(projectId) 
+                                  ? prev.filter(id => id !== projectId) 
+                                  : [...prev, projectId]
+                              );
+                            }}
+                            disabled={isUpdatingScope}
+                          />
+                          <Label htmlFor={`edit-proj-${projectId}`} className="text-sm font-medium text-slate-900 cursor-pointer">
+                            {p.projectName || p.title}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">No projects available.</div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" className="rounded-xl" onClick={() => setEditingCollaborator(null)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveAccessScope}
+              disabled={isUpdatingScope}
+              className="bg-[#009698] hover:bg-[#009698]/90 text-white font-bold rounded-xl"
+            >
+              {isUpdatingScope ? "Saving..." : "Save Access Scope"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -99,11 +99,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUser(userObj);
             localStorage.setItem('userData', JSON.stringify(userObj));
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Session verification failed:", error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('userData');
-          setUser(null);
+          if (error?.response?.status === 429) {
+            toast.error("Rate limit exceeded. Retrying session verification shortly...");
+          } else if (error?.response?.status === 401 || error?.response?.status === 403) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userData');
+            setUser(null);
+          }
         }
       } else {
         localStorage.removeItem('userData');
