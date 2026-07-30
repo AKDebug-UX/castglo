@@ -43,7 +43,7 @@ interface UnifiedProfessionalProfileFormProps {
 }
 
 const sectionOrder = [
-  "Basic Info", "About", "Contact", "Location", "Location / Availability", "Professional Overview", "Professional Identity", "Professional Focus", "Skills", "Skills / Tools", "Availability", "Booking Terms", "Credibility", "Credibility / Facilities", "Portfolio", "Social", "Reviews", "Service Listing", /* "Deliverables", */ "Portfolio Item", "Media", "System", "Photographer Profile", "Makeup Artist Profile", "Acting Coach Profile", "Editor Profile",
+  "Basic Info", "About", "Contact", "Location", "Location / Availability", "Professional Overview", "Professional Identity", "Professional Focus", "Skills", "Skills / Tools", "Availability", "Booking Terms", "Credibility", "Credibility / Facilities", "Portfolio", "Social", "Reviews", "Service Listing", "Deliverables", "Portfolio Item", "Media", "System", "Photographer Profile", "Makeup Artist Profile", "Acting Coach Profile", "Editor Profile",
 ];
 
 const normalizeArray = (value: unknown): string[] => (Array.isArray(value) ? value.map(String) : []);

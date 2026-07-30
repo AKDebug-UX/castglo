@@ -17,6 +17,7 @@ import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsPanel";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { VerifyProfileButton } from "@/components/verification/VerifyProfileButton";
 
 type SettingsTab =
   | "overview"
@@ -292,9 +293,23 @@ export default function AccountSettings() {
               <p className="text-sm text-muted-foreground">Quick snapshot of your account health</p>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-3">
-              <div className="p-4 rounded-xl border bg-white">
-                <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Verification</p>
-                <p className="font-medium">{user?.isVerified ? "Verified" : "Not Verified"}</p>
+              <div className="p-4 rounded-xl border bg-white flex flex-col justify-between">
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase mb-1">Identity Verification</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-medium">{user?.isVerified ? "Verified" : "Not Verified"}</p>
+                    {user?.isVerified ? (
+                      <Badge className="bg-emerald-500 text-white text-[10px] px-1.5 py-0">Verified</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] px-1.5 py-0">Unverified</Badge>
+                    )}
+                  </div>
+                </div>
+                {!user?.isVerified && (
+                  <VerifyProfileButton size="sm" className="mt-2 text-xs w-full bg-[#009698] hover:bg-[#009698]/90 text-white h-8">
+                    Verify Identity (Didit)
+                  </VerifyProfileButton>
+                )}
               </div>
               <div className="p-4 rounded-xl border bg-white flex items-center justify-between gap-2">
                 <div>

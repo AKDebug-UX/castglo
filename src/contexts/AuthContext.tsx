@@ -458,10 +458,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+const defaultAuthContext: AuthContextType = {
+  user: null,
+  isLoading: false,
+  pendingTwoFactor: null,
+  setPendingTwoFactor: () => {},
+  signIn: async () => ({ error: "Auth provider unavailable" }),
+  signInWithGoogle: async () => ({ error: "Auth provider unavailable" }),
+  signUp: async () => ({ error: "Auth provider unavailable" }),
+  signOut: async () => {},
+  forgotPassword: async () => ({ error: "Auth provider unavailable" }),
+  resetPassword: async () => ({ error: "Auth provider unavailable" }),
+  verifyEmail: async () => ({ error: "Auth provider unavailable" }),
+  resendVerification: async () => ({ error: "Auth provider unavailable" }),
+  refreshUser: async () => {},
+  updatePreferredCurrency: async () => ({ error: "Auth provider unavailable" }),
+  formatPrice: (amount) => String(amount),
+  verifyTwoFactor: async () => ({ error: "Auth provider unavailable" }),
+  resendTwoFactorCode: async () => ({ error: "Auth provider unavailable" }),
+  enrolTwoFactor: async () => ({ error: "Auth provider unavailable" }),
+  confirmTwoFactor: async () => ({ error: "Auth provider unavailable" }),
+  disableTwoFactor: async () => ({ error: "Auth provider unavailable" }),
+  regenerateBackupCodes: async () => ({ error: "Auth provider unavailable" }),
+};
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    console.warn("useAuth was used outside of an AuthProvider tree. Falling back to default auth context.");
+    return defaultAuthContext;
   }
   return context;
 }

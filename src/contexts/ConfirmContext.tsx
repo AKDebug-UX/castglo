@@ -92,7 +92,7 @@ export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
 export const useConfirm = () => {
   const context = useContext(ConfirmContext);
   if (!context) {
-    throw new Error("useConfirm must be used within a ConfirmProvider");
+    return async (message: string) => window.confirm(message);
   }
   return context.confirm;
 };

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { collaboratorAPI } from "@/lib/api";
 
 export interface WorkspacePermissions {
@@ -171,10 +171,20 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+const defaultWorkspaceContext: WorkspaceContextType = {
+  activeWorkspace: "Personal",
+  collaborations: [],
+  isLoading: false,
+  switchWorkspace: () => {},
+  refreshCollaborations: async () => {},
+  getPermissionsForProject: () => ({}),
+  getGrantedProjectIds: () => [],
+};
+
 export const useWorkspace = () => {
   const context = useContext(WorkspaceContext);
   if (context === undefined) {
-    throw new Error("useWorkspace must be used within a WorkspaceProvider");
+    return defaultWorkspaceContext;
   }
   return context;
 };

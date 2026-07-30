@@ -227,7 +227,7 @@ export const UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC: ProfessionalFieldSpec[] = 
   ...BOOKING_TERMS_FIELDS,
   ...TRUST_FIELDS,
   ...SERVICE_LISTING_FIELDS,
-  // ...SERVICE_DELIVERABLE_FIELDS,
+  ...SERVICE_DELIVERABLE_FIELDS,
   ...PORTFOLIO_ITEM_FIELDS,
   ...DYNAMIC_FIELDS,
 ];
@@ -255,7 +255,7 @@ export const sectionToTabMap: Record<string, "general" | "professional" | "busin
   "Availability": "business",
   "Booking Terms": "business",
   "Service Listing": "business",
-  // "Deliverables": "business",
+  "Deliverables": "business",
   "Portfolio Item": "media",
   "Photographer Profile": "professional",
   "Makeup Artist Profile": "professional",

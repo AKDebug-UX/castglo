@@ -27,6 +27,7 @@ export const API_ENDPOINTS = {
     GET_ALL: '/admin/verifications',
     UPDATE_STATUS: (id: string) => `/admin/verifications/${id}/status`,
     STATS: '/admin/verifications/stats',
+    DIDIT_SESSION: '/verification/didit/session',
   },
   SUBMISSIONS: {
     GET_ALL: '/admin/submissions',
@@ -292,6 +293,7 @@ export const verificationAPI = {
   submit: (formData: FormData) => api.post(API_ENDPOINTS.VERIFICATIONS.SUBMIT, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  createDiditSession: () => api.post(API_ENDPOINTS.VERIFICATIONS.DIDIT_SESSION),
 };
 
 // --- LIVESTREAM ENDPOINTS ---
