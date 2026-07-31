@@ -31,9 +31,13 @@ export default function DirectorDashboard() {
     const fetchData = async () => {
       try {
         const isPersonal = activeWorkspace === "Personal";
-        const streamsRes = await livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } }));
-        if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
-          setActiveStreams(streamsRes.data.data.filter((s: any) => s.status === "live").slice(0, 2));
+        if (isPersonal) {
+          const streamsRes = await livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } }));
+          if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
+            setActiveStreams(streamsRes.data.data.filter((s: any) => s.status === "live").slice(0, 2));
+          }
+        } else {
+          setActiveStreams([]);
         }
 
         let myCastings: any[] = [];
