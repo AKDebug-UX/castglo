@@ -19,6 +19,7 @@ import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { BookingDialog } from "@/components/BookingDialog";
+import { DeliverableHistoryTab } from "@/components/deliverable-history/DeliverableHistoryTab";
 
 const camelToSnake = (str: string) => str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 const snakeToCamel = (str: string) => str.replace(/(_\w)/g, (m) => m[1].toUpperCase());
@@ -281,6 +282,9 @@ export default function TalentProfile() {
                       <TabsTrigger value="overview" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <LayoutGrid className="w-4 h-4" /> Overview
                       </TabsTrigger>
+                      <TabsTrigger value="deliverable_history" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <Award className="w-4 h-4" /> Deliverable History
+                      </TabsTrigger>
                       <TabsTrigger value="headshots" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <ImageIcon className="w-4 h-4" /> Headshots
                       </TabsTrigger>
@@ -518,6 +522,12 @@ export default function TalentProfile() {
                           <p className="text-sm text-muted-foreground whitespace-pre-wrap">{t.career_goals}</p>
                         </div>
                       )}
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="deliverable_history" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="rounded-2xl p-6 md:p-8 border shadow-card bg-card">
+                      <DeliverableHistoryTab userId={id || t._id || t.id} userFullName={t.fullName || t.name} />
                     </Card>
                   </TabsContent>
 

@@ -63,6 +63,7 @@ const LivestreamsList = lazy(() => import("./pages/talent/LivestreamsList"));
 const VerificationProcess = lazy(() => import("./pages/talent/VerificationProcess"));
 const AccountSettings = lazy(() => import("./pages/talent/AccountSettings"));
 const CollaborationsPage = lazy(() => import("./pages/Collaborations"));
+const DeliverableDetailPage = lazy(() => import("./pages/DeliverableDetailPage"));
 
 // Director Dashboard
 const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DirectorLayout })));
@@ -197,6 +198,8 @@ const App = () => {
               <Route path="/talent/:id" element={<TalentProfile />} />
               <Route path="/professional/:id" element={<ProfessionalPublicProfile />} />
               <Route path="/director/:id" element={<DirectorPublicProfile />} />
+              <Route path="/profiles/:userId/history/:deliverableId" element={<DeliverableDetailPage />} />
+              <Route path="/deliverable-history/:deliverableId" element={<DeliverableDetailPage />} />
               <Route path="/browse-cast" element={<PublicCasting />} />
               <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
               <Route path="/cast/:id" element={<PublicCastingDetail />} />

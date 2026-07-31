@@ -14,6 +14,7 @@ import { castingCallAPI, applicationAPI, livestreamAPI, projectAPI } from "@/lib
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { PendingInvitationsBanner } from "@/components/collaborators/PendingInvitationsBanner";
 
 export default function DirectorDashboard() {
   const { user: authUser } = useAuth();
@@ -239,6 +240,9 @@ export default function DirectorDashboard() {
           </Link>
         </Button>
       </div>
+
+      {/* Pending Workspace Invitations Alert Banner */}
+      <PendingInvitationsBanner />
 
       {/* Active Livestreams */}
       {activeStreams.length > 0 && (

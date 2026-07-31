@@ -53,6 +53,12 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  useEffect(() => {
+    if (collaboratorToken) {
+      sessionStorage.setItem("collaboratorToken", collaboratorToken);
+    }
+  }, [collaboratorToken]);
+
   const config = typeLabels[type] || typeLabels.talent;
 
   const handleSubmit = async (e: React.FormEvent) => {
