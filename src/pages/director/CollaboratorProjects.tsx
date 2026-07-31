@@ -81,16 +81,20 @@ export default function CollaboratorProjects() {
         ).filter(Boolean);
 
         let finalProjects: any[] = [];
-        if (grantedIds.length > 0) {
-          if (fetchedProjects.length > 0) {
-            finalProjects = fetchedProjects.filter(p => grantedIds.includes(p._id || p.id));
-          }
-          if (finalProjects.length === 0) {
+        if (grantedIds.length > 0 && fetchedProjects.length > 0) {
+          finalProjects = fetchedProjects.filter(p => grantedIds.includes(p._id || p.id));
+        } else if (fetchedProjects.length > 0) {
+          finalProjects = fetchedProjects;
+        }
+
+        // Fallback: If fetchedProjects is empty or filtering returned no items, extract directly from grants / activeWorkspace
+        if (finalProjects.length === 0) {
+          if (grants.length > 0) {
             const promises = grants.map(async (grant: any) => {
               const p = grant.projectId;
               let projectDetails: any = null;
-              if (p && typeof p === "object") {
-                projectDetails = p;
+              if (p && typeof p === "object" && (p._id || p.id)) {
+                projectDetails = p.castingCall || p.project || p;
               } else if (typeof p === "string") {
                 try {
                   const res = await projectAPI.getOne(p);
@@ -118,8 +122,31 @@ export default function CollaboratorProjects() {
             const results = await Promise.all(promises);
             finalProjects = results.filter(Boolean);
           }
-        } else {
-          finalProjects = fetchedProjects;
+
+          if (finalProjects.length === 0) {
+            let singleProject = (activeWorkspace as any)?.project || (activeWorkspace as any)?.castingCall;
+            if (singleProject && typeof singleProject === "string") {
+              try {
+                const res = await projectAPI.getOne(singleProject);
+                if (res.data?.success) {
+                  singleProject = res.data.data?.castingCall || res.data.data?.project || res.data.data;
+                }
+              } catch (e) {
+                console.error("Failed to fetch single project for workspace:", singleProject, e);
+              }
+            }
+            if (singleProject && typeof singleProject === "object" && (singleProject._id || singleProject.id)) {
+              const unwrapped = singleProject.castingCall || singleProject.project || singleProject;
+              finalProjects = [{
+                ...unwrapped,
+                _id: unwrapped._id || unwrapped.id,
+                id: unwrapped._id || unwrapped.id,
+                title: unwrapped.title || unwrapped.projectName,
+                projectName: unwrapped.projectName || unwrapped.title,
+                roles: unwrapped.roles || []
+              }];
+            }
+          }
         }
 
         setProjects(finalProjects);
