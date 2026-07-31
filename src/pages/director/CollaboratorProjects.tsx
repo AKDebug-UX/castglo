@@ -52,39 +52,77 @@ export default function CollaboratorProjects() {
       
       setIsLoading(true);
       try {
-        const grants = (activeWorkspace as any)?.projectGrants || [];
-        const promises = grants.map(async (grant: any) => {
-          const p = grant.projectId;
-          let projectDetails: any = null;
-          if (p && typeof p === "object") {
-            projectDetails = p;
-          } else if (typeof p === "string") {
-            try {
-              const res = await projectAPI.getOne(p);
-              if (res.data?.success) {
-                projectDetails = res.data.data?.castingCall || res.data.data?.project || res.data.data;
-              }
-            } catch (err) {
-              console.error("Failed to fetch project details for collaborator:", p, err);
+        const ownerId = typeof activeWorkspace === "object" ? (
+          activeWorkspace.owner?._id || 
+          activeWorkspace.owner?.id ||
+          (typeof activeWorkspace.owner === "string" ? activeWorkspace.owner : null) || 
+          activeWorkspace.inviter?._id || 
+          activeWorkspace.inviter?.id ||
+          (typeof activeWorkspace.inviter === "string" ? activeWorkspace.inviter : null)
+        ) : null;
+
+        let fetchedProjects: any[] = [];
+        if (ownerId) {
+          try {
+            const res = await projectAPI.getWorkspaceProjects(ownerId);
+            if (res.data?.success) {
+              fetchedProjects = Array.isArray(res.data.data) 
+                ? res.data.data 
+                : res.data.data?.projects || res.data.data?.castingCalls || [];
             }
+          } catch (e) {
+            console.error("Failed to fetch workspace projects by ownerId:", e);
           }
-          
-          if (projectDetails) {
-            return {
-              ...projectDetails,
-              _id: projectDetails._id || projectDetails.id,
-              id: projectDetails._id || projectDetails.id,
-              title: projectDetails.title || projectDetails.projectName,
-              projectName: projectDetails.projectName || projectDetails.title,
-              roles: projectDetails.roles || [],
-              permissions: grant.permissions || {}
-            };
+        }
+
+        const grants = (activeWorkspace as any)?.projectGrants || [];
+        const grantedIds = grants.map((g: any) => 
+          typeof g.projectId === "object" ? g.projectId._id || g.projectId.id : g.projectId
+        ).filter(Boolean);
+
+        let finalProjects: any[] = [];
+        if (grantedIds.length > 0) {
+          if (fetchedProjects.length > 0) {
+            finalProjects = fetchedProjects.filter(p => grantedIds.includes(p._id || p.id));
           }
-          return null;
-        });
-        
-        const results = await Promise.all(promises);
-        setProjects(results.filter(Boolean));
+          if (finalProjects.length === 0) {
+            const promises = grants.map(async (grant: any) => {
+              const p = grant.projectId;
+              let projectDetails: any = null;
+              if (p && typeof p === "object") {
+                projectDetails = p;
+              } else if (typeof p === "string") {
+                try {
+                  const res = await projectAPI.getOne(p);
+                  if (res.data?.success) {
+                    projectDetails = res.data.data?.castingCall || res.data.data?.project || res.data.data;
+                  }
+                } catch (err) {
+                  console.error("Failed to fetch project details for collaborator:", p, err);
+                }
+              }
+              
+              if (projectDetails) {
+                return {
+                  ...projectDetails,
+                  _id: projectDetails._id || projectDetails.id,
+                  id: projectDetails._id || projectDetails.id,
+                  title: projectDetails.title || projectDetails.projectName,
+                  projectName: projectDetails.projectName || projectDetails.title,
+                  roles: projectDetails.roles || [],
+                  permissions: grant.permissions || {}
+                };
+              }
+              return null;
+            });
+            const results = await Promise.all(promises);
+            finalProjects = results.filter(Boolean);
+          }
+        } else {
+          finalProjects = fetchedProjects;
+        }
+
+        setProjects(finalProjects);
       } catch (error) {
         console.error("Failed to load collaborator projects:", error);
         toast.error("Failed to load collaborator projects.");

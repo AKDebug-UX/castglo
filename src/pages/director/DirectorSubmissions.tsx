@@ -30,6 +30,7 @@ import {
   Eye
 } from "lucide-react";
 import { applicationAPI, castingCallAPI, projectAPI } from "@/lib/api";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -54,6 +55,7 @@ import { ApplicationDetailsModal } from "@/components/applications/ApplicationDe
 
 export default function DirectorSubmissions() {
   const { id } = useParams(); // castingCallId
+  const { activeWorkspace } = useWorkspace();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeTab, setActiveTab] = useState("all");
   const [submissions, setSubmissions] = useState([]);
@@ -102,9 +104,24 @@ export default function DirectorSubmissions() {
         }
       } else {
         // Fetch all submissions for all director's projects
-        const listingsRes = await projectAPI.getMe();
-        if (listingsRes.data.success && Array.isArray(listingsRes.data.data)) {
-          const myCastings = listingsRes.data.data;
+        const isPersonal = activeWorkspace === "Personal";
+        const ownerId = !isPersonal ? (
+          (activeWorkspace as any)?.owner?._id || 
+          (activeWorkspace as any)?.owner?.id ||
+          (typeof (activeWorkspace as any)?.owner === "string" ? (activeWorkspace as any)?.owner : null) || 
+          (activeWorkspace as any)?.inviter?._id || 
+          (activeWorkspace as any)?.inviter?.id ||
+          (typeof (activeWorkspace as any)?.inviter === "string" ? (activeWorkspace as any)?.inviter : null)
+        ) : null;
+
+        const listingsRes = isPersonal 
+          ? await projectAPI.getMe() 
+          : (ownerId ? await projectAPI.getWorkspaceProjects(ownerId) : await projectAPI.getMe());
+
+        if (listingsRes.data?.success) {
+          const myCastings = Array.isArray(listingsRes.data.data)
+            ? listingsRes.data.data
+            : listingsRes.data.data?.projects || listingsRes.data.data?.castingCalls || [];
           
           if (myCastings.length > 0) {
             const allAppsPromises = myCastings.map((c) => {
@@ -149,7 +166,7 @@ export default function DirectorSubmissions() {
 
   useEffect(() => {
     fetchData();
-  }, [id]);
+  }, [id, activeWorkspace]);
 
   const handleAction = async (appId: string, action: 'shortlist' | 'accept' | 'reject') => {
     if (!appId || appId === "undefined") {
