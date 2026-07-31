@@ -165,9 +165,12 @@ export default function Collaborators() {
   };
 
   useEffect(() => {
-    fetchCollaborators();
-    fetchMyProjects();
-  }, []);
+    const isAuthorized = activeWorkspace === "Personal" || (typeof activeWorkspace === "object" && activeWorkspace.permissions?.manageCollaborators);
+    if (isAuthorized) {
+      fetchCollaborators();
+      fetchMyProjects();
+    }
+  }, [activeWorkspace]);
 
   const assignedProjName = useMemo(() => {
     if (customProjectName) return customProjectName;
