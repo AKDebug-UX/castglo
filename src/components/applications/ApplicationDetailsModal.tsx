@@ -103,9 +103,9 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
       } else {
         toast.error(res.data?.message || "Failed to send message");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("An error occurred while sending your message");
+      toast.error(error.response?.data?.message || error.response?.data?.error || "An error occurred while sending your message");
     } finally {
       setIsSending(false);
     }
@@ -257,7 +257,7 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
                               <p className="font-semibold text-xs mb-1 opacity-70">
                                 {isMe ? 'You' : comm.sender?.fullName || 'User'}
                               </p>
-                              <p>{comm.message}</p>
+                              <p>{comm.message || comm.content || comm.text}</p>
                             </div>
                             <span className="text-[10px] text-muted-foreground mt-1">
                               {new Date(comm.createdAt).toLocaleString()}

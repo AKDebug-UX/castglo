@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { StarRating } from "./StarRating";
 import { ReviewList } from "./ReviewList";
 import { DeliverableFormModal } from "./DeliverableFormModal";
+import { DeliverableMediaGallery } from "./DeliverableMediaGallery";
 import { DeliverableItem } from "./DeliverableCard";
 import { deliverableHistoryAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,9 +24,6 @@ import {
   Trash2,
   ExternalLink,
   Loader2,
-  Image as ImageIcon,
-  ChevronLeft,
-  ChevronRight,
   Share2
 } from "lucide-react";
 
@@ -49,7 +48,6 @@ export function DeliverableDetailModal({
   const [data, setData] = useState<DeliverableItem | null>(initialData || null);
   const [loading, setLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
 
   const activeId = deliverableId || initialData?.id;
 
@@ -119,34 +117,7 @@ export function DeliverableDetailModal({
             <div className="space-y-6">
               {/* Media Gallery / Header Banner */}
               {mediaUrls.length > 0 && (
-                <div className="relative rounded-2xl overflow-hidden bg-slate-950 aspect-video max-h-72 w-full flex items-center justify-center">
-                  <img
-                    src={mediaUrls[selectedMediaIndex]}
-                    alt={data.title}
-                    className="w-full h-full object-contain"
-                  />
-                  {mediaUrls.length > 1 && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedMediaIndex((i) => (i > 0 ? i - 1 : mediaUrls.length - 1))}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-1.5 rounded-full backdrop-blur-xs transition-colors"
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedMediaIndex((i) => (i < mediaUrls.length - 1 ? i + 1 : 0))}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/80 text-white p-1.5 rounded-full backdrop-blur-xs transition-colors"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full backdrop-blur-xs">
-                        {selectedMediaIndex + 1} / {mediaUrls.length}
-                      </div>
-                    </>
-                  )}
-                </div>
+                <DeliverableMediaGallery mediaUrls={mediaUrls} title={data.title} />
               )}
 
               {/* Title & Core Metadata */}
@@ -163,10 +134,14 @@ export function DeliverableDetailModal({
                         </Badge>
                       )}
                       {data.projectId && (
-                        <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-semibold rounded-full flex items-center gap-1">
+                        <Link
+                          to={`/casting-calls/${data.projectId}`}
+                          className="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold px-3 py-1 rounded-full transition-colors"
+                        >
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Platform Verified</span>
-                        </Badge>
+                          <span>{data.project?.title ? `Linked: ${data.project.title}` : "Platform Verified Project"}</span>
+                          <ExternalLink className="w-3 h-3 text-emerald-600 ml-0.5" />
+                        </Link>
                       )}
                     </div>
 

@@ -100,6 +100,10 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   };
 
   const getNotificationLink = (notification: any) => {
+    if (notification.type === "deliverable_review") {
+      const delivId = notification.metadata?.deliverableId || notification.metadata?.id;
+      return delivId ? `/deliverable-history/${delivId}#reviews` : getNotificationPath();
+    }
     if (notification.type === "message") {
       if (!user) return "/";
       switch (user.role) {

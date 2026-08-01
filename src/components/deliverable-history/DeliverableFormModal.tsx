@@ -18,10 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { deliverableHistoryAPI, projectAPI } from "@/lib/api";
+import { deliverableHistoryAPI, projectAPI, uploadAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { DeliverableItem } from "./DeliverableCard";
-import { Plus, X, Image as ImageIcon, Link as LinkIcon, Film, Loader2 } from "lucide-react";
+import { Plus, X, Image as ImageIcon, Link as LinkIcon, Film, Loader2, Upload } from "lucide-react";
 
 interface DeliverableFormModalProps {
   open: boolean;
@@ -62,6 +62,7 @@ export function DeliverableFormModal({
   const [projectId, setProjectId] = useState<string>("");
   const [myProjects, setMyProjects] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const [loadingProjects, setLoadingProjects] = useState(false);
 
   useEffect(() => {
@@ -110,11 +111,40 @@ export function DeliverableFormModal({
     const url = newMediaInput.trim();
     if (!url) return;
     if (mediaUrls.length >= 20) {
-      toast.error("Maximum 20 media URLs allowed.");
+      toast.error("Maximum 20 media items allowed.");
       return;
     }
     setMediaUrls((prev) => [...prev, url]);
     setNewMediaInput("");
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (mediaUrls.length + files.length > 20) {
+      toast.error("Maximum 20 media items allowed.");
+      return;
+    }
+
+    setUploadingMedia(true);
+    try {
+      const uploadedList: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append("image", files[i]);
+        const res = await uploadAPI.uploadImage(formData);
+        const url = res.data?.data?.url || res.data?.url;
+        if (url) uploadedList.push(url);
+      }
+      setMediaUrls((prev) => [...prev, ...uploadedList]);
+      toast.success(`${uploadedList.length} file(s) uploaded successfully!`);
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      toast.error(err?.response?.data?.message || "Failed to upload media file.");
+    } finally {
+      setUploadingMedia(false);
+      e.target.value = "";
+    }
   };
 
   const handleRemoveMediaUrl = (index: number) => {
@@ -132,9 +162,10 @@ export function DeliverableFormModal({
       return;
     }
 
+    const currentYearNum = new Date().getFullYear();
     const yearNum = year ? parseInt(year, 10) : undefined;
-    if (yearNum && (yearNum < 1900 || yearNum > 2026)) {
-      toast.error("Please enter a valid year between 1900 and 2026.");
+    if (yearNum && (yearNum < 1900 || yearNum > currentYearNum)) {
+      toast.error(`Please enter a valid year between 1900 and ${currentYearNum}.`);
       return;
     }
 
@@ -147,7 +178,7 @@ export function DeliverableFormModal({
         description: description.trim() || undefined,
         year: yearNum,
         mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
-        projectId: projectId ? projectId : undefined,
+        projectId: projectId && projectId !== "none" ? projectId : undefined,
       };
 
       if (isEditing && initialData?.id) {
@@ -161,7 +192,11 @@ export function DeliverableFormModal({
       onSuccess?.();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to save deliverable entry.");
+      if (err?.response?.status === 404) {
+        toast.error("Backend endpoint for Deliverable History (POST /deliverable-history) returned 404. Please deploy the latest backend build.");
+      } else {
+        toast.error(err?.response?.data?.message || "Failed to save deliverable entry.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -205,7 +240,7 @@ export function DeliverableFormModal({
               </Label>
               <Input
                 id="deliv-role"
-                placeholder="e.g. Lead Actor, Director, DP"
+                placeholder="e.g. Director, Lead Actor, DP"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 maxLength={200}
@@ -240,9 +275,9 @@ export function DeliverableFormModal({
               <Input
                 id="deliv-year"
                 type="number"
-                placeholder="2025"
+                placeholder={new Date().getFullYear().toString()}
                 min="1900"
-                max="2026"
+                max={new Date().getFullYear().toString()}
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
                 className="rounded-xl text-xs"
@@ -266,50 +301,72 @@ export function DeliverableFormModal({
             />
           </div>
 
-          {/* Media URLs */}
+          {/* Media Multi-File Upload & URL Inputs */}
           <div className="space-y-2">
             <Label className="text-xs font-bold uppercase text-slate-500 flex items-center justify-between">
-              <span>Media Links / Photo & Video URLs</span>
+              <span>Media (photos/clips)</span>
               <span className="text-[10px] text-muted-foreground font-normal">Max 20</span>
             </Label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Paste image or video URL (https://...)"
-                value={newMediaInput}
-                onChange={(e) => setNewMediaInput(e.target.value)}
-                className="rounded-xl text-xs flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddMediaUrl();
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleAddMediaUrl}
-                className="rounded-xl text-xs px-3"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <label className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-dashed border-slate-300 hover:border-[#009698] bg-slate-50 hover:bg-[#DEFCFE]/20 cursor-pointer transition-colors text-xs font-semibold text-slate-700">
+                {uploadingMedia ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-[#009698]" />
+                ) : (
+                  <Upload className="w-4 h-4 text-[#009698]" />
+                )}
+                <span>{uploadingMedia ? "Uploading..." : "Upload Photos / Clips"}</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  onChange={handleFileUpload}
+                  disabled={uploadingMedia || mediaUrls.length >= 20}
+                  className="hidden"
+                />
+              </label>
+
+              <div className="flex gap-1.5">
+                <Input
+                  placeholder="Or paste media URL"
+                  value={newMediaInput}
+                  onChange={(e) => setNewMediaInput(e.target.value)}
+                  className="rounded-xl text-xs flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddMediaUrl();
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddMediaUrl}
+                  disabled={mediaUrls.length >= 20}
+                  className="rounded-xl text-xs px-3"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
+            {/* Thumbnail previews */}
             {mediaUrls.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-1 max-h-32 overflow-y-auto">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 pt-2 max-h-36 overflow-y-auto">
                 {mediaUrls.map((url, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center gap-1.5 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-xl text-[11px] text-slate-700 max-w-full"
+                    className="relative group aspect-square rounded-xl overflow-hidden bg-slate-900 border border-slate-200"
                   >
-                    <ImageIcon className="w-3 h-3 text-[#009698] shrink-0" />
-                    <span className="truncate max-w-[200px]">{url}</span>
+                    <img src={url} alt={`Media ${idx + 1}`} className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => handleRemoveMediaUrl(idx)}
-                      className="text-slate-400 hover:text-destructive shrink-0"
+                      className="absolute top-1 right-1 bg-black/70 text-white p-1 rounded-full opacity-90 hover:opacity-100 hover:bg-destructive transition-colors"
+                      title="Remove"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 ))}

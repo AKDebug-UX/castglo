@@ -24,11 +24,9 @@ export function EmptyHistoryState({
       </h3>
 
       <p className="text-xs text-muted-foreground max-w-sm mb-6 leading-relaxed">
-        {isOwner ? (
-          "Showcase your verified work history, roles, and media. Add completed projects to receive reviews from verified co-workers."
-        ) : (
-          `${userFullName} hasn't added any completed projects or deliverable history entries yet.`
-        )}
+        {isOwner
+          ? "You haven't added any project history yet. Add your first completed project."
+          : `${userFullName} hasn't added any project history yet.`}
       </p>
 
       {isOwner && onAddClick && (

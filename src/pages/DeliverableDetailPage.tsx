@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/deliverable-history/StarRating";
 import { ReviewList } from "@/components/deliverable-history/ReviewList";
 import { DeliverableFormModal } from "@/components/deliverable-history/DeliverableFormModal";
+import { DeliverableMediaGallery } from "@/components/deliverable-history/DeliverableMediaGallery";
 import { DeliverableItem } from "@/components/deliverable-history/DeliverableCard";
 import { deliverableHistoryAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,8 +20,6 @@ import {
   Trash2,
   ExternalLink,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
   Share2,
   ArrowLeft,
   Award,
@@ -29,12 +28,13 @@ import {
 export default function DeliverableDetailPage() {
   const { userId, deliverableId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const reviewsRef = useRef<HTMLDivElement>(null);
 
   const [data, setData] = useState<DeliverableItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
-  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
 
   const fetchDetail = async () => {
     if (!deliverableId) return;
@@ -55,6 +55,12 @@ export default function DeliverableDetailPage() {
   useEffect(() => {
     fetchDetail();
   }, [deliverableId]);
+
+  useEffect(() => {
+    if (location.hash === "#reviews" && reviewsRef.current) {
+      reviewsRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [location.hash, data]);
 
   const currentUserId = user?._id || user?.id;
   const ownerId = data?.userId || data?.user?.id;
@@ -118,34 +124,7 @@ export default function DeliverableDetailPage() {
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-8 shadow-sm space-y-8 animate-fade-in">
             {/* Media Gallery */}
             {mediaUrls.length > 0 && (
-              <div className="relative rounded-2xl overflow-hidden bg-slate-950 aspect-video max-h-96 w-full flex items-center justify-center">
-                <img
-                  src={mediaUrls[selectedMediaIndex]}
-                  alt={data.title}
-                  className="w-full h-full object-contain"
-                />
-                {mediaUrls.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedMediaIndex((i) => (i > 0 ? i - 1 : mediaUrls.length - 1))}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-xs transition-colors"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedMediaIndex((i) => (i < mediaUrls.length - 1 ? i + 1 : 0))}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-xs transition-colors"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-xs">
-                      {selectedMediaIndex + 1} / {mediaUrls.length}
-                    </div>
-                  </>
-                )}
-              </div>
+              <DeliverableMediaGallery mediaUrls={mediaUrls} title={data.title} />
             )}
 
             {/* Title & Metadata */}
@@ -162,10 +141,14 @@ export default function DeliverableDetailPage() {
                       </Badge>
                     )}
                     {data.projectId && (
-                      <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-semibold rounded-full flex items-center gap-1">
+                      <Link
+                        to={`/casting-calls/${data.projectId}`}
+                        className="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold px-3 py-1 rounded-full transition-colors"
+                      >
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Platform Verified</span>
-                      </Badge>
+                        <span>{data.project?.title ? `Linked: ${data.project.title}` : "Platform Verified Project"}</span>
+                        <ExternalLink className="w-3 h-3 text-emerald-600 ml-0.5" />
+                      </Link>
                     )}
                   </div>
 
@@ -234,7 +217,7 @@ export default function DeliverableDetailPage() {
             )}
 
             {/* Reviews */}
-            <div className="pt-6 border-t border-slate-100 space-y-4">
+            <div id="reviews" ref={reviewsRef} className="pt-6 border-t border-slate-100 space-y-4">
               <h3 className="text-lg font-bold text-slate-900">
                 Verified Co-Worker Reviews ({reviewCount})
               </h3>

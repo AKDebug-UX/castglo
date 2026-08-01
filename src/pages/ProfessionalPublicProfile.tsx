@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { formatLocation, getAvatarUrl, cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
+import { DeliverableHistoryTab } from "@/components/deliverable-history/DeliverableHistoryTab";
+
 const camelToSnake = (str: string) => str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 const snakeToCamel = (str: string) => str.replace(/(_\w)/g, (m) => m[1].toUpperCase());
 
@@ -332,6 +334,9 @@ export default function ProfessionalPublicProfile() {
                       <TabsTrigger value="overview" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <LayoutGrid className="w-4 h-4" /> Overview
                       </TabsTrigger>
+                      <TabsTrigger value="deliverable_history" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <Award className="w-4 h-4" /> Deliverable History
+                      </TabsTrigger>
                       <TabsTrigger value="services" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <ListChecks className="w-4 h-4" /> Services
                       </TabsTrigger>
@@ -505,6 +510,12 @@ export default function ProfessionalPublicProfile() {
                           <Button variant="link" className="text-primary font-bold">Inquire about services</Button>
                         </div>
                       )}
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="deliverable_history" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    <Card className="rounded-2xl p-6 md:p-8 border shadow-card bg-card">
+                      <DeliverableHistoryTab userId={id || p._id || p.id} userFullName={p.fullName || p.name} />
                     </Card>
                   </TabsContent>
 

@@ -58,9 +58,13 @@ export function DeliverableHistoryTab({
           setItems((prev) => [...prev, ...list]);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch deliverable history:", err);
-      toast.error("Failed to load deliverable history.");
+      if (err?.response?.status === 404) {
+        setItems([]);
+      } else {
+        toast.error("Failed to load deliverable history.");
+      }
     } finally {
       setLoading(false);
       setLoadingMore(false);

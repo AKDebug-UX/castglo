@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, Upload, Link as LinkIcon, FileCheck } from "lucide-react";
-import { applicationAPI, uploadAPI } from "@/lib/api";
+import { applicationAPI, uploadAPI, deliverableHistoryAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 interface ProjectSubmissionModalProps {
-  submission: any;
+  submission?: any;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -26,25 +26,27 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
+  const activeSubmissionId =
+    submission?._id ||
+    submission?.id ||
+    submission?.applicationId ||
+    submission?.projectId ||
+    (typeof submission?.castingCallId === "string" ? submission.castingCallId : submission?.castingCallId?._id || submission?.castingCallId?.id) ||
+    "";
+
   useEffect(() => {
-    if (isOpen && !submission) {
+    if (isOpen) {
       const fetchAcceptedProjects = async () => {
         setIsLoadingProjects(true);
         try {
           const res = await applicationAPI.getMe();
           if (res.data?.success) {
             const apps = Array.isArray(res.data.data) ? res.data.data : (res.data.data?.applications || []);
-            // Filter to include accepted, hired, offer, or matched statuses (case-insensitive)
-            const filtered = apps.filter((app: any) => 
-              app.status && ["accepted", "hired", "offer", "matched"].includes(app.status.toLowerCase())
-            );
-            
-            // Fallback to all applications if no accepted/hired ones are found
-            const projectsToShow = filtered.length > 0 ? filtered : apps;
-            setAcceptedProjects(projectsToShow);
-            
-            if (projectsToShow.length > 0) {
-              setSelectedProjectId(projectsToShow[0]._id || projectsToShow[0].id || "");
+            setAcceptedProjects(apps);
+
+            if (apps.length > 0 && !activeSubmissionId) {
+              const firstId = apps[0]._id || apps[0].id || apps[0].applicationId || "";
+              setSelectedProjectId(firstId);
             }
           }
         } catch (error) {
@@ -55,7 +57,7 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
       };
       fetchAcceptedProjects();
     }
-  }, [isOpen, submission]);
+  }, [isOpen, submission, activeSubmissionId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -65,34 +67,51 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const targetSubmissionId = submission?._id || submission?.id || selectedProjectId;
-    
+    const targetSubmissionId = activeSubmissionId || selectedProjectId;
+
     if (!targetSubmissionId) {
       toast.error("Please select a project to submit work for.");
       return;
     }
-    
-    if (!title.trim()) {
-      toast.error("Please enter a title for your submission.");
+
+    if (!file && !externalLink.trim() && !description.trim()) {
+      toast.error("Please upload a file, provide an external link, or add notes for your deliverable.");
       return;
     }
+
+    const submissionTitle = title.trim() || submission?.castingCall?.title || "Project Deliverable";
 
     setIsSubmitting(true);
     try {
       let fileUrl = "";
       if (file) {
         const formData = new FormData();
-        formData.append("image", file); // Backend expects "image" or similar for general file uploads
+        formData.append("image", file);
         const uploadRes = await uploadAPI.uploadImage(formData);
         fileUrl = uploadRes.data?.data?.url || uploadRes.data?.url || "";
       }
 
       // Format the delivery message
-      const deliveryMessage = `📦 **Project Deliverable Submitted**\n\n**Title:** ${title.trim()}\n**Link:** ${externalLink.trim() || "None"}\n**File:** ${fileUrl || "None"}\n\n**Notes:**\n${description.trim() || "No additional notes."}`;
+      const deliveryMessage = `📦 **Project Deliverable Submitted**\n\n**Title:** ${submissionTitle}\n**Link:** ${externalLink.trim() || "None"}\n**File:** ${fileUrl || "None"}\n\n**Notes:**\n${description.trim() || "No additional notes."}`;
+
+      // Optionally record to deliverable history portfolio
+      try {
+        const mediaUrls = fileUrl ? [fileUrl] : (externalLink.trim() ? [externalLink.trim()] : []);
+        await deliverableHistoryAPI.create({
+          title: submissionTitle,
+          role: submission?.appliedRole || submission?.role?.role_name || submission?.role?.title || "Participant",
+          description: description.trim() || undefined,
+          year: new Date().getFullYear(),
+          mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
+          projectId: targetSubmissionId,
+        });
+      } catch (delivErr) {
+        console.log("Deliverable history portfolio entry notice:", delivErr);
+      }
 
       // Send via communication API
       const res = await applicationAPI.addCommunication(targetSubmissionId, deliveryMessage);
-      
+
       if (res.data?.success) {
         toast.success("Project deliverables submitted successfully!");
         onClose();
@@ -114,25 +133,25 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg h-[70%] rounded-[24px] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] rounded-[24px] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold">
             <FileCheck className="w-5 h-5 text-teal-600" />
             Submit Project Deliverables
           </DialogTitle>
-          {submission ? (
+          {activeSubmissionId ? (
             <DialogDescription>
-              Submit your work for the project: <strong>{submission?.castingCall?.title || "Project"}</strong>
+              Submit your work for: <strong>{submission?.castingCall?.title || submission?.title || "Selected Project"}</strong>
             </DialogDescription>
           ) : (
             <DialogDescription>
-              Select an accepted project and submit your deliverables.
+              Select an active project or casting call and submit your deliverables.
             </DialogDescription>
           )}
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          {!submission && (
+        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          {!activeSubmissionId && (
             <div className="space-y-2">
               <Label htmlFor="projectSelect">Select Project / Casting Call <span className="text-destructive">*</span></Label>
               {isLoadingProjects ? (
@@ -147,31 +166,31 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
                   onChange={(e) => setSelectedProjectId(e.target.value)}
                   required
                 >
-                  {acceptedProjects.map((proj) => {
-                    const titleVal = proj.castingCallId?.project_title || proj.project?.projectName || proj.castingCall?.title || proj.project?.title || "Unknown Project";
-                    const role = proj.appliedRole || proj.role?.role_name || proj.role?.title || "Standard Role";
+                  {acceptedProjects.map((proj, idx) => {
+                    const pId = proj._id || proj.id || proj.applicationId || "";
+                    const titleVal = proj.castingCallId?.project_title || proj.project?.projectName || proj.castingCall?.title || proj.project?.title || proj.title || "Project Work";
+                    const role = proj.appliedRole || proj.role?.role_name || proj.role?.title || "Role";
                     const statusStr = proj.status ? ` (${proj.status.toUpperCase()})` : "";
                     return (
-                      <option key={proj._id} value={proj._id}>
+                      <option key={pId || idx} value={pId}>
                         {titleVal} - {role}{statusStr}
                       </option>
                     );
                   })}
                 </select>
               ) : (
-                <p className="text-sm text-destructive font-medium">No accepted projects or casting calls found.</p>
+                <p className="text-sm text-destructive font-medium">No active projects or casting calls found.</p>
               )}
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="title">Deliverable Title <span className="text-destructive">*</span></Label>
+            <Label htmlFor="title">Deliverable Title (Optional)</Label>
             <Input
               id="title"
               placeholder="e.g. Final Video Cut, Voiceover WAV file, Draft 1"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              required
             />
           </div>
 
@@ -224,7 +243,7 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white" disabled={isSubmitting || (!submission && acceptedProjects.length === 0)}>
+            <Button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white" disabled={isSubmitting || (!activeSubmissionId && acceptedProjects.length === 0)}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

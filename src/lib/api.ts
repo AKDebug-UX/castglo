@@ -433,7 +433,11 @@ export const applicationAPI = {
   reject: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.REJECT(ensureValidId(id))),
   accept: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.ACCEPT(ensureValidId(id))),
   update: (id: string, data: any) => api.patch(API_ENDPOINTS.APPLICATIONS.UPDATE(ensureValidId(id)), data),
-  addCommunication: (id: string, message: string) => api.post(API_ENDPOINTS.APPLICATIONS.COMMUNICATION(ensureValidId(id)), { message }),
+  addCommunication: (id: string, message: string | any) =>
+    api.post(
+      API_ENDPOINTS.APPLICATIONS.COMMUNICATION(ensureValidId(id)),
+      typeof message === "string" ? { message } : message
+    ),
   withdraw: (id: string) => api.delete(API_ENDPOINTS.APPLICATIONS.WITHDRAW(ensureValidId(id))),
 };
 
