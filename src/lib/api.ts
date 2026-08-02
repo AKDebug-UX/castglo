@@ -228,6 +228,18 @@ export const API_ENDPOINTS = {
   UPLOAD: {
     IMAGE: '/upload/image',
   },
+  DELIVERABLE_HISTORY: {
+    LIST_BY_USER: (userId: string) => `/deliverable-history/user/${userId}`,
+    GET_ONE: (id: string) => `/deliverable-history/${id}`,
+    CREATE: '/deliverable-history',
+    UPDATE: (id: string) => `/deliverable-history/${id}`,
+    DELETE: (id: string) => `/deliverable-history/${id}`,
+    LIST_REVIEWS: (id: string) => `/deliverable-history/${id}/reviews`,
+    ADD_REVIEW: (id: string) => `/deliverable-history/${id}/reviews`,
+    UPDATE_REVIEW: (id: string, reviewId: string) => `/deliverable-history/${id}/reviews/${reviewId}`,
+    DELETE_REVIEW: (id: string, reviewId: string) => `/deliverable-history/${id}/reviews/${reviewId}`,
+    FLAG_REVIEW: (id: string, reviewId: string) => `/deliverable-history/${id}/reviews/${reviewId}/flag`,
+  },
 };
 
 // Axios instance
@@ -606,6 +618,44 @@ export const twoFactorAuthAPI = {
     api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.VERIFY, data),
   resend: (data?: { email?: string }) => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.RESEND, data),
   getStatus: () => api.get(API_ENDPOINTS.TWO_FACTOR_AUTH.STATUS),
+};
+
+// --- DELIVERABLE HISTORY ENDPOINTS ---
+export const deliverableHistoryAPI = {
+  getByUser: (userId: string, params?: { page?: number; limit?: number }) =>
+    api.get(API_ENDPOINTS.DELIVERABLE_HISTORY.LIST_BY_USER(userId), { params }),
+  getOne: (id: string) =>
+    api.get(API_ENDPOINTS.DELIVERABLE_HISTORY.GET_ONE(id)),
+  create: (data: {
+    title: string;
+    role: string;
+    productionType?: string;
+    description?: string;
+    year?: number;
+    mediaUrls?: string[];
+    projectId?: string;
+  }) => api.post(API_ENDPOINTS.DELIVERABLE_HISTORY.CREATE, data),
+  update: (id: string, data: Partial<{
+    title: string;
+    role: string;
+    productionType: string;
+    description: string;
+    year: number;
+    mediaUrls: string[];
+    projectId: string;
+  }>) => api.put(API_ENDPOINTS.DELIVERABLE_HISTORY.UPDATE(id), data),
+  delete: (id: string) =>
+    api.delete(API_ENDPOINTS.DELIVERABLE_HISTORY.DELETE(id)),
+  getReviews: (id: string, params?: { page?: number; limit?: number }) =>
+    api.get(API_ENDPOINTS.DELIVERABLE_HISTORY.LIST_REVIEWS(id), { params }),
+  addReview: (id: string, data: { rating: number; comment?: string }) =>
+    api.post(API_ENDPOINTS.DELIVERABLE_HISTORY.ADD_REVIEW(id), data),
+  updateReview: (id: string, reviewId: string, data: { rating?: number; comment?: string }) =>
+    api.put(API_ENDPOINTS.DELIVERABLE_HISTORY.UPDATE_REVIEW(id, reviewId), data),
+  deleteReview: (id: string, reviewId: string) =>
+    api.delete(API_ENDPOINTS.DELIVERABLE_HISTORY.DELETE_REVIEW(id, reviewId)),
+  flagReview: (id: string, reviewId: string, data: { reason: 'spam' | 'harassment' | 'false_information' | 'inappropriate_content' | 'other' }) =>
+    api.post(API_ENDPOINTS.DELIVERABLE_HISTORY.FLAG_REVIEW(id, reviewId), data),
 };
 
 export default api;

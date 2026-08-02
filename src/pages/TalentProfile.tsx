@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -19,12 +19,15 @@ import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { BookingDialog } from "@/components/BookingDialog";
+import { DeliverableHistoryTab } from "@/components/deliverable-history/DeliverableHistoryTab";
 
 const camelToSnake = (str: string) => str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 const snakeToCamel = (str: string) => str.replace(/(_\w)/g, (m) => m[1].toUpperCase());
 
 export default function TalentProfile() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "overview";
   const [talent, setTalent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -275,11 +278,14 @@ export default function TalentProfile() {
 
               {/* Profile Main Content */}
               <div className="space-y-6 min-w-0">
-                <Tabs defaultValue="overview" className="w-full">
+                <Tabs defaultValue={defaultTab} className="w-full">
                   <div className="overflow-x-auto pb-2 scrollbar-hide">
                     <TabsList className="h-11 p-1 bg-white border shadow-sm inline-flex min-w-full">
                       <TabsTrigger value="overview" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <LayoutGrid className="w-4 h-4" /> Overview
+                      </TabsTrigger>
+                      <TabsTrigger value="deliverables" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
+                        <BriefcaseIcon className="w-4 h-4" /> Deliverable History
                       </TabsTrigger>
                       <TabsTrigger value="headshots" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <ImageIcon className="w-4 h-4" /> Headshots
@@ -307,6 +313,11 @@ export default function TalentProfile() {
                       </TabsTrigger>
                     </TabsList>
                   </div>
+
+                  {/* Deliverable History Tab */}
+                  <TabsContent value="deliverables" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                    <DeliverableHistoryTab userId={id || ""} userName={t?.fullName} />
+                  </TabsContent>
 
                   {/* 1. Overview Tab */}
                   <TabsContent value="overview" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">

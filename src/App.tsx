@@ -43,6 +43,7 @@ const TalentProfile = lazy(() => import("./pages/TalentProfile"));
 const ProfessionalPublicProfile = lazy(() => import("./pages/ProfessionalPublicProfile"));
 const UnifiedProfile = lazy(() => import("./pages/UnifiedProfile"));
 const DirectorPublicProfile = lazy(() => import("./pages/DirectorPublicProfile"));
+const DeliverableDetailPage = lazy(() => import("./pages/DeliverableDetailPage"));
 const WhatsNew = lazy(() => import("./pages/WhatsNew"));
 const AcceptInvitation = lazy(() => import("./pages/AcceptInvitation"));
 
@@ -207,6 +208,8 @@ const App = () => {
               <Route path="/subscription/success" element={<PaymentSuccess />} />
               <Route path="/profile/:id" element={<UnifiedProfile />} />
               <Route path="/profile/me" element={<UnifiedProfile />} />
+              <Route path="/profiles/:username/history/:deliverableId" element={<DeliverableDetailPage />} />
+              <Route path="/deliverables/:deliverableId" element={<DeliverableDetailPage />} />
               <Route path="/subscription/cancel" element={<PaymentCancel />} />
               <Route path="/collaborators/accept" element={<AcceptInvitation />} />
 

@@ -13,10 +13,12 @@ import {
   Shield,
   CreditCard,
   BadgeCheck,
-  Send
+  Send,
+  Award
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useMemo, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const mainNavItems = [
   { title: "Dashboard", href: "/talent", Icon: LayoutDashboard },
@@ -35,7 +37,23 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ className }: DashboardSidebarProps) {
   const location = useLocation();
+  const { user } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const navItems = useMemo(() => {
+    const historyLink = user?.id ? `/talent/${user.id}?tab=deliverables` : "/talent/profile";
+    return [
+      { title: "Dashboard", href: "/talent", Icon: LayoutDashboard },
+      { title: "Profile", href: "/talent/profile", Icon: User },
+      { title: "Deliverable History", href: historyLink, Icon: Award },
+      { title: "Create Auditions", href: "/talent/create-audition", Icon: Video },
+      { title: "Browse Casting Calls", href: "/talent/browse-cast", Icon: Search },
+      { title: "My Applications", href: "/talent/applications", Icon: FileText },
+      { title: "Messages", href: "/talent/messages", Icon: MessageSquare },
+      { title: "Notifications", href: "/talent/notifications", Icon: Bell },
+      { title: "Audition", href: "/talent/audition", Icon: Video },
+    ];
+  }, [user]);
 
   const settingsLinks = useMemo(
     () => [
@@ -56,7 +74,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
       </div>
       
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {mainNavItems.map((item) => {
+        {navItems.map((item) => {
           const isActive = location.pathname === item.href || 
             (item.href !== "/talent" && location.pathname.startsWith(item.href));
           

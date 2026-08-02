@@ -14,23 +14,11 @@ import {
   Briefcase,
   User,
   Video,
-  FileVideo
+  FileVideo,
+  Award
 } from "lucide-react";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-
-const navItems = [
-  { title: "Dashboard", href: "/director", Icon: LayoutDashboard },
-  { title: "Profile", href: "/director/profile", Icon: UserCircle },
-  { title: "Projects", href: "/director/projects", Icon: FolderOpen },
-  { title: "Virtual Auditions", href: "/director/audition", Icon: Video },
-  { title: "Livestreams", href: "/director/livestreams", Icon: Video },
-  { title: "Applicants", href: "/director/applicants", Icon: Users },
-  { title: "Matched", href: "/director/matched", Icon: Sparkles },
-  { title: "Messages", href: "/director/messages", Icon: MessageSquare },
-  { title: "Collaborators", href: "/director/collaborators", Icon: Handshake },
-  { title: "Billing / Add-ons", href: "/director/billing", Icon: CreditCard },
-  { title: "Settings", href: "/director/settings", Icon: Settings },
-];
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DirectorSidebarProps {
   className?: string;
@@ -39,6 +27,22 @@ interface DirectorSidebarProps {
 export function DirectorSidebar({ className }: DirectorSidebarProps) {
   const location = useLocation();
   const { activeWorkspace } = useWorkspace();
+  const { user } = useAuth();
+
+  const navItems = [
+    { title: "Dashboard", href: "/director", Icon: LayoutDashboard },
+    { title: "Profile", href: "/director/profile", Icon: UserCircle },
+    { title: "Deliverable History", href: user?.id ? `/director/${user.id}?tab=deliverables` : "/director/profile", Icon: Award },
+    { title: "Projects", href: "/director/projects", Icon: FolderOpen },
+    { title: "Virtual Auditions", href: "/director/audition", Icon: Video },
+    { title: "Livestreams", href: "/director/livestreams", Icon: Video },
+    { title: "Applicants", href: "/director/applicants", Icon: Users },
+    { title: "Matched", href: "/director/matched", Icon: Sparkles },
+    { title: "Messages", href: "/director/messages", Icon: MessageSquare },
+    { title: "Collaborators", href: "/director/collaborators", Icon: Handshake },
+    { title: "Billing / Add-ons", href: "/director/billing", Icon: CreditCard },
+    { title: "Settings", href: "/director/settings", Icon: Settings },
+  ];
 
   const filteredNavItems = navItems.filter(item => {
     if (activeWorkspace !== "Personal") {

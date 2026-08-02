@@ -9,19 +9,10 @@ import {
   Calendar,
   MessageSquare,
   Bell,
-  Settings
+  Settings,
+  Award
 } from "lucide-react";
-
-const navItems = [
-  { title: "Dashboard", href: "/professional", Icon: LayoutDashboard },
-  { title: "Profile", href: "/professional/profile", Icon: User },
-  { title: "Services", href: "/professional/services", Icon: Briefcase },
-  { title: "Browse Talents", href: "/professional/talents", Icon: Search },
-  { title: "Bookings", href: "/professional/bookings", Icon: Calendar },
-  { title: "Messages", href: "/professional/messages", Icon: MessageSquare },
-  { title: "Notifications", href: "/professional/notifications", Icon: Bell },
-  { title: "Settings", href: "/professional/settings", Icon: Settings },
-];
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProfessionalSidebarProps {
   className?: string;
@@ -29,6 +20,19 @@ interface ProfessionalSidebarProps {
 
 export function ProfessionalSidebar({ className }: ProfessionalSidebarProps) {
   const location = useLocation();
+  const { user } = useAuth();
+
+  const navItems = [
+    { title: "Dashboard", href: "/professional", Icon: LayoutDashboard },
+    { title: "Profile", href: "/professional/profile", Icon: User },
+    { title: "Deliverable History", href: user?.id ? `/professional/${user.id}?tab=deliverables` : "/professional/profile", Icon: Award },
+    { title: "Services", href: "/professional/services", Icon: Briefcase },
+    { title: "Browse Talents", href: "/professional/talents", Icon: Search },
+    { title: "Bookings", href: "/professional/bookings", Icon: Calendar },
+    { title: "Messages", href: "/professional/messages", Icon: MessageSquare },
+    { title: "Notifications", href: "/professional/notifications", Icon: Bell },
+    { title: "Settings", href: "/professional/settings", Icon: Settings },
+  ];
 
   return (
     <aside className={cn("w-64 bg-card border-r border-border flex flex-col", className)}>

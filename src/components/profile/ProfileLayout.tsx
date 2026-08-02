@@ -69,6 +69,12 @@ export const ProfileLayout: React.FC<ProfileLayoutProps> = ({ children }) => {
               Media
             </button>
             <button 
+              className={`nav-link ${activeTab === 'deliverables' ? 'active' : ''}`}
+              onClick={() => setActiveTab('deliverables')}
+            >
+              Deliverable History
+            </button>
+            <button 
               className={`nav-link ${activeTab === 'portfolio' ? 'active' : ''}`}
               onClick={() => setActiveTab('portfolio')}
             >
