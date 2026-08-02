@@ -14,6 +14,7 @@ import {
   XCircle,
   Award,
   File,
+  FileText,
   Loader2,
   ArrowLeft,
   Star,
@@ -27,7 +28,8 @@ import {
   CalendarDays,
   ExternalLink,
   Pencil,
-  Eye
+  Eye,
+  Link as LinkIcon
 } from "lucide-react";
 import { applicationAPI, castingCallAPI, projectAPI } from "@/lib/api";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
