@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate } from "react-router-dom";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsPanel";
+import { VerifyProfileButton } from "@/components/verification/VerifyProfileButton";
 
 export default function DirectorSettings() {
   const { user: currentUser, updatePreferredCurrency, formatPrice } = useAuth();
@@ -213,9 +214,12 @@ export default function DirectorSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 rounded-2xl p-1 bg-slate-100/80 border">
+        <TabsList className="grid w-full grid-cols-6 rounded-2xl p-1 bg-slate-100/80 border">
           <TabsTrigger value="preferences" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
             <Settings2 className="w-4 h-4" /> Preferences
+          </TabsTrigger>
+          <TabsTrigger value="verification" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all text-emerald-700 bg-emerald-50/50 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+            <ShieldCheck className="w-4 h-4" /> Verification
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
             <Bell className="w-4 h-4" /> Notifications
@@ -465,7 +469,107 @@ export default function DirectorSettings() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="verification" className="mt-6 space-y-6">
+          <Card className="rounded-[32px] border-2 border-[#009698]/20 shadow-xl overflow-hidden">
+            <CardHeader className="bg-slate-900 text-white p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-xl text-white">
+                    <ShieldCheck className="w-6 h-6 text-[#009698]" />
+                    Identity Verification
+                  </CardTitle>
+                  <p className="text-sm text-slate-300 mt-1">
+                    Instant biometric selfie & government photo ID verification
+                  </p>
+                </div>
+                {currentUser?.isVerified ? (
+                  <Badge className="bg-emerald-500 text-white text-xs px-3 py-1 font-semibold self-start sm:self-auto">
+                    Account Verified
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-amber-400 border-amber-400/40 bg-amber-500/10 text-xs px-3 py-1 font-semibold self-start sm:self-auto">
+                    Unverified Profile
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="p-4 rounded-xl border bg-slate-50/50 space-y-1">
+                  <div className="text-sm font-semibold flex items-center gap-1.5 text-slate-800">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#009698]" /> Biometric Selfie Matching
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Quickly verify your identity using facial recognition via your webcam or camera.
+                  </p>
+                </div>
+                <div className="p-4 rounded-xl border bg-slate-50/50 space-y-1">
+                  <div className="text-sm font-semibold flex items-center gap-1.5 text-slate-800">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#009698]" /> Official Photo ID
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Validate your passport, driver's license, or national ID card securely.
+                  </p>
+                </div>
+                <div className="p-4 rounded-xl border bg-slate-50/50 space-y-1">
+                  <div className="text-sm font-semibold flex items-center gap-1.5 text-slate-800">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#009698]" /> Verified Badge
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Earn an official verified badge to build trust with talent and platform users.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-[#009698]/10 via-teal-500/5 to-slate-50 border border-[#009698]/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1 text-left">
+                  <h3 className="font-bold text-base text-slate-900">
+                    {currentUser?.isVerified ? "Identity Verification Completed" : "Start Instant Verification"}
+                  </h3>
+                  <p className="text-xs text-slate-600 max-w-lg">
+                    {currentUser?.isVerified
+                      ? "Your identity has been verified. You can re-run verification anytime if your details change."
+                      : "Click below to launch the identity verification popup and complete your identity check in under 2 minutes."}
+                  </p>
+                </div>
+                <VerifyProfileButton size="lg" className="bg-[#009698] hover:bg-[#009698]/90 text-white font-semibold px-6 py-3 rounded-xl shadow-md min-w-[220px]">
+                  {currentUser?.isVerified ? "Re-verify Identity" : "Verify Identity"}
+                </VerifyProfileButton>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="security" className="mt-6 space-y-6">
+          <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#009698]">
+                <ShieldCheck className="w-5 h-5" /> Identity Verification
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Verify your identity to earn an official verified badge</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-5 rounded-2xl border bg-slate-50/50">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-slate-800">Verification Status</p>
+                    {currentUser?.isVerified ? (
+                      <Badge className="bg-emerald-500 text-white text-xs">Verified</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-xs">Unverified</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {currentUser?.isVerified ? "Your identity is verified" : "Your account is currently unverified"}
+                  </p>
+                </div>
+                <VerifyProfileButton size="sm" className="bg-[#009698] hover:bg-[#009698]/90 text-white rounded-xl">
+                  {currentUser?.isVerified ? "Re-verify" : "Verify Identity"}
+                </VerifyProfileButton>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

@@ -66,7 +66,7 @@ export default function VerificationProcess() {
           </p>
         </div>
 
-        {/* Primary Method: Instant Didit Identity Verification */}
+        {/* Primary Method: Instant Identity Verification */}
         <Card className="border-2 border-primary/20 shadow-md relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-bl-lg flex items-center gap-1">
             <Zap className="w-3.5 h-3.5 fill-current" /> Recommended & Instant
@@ -74,10 +74,10 @@ export default function VerificationProcess() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl">
               <Zap className="w-5 h-5 text-primary" />
-              Instant Identity Verification (Didit SDK)
+              Instant Identity Verification
             </CardTitle>
             <CardDescription>
-              Verify your identity instantly using your camera/selfie and official photo ID via Didit Protocol.
+              Verify your identity instantly using your camera/selfie and official photo ID.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -98,7 +98,7 @@ export default function VerificationProcess() {
                 size="lg"
                 className="w-full bg-[#009698] hover:bg-[#009698]/90 text-white font-semibold py-6 text-base shadow-sm"
               >
-                <Zap className="w-5 h-5 mr-2" /> Start Instant Didit Verification
+                <Zap className="w-5 h-5 mr-2" /> Start Instant Verification
               </VerifyProfileButton>
             </div>
           </CardContent>
