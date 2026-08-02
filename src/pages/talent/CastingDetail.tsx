@@ -105,7 +105,7 @@ export default function CastingDetail() {
           <div className="text-center py-4">
             <p className="text-muted-foreground mb-2">You've already applied!</p>
             <Button asChild>
-              <Link to="/talent/submissions">View Submission</Link>
+              <Link to="/talent/applications">View Application</Link>
             </Button>
           </div>
         ) : (

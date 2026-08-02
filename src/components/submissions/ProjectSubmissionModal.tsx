@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2, Upload, Link as LinkIcon, FileCheck, X, FileText, Image as ImageIcon } from "lucide-react";
-import { applicationAPI, uploadAPI, deliverableHistoryAPI } from "@/lib/api";
+import { applicationAPI, uploadAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 interface ProjectSubmissionModalProps {
@@ -132,21 +132,6 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
       // Format the delivery message
       const deliveryMessage = `📦 **Project Deliverable Submitted**\n\n**Title:** ${submissionTitle}\n**Link:** ${externalLink.trim() || "None"}\n**Files (${uploadedUrls.length}):**\n${fileFormattedList}\n\n**Notes:**\n${description.trim() || "No additional notes."}`;
 
-      // Optionally record to deliverable history portfolio
-      try {
-        const combinedMedia = [...uploadedUrls];
-        if (externalLink.trim()) combinedMedia.push(externalLink.trim());
-        await deliverableHistoryAPI.create({
-          title: submissionTitle,
-          role: submission?.appliedRole || submission?.role?.role_name || submission?.role?.title || "Participant",
-          description: description.trim() || undefined,
-          year: new Date().getFullYear(),
-          mediaUrls: combinedMedia.length > 0 ? combinedMedia : undefined,
-          projectId: targetSubmissionId,
-        });
-      } catch (delivErr) {
-        console.log("Deliverable history portfolio entry notice:", delivErr);
-      }
 
       // Send via communication API
       const res = await applicationAPI.addCommunication(targetSubmissionId, deliveryMessage);

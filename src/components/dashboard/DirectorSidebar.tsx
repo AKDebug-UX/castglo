@@ -25,7 +25,6 @@ const navItems = [
   { title: "Virtual Auditions", href: "/director/audition", Icon: Video },
   { title: "Livestreams", href: "/director/livestreams", Icon: Video },
   { title: "Applicants", href: "/director/applicants", Icon: Users },
-  { title: "Deliverables", href: "/director/submissions", Icon: FileVideo },
   { title: "Matched", href: "/director/matched", Icon: Sparkles },
   { title: "Messages", href: "/director/messages", Icon: MessageSquare },
   { title: "Collaborators", href: "/director/collaborators", Icon: Handshake },
@@ -43,8 +42,8 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
 
   const filteredNavItems = navItems.filter(item => {
     if (activeWorkspace !== "Personal") {
-      // For collaborator workspace, allow Dashboard, Projects, Messages, Applicants, and Deliverables unconditionally
-      return ["Dashboard", "Projects", "Messages", "Applicants", "Deliverables"].includes(item.title);
+      // For collaborator workspace, allow Dashboard, Projects, Messages, and Applicants unconditionally
+      return ["Dashboard", "Projects", "Messages", "Applicants"].includes(item.title);
     }
     return true;
   });

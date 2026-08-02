@@ -354,7 +354,7 @@ export default function DirectorDashboard() {
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" asChild>
-                  <Link to={`/director/submissions/${casting._id || casting.id}`}>
+                  <Link to={`/director/applicants?project=${casting._id || casting.id}`}>
                     <Eye className="w-4 h-4" />
                   </Link>
                 </Button>

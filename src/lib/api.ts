@@ -47,18 +47,6 @@ export const API_ENDPOINTS = {
     COMMUNICATION: (applicationId: string) => `/applications/${applicationId}/communication`,
     WITHDRAW: (applicationId: string) => `/applications/${applicationId}`,
   },
-  DELIVERABLE_HISTORY: {
-    BY_USER: (userId: string) => `/deliverable-history/user/${userId}`,
-    DETAILS: (id: string) => `/deliverable-history/${id}`,
-    CREATE: '/deliverable-history',
-    UPDATE: (id: string) => `/deliverable-history/${id}`,
-    DELETE: (id: string) => `/deliverable-history/${id}`,
-    REVIEWS: (id: string) => `/deliverable-history/${id}/reviews`,
-    ADD_REVIEW: (id: string) => `/deliverable-history/${id}/reviews`,
-    UPDATE_REVIEW: (id: string, reviewId: string) => `/deliverable-history/${id}/reviews/${reviewId}`,
-    DELETE_REVIEW: (id: string, reviewId: string) => `/deliverable-history/${id}/reviews/${reviewId}`,
-    FLAG_REVIEW: (id: string, reviewId: string) => `/deliverable-history/${id}/reviews/${reviewId}/flag`,
-  },
   BOOKINGS: {
     PROFESSIONAL_ME: '/bookings/professional/me',
     UPDATE_STATUS: (id: string) => `/bookings/${id}/status`,
@@ -618,43 +606,6 @@ export const twoFactorAuthAPI = {
     api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.VERIFY, data),
   resend: (data?: { email?: string }) => api.post(API_ENDPOINTS.TWO_FACTOR_AUTH.RESEND, data),
   getStatus: () => api.get(API_ENDPOINTS.TWO_FACTOR_AUTH.STATUS),
-};
-
-export const deliverableHistoryAPI = {
-  getByUser: (userId: string, params?: { page?: number; limit?: number }) =>
-    api.get(API_ENDPOINTS.DELIVERABLE_HISTORY.BY_USER(ensureValidId(userId)), { params }),
-  getOne: (id: string) =>
-    api.get(API_ENDPOINTS.DELIVERABLE_HISTORY.DETAILS(ensureValidId(id))),
-  create: (data: {
-    title: string;
-    role: string;
-    productionType?: string;
-    description?: string;
-    year?: number;
-    mediaUrls?: string[];
-    projectId?: string;
-  }) => api.post(API_ENDPOINTS.DELIVERABLE_HISTORY.CREATE, data),
-  update: (id: string, data: Partial<{
-    title: string;
-    role: string;
-    productionType?: string;
-    description?: string;
-    year?: number;
-    mediaUrls?: string[];
-    projectId?: string;
-  }>) => api.put(API_ENDPOINTS.DELIVERABLE_HISTORY.UPDATE(ensureValidId(id)), data),
-  delete: (id: string) =>
-    api.delete(API_ENDPOINTS.DELIVERABLE_HISTORY.DELETE(ensureValidId(id))),
-  getReviews: (id: string, params?: { page?: number; limit?: number }) =>
-    api.get(API_ENDPOINTS.DELIVERABLE_HISTORY.REVIEWS(ensureValidId(id)), { params }),
-  addReview: (id: string, data: { rating: number; comment?: string }) =>
-    api.post(API_ENDPOINTS.DELIVERABLE_HISTORY.ADD_REVIEW(ensureValidId(id)), data),
-  updateReview: (id: string, reviewId: string, data: { rating?: number; comment?: string }) =>
-    api.put(API_ENDPOINTS.DELIVERABLE_HISTORY.UPDATE_REVIEW(ensureValidId(id), ensureValidId(reviewId)), data),
-  deleteReview: (id: string, reviewId: string) =>
-    api.delete(API_ENDPOINTS.DELIVERABLE_HISTORY.DELETE_REVIEW(ensureValidId(id), ensureValidId(reviewId))),
-  flagReview: (id: string, reviewId: string, data: { reason: "spam" | "harassment" | "false_information" | "inappropriate_content" | "other" }) =>
-    api.post(API_ENDPOINTS.DELIVERABLE_HISTORY.FLAG_REVIEW(ensureValidId(id), ensureValidId(reviewId)), data),
 };
 
 export default api;

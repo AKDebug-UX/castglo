@@ -227,7 +227,7 @@ export default function Dashboard() {
             <p className="text-sm text-muted-foreground">Track the status of your latest applications</p>
           </div>
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/talent/submissions">View All</Link>
+            <Link to="/talent/applications">View All</Link>
           </Button>
         </CardHeader>
         <CardContent>

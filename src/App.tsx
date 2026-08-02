@@ -53,7 +53,6 @@ const Profile = lazy(() => import("./pages/talent/Profile"));
 const BrowseCast = lazy(() => import("./pages/talent/BrowseCast"));
 const CastingDetail = lazy(() => import("./pages/talent/CastingDetail"));
 const SubmitAudition = lazy(() => import("./pages/talent/SubmitAudition"));
-const Submissions = lazy(() => import("./pages/talent/Submissions"));
 const Applications = lazy(() => import("./pages/talent/Applications"));
 const Messages = lazy(() => import("./pages/talent/Messages"));
 const Notifications = lazy(() => import("./pages/talent/Notifications"));
@@ -63,7 +62,6 @@ const LivestreamsList = lazy(() => import("./pages/talent/LivestreamsList"));
 const VerificationProcess = lazy(() => import("./pages/talent/VerificationProcess"));
 const AccountSettings = lazy(() => import("./pages/talent/AccountSettings"));
 const CollaborationsPage = lazy(() => import("./pages/Collaborations"));
-const DeliverableDetailPage = lazy(() => import("./pages/DeliverableDetailPage"));
 
 // Director Dashboard
 const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DirectorLayout })));
@@ -72,7 +70,6 @@ const DirectorSettings = lazy(() => import("./pages/director/DirectorSettings"))
 const MyProjects = lazy(() => import("./pages/director/MyProjects"));
 const CreateCasting = lazy(() => import("./pages/director/CreateCasting"));
 const DirectorProjectPreview = lazy(() => import("./pages/director/DirectorProjectPreview"));
-const DirectorSubmissions = lazy(() => import("./pages/director/DirectorSubmissions"));
 const DirectorMessages = lazy(() => import("./pages/director/DirectorMessages"));
 const ApplicantsManagement = lazy(() => import("./pages/director/ApplicantsManagement"));
 const DirectorRoles = lazy(() => import("./pages/director/DirectorRoles"));
@@ -87,7 +84,6 @@ const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const ModerationQueue = lazy(() => import("./pages/admin/ModerationQueue"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const UsersManagement = lazy(() => import("./pages/admin/UsersManagement"));
-const AdminSubmissions = lazy(() => import("./pages/admin/AdminSubmissions"));
 const FreeTierManagement = lazy(() => import("./pages/admin/FreeTierManagement"));
 const AdminBookings = lazy(() => import("./pages/admin/AdminBookings"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
@@ -198,8 +194,6 @@ const App = () => {
               <Route path="/talent/:id" element={<TalentProfile />} />
               <Route path="/professional/:id" element={<ProfessionalPublicProfile />} />
               <Route path="/director/:id" element={<DirectorPublicProfile />} />
-              <Route path="/profiles/:userId/history/:deliverableId" element={<DeliverableDetailPage />} />
-              <Route path="/deliverable-history/:deliverableId" element={<DeliverableDetailPage />} />
               <Route path="/browse-cast" element={<PublicCasting />} />
               <Route path="/browse-cast/:id/submit" element={<SubmitAudition />} />
               <Route path="/cast/:id" element={<PublicCastingDetail />} />
@@ -231,7 +225,6 @@ const App = () => {
                 <Route path="browse-cast" element={<BrowseCast />} />
                 <Route path="browse-cast/:id" element={<CastingDetail />} />
                 <Route path="browse-cast/:id/submit" element={<SubmitAudition />} />
-                <Route path="submissions" element={<Submissions />} />
                 <Route path="applications" element={<Applications />} />
                 <Route path="messages" element={<Messages />} />
                 <Route path="notifications" element={<Notifications />} />
@@ -258,8 +251,6 @@ const App = () => {
                 <Route path="projects/:id" element={<DirectorProjectPreview />} />
                 <Route path="projects/:id/edit" element={<CreateCasting />} />
                 <Route path="create" element={<CreateCasting />} />
-                <Route path="submissions" element={<DirectorSubmissions />} />
-                <Route path="submissions/:id" element={<DirectorSubmissions />} />
                 <Route path="applicants" element={<ApplicantsManagement />} />
                 <Route path="roles" element={<DirectorRoles />} />
                 <Route path="matched" element={<MatchedTalent />} />
@@ -308,7 +299,6 @@ const App = () => {
                 <Route path="analytics" element={<AdminAnalytics />} />
                 <Route path="users" element={<UsersManagement />} />
                 <Route path="free-tier" element={<FreeTierManagement />} />
-                <Route path="submissions" element={<AdminSubmissions />} />
                 <Route path="bookings" element={<AdminBookings />} />
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="verification" element={<VerificationManagement />} />

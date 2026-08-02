@@ -8,8 +8,6 @@ import { CastingView } from '@/components/profile/CastingView';
 import { MediaManager } from '@/components/profile/MediaManager';
 import { ProfileEditDashboard } from '@/components/profile/ProfileEditDashboard';
 
-import { DeliverableHistoryTab } from '@/components/deliverable-history/DeliverableHistoryTab';
-
 const UnifiedProfileContent: React.FC<{ activeTab: string }> = ({ activeTab }) => {
   const { profile, isEditMode } = useProfile();
   
@@ -19,15 +17,6 @@ const UnifiedProfileContent: React.FC<{ activeTab: string }> = ({ activeTab }) =
 
   if (activeTab === 'media') {
     return <MediaManager />;
-  }
-
-  if (activeTab === 'deliverables') {
-    const targetUserId = profile?.userId?._id || profile?.userId?.id || profile?.userId || profile?._id || profile?.id || "";
-    return (
-      <div className="glass-card p-6 rounded-2xl">
-        <DeliverableHistoryTab userId={String(targetUserId)} userFullName={profile?.fullName || profile?.displayName} />
-      </div>
-    );
   }
 
   const role = profile?.userRole || 'talent';
