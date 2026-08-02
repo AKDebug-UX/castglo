@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, Upload, Link as LinkIcon, FileCheck } from "lucide-react";
+import { Loader2, Upload, Link as LinkIcon, FileCheck, X, FileText, Image as ImageIcon } from "lucide-react";
 import { applicationAPI, uploadAPI, deliverableHistoryAPI } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -18,13 +18,29 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [externalLink, setExternalLink] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [filePreviews, setFilePreviews] = useState<{ id: string; url: string | null; file: File }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Dynamic project selection states
   const [acceptedProjects, setAcceptedProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+
+  useEffect(() => {
+    const previews = files.map((f, idx) => ({
+      id: `${f.name}-${f.size}-${idx}`,
+      url: f.type.startsWith("image/") ? URL.createObjectURL(f) : null,
+      file: f,
+    }));
+    setFilePreviews(previews);
+
+    return () => {
+      previews.forEach((p) => {
+        if (p.url) URL.revokeObjectURL(p.url);
+      });
+    };
+  }, [files]);
 
   const activeSubmissionId =
     submission?._id ||
@@ -60,9 +76,25 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
   }, [isOpen, submission, activeSubmissionId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setFile(e.target.files[0]);
+    const selectedFiles = e.target.files;
+    if (!selectedFiles || selectedFiles.length === 0) return;
+
+    const newFiles = Array.from(selectedFiles);
+    if (files.length + newFiles.length > 20) {
+      toast.error("Maximum 20 files allowed per submission.");
+      return;
     }
+
+    setFiles((prev) => [...prev, ...newFiles]);
+    e.target.value = "";
+  };
+
+  const handleRemoveFileAt = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleClearAllFiles = () => {
+    setFiles([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,8 +106,8 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
       return;
     }
 
-    if (!file && !externalLink.trim() && !description.trim()) {
-      toast.error("Please upload a file, provide an external link, or add notes for your deliverable.");
+    if (files.length === 0 && !externalLink.trim() && !description.trim()) {
+      toast.error("Please upload at least one file/image, provide an external link, or add notes for your deliverable.");
       return;
     }
 
@@ -83,26 +115,33 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
 
     setIsSubmitting(true);
     try {
-      let fileUrl = "";
-      if (file) {
-        const formData = new FormData();
-        formData.append("image", file);
-        const uploadRes = await uploadAPI.uploadImage(formData);
-        fileUrl = uploadRes.data?.data?.url || uploadRes.data?.url || "";
+      const uploadedUrls: string[] = [];
+      if (files.length > 0) {
+        for (const f of files) {
+          const formData = new FormData();
+          formData.append("image", f);
+          const uploadRes = await uploadAPI.uploadImage(formData);
+          const url = uploadRes.data?.data?.url || uploadRes.data?.url || "";
+          if (url) uploadedUrls.push(url);
+        }
       }
 
+      const fileFormattedList =
+        uploadedUrls.length > 0 ? uploadedUrls.join("\n") : "None";
+
       // Format the delivery message
-      const deliveryMessage = `📦 **Project Deliverable Submitted**\n\n**Title:** ${submissionTitle}\n**Link:** ${externalLink.trim() || "None"}\n**File:** ${fileUrl || "None"}\n\n**Notes:**\n${description.trim() || "No additional notes."}`;
+      const deliveryMessage = `📦 **Project Deliverable Submitted**\n\n**Title:** ${submissionTitle}\n**Link:** ${externalLink.trim() || "None"}\n**Files (${uploadedUrls.length}):**\n${fileFormattedList}\n\n**Notes:**\n${description.trim() || "No additional notes."}`;
 
       // Optionally record to deliverable history portfolio
       try {
-        const mediaUrls = fileUrl ? [fileUrl] : (externalLink.trim() ? [externalLink.trim()] : []);
+        const combinedMedia = [...uploadedUrls];
+        if (externalLink.trim()) combinedMedia.push(externalLink.trim());
         await deliverableHistoryAPI.create({
           title: submissionTitle,
           role: submission?.appliedRole || submission?.role?.role_name || submission?.role?.title || "Participant",
           description: description.trim() || undefined,
           year: new Date().getFullYear(),
-          mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
+          mediaUrls: combinedMedia.length > 0 ? combinedMedia : undefined,
           projectId: targetSubmissionId,
         });
       } catch (delivErr) {
@@ -119,7 +158,7 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
         setTitle("");
         setDescription("");
         setExternalLink("");
-        setFile(null);
+        setFiles([]);
       } else {
         toast.error(res.data?.message || "Failed to submit deliverables.");
       }
@@ -167,9 +206,17 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
                   required
                 >
                   {acceptedProjects.map((proj, idx) => {
-                    const pId = proj._id || proj.id || proj.applicationId || "";
-                    const titleVal = proj.castingCallId?.project_title || proj.project?.projectName || proj.castingCall?.title || proj.project?.title || proj.title || "Project Work";
-                    const role = proj.appliedRole || proj.role?.role_name || proj.role?.title || "Role";
+                    const pId = proj.id || proj._id || proj.applicationId || "";
+                    const titleVal =
+                      proj.castingCall?.title ||
+                      proj.castingCallId?.project_title ||
+                      proj.project?.projectName ||
+                      proj.castingCall?.project_title ||
+                      proj.project?.title ||
+                      proj.title ||
+                      (typeof proj.castingCallId === "string" ? `Casting Call #${proj.castingCallId.substring(0, 8)}` : null) ||
+                      `Application #${String(pId).substring(0, 8)}`;
+                    const role = proj.appliedRole || proj.role?.role_name || proj.role?.title || proj.role?.name || "Standard Role";
                     const statusStr = proj.status ? ` (${proj.status.toUpperCase()})` : "";
                     return (
                       <option key={pId || idx} value={pId}>
@@ -210,20 +257,74 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="file">Upload File</Label>
-            <div className="border border-dashed border-border rounded-lg p-4 flex flex-col items-center justify-center bg-muted/20 hover:bg-muted/40 cursor-pointer transition relative">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="file">Upload Files / Images ({files.length}/20)</Label>
+              {files.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllFiles}
+                  className="text-xs font-semibold text-destructive hover:underline flex items-center gap-1 focus:outline-none"
+                >
+                  <X className="w-3.5 h-3.5" /> Remove all
+                </button>
+              )}
+            </div>
+
+            {/* Multi-file grid view */}
+            {filePreviews.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 border border-slate-100 rounded-xl bg-slate-50/50">
+                {filePreviews.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className="relative group border border-slate-200 rounded-xl p-2 bg-white flex items-center gap-2 overflow-hidden shadow-2xs hover:border-[#009698] transition-colors"
+                  >
+                    {item.url ? (
+                      <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-900 border border-slate-200 relative">
+                        <img src={item.url} alt={item.file.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-[#DEFCFE] text-[#009698] flex items-center justify-center shrink-0 font-bold">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1 pr-3">
+                      <p className="text-[11px] font-bold text-slate-900 truncate" title={item.file.name}>
+                        {item.file.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {(item.file.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFileAt(idx)}
+                      className="absolute top-1 right-1 bg-slate-200 hover:bg-destructive hover:text-white text-slate-600 p-1 rounded-full transition-colors"
+                      title="Remove file"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload Dropzone */}
+            <div className="border border-dashed border-slate-300 hover:border-[#009698] rounded-2xl p-4 flex flex-col items-center justify-center bg-slate-50/50 hover:bg-[#DEFCFE]/20 cursor-pointer transition relative group">
               <input
                 id="file"
                 type="file"
+                multiple
                 className="absolute inset-0 opacity-0 cursor-pointer"
                 onChange={handleFileChange}
               />
-              <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-              <p className="text-sm font-medium text-slate-700">
-                {file ? file.name : "Click to select a file"}
+              <Upload className="w-6 h-6 text-[#009698] group-hover:scale-110 transition-transform mb-1" />
+              <p className="text-xs font-bold text-slate-800">
+                {files.length > 0 ? "+ Add More Files / Images" : "Click or drag to select images & files"}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {file ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : "Images, PDFs, audio or video files"}
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Select multiple images, PDFs, audio or video files (Max 20 files)
               </p>
             </div>
           </div>
@@ -250,7 +351,7 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
                   Submitting...
                 </>
               ) : (
-                "Submit Work"
+                `Submit Work (${files.length > 0 ? `${files.length} file${files.length > 1 ? 's' : ''}` : 'Deliverable'})`
               )}
             </Button>
           </DialogFooter>

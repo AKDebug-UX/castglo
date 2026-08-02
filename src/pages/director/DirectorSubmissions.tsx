@@ -76,6 +76,66 @@ export default function DirectorSubmissions() {
   // Bulk Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  const mapSubmissionItem = (app: any, fallbackTitle?: string) => {
+    const appId = app._id || app.id || app.applicationId;
+    const talentObj = typeof app.talent === 'object' && app.talent ? app.talent : (
+      typeof app.talentUser === 'object' && app.talentUser ? app.talentUser : (
+        typeof app.user === 'object' && app.user ? app.user : null
+      )
+    );
+
+    const talentName =
+      talentObj?.fullName ||
+      app.talentName ||
+      app.fullName ||
+      (typeof app.talentId === 'string' ? `Talent #${app.talentId.substring(0, 8)}` : null) ||
+      (typeof app.talent === 'string' ? `Talent #${app.talent.substring(0, 8)}` : "Talent Applicant");
+
+    const castingTitle =
+      app.castingCall?.title ||
+      app.castingCallId?.project_title ||
+      app.project?.projectName ||
+      app.castingCall?.project_title ||
+      app.project?.title ||
+      app.title ||
+      fallbackTitle ||
+      (typeof app.castingCallId === 'string' ? `Casting Call #${app.castingCallId.substring(0, 8)}` : "Casting Project");
+
+    let cleanNotes = "";
+    if (app.cover_message) {
+      cleanNotes = app.cover_message;
+    } else if (app.additional_notes) {
+      cleanNotes = app.additional_notes;
+    } else if (app.notes) {
+      const metaIdx = app.notes.indexOf("\n__META__:");
+      cleanNotes = metaIdx !== -1 ? app.notes.substring(0, metaIdx).trim() : app.notes.trim();
+    } else if (app.why_suitable) {
+      cleanNotes = app.why_suitable;
+    }
+
+    const primaryMedia =
+      app.auditionVideo ||
+      app.auditionVideoUrl ||
+      app.mediaUrl ||
+      app.fileUrl ||
+      app.showreel_url ||
+      (Array.isArray(app.mediaUrls) && app.mediaUrls[0]) ||
+      (Array.isArray(app.attachments) && app.attachments[0]) ||
+      app.headshotUrl ||
+      "";
+
+    return {
+      ...app,
+      _id: appId,
+      id: appId,
+      displayTalentName: talentName,
+      displayCastingTitle: castingTitle,
+      displayNotes: cleanNotes || "No notes provided",
+      displayMediaUrl: primaryMedia,
+      talent: talentObj ? { ...talentObj, fullName: talentName } : { fullName: talentName, _id: app.talentId || app.talent }
+    };
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -86,21 +146,19 @@ export default function DirectorSubmissions() {
           projectAPI.getOne(id).catch(() => null)
         ]);
 
+        let currentCastingTitle = "";
+        if (castingRes && castingRes.data.success) {
+          setCastingCall(castingRes.data.data);
+          currentCastingTitle = castingRes.data.data?.title || castingRes.data.data?.project_title || "";
+        }
+
         if (subsRes && subsRes.data.success) {
           const payload = subsRes.data.data;
           const apps = Array.isArray(payload) ? payload : (payload?.applications || []);
-          const mappedApps = apps.map((app: any) => ({ 
-            ...app, 
-            _id: app._id || app.id || app.applicationId,
-            id: app._id || app.id || app.applicationId,
-            talent: app.talentUserId || app.talentId || app.talentUser || app.talent 
-          }));
+          const mappedApps = apps.map((app: any) => mapSubmissionItem(app, currentCastingTitle));
           setSubmissions(mappedApps);
         } else {
           setSubmissions([]);
-        }
-        if (castingRes && castingRes.data.success) {
-          setCastingCall(castingRes.data.data);
         }
       } else {
         // Fetch all submissions for all director's projects
@@ -137,12 +195,7 @@ export default function DirectorSubmissions() {
               return Array.isArray(payload) ? payload : (payload?.applications || []);
             });
             
-            const mappedApps = allApps.map((app: any) => ({ 
-              ...app, 
-              _id: app._id || app.id || app.applicationId,
-              id: app._id || app.id || app.applicationId,
-              talent: app.talentUserId || app.talentId || app.talentUser || app.talent 
-            }));
+            const mappedApps = allApps.map((app: any) => mapSubmissionItem(app));
             
             // Sort by most recent
             setSubmissions(mappedApps.sort((a: any, b: any) => 
@@ -260,15 +313,18 @@ export default function DirectorSubmissions() {
   const filteredSubmissions = submissions.filter((sub) => {
     const matchesSearch = searchQuery === "" || 
       sub.talent?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sub.castingCall?.title?.toLowerCase().includes(searchQuery.toLowerCase());
+      sub.castingCall?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sub.project?.projectName?.toLowerCase().includes(searchQuery.toLowerCase());
       
     if (!matchesSearch) return false;
 
+    const statusStr = String(sub.status || "").toLowerCase();
+
     if (activeTab === "all") return true;
-    if (activeTab === "pending") return sub.status === "applied";
-    if (activeTab === "shortlisted") return sub.status === "shortlisted";
-    if (activeTab === "accepted") return sub.status === "accepted";
-    if (activeTab === "rejected") return sub.status === "rejected";
+    if (activeTab === "pending") return ["pending", "submitted", "applied", "viewed", "in_review"].includes(statusStr);
+    if (activeTab === "shortlisted" || activeTab === "short") return ["shortlisted", "short"].includes(statusStr);
+    if (activeTab === "accepted") return ["accepted", "approved", "hired"].includes(statusStr);
+    if (activeTab === "rejected") return ["rejected", "declined", "withdrawn"].includes(statusStr);
     return true;
   });
 
@@ -367,10 +423,10 @@ export default function DirectorSubmissions() {
                       </Avatar>
                     </div>
                     <div>
-                      <p className="font-semibold">{submission.talent?.fullName}</p>
+                      <p className="font-semibold">{submission.displayTalentName || submission.talent?.fullName || "Talent Applicant"}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
-                        {formatLocation(submission.talent?.location)}
+                        {formatLocation(submission.talent?.location || submission.location_override)}
                       </p>
                       {submission.talent?.role === "industry_professional" && (
                         <Badge variant="outline" className="text-[10px] py-0 px-2 mt-1 bg-teal-50/50 text-teal-700 border-teal-200 font-semibold">
@@ -396,37 +452,48 @@ export default function DirectorSubmissions() {
 
                 {/* Video / Media Preview */}
                 <div 
-                  className="relative aspect-video rounded-lg bg-muted mb-3 flex items-center justify-center group cursor-pointer overflow-hidden"
+                  className="relative aspect-video rounded-lg bg-slate-900 mb-3 flex items-center justify-center group cursor-pointer overflow-hidden border border-slate-800"
                   onClick={() => {
                     setSelectedSubmission(submission);
                     setReviewNotes(submission.directorNotes || "");
                     setReviewScore(submission.directorScore || 0);
                   }}
                 >
-                  {submission.auditionVideo ? (
-                    <video src={submission.auditionVideo} className="w-full h-full object-cover" />
-                  ) : submission.mediaUrl && (submission.mediaUrl.endsWith('.png') || submission.mediaUrl.endsWith('.jpg') || submission.mediaUrl.endsWith('.jpeg')) ? (
-                    <img src={submission.mediaUrl} className="w-full h-full object-cover" alt="Portfolio Preview" />
-                  ) : submission.mediaUrl && submission.mediaUrl.endsWith('.pdf') ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-4 bg-slate-100">
-                       <File className="w-8 h-8 text-[#009698] mb-1" />
-                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">View PDF Portfolio</span>
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-lg flex items-center justify-center">
-                       <Play className="w-8 h-8 text-white" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  {(() => {
+                    const media = submission.displayMediaUrl || submission.auditionVideo || submission.mediaUrl;
+                    const isVideo = media && (media.endsWith('.mp4') || media.endsWith('.webm') || media.endsWith('.mov') || media.includes('video/upload'));
+                    const isImg = media && (media.endsWith('.png') || media.endsWith('.jpg') || media.endsWith('.jpeg') || media.endsWith('.webp') || media.includes('image/upload') || media.includes('ui-avatars'));
+
+                    if (isVideo) {
+                      return <video src={media} className="w-full h-full object-cover" />;
+                    }
+                    if (isImg) {
+                      return <img src={media} className="w-full h-full object-cover" alt="Submission Preview" />;
+                    }
+                    if (media && (media.endsWith('.pdf') || media.endsWith('.docx') || media.endsWith('.doc'))) {
+                      return (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-4 bg-slate-100">
+                          <File className="w-8 h-8 text-[#009698] mb-1" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Document Deliverable</span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-slate-900 rounded-lg flex items-center justify-center">
+                        <Play className="w-8 h-8 text-white/80" />
+                      </div>
+                    );
+                  })()}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <span className="text-white text-xs font-bold flex items-center gap-1">
-                      {submission.auditionVideo ? <Play className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      {submission.auditionVideo ? "Review Audition" : "Review Portfolio"}
+                      <Eye className="w-4 h-4" />
+                      Review Deliverable
                     </span>
                   </div>
                 </div>
 
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-4 italic">
-                  "{submission.notes || "No notes provided"}"
+                  "{submission.displayNotes || submission.notes || "No notes provided"}"
                 </p>
 
                 <div className="flex flex-wrap gap-2">
@@ -508,12 +575,12 @@ export default function DirectorSubmissions() {
                   <div className="flex-1 flex items-center gap-3 min-w-0">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
-                        {submission.talent?.fullName?.[0] || 'T'}
+                        {(submission.displayTalentName || submission.talent?.fullName || 'T')[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div className="truncate">
-                      <p className="font-medium text-sm truncate">{submission.talent?.fullName}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{submission.castingCall?.title}</p>
+                      <p className="font-medium text-sm truncate">{submission.displayTalentName || submission.talent?.fullName || "Talent Applicant"}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{submission.displayCastingTitle || submission.castingCall?.title || "Casting Project"}</p>
                     </div>
                   </div>
                   <div className="w-32">
@@ -577,70 +644,120 @@ export default function DirectorSubmissions() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-[32px]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-              Reviewing Audition: {selectedSubmission?.talent?.fullName}
+              Reviewing Application: {selectedSubmission?.displayTalentName || selectedSubmission?.talent?.fullName || "Talent Applicant"}
               <Badge className={statusColors[selectedSubmission?.status] || "bg-muted"}>
                 {selectedSubmission?.status}
               </Badge>
             </DialogTitle>
             <DialogDescription>
-              Project: {selectedSubmission?.castingCall?.title || castingCall?.title}
+              Project: {selectedSubmission?.displayCastingTitle || selectedSubmission?.castingCall?.title || castingCall?.title || "Casting Project"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid md:grid-cols-[1fr,320px] gap-6 mt-4">
             {/* Left Column: Media & Notes */}
             <div className="space-y-6">
-              <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative group flex items-center justify-center">
-                {selectedSubmission?.auditionVideo ? (
-                  <video 
-                    src={selectedSubmission.auditionVideo} 
-                    controls 
-                    className="w-full h-full object-contain"
-                    autoPlay
-                  />
-                ) : selectedSubmission?.mediaUrl && (selectedSubmission.mediaUrl.endsWith('.png') || selectedSubmission.mediaUrl.endsWith('.jpg') || selectedSubmission.mediaUrl.endsWith('.jpeg')) ? (
-                  <img 
-                    src={selectedSubmission.mediaUrl} 
-                    className="w-full h-full object-contain" 
-                    alt="Portfolio Preview" 
-                  />
-                ) : selectedSubmission?.mediaUrl && selectedSubmission.mediaUrl.endsWith('.pdf') ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4 p-6 bg-slate-900/50">
-                    <File className="w-16 h-16 text-[#009698]" />
-                    <p className="text-lg font-medium opacity-70">Document Portfolio Submitted</p>
-                    <Button variant="outline" className="border-teal-400 text-teal-400 hover:bg-teal-400/10" asChild>
-                      <a href={selectedSubmission.mediaUrl} target="_blank" rel="noopener noreferrer">
-                        Open PDF Document
-                      </a>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4">
-                    <Play className="w-16 h-16 opacity-50" />
-                    <p className="text-lg font-medium opacity-70">Audition video loading...</p>
-                  </div>
-                )}
+              <div className="aspect-video bg-slate-950 rounded-2xl overflow-hidden shadow-2xl relative group flex items-center justify-center border border-slate-800">
+                {(() => {
+                  const media = selectedSubmission?.displayMediaUrl || selectedSubmission?.auditionVideo || selectedSubmission?.mediaUrl;
+                  const isVideo = media && (media.endsWith('.mp4') || media.endsWith('.webm') || media.endsWith('.mov') || media.includes('video/upload'));
+                  const isImg = media && (media.endsWith('.png') || media.endsWith('.jpg') || media.endsWith('.jpeg') || media.endsWith('.webp') || media.includes('image/upload') || media.includes('ui-avatars'));
+                  const isDoc = media && (media.endsWith('.pdf') || media.endsWith('.docx') || media.endsWith('.doc'));
+
+                  if (isVideo) {
+                    return (
+                      <video 
+                        src={media} 
+                        controls 
+                        className="w-full h-full object-contain"
+                        autoPlay
+                      />
+                    );
+                  }
+
+                  if (isImg) {
+                    return (
+                      <img 
+                        src={media} 
+                        className="w-full h-full object-contain" 
+                        alt="Deliverable / Portfolio Media" 
+                      />
+                    );
+                  }
+
+                  if (isDoc) {
+                    return (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-white gap-4 p-6 bg-slate-900/90">
+                        <File className="w-16 h-16 text-[#009698]" />
+                        <p className="text-lg font-medium opacity-90">Document Deliverable Submitted</p>
+                        <Button variant="outline" className="border-teal-400 text-teal-400 hover:bg-teal-400/10" asChild>
+                          <a href={media} target="_blank" rel="noopener noreferrer">
+                            Open PDF / Document
+                          </a>
+                        </Button>
+                      </div>
+                    );
+                  }
+
+                  if (media) {
+                    return (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-white gap-3 p-6 bg-slate-900">
+                        <LinkIcon className="w-12 h-12 text-[#009698]" />
+                        <p className="text-xs font-bold text-slate-300 truncate max-w-md">{media}</p>
+                        <Button variant="outline" size="sm" className="text-teal-400 border-teal-400/40 hover:bg-teal-400/10" asChild>
+                          <a href={media} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> View Deliverable Link
+                          </a>
+                        </Button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-white gap-2 p-6 text-center bg-slate-900">
+                      <FileText className="w-12 h-12 text-slate-500 mb-1" />
+                      <p className="text-sm font-bold text-slate-300">No Direct Media File Attached</p>
+                      {selectedSubmission?.showreel_url && (
+                        <Button variant="outline" size="sm" className="mt-2 text-teal-400 border-teal-400/40 hover:bg-teal-400/10" asChild>
+                          <a href={selectedSubmission.showreel_url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> View Showreel Link
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
-              <div className="bg-muted/30 p-4 rounded-2xl">
-                <h4 className="text-sm font-bold mb-2 flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
+              <div className="bg-muted/30 p-4 rounded-2xl space-y-2">
+                <h4 className="text-sm font-bold flex items-center gap-2 uppercase tracking-wider text-muted-foreground">
                   <MessageSquare className="w-4 h-4" />
-                  Talent's Notes
+                  Talent's Notes & Application Message
                 </h4>
-                <p className="text-sm italic">
-                  "{selectedSubmission?.notes || "No notes provided by the talent."}"
+                <p className="text-sm italic text-slate-800">
+                  "{selectedSubmission?.displayNotes || selectedSubmission?.notes || "No notes provided by the talent."}"
                 </p>
+                {selectedSubmission?.portfolio_links && (
+                  <p className="text-xs font-semibold text-[#009698] pt-1">
+                    Portfolio Link: <a href={selectedSubmission.portfolio_links} target="_blank" rel="noopener noreferrer" className="underline hover:text-teal-700">{selectedSubmission.portfolio_links}</a>
+                  </p>
+                )}
+                {selectedSubmission?.previous_work_links && (
+                  <p className="text-xs font-semibold text-[#009698]">
+                    Previous Work: <a href={selectedSubmission.previous_work_links} target="_blank" rel="noopener noreferrer" className="underline hover:text-teal-700">{selectedSubmission.previous_work_links}</a>
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center gap-4">
                 <Button variant="outline" className="flex-1 rounded-xl" asChild>
-                  <Link to={`/talent/${selectedSubmission?.talent?._id || selectedSubmission?.talentId}`}>
+                  <Link to={`/talent/${selectedSubmission?.talent?._id || selectedSubmission?.talentId || selectedSubmission?.talent?.id}`}>
                     <ExternalLink className="w-4 h-4 mr-2" />
                     View Full Profile
                   </Link>
                 </Button>
                 <Button variant="outline" className="flex-1 rounded-xl" asChild>
-                  <Link to={`/director/messages?talentId=${selectedSubmission?.talent?._id || selectedSubmission?.talentId}`}>
+                  <Link to={`/director/messages?talentId=${selectedSubmission?.talent?._id || selectedSubmission?.talentId || selectedSubmission?.talent?.id}`}>
                     <MessageSquare className="w-4 h-4 mr-2" />
                     Message Talent
                   </Link>

@@ -62,21 +62,44 @@ export default function Submissions() {
         }
 
         if (appsData && Array.isArray(appsData)) {
-          // Filter to only include casting call submissions (which typically don't have appliedRole)
-          const castingCallApps = appsData.filter(app => !app.appliedRole);
-          
-          const apps = castingCallApps.map((app: any) => ({
-            _id: app._id,
-            status: app.status, // submitted, viewed, shortlisted, rejected, accepted, withdrawn
-            createdAt: app.createdAt,
-            castingCall: {
-              title: app.castingCallId?.project_title || app.project?.projectName || app.castingCall?.title || "Unknown Position",
-              category: app.role?.role_name || app.role?.name || app.role?.title || app.castingCall?.category || "Other",
-              postedBy: {
-                fullName: app.project?.postedBy?.fullName || app.project?.productionCompany || app.castingCall?.postedBy?.fullName || "Casting Team"
+          const apps = appsData.map((app: any) => {
+            const appId = app.id || app._id;
+            const projectTitle =
+              app.castingCall?.title ||
+              app.castingCallId?.project_title ||
+              app.project?.projectName ||
+              app.castingCall?.project_title ||
+              (typeof app.castingCallId === "string" ? `Casting Call #${app.castingCallId.substring(0, 8)}` : null) ||
+              `Application #${String(appId).substring(0, 8)}`;
+
+            const category =
+              app.appliedRole ||
+              app.role?.role_name ||
+              app.role?.name ||
+              app.role?.title ||
+              app.castingCall?.category ||
+              "Standard Role";
+
+            const company =
+              app.project?.postedBy?.fullName ||
+              app.project?.productionCompany ||
+              app.castingCall?.postedBy?.fullName ||
+              (app.castingDirectorId ? `Director #${app.castingDirectorId.substring(0, 8)}` : "Casting Team");
+
+            return {
+              _id: appId,
+              id: appId,
+              status: app.status || "submitted",
+              createdAt: app.createdAt,
+              castingCall: {
+                title: projectTitle,
+                category: category,
+                postedBy: {
+                  fullName: company
+                }
               }
-            }
-          }));
+            };
+          });
           setSubmissions(apps);
 
           // Calculate stats
