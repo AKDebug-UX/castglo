@@ -10,7 +10,8 @@ import {
   MessageSquare,
   Bell,
   Settings,
-  Award
+  Award,
+  FolderKanban
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -28,6 +29,7 @@ export function ProfessionalSidebar({ className }: ProfessionalSidebarProps) {
     { title: "Deliverable History", href: user?.id ? `/professional/${user.id}?tab=deliverables` : "/professional/profile", Icon: Award },
     { title: "Services", href: "/professional/services", Icon: Briefcase },
     { title: "Browse Talents", href: "/professional/talents", Icon: Search },
+    { title: "My Collaborations", href: "/collaborations", Icon: FolderKanban },
     { title: "Bookings", href: "/professional/bookings", Icon: Calendar },
     { title: "Messages", href: "/professional/messages", Icon: MessageSquare },
     { title: "Notifications", href: "/professional/notifications", Icon: Bell },

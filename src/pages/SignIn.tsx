@@ -30,6 +30,7 @@ export default function SignIn() {
 
   const searchParams = new URLSearchParams(location.search);
   const redirect = searchParams.get("redirect");
+  const collaboratorToken = searchParams.get("collaboratorToken") || sessionStorage.getItem("collaboratorToken");
 
   const {
     register,
@@ -194,7 +195,7 @@ export default function SignIn() {
         <p className="text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Link 
-            to={token ? `/join?collaboratorToken=${token}` : "/join"} 
+            to={collaboratorToken ? `/join?collaboratorToken=${collaboratorToken}` : "/join"} 
             className="font-semibold text-primary hover:underline"
           >
             Sign up now

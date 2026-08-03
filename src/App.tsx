@@ -45,6 +45,11 @@ const UnifiedProfile = lazy(() => import("./pages/UnifiedProfile"));
 const DirectorPublicProfile = lazy(() => import("./pages/DirectorPublicProfile"));
 const DeliverableDetailPage = lazy(() => import("./pages/DeliverableDetailPage"));
 const WhatsNew = lazy(() => import("./pages/WhatsNew"));
+const AcceptInvitationPage = lazy(() => import("./pages/collaborators/AcceptInvitationPage"));
+const MyCollaborationsPage = lazy(() => import("./pages/collaborators/MyCollaborationsPage"));
+const CollaboratorProjects = lazy(() => import("./pages/director/CollaboratorProjects"));
+const Collaborators = lazy(() => import("./pages/director/Collaborators"));
+const CollaborationsLayout = lazy(() => import("./components/dashboard/CollaborationsLayout").then(m => ({ default: m.CollaborationsLayout })));
 
 // Talent Dashboard
 const DashboardLayout = lazy(() => import("./components/dashboard/TalentLayout").then(m => ({ default: m.DashboardLayout })));
@@ -209,6 +214,24 @@ const App = () => {
               <Route path="/profiles/:username/history/:deliverableId" element={<DeliverableDetailPage />} />
               <Route path="/deliverables/:deliverableId" element={<DeliverableDetailPage />} />
               <Route path="/subscription/cancel" element={<PaymentCancel />} />
+              <Route path="/collaborators/accept" element={<AcceptInvitationPage />} />
+              <Route
+                path="/collaborations"
+                element={
+                  <ProtectedRoute allowedRoles={["talent", "casting_director", "industry_professional", "admin"]}>
+                    <CollaborationsLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<MyCollaborationsPage />} />
+                <Route path=":collaboratorId/projects" element={<CollaboratorProjects />} />
+              </Route>
+
+              <Route path="/settings/collaborators" element={
+                <ProtectedRoute allowedRoles={["casting_director", "industry_professional", "admin"]}>
+                  <Collaborators />
+                </ProtectedRoute>
+              } />
 
               {/* Talent Dashboard Routes */}
               <Route
@@ -258,6 +281,7 @@ const App = () => {
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="livestreams" element={<LivestreamsList />} />
                 <Route path="audition" element={<InstantAudition />} />
+                <Route path="collaborators" element={<Collaborators />} />
                 <Route path="livestream/:id" element={<Livestream />} />
               </Route>
 

@@ -14,7 +14,9 @@ import {
   User,
   Video,
   FileVideo,
-  Award
+  Award,
+  UserPlus,
+  FolderKanban
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -31,6 +33,8 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
     { title: "Profile", href: "/director/profile", Icon: UserCircle },
     { title: "Deliverable History", href: user?.id ? `/director/${user.id}?tab=deliverables` : "/director/profile", Icon: Award },
     { title: "Projects", href: "/director/projects", Icon: FolderOpen },
+    { title: "Collaborators", href: "/director/collaborators", Icon: UserPlus },
+    { title: "My Collaborations", href: "/collaborations", Icon: FolderKanban },
     { title: "Virtual Auditions", href: "/director/audition", Icon: Video },
     { title: "Livestreams", href: "/director/livestreams", Icon: Video },
     { title: "Applicants", href: "/director/applicants", Icon: Users },

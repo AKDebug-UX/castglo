@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, KeyRound, Settings2, ShieldCheck, ShieldAlert, CreditCard, Bell, UserMinus, History, Download } from "lucide-react";
+import { Loader2, KeyRound, Settings2, ShieldCheck, ShieldAlert, CreditCard, Bell, UserMinus, History, Download, Users } from "lucide-react";
+import Collaborators from "@/pages/director/Collaborators";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { authAPI, subscriptionAPI, userAPI } from "@/lib/api";
@@ -214,9 +215,12 @@ export default function DirectorSettings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6 rounded-2xl p-1 bg-slate-100/80 border">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 rounded-2xl p-1 bg-slate-100/80 border gap-1">
           <TabsTrigger value="preferences" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
             <Settings2 className="w-4 h-4" /> Preferences
+          </TabsTrigger>
+          <TabsTrigger value="collaborators" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
+            <Users className="w-4 h-4" /> Collaborators
           </TabsTrigger>
           <TabsTrigger value="verification" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all text-emerald-700 bg-emerald-50/50 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <ShieldCheck className="w-4 h-4" /> Verification
@@ -234,6 +238,10 @@ export default function DirectorSettings() {
             <ShieldCheck className="w-4 h-4" /> Security
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="collaborators" className="mt-6">
+          <Collaborators />
+        </TabsContent>
 
         <TabsContent value="preferences" className="mt-6">
           <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">

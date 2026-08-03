@@ -228,10 +228,22 @@ export const API_ENDPOINTS = {
     DELETE_REVIEW: (id: string, reviewId: string) => `/deliverable-history/${id}/reviews/${reviewId}`,
     FLAG_REVIEW: (id: string, reviewId: string) => `/deliverable-history/${id}/reviews/${reviewId}/flag`,
   },
+  COLLABORATORS: {
+    INVITE: '/collaborators/invite',
+    LIST: '/collaborators',
+    GET_ONE: (id: string) => `/collaborators/${id}`,
+    UPDATE: (id: string) => `/collaborators/${id}`,
+    REVOKE: (id: string) => `/collaborators/${id}`,
+    RESEND: (id: string) => `/collaborators/${id}/resend`,
+    MY_INVITATIONS: '/collaborators/me/invitations',
+    MY_COLLABORATIONS: '/collaborators/me/collaborations',
+    ACCEPT: '/collaborators/invite/accept',
+    DECLINE: '/collaborators/invite/decline',
+  },
 };
 
 // Axios instance
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -617,6 +629,21 @@ export const deliverableHistoryAPI = {
     api.delete(API_ENDPOINTS.DELIVERABLE_HISTORY.DELETE_REVIEW(id, reviewId)),
   flagReview: (id: string, reviewId: string, data: { reason: 'spam' | 'harassment' | 'false_information' | 'inappropriate_content' | 'other' }) =>
     api.post(API_ENDPOINTS.DELIVERABLE_HISTORY.FLAG_REVIEW(id, reviewId), data),
+};
+
+// --- COLLABORATORS ENDPOINTS ---
+export const collaboratorAPI = {
+  invite: (data: any) => api.post(API_ENDPOINTS.COLLABORATORS.INVITE, data),
+  list: (params?: { status?: string }) => api.get(API_ENDPOINTS.COLLABORATORS.LIST, { params }),
+  getOne: (id: string) => api.get(API_ENDPOINTS.COLLABORATORS.GET_ONE(id)),
+  update: (id: string, data: any) => api.patch(API_ENDPOINTS.COLLABORATORS.UPDATE(id), data),
+  revoke: (id: string, hardDelete?: boolean) =>
+    api.delete(API_ENDPOINTS.COLLABORATORS.REVOKE(id), { params: { hardDelete } }),
+  resend: (id: string) => api.post(API_ENDPOINTS.COLLABORATORS.RESEND(id)),
+  getMyInvitations: () => api.get(API_ENDPOINTS.COLLABORATORS.MY_INVITATIONS),
+  getMyCollaborations: () => api.get(API_ENDPOINTS.COLLABORATORS.MY_COLLABORATIONS),
+  accept: (data: { token: string }) => api.post(API_ENDPOINTS.COLLABORATORS.ACCEPT, data),
+  decline: (data: { token: string }) => api.post(API_ENDPOINTS.COLLABORATORS.DECLINE, data),
 };
 
 export default api;
