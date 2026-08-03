@@ -83,8 +83,8 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    if (mediaUrls.length + files.length > 20) {
-      toast.error("You can upload a maximum of 20 media files per project.");
+    if (mediaUrls.length + files.length > 3) {
+      toast.error("You can upload a maximum of 3 media files per project.");
       return;
     }
 
@@ -122,8 +122,8 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
 
   const handleAddMediaUrl = () => {
     if (!customMediaInput.trim()) return;
-    if (mediaUrls.length >= 20) {
-      toast.error("Maximum 20 media items allowed.");
+    if (mediaUrls.length >= 3) {
+      toast.error("Maximum 3 media items allowed.");
       return;
     }
     setMediaUrls((prev) => [...prev, customMediaInput.trim()]);
@@ -145,21 +145,28 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
       toast.error("Your Role / Credit is required.");
       return;
     }
+    if (!description.trim()) {
+      toast.error("Project Description is required.");
+      return;
+    }
     if (year < 1900 || year > currentYear + 1) {
       toast.error(`Year must be between 1900 and ${currentYear + 1}`);
       return;
     }
 
     setIsSubmitting(true);
-    const payload = {
+    const payload: any = {
       title: title.trim(),
       role: role.trim(),
       productionType,
       year: Number(year),
       description: description.trim(),
       mediaUrls,
-      projectId: projectId || undefined
     };
+
+    if (projectId) {
+      payload.projectId = projectId;
+    }
 
     try {
       let saved: DeliverableEntry;
@@ -175,7 +182,11 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
       onSuccess(saved);
       onClose();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to save project entry.");
+      const errData = err?.response?.data;
+      const errMsg = Array.isArray(errData?.data) && errData.data.length > 0
+        ? errData.data[0]
+        : errData?.message || errData?.error || "Failed to save project entry.";
+      toast.error(errMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -261,7 +272,7 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
           {/* Description */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Project Description (optional)
+              Project Description *
             </Label>
             <Textarea
               value={description}
@@ -269,6 +280,7 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
               placeholder="Briefly describe the storyline, production scope, or key achievements..."
               maxLength={5000}
               rows={4}
+              required
               className="rounded-xl text-sm"
             />
           </div>
@@ -302,10 +314,10 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
               <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <ImageIcon className="w-3.5 h-3.5 text-[#009698]" /> Media & Stills (Max 20)
+                <ImageIcon className="w-3.5 h-3.5 text-[#009698]" /> Media & Stills (Max 3)
               </Label>
               <span className="text-[11px] text-slate-400 font-medium">
-                {mediaUrls.length} / 20 items
+                {mediaUrls.length} / 3 items
               </span>
             </div>
 
@@ -323,7 +335,7 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
                   multiple
                   accept="image/*,video/*"
                   onChange={handleFileUpload}
-                  disabled={isUploadingMedia || mediaUrls.length >= 20}
+                  disabled={isUploadingMedia || mediaUrls.length >= 3}
                   className="hidden"
                 />
               </label>

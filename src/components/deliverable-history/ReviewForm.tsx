@@ -43,27 +43,30 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
     setErrorMessage(null);
 
     try {
+      const trimmedComment = comment.trim();
+      const payload: { rating: number; comment?: string } = {
+        rating,
+        ...(trimmedComment ? { comment: trimmedComment } : {})
+      };
+
       if (existingReview) {
-        await deliverableHistoryAPI.updateReview(deliverableId, existingReview.id, {
-          rating,
-          comment
-        });
+        await deliverableHistoryAPI.updateReview(deliverableId, existingReview.id, payload);
         toast.success("Review updated successfully");
       } else {
-        await deliverableHistoryAPI.addReview(deliverableId, {
-          rating,
-          comment
-        });
+        await deliverableHistoryAPI.addReview(deliverableId, payload);
         toast.success("Review submitted successfully");
       }
       onSuccess();
     } catch (error: any) {
       const status = error?.response?.status;
-      const msg = error?.response?.data?.message;
+      const errData = error?.response?.data;
+      const msg = Array.isArray(errData?.data) && errData.data.length > 0
+        ? errData.data[0]
+        : errData?.message || errData?.error;
 
       if (status === 403) {
         setErrorMessage("Only verified co-workers / participants on this project are eligible to leave a review.");
-      } else if (status === 400 && msg?.toLowerCase().includes("own")) {
+      } else if (status === 400 && msg?.toLowerCase()?.includes("own")) {
         setErrorMessage("You cannot leave a review on your own project entry.");
       } else if (status === 409) {
         setErrorMessage("You have already submitted a review for this deliverable.");
