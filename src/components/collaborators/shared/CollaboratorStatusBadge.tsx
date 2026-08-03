@@ -11,29 +11,29 @@ export const CollaboratorStatusBadge: React.FC<CollaboratorStatusBadgeProps> = (
   switch (status) {
     case 'accepted':
       return (
-        <Badge className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 text-xs">
-          <CheckCircle2 className="w-3.5 h-3.5" />
+        <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold inline-flex items-center gap-1 text-xs px-2.5 py-0.5">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           <span>Active</span>
         </Badge>
       );
     case 'pending':
       return (
-        <Badge className="bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1 text-xs">
-          <Clock className="w-3.5 h-3.5" />
+        <Badge className="bg-amber-50 text-amber-700 border border-amber-200 font-semibold inline-flex items-center gap-1 text-xs px-2.5 py-0.5">
+          <Clock className="w-3.5 h-3.5 text-amber-600" />
           <span>Pending</span>
         </Badge>
       );
     case 'declined':
       return (
-        <Badge className="bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center gap-1 text-xs">
-          <XCircle className="w-3.5 h-3.5" />
+        <Badge className="bg-rose-50 text-rose-700 border border-rose-200 font-semibold inline-flex items-center gap-1 text-xs px-2.5 py-0.5">
+          <XCircle className="w-3.5 h-3.5 text-rose-600" />
           <span>Declined</span>
         </Badge>
       );
     case 'revoked':
       return (
-        <Badge className="bg-slate-500/15 text-slate-400 border border-slate-500/30 flex items-center gap-1 text-xs">
-          <UserX className="w-3.5 h-3.5" />
+        <Badge className="bg-slate-100 text-slate-700 border border-slate-200 font-semibold inline-flex items-center gap-1 text-xs px-2.5 py-0.5">
+          <UserX className="w-3.5 h-3.5 text-slate-500" />
           <span>Revoked</span>
         </Badge>
       );

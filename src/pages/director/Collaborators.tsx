@@ -81,22 +81,24 @@ export default function Collaborators() {
   const revokedCount = collaborators.filter((c) => c.status === 'revoked' || c.status === 'declined').length;
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 max-w-6xl mx-auto">
       {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
-            <Users className="w-7 h-7 text-primary" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20">
+              <Users className="w-6 h-6" />
+            </div>
             <span>Workspace Collaborators</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Invite team members and co-casting directors to help manage projects and applicants.
+          <p className="text-slate-600 text-sm mt-2 max-w-xl">
+            Invite team members and co-casting directors to help manage your projects, review applicants, and add private notes.
           </p>
         </div>
 
         <Button
           onClick={() => setIsInviteModalOpen(true)}
-          className="bg-primary hover:bg-primary/90 text-white font-medium flex items-center gap-2 self-start sm:self-auto"
+          className="bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl px-4 py-2.5 shadow-sm flex items-center gap-2 self-start sm:self-auto"
         >
           <UserPlus className="w-4 h-4" />
           <span>Invite Collaborator</span>
@@ -104,42 +106,42 @@ export default function Collaborators() {
       </div>
 
       {/* Tabs & Search controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
-          <TabsList className="bg-slate-900 border border-slate-800 p-1">
+          <TabsList className="bg-white/90 border border-slate-200/90 shadow-sm p-1 rounded-xl">
             <TabsTrigger
               value="active"
-              className="data-[state=active]:bg-primary data-[state=active]:text-white text-slate-400 text-xs sm:text-sm flex items-center gap-2"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white text-slate-600 font-semibold rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-all"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 data-[state=active]:text-white" />
               <span>Active</span>
-              <span className="px-1.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-semibold text-slate-300">
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-700">
                 {activeCount}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="pending"
-              className="data-[state=active]:bg-primary data-[state=active]:text-white text-slate-400 text-xs sm:text-sm flex items-center gap-2"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white text-slate-600 font-semibold rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-all"
             >
-              <Clock className="w-4 h-4 text-amber-400" />
+              <Clock className="w-4 h-4 text-amber-500 data-[state=active]:text-white" />
               <span>Pending</span>
-              <span className="px-1.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-semibold text-slate-300">
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-700">
                 {pendingCount}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="revoked"
-              className="data-[state=active]:bg-primary data-[state=active]:text-white text-slate-400 text-xs sm:text-sm flex items-center gap-2"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white text-slate-600 font-semibold rounded-lg text-xs sm:text-sm flex items-center gap-2 transition-all"
             >
-              <UserX className="w-4 h-4 text-rose-400" />
+              <UserX className="w-4 h-4 text-rose-500 data-[state=active]:text-white" />
               <span>Revoked / Declined</span>
-              <span className="px-1.5 py-0.5 rounded-full bg-slate-800 text-[10px] font-semibold text-slate-300">
+              <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-700">
                 {revokedCount}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="all"
-              className="data-[state=active]:bg-primary data-[state=active]:text-white text-slate-400 text-xs sm:text-sm"
+              className="data-[state=active]:bg-primary data-[state=active]:text-white text-slate-600 font-semibold rounded-lg text-xs sm:text-sm transition-all"
             >
               All ({collaborators.length})
             </TabsTrigger>
@@ -152,16 +154,16 @@ export default function Collaborators() {
             placeholder="Search by name or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 bg-slate-900/80 border-slate-800 text-white placeholder:text-slate-500 text-sm"
+            className="pl-9 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 text-sm rounded-xl shadow-sm"
           />
         </div>
       </div>
 
       {/* Main List content */}
       {isLoading ? (
-        <div className="flex items-center justify-center p-16 text-slate-400">
+        <div className="flex items-center justify-center p-16 text-slate-500 bg-white/60 rounded-2xl border border-slate-200">
           <Loader2 className="w-8 h-8 animate-spin text-primary mr-3" />
-          <span>Loading collaborators...</span>
+          <span className="font-medium text-slate-700">Loading collaborators...</span>
         </div>
       ) : filteredCollaborators.length === 0 ? (
         <CollaboratorEmptyState

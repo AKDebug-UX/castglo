@@ -15,37 +15,37 @@ const PERMISSION_CONFIG: Record<
   viewApplicants: {
     label: 'View Applicants',
     icon: Eye,
-    colorClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    colorClass: 'bg-blue-50 text-blue-700 border-blue-200 font-medium',
   },
   moveApplicants: {
     label: 'Move Applicants',
     icon: ArrowRightLeft,
-    colorClass: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    colorClass: 'bg-purple-50 text-purple-700 border-purple-200 font-medium',
   },
   addNotes: {
     label: 'Add Notes',
     icon: FileText,
-    colorClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    colorClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 font-medium',
   },
   sendMessages: {
     label: 'Send Messages',
     icon: Send,
-    colorClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+    colorClass: 'bg-cyan-50 text-cyan-700 border-cyan-200 font-medium',
   },
   editProject: {
     label: 'Edit Project',
     icon: Edit,
-    colorClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    colorClass: 'bg-amber-50 text-amber-700 border-amber-200 font-medium',
   },
   editRoles: {
     label: 'Edit Roles',
     icon: Users,
-    colorClass: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+    colorClass: 'bg-indigo-50 text-indigo-700 border-indigo-200 font-medium',
   },
   manageCollaborators: {
     label: 'Manage Collaborators',
     icon: Shield,
-    colorClass: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+    colorClass: 'bg-rose-50 text-rose-700 border-rose-200 font-medium',
   },
 };
 
