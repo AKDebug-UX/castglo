@@ -778,12 +778,6 @@ export default function AccountSettings() {
                 </VerifyProfileButton>
               </div>
 
-              <div className="pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
-                <span>Prefer manual document upload?</span>
-                <Button variant="link" className="p-0 h-auto text-xs font-semibold text-[#009698]" asChild>
-                  <a href="/talent/verification-process">Go to Manual Document Upload →</a>
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>

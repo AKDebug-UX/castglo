@@ -9,8 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Loader2, Save, User, Briefcase, Sparkles,
   Camera, Eye, Layers, Share2, X, Ruler, ClipboardList, Wand2,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, FolderKanban
 } from "lucide-react";
+import { DeliverableHistoryTab } from "@/components/deliverable-history/DeliverableHistoryTab";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { generateDummyProfileData } from "@/lib/profileAutofill";
@@ -469,6 +470,11 @@ export function UnifiedTalentProfileForm({
         id: "portfolio",
         label: "Portfolio",
         sections: ["Social", "Contact / Media"]
+      },
+      {
+        id: "deliverables",
+        label: "Deliverable History",
+        sections: []
       },
       {
         id: "summary",
@@ -1011,6 +1017,7 @@ export function UnifiedTalentProfileForm({
   const tabIcons: Record<string, any> = {
     basic: User,
     professional: Briefcase,
+    deliverables: FolderKanban,
     specialisms: Sparkles,
     appearance: Eye,
     portfolio: Share2,
@@ -1072,7 +1079,7 @@ export function UnifiedTalentProfileForm({
         <TabsList className="sticky top-0 z-10 h-14 w-full justify-start overflow-x-auto bg-white/80 backdrop-blur-md border shadow-sm gap-2 p-1.5 rounded-2xl scrollbar-hide mb-6">
           {tabGroups.map(tab => {
             const hasFields = sectionsByTab[tab.id]?.length > 0;
-            if (!hasFields && tab.id !== 'portfolio' && tab.id !== 'summary') return null;
+            if (!hasFields && tab.id !== 'portfolio' && tab.id !== 'summary' && tab.id !== 'deliverables') return null;
             const Icon = tabIcons[tab.id] || Sparkles;
             return (
               <TabsTrigger
@@ -1092,6 +1099,12 @@ export function UnifiedTalentProfileForm({
             <TabsContent key={tab.id} value={tab.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <Card className="rounded-[2rem] border shadow-card overflow-hidden">
                 <CardContent className="p-8 md:p-12 space-y-10">
+                  {tab.id === 'deliverables' && (
+                    <DeliverableHistoryTab
+                      userId={rootData?.userId || rootData?._id || rootData?.id || user?.id || ''}
+                      userName={rootData?.fullName || rootData?.displayName}
+                    />
+                  )}
                   {tab.id === 'portfolio' && (
                     <PortfolioMediaGallery
                       profileData={rootData}

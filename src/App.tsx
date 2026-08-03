@@ -206,6 +206,7 @@ const App = () => {
               <Route path="/copyright-policy" element={<CopyrightPolicy />} />
               <Route path="/anti-scam-guidelines" element={<AntiScamGuidelines />} />
               <Route path="/subscription/success" element={<PaymentSuccess />} />
+              <Route path="/profile" element={<Navigate to="/profile/me" replace />} />
               <Route path="/profile/:id" element={<UnifiedProfile />} />
               <Route path="/profile/me" element={<UnifiedProfile />} />
               <Route path="/profiles/:username/history/:deliverableId" element={<DeliverableDetailPage />} />

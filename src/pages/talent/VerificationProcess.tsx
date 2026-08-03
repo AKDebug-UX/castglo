@@ -1,174 +1,124 @@
-import { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Loader2, ShieldCheck, Upload, Zap, FileCheck, CheckCircle2 } from 'lucide-react';
-import { verificationAPI } from '@/lib/api';
-import { toast } from 'sonner';
+import { ShieldCheck, Zap, CheckCircle2, Lock, Sparkles, UserCheck, Shield, FileText } from 'lucide-react';
 import { VerifyProfileButton } from '@/components/verification/VerifyProfileButton';
 
 export default function VerificationProcess() {
-  const [verificationType, setVerificationType] = useState('');
-  const [document, setDocument] = useState<File | null>(null);
-  const [notes, setNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setDocument(e.target.files[0]);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!verificationType || !document) {
-      toast.error('Please select a verification type and upload a document.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.append('document', document);
-      formData.append('documentType', verificationType);
-      formData.append('notes', notes);
-
-      const response = await verificationAPI.submit(formData);
-      
-      if (response.data.success) {
-        toast.success('Verification request submitted successfully!');
-        setVerificationType('');
-        setDocument(null);
-        setNotes('');
-      } else {
-        throw new Error(response.data.message || 'Failed to submit verification request.');
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || error.message || 'Failed to submit verification request.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
-    <div className="container mx-auto py-12 px-4 md:px-6">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <div className="text-center space-y-2">
-          <Badge variant="outline" className="px-3 py-1 text-sm border-primary/30 text-primary bg-primary/5 mb-2">
-            <ShieldCheck className="w-4 h-4 mr-1.5 inline-block" /> Account Verification
+    <div className="min-h-[85vh] bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-white py-12 px-4 md:px-6 flex items-center justify-center">
+      <div className="max-w-4xl mx-auto w-full space-y-10">
+        
+        {/* Hero Section Header */}
+        <div className="text-center space-y-4">
+          <Badge className="px-4 py-1.5 text-xs font-semibold border-teal-500/30 text-teal-300 bg-teal-500/10 rounded-full inline-flex items-center gap-1.5 backdrop-blur-md">
+            <ShieldCheck className="w-4 h-4 text-[#009698]" /> Official Platform Verification
           </Badge>
-          <h1 className="text-3xl font-bold tracking-tight">Get Verified on CastGlo</h1>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Verified accounts gain higher trust, exclusive casting opportunities, and enhanced profile visibility across the platform.
+          
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-teal-200 bg-clip-text text-transparent">
+            Verify Your Castglo Identity
+          </h1>
+          
+          <p className="text-slate-300 max-w-2xl mx-auto text-base sm:text-lg leading-relaxed">
+            Stand out in search results, unlock exclusive high-budget casting calls, and build instant trust with casting directors and recruiters.
           </p>
         </div>
 
-        {/* Primary Method: Instant Identity Verification */}
-        <Card className="border-2 border-primary/20 shadow-md relative overflow-hidden">
-          <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-bl-lg flex items-center gap-1">
-            <Zap className="w-3.5 h-3.5 fill-current" /> Recommended & Instant
+        {/* Main Verification Showcase Card */}
+        <Card className="bg-slate-900/80 border-2 border-[#009698]/30 shadow-2xl rounded-3xl overflow-hidden backdrop-blur-xl relative">
+          <div className="absolute top-0 right-0 bg-gradient-to-l from-[#009698] to-teal-500 text-white text-xs font-bold px-4 py-1.5 rounded-bl-2xl shadow-md flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 fill-current" /> Instant & Automated
           </div>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Zap className="w-5 h-5 text-primary" />
-              Instant Identity Verification
-            </CardTitle>
-            <CardDescription>
-              Verify your identity instantly using your camera/selfie and official photo ID.
-            </CardDescription>
+
+          <CardHeader className="p-8 sm:p-10 border-b border-slate-800/80 bg-slate-950/40">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-2xl bg-[#009698]/20 border border-[#009698]/40 flex items-center justify-center text-[#009698] shadow-inner">
+                <Shield className="w-6 h-6" />
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold text-white flex items-center gap-2">
+                  Instant Identity Verification
+                </CardTitle>
+                <CardDescription className="text-slate-400 text-sm mt-0.5">
+                  Complete your biometrics & photo ID verification in under 2 minutes.
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-muted/40 rounded-xl p-4 border space-y-2 text-sm">
-              <div className="flex items-center gap-2 font-medium text-foreground">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Secure biometric selfie matching
+
+          <CardContent className="p-8 sm:p-10 space-y-8">
+            
+            {/* Feature Perks Grid */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="p-5 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-2 hover:border-[#009698]/50 transition-all group">
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <h4 className="font-bold text-sm text-slate-100">Biometric Matching</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Real-time 3D selfie facial scan to match your face with your government photo ID.
+                </p>
               </div>
-              <div className="flex items-center gap-2 font-medium text-foreground">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Automated real-time verification processing
+
+              <div className="p-5 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-2 hover:border-[#009698]/50 transition-all group">
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <h4 className="font-bold text-sm text-slate-100">Government Photo ID</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Supports passport, driver's license, and national ID cards across 190+ countries.
+                </p>
               </div>
-              <div className="flex items-center gap-2 font-medium text-foreground">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Instant verification badge on approval
+
+              <div className="p-5 rounded-2xl bg-slate-800/50 border border-slate-700/60 space-y-2 hover:border-[#009698]/50 transition-all group">
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <h4 className="font-bold text-sm text-slate-100">Official Verified Badge</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Instantly receive the verified checkmark on your public & talent profile upon completion.
+                </p>
               </div>
             </div>
 
+            {/* Guarantees List */}
+            <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 text-[#009698]" /> Security & Privacy Guarantees
+              </h4>
+              <div className="grid gap-2 sm:grid-cols-2 text-xs text-slate-300">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span>256-bit bank-grade encryption</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span>Fully GDPR & Privacy compliant</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span>No physical document mailing required</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <span>Automated instant processing</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Launch Action Button */}
             <div className="pt-2">
               <VerifyProfileButton
                 size="lg"
-                className="w-full bg-[#009698] hover:bg-[#009698]/90 text-white font-semibold py-6 text-base shadow-sm"
+                className="w-full bg-[#009698] hover:bg-[#008082] text-white font-bold py-7 text-lg rounded-2xl shadow-xl shadow-[#009698]/20 transition-all duration-300 hover:scale-[1.01]"
               >
-                <Zap className="w-5 h-5 mr-2" /> Start Instant Verification
+                <Zap className="w-6 h-6 mr-2 fill-current" /> Launch Instant Verification
               </VerifyProfileButton>
             </div>
+
           </CardContent>
         </Card>
 
-        <div className="relative flex py-2 items-center">
-          <div className="flex-grow border-t border-muted"></div>
-          <span className="flex-shrink mx-4 text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-            Or Submit Documents Manually
-          </span>
-          <div className="flex-grow border-t border-muted"></div>
-        </div>
-
-        {/* Secondary Method: Manual Document Submission */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileCheck className="w-5 h-5 text-muted-foreground" />
-              Manual Document Upload
-            </CardTitle>
-            <CardDescription>
-              Upload documents (Passport, Union Card, Business Reg) for manual review by our verification team (takes 24-48 hours).
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <label className="font-medium text-sm">Verification Type</label>
-              <Select value={verificationType} onValueChange={setVerificationType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select verification type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="identity">Identity Verification (Passport, Driver's License)</SelectItem>
-                  <SelectItem value="professional">Professional Verification (Union Card, Guild Membership)</SelectItem>
-                  <SelectItem value="company">Company Verification (Business Registration Documents)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-medium text-sm">Upload Document</label>
-              <div className="flex items-center gap-4">
-                <Input id="document-upload" type="file" className="hidden" onChange={handleFileChange} />
-                <label htmlFor="document-upload" className="flex-1 cursor-pointer">
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center hover:bg-muted/50 transition-colors">
-                    <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      {document ? document.name : 'Click to upload your document'}
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-medium text-sm">Notes (Optional)</label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add any relevant notes for the verification team..."
-                rows={3}
-              />
-            </div>
-
-            <Button onClick={handleSubmit} disabled={isSubmitting} variant="outline" className="w-full">
-              {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Submit Manual Documents
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
