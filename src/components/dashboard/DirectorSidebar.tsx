@@ -8,7 +8,6 @@ import {
   MessageSquare,
   Settings,
   Sparkles,
-  Handshake,
   CreditCard,
   UserCircle,
   Briefcase,
@@ -17,7 +16,6 @@ import {
   FileVideo,
   Award
 } from "lucide-react";
-import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface DirectorSidebarProps {
@@ -26,7 +24,6 @@ interface DirectorSidebarProps {
 
 export function DirectorSidebar({ className }: DirectorSidebarProps) {
   const location = useLocation();
-  const { activeWorkspace } = useWorkspace();
   const { user } = useAuth();
 
   const navItems = [
@@ -39,18 +36,9 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
     { title: "Applicants", href: "/director/applicants", Icon: Users },
     { title: "Matched", href: "/director/matched", Icon: Sparkles },
     { title: "Messages", href: "/director/messages", Icon: MessageSquare },
-    { title: "Collaborators", href: "/director/collaborators", Icon: Handshake },
     { title: "Billing / Add-ons", href: "/director/billing", Icon: CreditCard },
     { title: "Settings", href: "/director/settings", Icon: Settings },
   ];
-
-  const filteredNavItems = navItems.filter(item => {
-    if (activeWorkspace !== "Personal") {
-      // For collaborator workspace, allow Dashboard, Projects, Messages, and Applicants unconditionally
-      return ["Dashboard", "Projects", "Messages", "Applicants"].includes(item.title);
-    }
-    return true;
-  });
 
   return (
     <aside className={cn("w-64 bg-card border-r border-border flex flex-col", className)}>
@@ -59,7 +47,7 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
       </div>
       
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {filteredNavItems.map((item) => {
+        {navItems.map((item) => {
           const isActive = location.pathname === item.href || 
             (item.href !== "/director" && location.pathname.startsWith(item.href));
           

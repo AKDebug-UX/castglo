@@ -195,18 +195,6 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `/leads/admin/leads/${id}`,
     CONVERT: (id: string) => `/leads/admin/leads/${id}/convert`,
   },
-  COLLABORATORS: {
-    INVITE: '/collaborators/invite',
-    GET_ALL: '/collaborators',
-    GET_ONE: (collaboratorId: string) => `/collaborators/${collaboratorId}`,
-    UPDATE: (collaboratorId: string) => `/collaborators/${collaboratorId}`,
-    REVOKE: (collaboratorId: string) => `/collaborators/${collaboratorId}/revoke`,
-    RESEND: (collaboratorId: string) => `/collaborators/${collaboratorId}/resend`,
-    MY_INVITATIONS: '/collaborators/me/invitations',
-    MY_COLLABORATIONS: '/collaborators/me/collaborations',
-    ACCEPT_INVITATION: '/collaborators/invite/accept',
-    DECLINE_INVITATION: '/collaborators/invite/decline',
-  },
   TWO_FACTOR_AUTH: {
     ENROL: '/2fa/enrol',
     CONFIRM: '/2fa/confirm',
@@ -571,33 +559,6 @@ export const adminLeadsAPI = {
   getOne: (id: string) => api.get(API_ENDPOINTS.LEADS_ADMIN.GET_ONE(id)),
   delete: (id: string) => api.delete(API_ENDPOINTS.LEADS_ADMIN.DELETE(id)),
   convert: (id: string) => api.put(API_ENDPOINTS.LEADS_ADMIN.CONVERT(id)),
-};
-
-// --- COLLABORATORS ENDPOINTS ---
-export const collaboratorAPI = {
-  invite: (data: {
-    inviteEmail: string;
-    projectGrants?: Array<{ projectId: string; permissions: string | { role: string } | string[] }>;
-    permissions?: string | { role: string } | string[];
-    projectId?: string
-  }) =>
-    api.post(API_ENDPOINTS.COLLABORATORS.INVITE, data),
-  getAll: (params?) => api.get(API_ENDPOINTS.COLLABORATORS.GET_ALL, { params }),
-  getOne: (collaboratorId: string) => api.get(API_ENDPOINTS.COLLABORATORS.GET_ONE(collaboratorId)),
-  updatePermissions: (collaboratorId: string, data: { permissions: string | { role: string } | string[] }) =>
-    api.patch(API_ENDPOINTS.COLLABORATORS.UPDATE(collaboratorId), data),
-  revoke: (collaboratorId: string) =>
-    api.delete(API_ENDPOINTS.COLLABORATORS.REVOKE(collaboratorId)),
-  resendInvitation: (collaboratorId: string) =>
-    api.post(API_ENDPOINTS.COLLABORATORS.RESEND(collaboratorId)),
-  getMyInvitations: (params?) =>
-    api.get(API_ENDPOINTS.COLLABORATORS.MY_INVITATIONS, { params }),
-  getMyCollaborations: (params?) =>
-    api.get(API_ENDPOINTS.COLLABORATORS.MY_COLLABORATIONS, { params }),
-  acceptInvitation: (data: string | { invitationId?: string; id?: string; token?: string }) =>
-    api.post(API_ENDPOINTS.COLLABORATORS.ACCEPT_INVITATION, typeof data === "string" ? { id: data, invitationId: data, token: data } : data),
-  declineInvitation: (data: string | { invitationId?: string; id?: string; token?: string }) =>
-    api.post(API_ENDPOINTS.COLLABORATORS.DECLINE_INVITATION, typeof data === "string" ? { id: data, invitationId: data, token: data } : data),
 };
 
 export const twoFactorAuthAPI = {

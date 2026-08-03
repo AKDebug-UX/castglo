@@ -31,19 +31,6 @@ export default function SignIn() {
   const searchParams = new URLSearchParams(location.search);
   const redirect = searchParams.get("redirect");
 
-  // Extract token from redirect query parameter if it exists (e.g. /collaborators/accept?token=XYZ)
-  const getCollaboratorToken = () => {
-    if (!redirect) return null;
-    try {
-      const url = new URL(redirect, window.location.origin);
-      return url.searchParams.get("token");
-    } catch {
-      const match = redirect.match(/[?&]token=([^&]+)/);
-      return match ? match[1] : null;
-    }
-  };
-  const token = getCollaboratorToken();
-
   const {
     register,
     handleSubmit,

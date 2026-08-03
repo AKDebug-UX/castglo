@@ -45,7 +45,6 @@ const UnifiedProfile = lazy(() => import("./pages/UnifiedProfile"));
 const DirectorPublicProfile = lazy(() => import("./pages/DirectorPublicProfile"));
 const DeliverableDetailPage = lazy(() => import("./pages/DeliverableDetailPage"));
 const WhatsNew = lazy(() => import("./pages/WhatsNew"));
-const AcceptInvitation = lazy(() => import("./pages/AcceptInvitation"));
 
 // Talent Dashboard
 const DashboardLayout = lazy(() => import("./components/dashboard/TalentLayout").then(m => ({ default: m.DashboardLayout })));
@@ -62,7 +61,6 @@ const Livestream = lazy(() => import("./pages/talent/Livestream"));
 const LivestreamsList = lazy(() => import("./pages/talent/LivestreamsList"));
 const VerificationProcess = lazy(() => import("./pages/talent/VerificationProcess"));
 const AccountSettings = lazy(() => import("./pages/talent/AccountSettings"));
-const CollaborationsPage = lazy(() => import("./pages/Collaborations"));
 
 // Director Dashboard
 const DirectorLayout = lazy(() => import("./components/dashboard/DirectorLayout").then(m => ({ default: m.DirectorLayout })));
@@ -75,7 +73,6 @@ const DirectorMessages = lazy(() => import("./pages/director/DirectorMessages"))
 const ApplicantsManagement = lazy(() => import("./pages/director/ApplicantsManagement"));
 const DirectorRoles = lazy(() => import("./pages/director/DirectorRoles"));
 const MatchedTalent = lazy(() => import("./pages/director/MatchedTalent"));
-const Collaborators = lazy(() => import("./pages/director/Collaborators"));
 const DirectorBilling = lazy(() => import("./pages/director/DirectorBilling"));
 const DirectorProfile = lazy(() => import("./pages/director/DirectorProfile"));
 
@@ -212,7 +209,6 @@ const App = () => {
               <Route path="/profiles/:username/history/:deliverableId" element={<DeliverableDetailPage />} />
               <Route path="/deliverables/:deliverableId" element={<DeliverableDetailPage />} />
               <Route path="/subscription/cancel" element={<PaymentCancel />} />
-              <Route path="/collaborators/accept" element={<AcceptInvitation />} />
 
               {/* Talent Dashboard Routes */}
               <Route
@@ -236,7 +232,6 @@ const App = () => {
                 <Route path="create-audition" element={<InstantAudition />} />
                 <Route path="livestream/:id" element={<Livestream />} />
                 <Route path="verification-process" element={<VerificationProcess />} />
-                <Route path="collaborations" element={<CollaborationsPage />} />
               </Route>
 
               {/* Director Dashboard Routes */}
@@ -258,8 +253,6 @@ const App = () => {
                 <Route path="applicants" element={<ApplicantsManagement />} />
                 <Route path="roles" element={<DirectorRoles />} />
                 <Route path="matched" element={<MatchedTalent />} />
-                <Route path="collaborators" element={<Collaborators />} />
-                <Route path="collaborations" element={<CollaborationsPage />} />
                 <Route path="billing" element={<DirectorBilling />} />
                 <Route path="messages" element={<DirectorMessages />} />
                 <Route path="notifications" element={<Notifications />} />
@@ -285,7 +278,6 @@ const App = () => {
                 <Route path="messages" element={<ProfessionalMessages />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="settings" element={<ProfessionalSettings />} />
-                <Route path="collaborations" element={<CollaborationsPage />} />
               </Route>
 
               {/* Admin Dashboard Routes */}

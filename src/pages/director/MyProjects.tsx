@@ -555,13 +555,7 @@ export function DirectorProjects() {
   );
 }
 
-import CollaboratorProjects from "./CollaboratorProjects";
-
 export default function MyProjects() {
-  const { activeWorkspace } = useWorkspace();
-  
-  if (activeWorkspace !== "Personal") {
-    return <CollaboratorProjects />;
-  }
   return <DirectorProjects />;
 }
+
