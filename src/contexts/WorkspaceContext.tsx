@@ -1,4 +1,5 @@
 import { createContext, useContext, ReactNode } from "react";
+import { MyCollaboration } from "@/types/collaborator";
 
 export interface WorkspacePermissions {
   viewApplicants?: boolean;
@@ -10,7 +11,7 @@ export interface WorkspacePermissions {
   manageCollaborators?: boolean;
 }
 
-export type ActiveWorkspace = "Personal";
+export type ActiveWorkspace = "Personal" | MyCollaboration | any;
 
 interface WorkspaceContextType {
   activeWorkspace: ActiveWorkspace;

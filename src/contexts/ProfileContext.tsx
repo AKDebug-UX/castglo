@@ -26,7 +26,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode, userId?: str
 
   const { data: profileResponse, isLoading, isError } = useQuery({
     queryKey: ['profile', targetId],
-    queryFn: () => isOwnProfile ? profileAPI.getMe() : profileAPI.getPublic(targetId!),
+    queryFn: () => isOwnProfile ? profileAPI.getMe() : profileAPI.getOne(targetId!),
     enabled: !!targetId,
   });
 

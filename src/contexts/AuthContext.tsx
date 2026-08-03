@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authAPI, userAPI, twoFactorAuthAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 export type UserRole = "talent" | "casting_director" | "industry_professional" | "admin";
 
