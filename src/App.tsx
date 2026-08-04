@@ -22,6 +22,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const VerifyEmail = lazy(() => import("./pages/VerifyEmail"));
 const VerificationPending = lazy(() => import("./pages/VerificationPending"));
+const VerificationCallback = lazy(() => import("./pages/VerificationCallback"));
 const VerifyTwoFactor = lazy(() => import("./pages/VerifyTwoFactor"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const News = lazy(() => import("./pages/News"));
@@ -186,6 +187,7 @@ const App = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/verification-pending" element={<VerificationPending />} />
+              <Route path="/verification/callback" element={<VerificationCallback />} />
               <Route path="/auth/2fa" element={<VerifyTwoFactor />} />
               <Route path="/verify-two-factor" element={<Navigate to="/auth/2fa" replace />} />
               <Route path="/news" element={<News />} />
