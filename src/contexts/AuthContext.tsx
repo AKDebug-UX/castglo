@@ -63,8 +63,8 @@ const buildUserObj = (userData: any): User => {
     role: (userData.role || (userData.roles && userData.roles[0])) as UserRole,
     fullName: resolvedFullName,
     profilePicture: userData.profilePicture,
-    isEmailVerified: userData.emailVerified || userData.isEmailVerified || false,
-    isVerified: userData.isVerified || (userData.emailVerified || userData.isEmailVerified) || false,
+    isEmailVerified: Boolean(userData.isEmailVerified || userData.emailVerified),
+    isVerified: Boolean(userData.isVerified),
     preferredCurrency: userData.preferredCurrency || "GBP",
     twoFactorEnabled: userData.twoFactorEnabled || userData.isTwoFactorEnabled || userData.is2FAEnabled || userData.twoFactorAuthEnabled || false,
   };
@@ -211,7 +211,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await authAPI.verifyEmail({ token });
       if (response.data.success) {
         if (user) {
-          const updatedUser = { ...user, isEmailVerified: true, isVerified: true };
+          const updatedUser = { ...user, isEmailVerified: true };
           setUser(updatedUser);
           localStorage.setItem('userData', JSON.stringify(updatedUser));
         }

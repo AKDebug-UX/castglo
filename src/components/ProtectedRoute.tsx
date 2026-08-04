@@ -31,7 +31,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     location.pathname.includes("verification-pending");
 
   // Check if email is verified
-  if (!user.isVerified && !user.isEmailVerified && user.role !== "admin" && !isVerificationPath) {
+  if (!user.isEmailVerified && user.role !== "admin" && !isVerificationPath) {
     return <Navigate to="/verification-pending" replace />;
   }
 
