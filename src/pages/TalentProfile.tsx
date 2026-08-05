@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -13,19 +13,25 @@ import {
   BadgeCheck, ListChecks, LayoutGrid, Banknote, MessageCircle, 
   MessageSquare, Image as ImageIcon, Calendar, Plane, Monitor, Shield,
   CheckCircle2, DollarSign, Target, FolderOpen, Clock, CheckSquare,
-  VenetianMask, Music, Accessibility, Camera, Info, ExternalLink, Linkedin
+  VenetianMask, Music, Accessibility, Camera, Info, ExternalLink, Linkedin,
+  ArrowLeft
 } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { formatLocation } from "@/lib/utils";
 import { BookingDialog } from "@/components/BookingDialog";
 import { DeliverableHistoryTab } from "@/components/deliverable-history/DeliverableHistoryTab";
+import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 const camelToSnake = (str: string) => str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 const snakeToCamel = (str: string) => str.replace(/(_\w)/g, (m) => m[1].toUpperCase());
 
 export default function TalentProfile() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "overview";
   const [talent, setTalent] = useState(null);
@@ -225,6 +231,25 @@ export default function TalentProfile() {
                     </div>
                     <div className="mt-6 flex flex-col gap-2">
                       <Button variant="hero" className="w-full" onClick={() => setIsBookingOpen(true)}>Book Talent</Button>
+                      <Button
+                        variant="default"
+                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium flex items-center justify-center gap-2"
+                        onClick={() => {
+                          const isCollaborator = activeWorkspace !== "Personal";
+                          if (user?.role === "casting_director" || isCollaborator) {
+                            navigate("/director/applicants");
+                          } else if (user?.role === "industry_professional") {
+                            navigate("/professional");
+                          } else if (user?.role === "admin") {
+                            navigate("/admin");
+                          } else {
+                            navigate("/talent");
+                          }
+                        }}
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span>Back to Dashboard</span>
+                      </Button>
                       <Button variant="outline" className="w-full" asChild>
                         <Link to="/browse-talent">Back to Browse</Link>
                       </Button>

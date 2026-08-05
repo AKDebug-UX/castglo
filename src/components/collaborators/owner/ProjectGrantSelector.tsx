@@ -67,9 +67,9 @@ export const ProjectGrantSelector: React.FC<ProjectGrantSelectorProps> = ({
 
   const defaultPermissions: Permissions = {
     viewApplicants: true,
-    moveApplicants: false,
+    moveApplicants: true,
     addNotes: true,
-    sendMessages: false,
+    sendMessages: true,
     editProject: false,
     editRoles: false,
     manageCollaborators: false,

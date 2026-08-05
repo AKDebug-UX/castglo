@@ -32,9 +32,9 @@ export const EditPermissionsModal: React.FC<EditPermissionsModalProps> = ({
   const [accessScope, setAccessScope] = useState<AccessScope>('all_projects');
   const [globalPermissions, setGlobalPermissions] = useState<Permissions>({
     viewApplicants: true,
-    moveApplicants: false,
+    moveApplicants: true,
     addNotes: true,
-    sendMessages: false,
+    sendMessages: true,
     editProject: false,
     editRoles: false,
     manageCollaborators: false,

@@ -109,7 +109,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const getPermissionsForProject = (projectId?: string): WorkspacePermissions => {
+  const getPermissionsForProject = (projectId?: string | any): WorkspacePermissions => {
     if (activeWorkspace === "Personal" || !activeWorkspace) {
       return FULL_PERMISSIONS;
     }
@@ -118,29 +118,54 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     const collab = activeWorkspace;
 
     if (collab.accessScope === "all_projects") {
-      return collab.globalPermissions || FULL_PERMISSIONS;
+      const perms = collab.globalPermissions || {};
+      return {
+        ...perms,
+        viewApplicants: true,
+        moveApplicants: true,
+        addNotes: perms.addNotes !== false,
+        sendMessages: perms.sendMessages !== false,
+      };
     }
 
     if (collab.accessScope === "selected_projects" && collab.projectGrants) {
-      if (projectId) {
-        const grant = collab.projectGrants.find(
-          (g) => g.projectId === projectId || (g.project && g.project.id === projectId)
-        );
-        return grant?.permissions || {};
+      const targetId = typeof projectId === "object"
+        ? (projectId?._id || projectId?.id)
+        : projectId;
+
+      if (targetId) {
+        const grant = collab.projectGrants.find((g: any) => {
+          const rawP = g.projectId || g.project;
+          const gId = typeof rawP === "object" ? (rawP?._id || rawP?.id) : rawP;
+          return gId === targetId;
+        });
+
+        if (grant?.permissions) {
+          return {
+            ...grant.permissions,
+            viewApplicants: true,
+            moveApplicants: true,
+          };
+        }
       }
-      // If no specific projectId provided, return union of permissions across all granted projects
-      const combined: WorkspacePermissions = {};
-      collab.projectGrants.forEach((g) => {
+
+      // Fallback: union of permissions across all granted projects
+      const combined: WorkspacePermissions = {
+        viewApplicants: true,
+        moveApplicants: true,
+      };
+      collab.projectGrants.forEach((g: any) => {
         if (g.permissions) {
           (Object.keys(g.permissions) as (keyof Permissions)[]).forEach((key) => {
             if (g.permissions[key]) combined[key] = true;
           });
         }
       });
+
       return combined;
     }
 
-    return {};
+    return FULL_PERMISSIONS;
   };
 
   const getGrantedProjectIds = (): string[] => {

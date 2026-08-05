@@ -40,8 +40,10 @@ type PipelineStage =
 
 interface Applicant {
   _id: string;
+  id?: string;
   talent?: { 
-    _id: string; 
+    _id?: string; 
+    id?: string;
     fullName?: string; 
     profilePicture?: string;
     years_of_experience?: string;
@@ -51,7 +53,7 @@ interface Applicant {
   folder_name?: string;
   createdAt: string;
   coverLetter?: string;
-  castingCall?: { _id: string; title?: string; };
+  castingCall?: { _id?: string; id?: string; title?: string } | string;
   roleName?: string;
   note?: string;
 }
@@ -436,7 +438,10 @@ export default function ApplicantsManagement() {
   // ── Applicant card (reused in both kanban + list) ─────────────────────────
   const ApplicantCard = ({ app }: { app: Applicant }) => {
     const targetId = app._id || app.id || (app as any).applicationId || "";
-    const projectPermissions = getPermissionsForProject(app.castingCall?._id || app.castingCall?.id);
+    const projId = typeof app.castingCall === "string"
+      ? app.castingCall
+      : (app.castingCall?._id || app.castingCall?.id || (app as any).castingCallId || (app as any).projectId || (app as any).project?._id || (app as any).project?.id);
+    const projectPermissions = getPermissionsForProject(projId);
     const stage = STAGE_MAP[app.status as PipelineStage] || STAGE_MAP["review"];
     
     return (
@@ -446,7 +451,7 @@ export default function ApplicantsManagement() {
         }`}
       >
         <div className="flex items-start gap-3">
-          {projectPermissions.moveApplicants && (
+          {projectPermissions.moveApplicants !== false && (
             <Checkbox
               checked={isSelected(targetId)}
               onCheckedChange={() => toggleSelect(targetId)}
@@ -480,37 +485,29 @@ export default function ApplicantsManagement() {
                   <ExternalLink className="w-4 h-4" /> View Profile
                 </Link>
               </DropdownMenuItem>
-              {projectPermissions.addNotes && (
-                <DropdownMenuItem onClick={() => openNote(app)}>
-                  <FileText className="w-4 h-4 mr-2" /> Add / View Note
-                </DropdownMenuItem>
-              )}
-              {projectPermissions.sendMessages && (
-                <DropdownMenuItem onClick={() => setDetailsModalAppId(targetId)}>
-                  <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => openNote(app)}>
+                <FileText className="w-4 h-4 mr-2" /> Add / View Note
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDetailsModalAppId(targetId)}>
+                <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
+              </DropdownMenuItem>
               {app.status === "contacting" && (
                 <>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to={`/director/audition?email=${encodeURIComponent(app.talent?.email || "")}`} className="flex items-center gap-2 text-primary font-semibold">
                       <Video className="w-4 h-4 text-primary" /> Create Audition
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                 </>
               )}
-              {projectPermissions.moveApplicants && (
-                <>
-                  <p className="text-[11px] text-muted-foreground px-2 py-1 font-semibold uppercase tracking-wider">Move to</p>
-                  {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
-                    <DropdownMenuItem key={opt.value} onClick={() => updateStatus(targetId, opt.value)}>
-                      <ArrowRight className="w-4 h-4 mr-2" /> {opt.label}
-                    </DropdownMenuItem>
-                  ))}
-                </>
-              )}
+              <DropdownMenuSeparator />
+              <p className="text-[11px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider">Move to</p>
+              {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
+                <DropdownMenuItem key={opt.value} onClick={() => updateStatus(targetId, opt.value)}>
+                  <ArrowRight className="w-4 h-4 mr-2" /> {opt.label}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -723,8 +720,11 @@ export default function ApplicantsManagement() {
                 </div>
                 {filteredApplicants.map(app => {
                   const targetId = app._id || app.id || (app as any).applicationId || "";
-                  const stage = STAGE_MAP[app.status] || STAGE_MAP["review"];
-                  const projectPermissions = getPermissionsForProject(app.castingCall?._id || app.castingCall?.id);
+                  const projId = typeof app.castingCall === "string"
+                    ? app.castingCall
+                    : (app.castingCall?._id || app.castingCall?.id || (app as any).castingCallId || (app as any).projectId || (app as any).project?._id || (app as any).project?.id);
+                  const projectPermissions = getPermissionsForProject(projId);
+                  const stage = STAGE_MAP[app.status || "review"] || STAGE_MAP.review;
                   return (
                     <div key={targetId} className={`grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 px-4 py-3 items-center hover:bg-muted/30 transition-colors ${isSelected(targetId) ? "bg-primary/5" : ""}`}>
                       {projectPermissions.moveApplicants ? (
@@ -744,7 +744,7 @@ export default function ApplicantsManagement() {
                         </div>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{app.castingCall?.title || "—"}</p>
+                        <p className="text-sm font-medium truncate">{typeof app.castingCall === "object" ? app.castingCall?.title || "—" : "—"}</p>
                         {app.roleName && <p className="text-xs text-muted-foreground truncate">{app.roleName}</p>}
                       </div>
                       <div>
@@ -770,32 +770,26 @@ export default function ApplicantsManagement() {
                                 <ExternalLink className="w-4 h-4 mr-2" /> View Profile
                               </Link>
                             </DropdownMenuItem>
-                            {projectPermissions.sendMessages && (
-                              <DropdownMenuItem onClick={() => setDetailsModalAppId(targetId)}>
-                                <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setDetailsModalAppId(targetId)}>
+                              <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
+                            </DropdownMenuItem>
                             {app.status === "contacting" && (
                               <>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
                                   <Link to={`/director/audition?email=${encodeURIComponent(app.talent?.email || "")}`} className="flex items-center gap-2 text-primary font-semibold">
                                     <Video className="w-4 h-4 text-primary" /> Create Audition
                                   </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
                               </>
                             )}
-                            {projectPermissions.moveApplicants && (
-                              <>
-                                <p className="text-[11px] text-muted-foreground px-2 py-1 font-semibold uppercase tracking-wider">Move to</p>
-                                {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
-                                  <DropdownMenuItem key={opt.value} onClick={() => updateStatus(targetId, opt.value)}>
-                                    <ArrowRight className="w-4 h-4 mr-2" /> {opt.label}
-                                  </DropdownMenuItem>
-                                ))}
-                              </>
-                            )}
+                            <DropdownMenuSeparator />
+                            <p className="text-[11px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider">Move to</p>
+                            {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
+                              <DropdownMenuItem key={opt.value} onClick={() => updateStatus(targetId, opt.value)}>
+                                <ArrowRight className="w-4 h-4 mr-2" /> {opt.label}
+                              </DropdownMenuItem>
+                            ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
