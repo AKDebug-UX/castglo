@@ -223,30 +223,33 @@ export default function AcceptInvitationPage() {
               />
 
               {!isAuthenticated ? (
-                <div className="space-y-3 p-4 rounded-xl bg-slate-950 border border-slate-800 text-center">
-                  <p className="text-xs text-slate-300">
-                    Log in or register an account to accept this invitation.
+                <div className="space-y-4 p-5 rounded-xl bg-slate-950 border border-slate-800 text-center">
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    You have been invited to collaborate on Castglo. Please log in or sign up to accept this invitation.
                   </p>
                   <div className="grid grid-cols-2 gap-3 pt-1">
                     <Button
                       onClick={() =>
                         navigate(`/sign-in?redirect=${encodeURIComponent(`/collaborators/accept?token=${rawToken}`)}`)
                       }
-                      className="bg-primary hover:bg-primary/90 text-white font-medium text-xs flex items-center justify-center gap-1.5"
+                      className="bg-primary hover:bg-primary/90 text-white font-medium text-xs flex items-center justify-center gap-1.5 py-2.5"
                     >
                       <LogIn className="w-3.5 h-3.5" />
                       <span>Log In</span>
                     </Button>
 
                     <Button
-                      onClick={() =>
-                        navigate(`/register?collaboratorToken=${encodeURIComponent(rawToken)}`)
-                      }
+                      onClick={() => {
+                        const emailParam = invitationData?.inviteEmail
+                          ? `&email=${encodeURIComponent(invitationData.inviteEmail)}`
+                          : '';
+                        navigate(`/register?collaboratorToken=${encodeURIComponent(rawToken)}${emailParam}`);
+                      }}
                       variant="outline"
-                      className="border-slate-700 text-slate-200 hover:bg-slate-800 text-xs flex items-center justify-center gap-1.5"
+                      className="border-slate-700 text-slate-200 hover:bg-slate-800 text-xs flex items-center justify-center gap-1.5 py-2.5"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
-                      <span>Register</span>
+                      <span>Sign Up</span>
                     </Button>
                   </div>
                 </div>

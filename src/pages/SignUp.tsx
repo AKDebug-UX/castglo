@@ -184,6 +184,13 @@ export default function SignUp() {
           <SocialLogin mode="signup" disabled={isLoading} />
 
 
+          {inviteEmail && (
+            <div className="mb-4 p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-2.5 text-xs text-primary font-medium">
+              <Info className="w-4 h-4 shrink-0" />
+              <span>Registering with invited email: <strong>{inviteEmail}</strong></span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Full Name</label>
@@ -202,6 +209,8 @@ export default function SignUp() {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                readOnly={!!inviteEmail}
+                className={inviteEmail ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : ""}
                 required
               />
             </div>

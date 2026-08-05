@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Pencil, Users, Eye } from "lucide-react";
 import SharedCastingDetail from "@/components/casting/SharedCastingDetail";
 import { useProjectWithRoles } from "@/hooks/useProjectWithRoles";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
@@ -11,6 +12,8 @@ export default function DirectorProjectPreview() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { project, isLoading, error } = useProjectWithRoles(id);
+  const { getPermissionsForProject } = useWorkspace();
+  const permissions = getPermissionsForProject(id);
 
   useEffect(() => {
     if (error) toast.error(error);
@@ -50,18 +53,22 @@ export default function DirectorProjectPreview() {
 
   const headerActions = (
     <>
-      <Button variant="outline" asChild className="gap-2">
-        <Link to={`/director/projects/${id}/edit`}>
-          <Pencil className="w-4 h-4" />
-          Edit
-        </Link>
-      </Button>
-      <Button variant="outline" asChild className="gap-2">
-        <Link to={`/director/applicants/?project=${id}`}>
-          <Users className="w-4 h-4" />
-          Applicants
-        </Link>
-      </Button>
+      {permissions.editProject !== false && (
+        <Button variant="outline" asChild className="gap-2">
+          <Link to={`/director/projects/${id}/edit`}>
+            <Pencil className="w-4 h-4" />
+            Edit
+          </Link>
+        </Button>
+      )}
+      {permissions.viewApplicants !== false && (
+        <Button variant="outline" asChild className="gap-2">
+          <Link to={`/director/applicants/?project=${id}`}>
+            <Users className="w-4 h-4" />
+            Applicants
+          </Link>
+        </Button>
+      )}
     </>
   );
 

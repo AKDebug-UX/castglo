@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { WorkspaceSwitcher } from "@/components/collaborators/shared/WorkspaceSwitcher";
 import { useState } from "react";
 
 interface DirectorSidebarProps {
@@ -28,6 +30,8 @@ interface DirectorSidebarProps {
 export function DirectorSidebar({ className }: DirectorSidebarProps) {
   const location = useLocation();
   const { user } = useAuth();
+  const { getPermissionsForProject, activeWorkspace } = useWorkspace();
+  const permissions = getPermissionsForProject();
 
   const isCollaborationsActive = 
     location.pathname.startsWith("/director/collaborators") || 
@@ -48,7 +52,9 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
   ];
 
   const collaboratorSubItems = [
-    { title: "Collaborators", href: "/director/collaborators", Icon: UserPlus },
+    ...(permissions.manageCollaborators !== false
+      ? [{ title: "Collaborators", href: "/director/collaborators", Icon: UserPlus }]
+      : []),
     { title: "My Collaborations", href: "/collaborations", Icon: FolderKanban },
   ];
 
@@ -58,7 +64,9 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
   ];
 
   const bottomNavItems = [
-    { title: "Applicants", href: "/director/applicants", Icon: Users },
+    ...(permissions.viewApplicants !== false
+      ? [{ title: "Applicants", href: "/director/applicants", Icon: Users }]
+      : []),
     { title: "Matched", href: "/director/matched", Icon: Sparkles },
     { title: "Messages", href: "/director/messages", Icon: MessageSquare },
     { title: "Billing / Add-ons", href: "/director/billing", Icon: CreditCard },
@@ -67,8 +75,9 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
 
   return (
     <aside className={cn("w-64 bg-card border-r border-border flex flex-col", className)}>
-      <div className="p-3 border-b border-border">
+      <div className="p-3 border-b border-border space-y-3">
         <Logo />
+        <WorkspaceSwitcher />
       </div>
       
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

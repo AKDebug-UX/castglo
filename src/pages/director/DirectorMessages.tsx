@@ -4,10 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function DirectorMessages() {
   const { user } = useAuth();
-  const { activeWorkspace, getGrantedProjectIds } = useWorkspace();
+  const { activeWorkspace, getGrantedProjectIds, getPermissionsForProject } = useWorkspace();
+  const permissions = getPermissionsForProject();
 
   // Are we acting on behalf of a director's workspace?
   const isCollaboratorMode = activeWorkspace !== "Personal";
+  const canSendMessages = permissions.sendMessages !== false;
 
   // IDs of projects this collaborator can see (empty = workspace-wide access → show all)
   const grantedProjectIds = isCollaboratorMode ? getGrantedProjectIds() : [];
@@ -19,7 +21,7 @@ export default function DirectorMessages() {
 
   // Director name shown in attribution ("on behalf of …")
   const directorName = isCollaboratorMode && activeWorkspace !== "Personal"
-    ? (activeWorkspace as any).owner?.fullName
+    ? (activeWorkspace as any).ownerProfile?.fullName || (activeWorkspace as any).owner?.fullName
     : undefined;
 
   return (
@@ -30,6 +32,7 @@ export default function DirectorMessages() {
       grantedProjectIds={grantedProjectIds}
       collaboratorLabel={collaboratorLabel}
       directorName={directorName}
+      canSendMessages={canSendMessages}
     />
   );
 }

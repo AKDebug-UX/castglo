@@ -234,6 +234,16 @@ const App = () => {
                   <Collaborators />
                 </ProtectedRoute>
               } />
+              <Route path="/dashboard/settings/team" element={
+                <ProtectedRoute allowedRoles={["casting_director", "industry_professional", "admin"]}>
+                  <Collaborators />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings/team" element={
+                <ProtectedRoute allowedRoles={["casting_director", "industry_professional", "admin"]}>
+                  <Collaborators />
+                </ProtectedRoute>
+              } />
 
               {/* Talent Dashboard Routes */}
               <Route
@@ -284,6 +294,7 @@ const App = () => {
                 <Route path="livestreams" element={<LivestreamsList />} />
                 <Route path="audition" element={<InstantAudition />} />
                 <Route path="collaborators" element={<Collaborators />} />
+                <Route path="settings/team" element={<Collaborators />} />
                 <Route path="livestream/:id" element={<Livestream />} />
               </Route>
 
