@@ -459,14 +459,31 @@ export default function ApplicantsManagement() {
       }
       // Use the role-level pipeline endpoint when project context is known
       const app = applicants.find(a => (a._id || a.id) === appId);
-      const projId = selectedProject !== "all" ? selectedProject : (typeof app?.castingCall === "object" ? (app.castingCall._id || app.castingCall.id) : app?.castingCall);
+      const projId = typeof app?.castingCall === "object"
+        ? (app.castingCall._id || app.castingCall.id)
+        : (app?.castingCall || (selectedProject !== "all" ? selectedProject : ""));
       const roleId = app?.roleId;
 
       if (projId && roleId && roleId !== "general") {
-        // Prefer the authoritative project-scoped endpoint
-        await projectAPI.updateApplicantStatus(projId, roleId, appId, { status: toStatus });
+        try {
+          await projectAPI.updateApplicantStatus(projId as string, roleId, appId, { status: toStatus });
+        } catch {
+          if (toStatus === "shortlist") {
+            await applicationAPI.shortlist(appId);
+          } else if (toStatus === "contacting") {
+            await applicationAPI.contact(appId);
+          } else if (toStatus === "declined") {
+            await applicationAPI.reject(appId);
+          } else if (toStatus === "hired") {
+            await applicationAPI.accept(appId);
+          } else {
+            await applicationAPI.update(appId, { status: toStatus });
+          }
+        }
       } else if (toStatus === "shortlist") {
         await applicationAPI.shortlist(appId);
+      } else if (toStatus === "contacting") {
+        await applicationAPI.contact(appId);
       } else if (toStatus === "declined") {
         await applicationAPI.reject(appId);
       } else if (toStatus === "hired") {
@@ -476,7 +493,7 @@ export default function ApplicantsManagement() {
         await applicationAPI.update(appId, { status: toStatus });
       }
 
-      setApplicants(prev => prev.map(a => (a._id || a.id) === appId ? { ...a, status: toStatus } : a));
+      setApplicants(prev => prev.map(a => (a._id || a.id) === appId ? { ...a, status: normalizePipelineStage(toStatus) } : a));
       toast.success("Applicant moved.");
     } catch {
       toast.error("Failed to update status.");

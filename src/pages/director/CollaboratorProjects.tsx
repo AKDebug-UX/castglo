@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { collaboratorAPI, api } from '@/lib/api';
+import { collaboratorAPI, projectAPI, castingCallAPI, applicationAPI, api } from '@/lib/api';
 import { Collaborator } from '@/types/collaborator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -54,12 +54,17 @@ export default function CollaboratorProjects() {
         // Derive projects: if selected_projects scope, map projectGrants
         let sharedProjects: any[] = [];
         if (data.projectGrants && data.projectGrants.length > 0) {
-          sharedProjects = data.projectGrants.map((g) => g.project || {
-            id: g.projectId,
-            title: `Project ${g.projectId.slice(0, 8)}`,
-            status: 'Active',
-            rolesCount: 0,
-            applicantsCount: 0,
+          sharedProjects = data.projectGrants.map((g: any) => {
+            const projObj = g.project || (typeof g.projectId === 'object' ? g.projectId : null);
+            const pId = typeof g.projectId === 'object' ? (g.projectId._id || g.projectId.id) : (g.projectId || g.id);
+            return projObj || {
+              id: pId,
+              _id: pId,
+              title: projObj?.title || projObj?.projectName || (pId ? `Project ${String(pId).slice(0, 8)}` : 'Project'),
+              status: projObj?.status || 'Active',
+              rolesCount: projObj?.rolesCount || (Array.isArray(projObj?.roles) ? projObj.roles.length : 0),
+              applicantsCount: projObj?.applicantsCount || projObj?.applicationCount || (Array.isArray(projObj?.applicants) ? projObj.applicants.length : 0),
+            };
           });
         }
 
@@ -76,7 +81,77 @@ export default function CollaboratorProjects() {
           }
         }
 
-        setProjects(sharedProjects);
+        // Enrich projects with real titles, roles count, and applicants count
+        const enrichedProjects = await Promise.all(
+          sharedProjects.map(async (proj: any) => {
+            const pId = proj._id || proj.id || proj.projectId;
+            if (!pId) return proj;
+
+            let title = proj.title || proj.projectName || proj.name;
+            let status = proj.status || proj.project_status || 'Active';
+            let rolesCount = proj.rolesCount || (Array.isArray(proj.roles) ? proj.roles.length : 0);
+            let applicantsCount = proj.applicantsCount || proj.applicationCount || (Array.isArray(proj.applicants) ? proj.applicants.length : 0);
+
+            // Fetch actual project details
+            try {
+              const res = await projectAPI.getOne(pId).catch(() => null) || await castingCallAPI.getOne(pId).catch(() => null);
+              const fetchedData = res?.data?.data?.castingCall || res?.data?.data?.project || res?.data?.data;
+              if (fetchedData) {
+                if (fetchedData.projectName || fetchedData.title) {
+                  title = fetchedData.projectName || fetchedData.title;
+                }
+                if (fetchedData.status || fetchedData.project_status) {
+                  status = fetchedData.status || fetchedData.project_status;
+                }
+                if (Array.isArray(fetchedData.roles)) {
+                  rolesCount = fetchedData.roles.length;
+                } else if (typeof fetchedData.rolesCount === 'number') {
+                  rolesCount = fetchedData.rolesCount;
+                }
+                if (typeof fetchedData.applicationCount === 'number') {
+                  applicantsCount = fetchedData.applicationCount;
+                } else if (typeof fetchedData.applicantsCount === 'number') {
+                  applicantsCount = fetchedData.applicantsCount;
+                } else if (Array.isArray(fetchedData.applicants)) {
+                  applicantsCount = fetchedData.applicants.length;
+                }
+              }
+            } catch {
+              // Ignore fetch error
+            }
+
+            // Always fetch exact applicant count for the casting call
+            try {
+              const appRes = await applicationAPI.getByCastingCall(pId).catch(() => null);
+              if (appRes?.data?.success || appRes?.data) {
+                const payload = appRes.data?.data || appRes.data;
+                const list = Array.isArray(payload) ? payload : (payload?.applicants || payload?.applications || []);
+                if (Array.isArray(list)) {
+                  applicantsCount = list.length;
+                }
+              }
+            } catch {
+              // Ignore fetch error
+            }
+
+            // Fallback title formatting
+            if (!title || (title.startsWith('Project ') && title.length > 15)) {
+              title = `Project ${String(pId).slice(-6).toUpperCase()}`;
+            }
+
+            return {
+              ...proj,
+              id: pId,
+              _id: pId,
+              title,
+              status,
+              rolesCount,
+              applicantsCount,
+            };
+          })
+        );
+
+        setProjects(enrichedProjects);
       } catch (err: any) {
         toast.error(err?.response?.data?.message || 'Failed to load workspace projects');
       } finally {
