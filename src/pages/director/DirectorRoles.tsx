@@ -68,7 +68,7 @@ export default function DirectorRoles() {
           }
           
           if (extractedProjects.length === 0) {
-            let singleProject = activeWorkspace.project || activeWorkspace.castingCall;
+            let singleProject = (activeWorkspace as any).project || (activeWorkspace as any).castingCall;
             if (singleProject && typeof singleProject === 'string') {
               const res = await projectAPI.getOne(singleProject).catch(() => null);
               const data = res?.data?.data;
@@ -85,10 +85,12 @@ export default function DirectorRoles() {
 
       try {
         const ownerId = !isPersonal ? (
-          activeWorkspace.owner?._id || 
-          activeWorkspace.owner || 
-          activeWorkspace.inviter?._id || 
-          activeWorkspace.inviter
+          activeWorkspace.ownerId ||
+          activeWorkspace.ownerProfile?.id ||
+          (activeWorkspace as any).owner?._id || 
+          (activeWorkspace as any).owner || 
+          (activeWorkspace as any).inviter?._id || 
+          (activeWorkspace as any).inviter
         ) : null;
 
         if (!isPersonal && !ownerId) {

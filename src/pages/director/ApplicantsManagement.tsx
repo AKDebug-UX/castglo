@@ -60,6 +60,7 @@ interface Applicant {
 
 interface Project {
   _id: string;
+  id?: string;
   title: string;
   projectName?: string;
   roles?: { id: string; title: string }[];
@@ -85,9 +86,106 @@ const MOVE_TO_OPTIONS: { label: string; value: PipelineStage }[] = [
   { label: "Decline",            value: "declined" },
 ];
 
-// ── Helper ────────────────────────────────────────────────────────────────────
 const getInitials = (name?: string) =>
   name ? name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() : "?";
+
+const resolveTalentName = (a: any, resolvedUser: any): string => {
+  const isInvalid = (val: any) =>
+    !val || typeof val !== "string" || !val.trim() ||
+    ["unknown talent", "unknown", "null", "undefined"].includes(val.trim().toLowerCase());
+
+  const tryExtractName = (obj: any): string | null => {
+    if (!obj || typeof obj !== "object") return null;
+
+    // Check nested objects first
+    if (obj.user && typeof obj.user === "object") {
+      const res = tryExtractName(obj.user);
+      if (res) return res;
+    }
+    if (obj.profile && typeof obj.profile === "object") {
+      const res = tryExtractName(obj.profile);
+      if (res) return res;
+    }
+    if (obj.userId && typeof obj.userId === "object") {
+      const res = tryExtractName(obj.userId);
+      if (res) return res;
+    }
+    if (obj.talentId && typeof obj.talentId === "object") {
+      const res = tryExtractName(obj.talentId);
+      if (res) return res;
+    }
+    if (obj.talent && typeof obj.talent === "object") {
+      const res = tryExtractName(obj.talent);
+      if (res) return res;
+    }
+    if (obj.applicant && typeof obj.applicant === "object") {
+      const res = tryExtractName(obj.applicant);
+      if (res) return res;
+    }
+    if (obj.talentUser && typeof obj.talentUser === "object") {
+      const res = tryExtractName(obj.talentUser);
+      if (res) return res;
+    }
+
+    // Direct full name fields
+    if (!isInvalid(obj.fullName)) return obj.fullName.trim();
+    if (!isInvalid(obj.full_name)) return obj.full_name.trim();
+    if (!isInvalid(obj.displayName)) return obj.displayName.trim();
+    if (!isInvalid(obj.display_name)) return obj.display_name.trim();
+    if (!isInvalid(obj.name)) return obj.name.trim();
+    if (!isInvalid(obj.talentName)) return obj.talentName.trim();
+    if (!isInvalid(obj.applicantName)) return obj.applicantName.trim();
+
+    // First and last name combinations
+    const first = (obj.firstName || obj.first_name || obj.givenName || "").trim();
+    const last = (obj.lastName || obj.last_name || obj.familyName || "").trim();
+    if (first || last) {
+      const combined = `${first} ${last}`.trim();
+      if (!isInvalid(combined)) return combined;
+    }
+
+    if (!isInvalid(obj.username)) return obj.username.trim();
+
+    return null;
+  };
+
+  // 1. Try from resolvedUser
+  let name = tryExtractName(resolvedUser);
+  if (name) return name;
+
+  // 2. Try from application 'a' nested objects
+  name = tryExtractName(a.talent) ||
+         tryExtractName(a.talentUser) ||
+         tryExtractName(a.talentId) ||
+         tryExtractName(a.userId) ||
+         tryExtractName(a.talentUserId) ||
+         tryExtractName(a.applicant) ||
+         tryExtractName(a.user) ||
+         tryExtractName(a.profile) ||
+         tryExtractName(a.applicantDetails) ||
+         tryExtractName(a.metaData);
+  if (name) return name;
+
+  // 3. Try top-level properties on 'a'
+  name = tryExtractName(a);
+  if (name) return name;
+
+  // 4. Try email address if available
+  const email = resolvedUser?.email || a.email || a.talentEmail || a.talentId?.email || a.userId?.email || a.user?.email || a.talentUser?.email || "";
+  if (email && typeof email === "string" && email.includes("@")) {
+    const prefix = email.split("@")[0];
+    const formatted = prefix.replace(/[._-]/g, " ").replace(/\b\w/g, c => c.toUpperCase()).trim();
+    if (formatted) return formatted;
+  }
+
+  // 5. Fallback using ID reference
+  const rawId = a._id || a.id || (typeof a.talentId === "string" ? a.talentId : null) || (typeof a.userId === "string" ? a.userId : null);
+  if (rawId && typeof rawId === "string") {
+    return `Applicant #${rawId.slice(-4).toUpperCase()}`;
+  }
+
+  return "Applicant";
+};
 
 // ── Main Component ─────────────────────────────────────────────────────────
 export default function ApplicantsManagement() {
@@ -144,7 +242,7 @@ export default function ApplicantsManagement() {
             }
             
             if (extractedProjects.length === 0) {
-              let singleProject = activeWorkspace.project || activeWorkspace.castingCall;
+              let singleProject = (activeWorkspace as any).project || (activeWorkspace as any).castingCall;
               if (singleProject && typeof singleProject === 'string') {
                 const res = await projectAPI.getOne(singleProject).catch(() => null);
                 const data = res?.data?.data;
@@ -161,10 +259,12 @@ export default function ApplicantsManagement() {
 
         try {
           const ownerId = !isPersonal ? (
-            activeWorkspace.owner?._id || 
-            activeWorkspace.owner || 
-            activeWorkspace.inviter?._id || 
-            activeWorkspace.inviter
+            activeWorkspace.ownerId ||
+            activeWorkspace.ownerProfile?.id ||
+            (activeWorkspace as any).owner?._id || 
+            (activeWorkspace as any).owner || 
+            (activeWorkspace as any).inviter?._id || 
+            (activeWorkspace as any).inviter
           ) : null;
 
           if (!isPersonal && !ownerId) {
@@ -221,31 +321,49 @@ export default function ApplicantsManagement() {
               const userObj = (typeof a.userId === "object" ? a.userId : null) || 
                               (typeof a.talentId === "object" ? a.talentId : null) || 
                               (typeof a.talentUserId === "object" ? a.talentUserId : null) ||
-                              a.talentUser || a.talent || a.user;
+                              (typeof a.applicantId === "object" ? a.applicantId : null) ||
+                              a.talentUser || a.talent || a.user || a.applicant || a.profile;
                               
               let resolvedUser: any = userObj;
               
               if (!resolvedUser) {
                 const tId = (typeof a.talentId === "string" ? a.talentId : null) ||
                             (typeof a.userId === "string" ? a.userId : null) ||
-                            (typeof a.talentUserId === "string" ? a.talentUserId : null);
+                            (typeof a.talentUserId === "string" ? a.talentUserId : null) ||
+                            (typeof a.applicantId === "string" ? a.applicantId : null) ||
+                            (typeof a.applicant === "string" ? a.applicant : null);
                 if (tId) {
                   try {
                     const uRes = await userAPI.getOne(tId);
-                    if (uRes.data?.success) {
-                      resolvedUser = uRes.data.data;
+                    if (uRes.data?.success || uRes.data?.user || uRes.data?.data) {
+                      resolvedUser = uRes.data?.data?.user || uRes.data?.data?.profile || uRes.data?.data || uRes.data?.user || uRes.data;
                     }
                   } catch (err) {
                     console.error("Failed to load talent profile in ApplicantsManagement:", tId, err);
                   }
                 }
               }
+
+              // Fallback: If user is still not resolved, try fetching detailed application
+              if (!resolvedUser && (a._id || a.id)) {
+                try {
+                  const detailsRes = await applicationAPI.getDetails(a._id || a.id);
+                  if (detailsRes.data?.success && detailsRes.data?.data) {
+                    const d = detailsRes.data.data;
+                    resolvedUser = (typeof d.talentId === "object" ? d.talentId : null) ||
+                                   (typeof d.talentUserId === "object" ? d.talentUserId : null) ||
+                                   d.talentUser || d.talent || d.user || d.profile;
+                  }
+                } catch {
+                  // Ignore fallback error
+                }
+              }
                               
               const talentData = {
                 _id: resolvedUser?._id || resolvedUser?.id || (typeof a.userId === "string" ? a.userId : (typeof a.talentUserId === "string" ? a.talentUserId : a.talentId)),
-                fullName: resolvedUser?.fullName || resolvedUser?.name || a.fullName || a.displayName || "Unknown Talent",
-                profilePicture: resolvedUser?.profilePicture || resolvedUser?.profile_photo || a.profilePicture,
-                email: resolvedUser?.email || a.email || a.talentEmail || "",
+                fullName: resolveTalentName(a, resolvedUser),
+                profilePicture: resolvedUser?.profilePicture || resolvedUser?.profile_photo || resolvedUser?.avatar || a.profilePicture || a.talentId?.profilePicture || a.userId?.profilePicture || a.talent?.profilePicture,
+                email: resolvedUser?.email || a.email || a.talentEmail || a.talentId?.email || a.userId?.email || "",
               };
 
               const resolvedRoleName = a.appliedRole || a.role?.role_name || a.role?.title || "General Application";
@@ -465,7 +583,7 @@ export default function ApplicantsManagement() {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate">{app.talent?.fullName || "Unknown Talent"}</p>
+            <p className="text-sm font-semibold truncate">{app.talent?.fullName || "Applicant"}</p>
             {app.roleName && (
               <p className="text-[11px] text-muted-foreground truncate">↳ {app.roleName}</p>
             )}
@@ -739,7 +857,7 @@ export default function ApplicantsManagement() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold truncate">{app.talent?.fullName || "Unknown"}</p>
+                          <p className="text-sm font-semibold truncate">{app.talent?.fullName || "Applicant"}</p>
                           <p className="text-xs text-muted-foreground">{new Date(app.createdAt).toLocaleDateString()}</p>
                         </div>
                       </div>
