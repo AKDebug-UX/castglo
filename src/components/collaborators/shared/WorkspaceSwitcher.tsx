@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -14,6 +15,7 @@ import { Check, ChevronDown, Building2, User, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const WorkspaceSwitcher: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { activeWorkspace, collaborations, switchWorkspace } = useWorkspace();
 
@@ -38,6 +40,18 @@ export const WorkspaceSwitcher: React.FC = () => {
           .slice(0, 2)
           .toUpperCase()
       : "WS";
+
+  const handleSwitchPersonal = () => {
+    switchWorkspace("Personal");
+    const roleRoutes: Record<string, string> = {
+      admin: "/admin",
+      talent: "/talent",
+      casting_director: "/director",
+      industry_professional: "/professional",
+    };
+    const target = roleRoutes[user?.role || "talent"] || "/talent";
+    navigate(target);
+  };
 
   if (!user) return null;
 
@@ -82,7 +96,7 @@ export const WorkspaceSwitcher: React.FC = () => {
 
         {/* Personal Workspace Option */}
         <DropdownMenuItem
-          onClick={() => switchWorkspace("Personal")}
+          onClick={handleSwitchPersonal}
           className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors ${
             isPersonal
               ? "bg-primary/10 text-primary font-medium"

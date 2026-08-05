@@ -5,11 +5,13 @@ import { Collaborator } from '@/types/collaborator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, ArrowLeft, FolderKanban, ChevronRight, Eye, Film, AlertCircle } from 'lucide-react';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { toast } from 'sonner';
 
 export default function CollaboratorProjects() {
   const { collaboratorId } = useParams<{ collaboratorId: string }>();
   const navigate = useNavigate();
+  const { switchWorkspace } = useWorkspace();
 
   const [collaboration, setCollaboration] = useState<Collaborator | null>(null);
   const [projects, setProjects] = useState<any[]>([]);
@@ -169,7 +171,12 @@ export default function CollaboratorProjects() {
                 </div>
 
                 <Button
-                  onClick={() => navigate(`/director/projects/${proj.id}`)}
+                  onClick={() => {
+                    if (collaboration?.id || collaboration?.ownerId) {
+                      switchWorkspace(collaboration.id || collaboration.ownerId);
+                    }
+                    navigate(`/director/projects/${proj.id}`);
+                  }}
                   className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium flex items-center justify-center gap-2 text-xs py-2.5 rounded-xl shadow-sm"
                 >
                   <Eye className="w-3.5 h-3.5" />

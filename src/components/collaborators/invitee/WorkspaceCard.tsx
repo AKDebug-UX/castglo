@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Globe, FolderKanban, ArrowRight, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 
 interface WorkspaceCardProps {
   collaboration: Collaborator;
@@ -12,6 +13,7 @@ interface WorkspaceCardProps {
 
 export const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ collaboration }) => {
   const navigate = useNavigate();
+  const { switchWorkspace } = useWorkspace();
   const ownerName =
     collaboration.ownerProfile?.fullName || collaboration.ownerProfile?.email || 'Workspace Owner';
   const companyName = collaboration.ownerProfile?.companyName;
@@ -96,11 +98,14 @@ export const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ collaboration }) =
       {/* Action button */}
       <div className="pt-3 border-t border-slate-100">
         <Button
-          onClick={() => navigate(`/collaborations/${collaboration.id}/projects`)}
+          onClick={() => {
+            switchWorkspace(collaboration.id || collaboration.ownerId);
+            navigate(`/collaborations/${collaboration.id}/projects`);
+          }}
           className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium flex items-center justify-center gap-2 text-xs py-2.5 rounded-xl shadow-sm"
         >
-          <span>View Shared Projects</span>
-          <ArrowRight className="w-4 h-4" />
+          <span>View Workspace Projects</span>
+          <ArrowRight className="w-3.5 h-3.5" />
         </Button>
       </div>
     </div>

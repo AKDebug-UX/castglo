@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { 
@@ -15,8 +15,10 @@ import {
   FolderKanban,
   Video,
   Radio,
-  ChevronDown
+  ChevronDown,
+  ArrowLeft
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -29,8 +31,9 @@ interface DirectorSidebarProps {
 
 export function DirectorSidebar({ className }: DirectorSidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const { getPermissionsForProject, activeWorkspace } = useWorkspace();
+  const { getPermissionsForProject, activeWorkspace, switchWorkspace } = useWorkspace();
   const permissions = getPermissionsForProject();
 
   const isCollaborationsActive = 
@@ -44,10 +47,12 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
   const [collaborationsOpen, setCollaborationsOpen] = useState(isCollaborationsActive);
   const [auditionsOpen, setAuditionsOpen] = useState(isAuditionsActive);
 
+  const isCollaboratorMode = activeWorkspace !== "Personal";
+
   const topNavItems = [
-    { title: "Dashboard", href: "/director", Icon: LayoutDashboard },
-    { title: "Profile", href: "/director/profile", Icon: UserCircle },
-    { title: "Deliverable History", href: user?.id ? `/director/${user.id}?tab=deliverables` : "/director/profile", Icon: Award },
+    ...(!isCollaboratorMode ? [{ title: "Dashboard", href: "/director", Icon: LayoutDashboard }] : []),
+    ...(!isCollaboratorMode ? [{ title: "Profile", href: "/director/profile", Icon: UserCircle }] : []),
+    ...(!isCollaboratorMode ? [{ title: "Deliverable History", href: user?.id ? `/director/${user.id}?tab=deliverables` : "/director/profile", Icon: Award }] : []),
     { title: "Projects", href: "/director/projects", Icon: FolderOpen },
   ];
 
@@ -68,9 +73,11 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
       ? [{ title: "Applicants", href: "/director/applicants", Icon: Users }]
       : []),
     { title: "Matched", href: "/director/matched", Icon: Sparkles },
-    { title: "Messages", href: "/director/messages", Icon: MessageSquare },
-    { title: "Billing / Add-ons", href: "/director/billing", Icon: CreditCard },
-    { title: "Settings", href: "/director/settings", Icon: Settings },
+    ...(permissions.sendMessages !== false
+      ? [{ title: "Messages", href: "/director/messages", Icon: MessageSquare }]
+      : []),
+    ...(!isCollaboratorMode ? [{ title: "Billing / Add-ons", href: "/director/billing", Icon: CreditCard }] : []),
+    ...(!isCollaboratorMode ? [{ title: "Settings", href: "/director/settings", Icon: Settings }] : []),
   ];
 
   return (
@@ -78,6 +85,21 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
       <div className="p-3 border-b border-border space-y-3">
         <Logo />
         <WorkspaceSwitcher />
+        {user?.role !== "casting_director" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              switchWorkspace("Personal");
+              const target = user?.role === "industry_professional" ? "/professional" : user?.role === "admin" ? "/admin" : "/talent";
+              navigate(target);
+            }}
+            className="w-full justify-start gap-2 text-xs font-semibold text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 py-2.5 h-auto transition-all"
+          >
+            <ArrowLeft className="w-4 h-4 shrink-0" />
+            <span>Return to My Dashboard</span>
+          </Button>
+        )}
       </div>
       
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

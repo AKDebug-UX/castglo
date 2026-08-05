@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
-  const { activeWorkspace } = useWorkspace();
+  const { activeWorkspace, collaborations } = useWorkspace();
   const location = useLocation();
 
   if (isLoading) {
@@ -36,8 +36,26 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Bypass role restriction if user is acting as a collaborator in a Casting Director workspace
-    if (location.pathname.startsWith("/director") && activeWorkspace !== "Personal") {
+    // Bypass role restriction for specific collaborator routes if user is acting as a collaborator in a Casting Director workspace
+    const savedWorkspaceId = localStorage.getItem("active_workspace_id");
+    const isCollaboratorActive = 
+      activeWorkspace !== "Personal" || 
+      (savedWorkspaceId && savedWorkspaceId !== "Personal") || 
+      (collaborations && collaborations.length > 0);
+
+    if (location.pathname.startsWith("/director") && isCollaboratorActive) {
+      const path = location.pathname;
+      const isOwnerOnlyRoute =
+        path === "/director" ||
+        path === "/director/" ||
+        path.startsWith("/director/billing") ||
+        path.startsWith("/director/profile") ||
+        (path.startsWith("/director/settings") && !path.startsWith("/director/settings/team"));
+
+      if (isOwnerOnlyRoute) {
+        return <Navigate to="/collaborations" replace />;
+      }
+
       return <>{children}</>;
     }
 
