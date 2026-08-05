@@ -45,6 +45,7 @@ interface Applicant {
     _id?: string; 
     id?: string;
     fullName?: string; 
+    email?: string;
     profilePicture?: string;
     years_of_experience?: string;
     experience_level?: string;
@@ -54,6 +55,7 @@ interface Applicant {
   createdAt: string;
   coverLetter?: string;
   castingCall?: { _id?: string; id?: string; title?: string } | string;
+  roleId?: string;
   roleName?: string;
   note?: string;
 }
@@ -185,6 +187,21 @@ const resolveTalentName = (a: any, resolvedUser: any): string => {
   }
 
   return "Applicant";
+};
+
+const normalizePipelineStage = (rawStatus?: string): PipelineStage => {
+  if (!rawStatus) return "review";
+  const s = rawStatus.toLowerCase().trim();
+  if (s === "shortlisted" || s === "shortlist") return "shortlist";
+  if (s === "accepted" || s === "hired") return "hired";
+  if (s === "rejected" || s === "declined") return "declined";
+  if (s === "contacting") return "contacting";
+  if (s === "audition_requested" || s === "audition") return "audition_requested";
+  if (s === "self_tape_requested") return "self_tape_requested";
+  if (s === "invite") return "invite";
+  if (s === "offer") return "offer";
+  if (s === "matched") return "matched";
+  return "review";
 };
 
 // ── Main Component ─────────────────────────────────────────────────────────
@@ -373,6 +390,7 @@ export default function ApplicantsManagement() {
                 ...a, 
                 _id: a._id || a.id,
                 id: a._id || a.id,
+                status: normalizePipelineStage(a.status),
                 talent: talentData,
                 roleId: resolvedRoleId,
                 roleName: resolvedRoleName,
@@ -409,7 +427,8 @@ export default function ApplicantsManagement() {
   const currentProject = projects.find(p => (p._id || p.id) === selectedProject);
   const filteredApplicants = useMemo(() => {
     return applicants.filter(a => {
-      if (selectedProject !== "all" && (a.castingCall?._id || a.castingCall?.id) !== selectedProject) return false;
+      const castingCallId = typeof a.castingCall === "object" ? (a.castingCall?._id || a.castingCall?.id) : a.castingCall;
+      if (selectedProject !== "all" && castingCallId !== selectedProject) return false;
       if (selectedRole !== "all" && a.roleName !== selectedRole) return false;
       if (selectedFolder !== "all" && a.folder_name !== selectedFolder) return false;
       if (searchQuery) {
@@ -425,7 +444,7 @@ export default function ApplicantsManagement() {
     const map: Record<string, Applicant[]> = {};
     STAGES.forEach(s => { map[s.key] = []; });
     filteredApplicants.forEach(a => {
-      const stage = a.status || "review";
+      const stage = normalizePipelineStage(a.status);
       if (map[stage]) map[stage].push(a); else map["review"].push(a);
     });
     return map;
@@ -440,8 +459,8 @@ export default function ApplicantsManagement() {
       }
       // Use the role-level pipeline endpoint when project context is known
       const app = applicants.find(a => (a._id || a.id) === appId);
-      const projId = selectedProject !== "all" ? selectedProject : (app?.castingCall?._id || app?.castingCall?.id);
-      const roleId  = app?.roleId as string | undefined;
+      const projId = selectedProject !== "all" ? selectedProject : (typeof app?.castingCall === "object" ? (app.castingCall._id || app.castingCall.id) : app?.castingCall);
+      const roleId = app?.roleId;
 
       if (projId && roleId && roleId !== "general") {
         // Prefer the authoritative project-scoped endpoint
@@ -560,7 +579,8 @@ export default function ApplicantsManagement() {
       ? app.castingCall
       : (app.castingCall?._id || app.castingCall?.id || (app as any).castingCallId || (app as any).projectId || (app as any).project?._id || (app as any).project?.id);
     const projectPermissions = getPermissionsForProject(projId);
-    const stage = STAGE_MAP[app.status as PipelineStage] || STAGE_MAP["review"];
+    const stageKey = normalizePipelineStage(app.status);
+    const stage = STAGE_MAP[stageKey] || STAGE_MAP["review"];
     
     return (
       <div
@@ -621,7 +641,7 @@ export default function ApplicantsManagement() {
               )}
               <DropdownMenuSeparator />
               <p className="text-[11px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider">Move to</p>
-              {MOVE_TO_OPTIONS.filter(o => o.value !== app.status).map(opt => (
+              {MOVE_TO_OPTIONS.filter(o => o.value !== normalizePipelineStage(app.status)).map(opt => (
                 <DropdownMenuItem key={opt.value} onClick={() => updateStatus(targetId, opt.value)}>
                   <ArrowRight className="w-4 h-4 mr-2" /> {opt.label}
                 </DropdownMenuItem>
