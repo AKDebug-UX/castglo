@@ -192,15 +192,15 @@ const resolveTalentName = (a: any, resolvedUser: any): string => {
 const normalizePipelineStage = (rawStatus?: string): PipelineStage => {
   if (!rawStatus) return "review";
   const s = rawStatus.toLowerCase().trim();
-  if (s === "shortlisted" || s === "shortlist") return "shortlist";
-  if (s === "accepted" || s === "hired") return "hired";
-  if (s === "rejected" || s === "declined") return "declined";
-  if (s === "contacting") return "contacting";
-  if (s === "audition_requested" || s === "audition") return "audition_requested";
-  if (s === "self_tape_requested") return "self_tape_requested";
-  if (s === "invite") return "invite";
-  if (s === "offer") return "offer";
-  if (s === "matched") return "matched";
+  if (["shortlisted", "shortlist"].includes(s)) return "shortlist";
+  if (["contacting", "contact"].includes(s)) return "contacting";
+  if (["accepted", "hired", "hire"].includes(s)) return "hired";
+  if (["rejected", "declined", "decline"].includes(s)) return "declined";
+  if (["audition_requested", "audition", "auditioning"].includes(s)) return "audition_requested";
+  if (["self_tape_requested", "selftape", "self_tape"].includes(s)) return "self_tape_requested";
+  if (["invite", "invited"].includes(s)) return "invite";
+  if (["offer", "offered"].includes(s)) return "offer";
+  if (["matched", "match"].includes(s)) return "matched";
   return "review";
 };
 
@@ -646,7 +646,7 @@ export default function ApplicantsManagement() {
               <DropdownMenuItem onClick={() => setDetailsModalAppId(targetId)}>
                 <MessageSquare className="w-4 h-4 mr-2" /> Details & Comm
               </DropdownMenuItem>
-              {app.status === "contacting" && (
+              {normalizePipelineStage(app.status) === "contacting" && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>

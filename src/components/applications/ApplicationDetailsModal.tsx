@@ -112,12 +112,25 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
   };
 
   const statusColors: Record<string, string> = {
-    "pending": "bg-blue-500 text-white",
+    "pending": "bg-slate-500 text-white",
     "submitted": "bg-slate-500 text-white",
+    "review": "bg-slate-500 text-white",
+    "under_review": "bg-slate-500 text-white",
     "viewed": "bg-blue-400 text-white",
-    "shortlisted": "bg-amber-500 text-white",
+    "shortlist": "bg-blue-600 text-white",
+    "shortlisted": "bg-blue-600 text-white",
+    "contacting": "bg-purple-600 text-white",
+    "contact": "bg-purple-600 text-white",
+    "audition_requested": "bg-indigo-600 text-white",
+    "audition": "bg-indigo-600 text-white",
+    "self_tape_requested": "bg-indigo-500 text-white",
+    "invite": "bg-purple-500 text-white",
+    "offer": "bg-amber-600 text-white",
+    "declined": "bg-rose-500 text-white",
     "rejected": "bg-rose-500 text-white",
-    "accepted": "bg-emerald-500 text-white",
+    "hired": "bg-emerald-600 text-white",
+    "accepted": "bg-emerald-600 text-white",
+    "matched": "bg-indigo-600 text-white",
     "withdrawn": "bg-slate-300 text-slate-700",
   };
 
