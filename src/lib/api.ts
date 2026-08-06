@@ -42,7 +42,6 @@ export const API_ENDPOINTS = {
     DETAILS: (applicationId: string) => `/applications/details/${applicationId}`,
     UPDATE: (applicationId: string) => `/applications/${applicationId}`,
     SHORTLIST: (applicationId: string) => `/applications/${applicationId}/shortlist`,
-    CONTACT: (applicationId: string) => `/applications/${applicationId}/contact`,
     CONTACTING: (applicationId: string) => `/applications/${applicationId}/contacting`,
     REJECT: (applicationId: string) => `/applications/${applicationId}/reject`,
     ACCEPT: (applicationId: string) => `/applications/${applicationId}/accept`,
@@ -432,53 +431,35 @@ export const applicationAPI = {
   getByCastingCall: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.BY_CASTING_CALL(ensureValidId(id, "Casting Call ID"))),
   getDetails: (id: string) => api.get(API_ENDPOINTS.APPLICATIONS.DETAILS(ensureValidId(id))),
   shortlist: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.SHORTLIST(ensureValidId(id))),
-  contact: async (id: string) => {
-    const validId = ensureValidId(id);
-    try {
-      return await api.put(API_ENDPOINTS.APPLICATIONS.CONTACT(validId));
-    } catch (err: any) {
-      if (err.response?.status === 404) {
-        return await api.put(API_ENDPOINTS.APPLICATIONS.CONTACTING(validId));
-      }
-      throw err;
-    }
-  },
+  contact: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.CONTACTING(ensureValidId(id))),
   reject: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.REJECT(ensureValidId(id))),
   accept: (id: string) => api.put(API_ENDPOINTS.APPLICATIONS.ACCEPT(ensureValidId(id))),
   update: async (id: string, data: any) => {
     const validId = ensureValidId(id);
     if (data?.status === "contacting" || data?.status === "contact") {
-      try {
-        return await applicationAPI.contact(validId);
-      } catch (e) {
-        // Fall through to generic patch/put attempts if endpoint missing
-      }
+      return await applicationAPI.contact(validId);
     }
     try {
       return await api.patch(API_ENDPOINTS.APPLICATIONS.UPDATE(validId), data);
     } catch (err: any) {
       if (err.response?.status === 404) {
         try {
-          return await api.put(`/applications/${validId}/contact`, data);
+          return await api.put(API_ENDPOINTS.APPLICATIONS.CONTACTING(validId));
         } catch {
           try {
-            return await api.put(`/applications/${validId}/contacting`, data);
-          } catch {
-            try {
-              return await api.patch(`/applications/${validId}/status`, data);
-            } catch (err2: any) {
-              if (err2.response?.status === 404) {
-                try {
-                  return await api.put(`/applications/${validId}/status`, data);
-                } catch (err3: any) {
-                  if (err3.response?.status === 404) {
-                    return await api.put(`/applications/${validId}`, data);
-                  }
-                  throw err3;
+            return await api.patch(`/applications/${validId}/status`, data);
+          } catch (err2: any) {
+            if (err2.response?.status === 404) {
+              try {
+                return await api.put(`/applications/${validId}/status`, data);
+              } catch (err3: any) {
+                if (err3.response?.status === 404) {
+                  return await api.put(`/applications/${validId}`, data);
                 }
+                throw err3;
               }
-              throw err2;
             }
+            throw err2;
           }
         }
       }
