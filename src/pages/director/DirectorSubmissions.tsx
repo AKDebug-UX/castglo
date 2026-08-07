@@ -1,3 +1,6 @@
+import { Navigate } from "react-router-dom";
+
 export default function DirectorSubmissions() {
-  return null;
+  return <Navigate to="/director/applicants" replace />;
 }
+
