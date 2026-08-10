@@ -19,9 +19,9 @@ import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
 
 export interface PortfolioMediaGalleryProps {
-  profileData: never;
+  profileData: any;
   setProfileData: any;
-  pendingProfilePhoto: never;
+  pendingProfilePhoto: any;
   setPendingProfilePhoto: any;
   pendingPortfolioPhotos: any[];
   setPendingPortfolioPhotos?: React.Dispatch<React.SetStateAction<any[]>>;
@@ -217,7 +217,7 @@ export function PortfolioMediaGallery({
                             talent: {
                               ...(prev?.talent || {}),
                               headshots: (prev?.talent?.headshots || []).filter(
-                                (s: never) => s._id !== shot._id
+                                (s: any) => s._id !== shot._id
                               ),
                             },
                           }));

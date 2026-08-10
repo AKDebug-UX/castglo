@@ -780,9 +780,11 @@ export default function CreateCasting() {
           <h1 className="text-3xl font-bold">{isEditMode ? "Edit Project" : "Post a New Project"}</h1>
           <p className="text-muted-foreground">Find the perfect talent for your upcoming production</p>
         </div>
-        <Button variant="outline" onClick={handleAutoFill} type="button">
-          Auto-fill Mock Data
-        </Button>
+        {import.meta.env.DEV && (
+          <Button variant="outline" onClick={handleAutoFill} type="button">
+            Auto-fill Mock Data
+          </Button>
+        )}
       </div>
 
       {/* Stepper */}

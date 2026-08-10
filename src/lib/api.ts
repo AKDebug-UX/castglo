@@ -310,6 +310,25 @@ export const verificationAPI = {
   createDiditSession: () => api.post(API_ENDPOINTS.VERIFICATIONS.DIDIT_SESSION),
 };
 
+// --- SUBMISSION ENDPOINTS ---
+export const submissionAPI = {
+  getAll: (params?: any) => api.get(API_ENDPOINTS.SUBMISSIONS.GET_ALL, { params }),
+  getOne: (id: string) => api.get(API_ENDPOINTS.SUBMISSIONS.GET_ONE(id)),
+  updateStatus: (id: string, status: string) => api.patch(API_ENDPOINTS.SUBMISSIONS.UPDATE_STATUS(id), { status }),
+  getStats: () => api.get(API_ENDPOINTS.SUBMISSIONS.STATS),
+};
+
+// --- BOOKINGS ENDPOINTS ---
+export const bookingAPI = {
+  getProfessionalMe: (params?: any) => api.get(API_ENDPOINTS.BOOKINGS.PROFESSIONAL_ME, { params }),
+  getProfessionalBookings: (params?: any) => api.get(API_ENDPOINTS.BOOKINGS.PROFESSIONAL_ME, { params }),
+  updateStatus: (id: string, status: string) => api.patch(API_ENDPOINTS.BOOKINGS.UPDATE_STATUS(id), { status }),
+  getStats: () => api.get(API_ENDPOINTS.BOOKINGS.STATS),
+  adminGetAll: (params?: any) => api.get(API_ENDPOINTS.BOOKINGS.ADMIN_GET_ALL, { params }),
+  adminUpdateStatus: (id: string, status: string) => api.patch(API_ENDPOINTS.BOOKINGS.ADMIN_UPDATE_STATUS(id), { status }),
+  adminGetStats: () => api.get(API_ENDPOINTS.BOOKINGS.ADMIN_STATS),
+};
+
 // --- LIVESTREAM ENDPOINTS ---
 export const livestreamAPI = {
   create: (data) => api.post(API_ENDPOINTS.LIVESTREAM.CREATE, data),
@@ -472,13 +491,6 @@ export const applicationAPI = {
       typeof message === "string" ? { message } : message
     ),
   withdraw: (id: string) => api.delete(API_ENDPOINTS.APPLICATIONS.WITHDRAW(ensureValidId(id))),
-};
-
-// --- BOOKING ENDPOINTS ---
-export const bookingAPI = {
-  getProfessionalBookings: (params?) => api.get(API_ENDPOINTS.BOOKINGS.PROFESSIONAL_ME, { params }),
-  updateStatus: (id: string, status: string) => api.patch(API_ENDPOINTS.BOOKINGS.UPDATE_STATUS(id), { status }),
-  getStats: () => api.get(API_ENDPOINTS.BOOKINGS.STATS),
 };
 
 // --- SERVICE ENDPOINTS ---

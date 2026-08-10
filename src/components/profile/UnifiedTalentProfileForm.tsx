@@ -1055,19 +1055,21 @@ export function UnifiedTalentProfileForm({
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-end mb-4">
-        <Button 
-          variant="outline" 
-          onClick={() => {
-            const dummyData = generateDummyProfileData("talent");
-            onChange(dummyData);
-            toast.success("Mock data auto-filled!");
-          }} 
-          type="button"
-        >
-          Auto-fill Mock Data
-        </Button>
-      </div>
+      {import.meta.env.DEV && (
+        <div className="flex justify-end mb-4">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              const dummyData = generateDummyProfileData("talent");
+              onChange(dummyData);
+              toast.success("Mock data auto-filled!");
+            }} 
+            type="button"
+          >
+            Auto-fill Mock Data
+          </Button>
+        </div>
+      )}
       <Tabs
         value={activeTab}
         onValueChange={(value) => {

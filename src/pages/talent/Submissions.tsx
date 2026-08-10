@@ -1,3 +1,6 @@
+import { Navigate } from "react-router-dom";
+
 export default function Submissions() {
-  return null;
+  return <Navigate to="/talent/applications" replace />;
 }
+

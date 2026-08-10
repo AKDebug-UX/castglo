@@ -237,19 +237,21 @@ export function UnifiedProfessionalProfileForm({
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-end mb-4">
-        <Button 
-          variant="outline" 
-          onClick={() => {
-            const dummyData = generateDummyProfileData("professional");
-            onChange(dummyData);
-            toast.success("Mock data auto-filled!");
-          }} 
-          type="button"
-        >
-          Auto-fill Mock Data
-        </Button>
-      </div>
+      {import.meta.env.DEV && (
+        <div className="flex justify-end mb-4">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              const dummyData = generateDummyProfileData("professional");
+              onChange(dummyData);
+              toast.success("Mock data auto-filled!");
+            }} 
+            type="button"
+          >
+            Auto-fill Mock Data
+          </Button>
+        </div>
+      )}
 
       {activeTab === "media" && (
         <Card className="rounded-[2rem] border shadow-card overflow-hidden">
