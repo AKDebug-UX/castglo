@@ -8,7 +8,7 @@ import { useState } from "react";
    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
  
    return (
-     <div className="min-h-screen flex bg-[#DEFCFE]">
+     <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-slate-50/80 to-[#eefcfd] dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
        {/* Desktop Sidebar */}
        <AdminSidebar className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:z-40" />
  

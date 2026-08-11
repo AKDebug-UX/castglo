@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsPanel";
 import { VerifyProfileButton } from "@/components/verification/VerifyProfileButton";
@@ -23,8 +23,24 @@ import { VerifyProfileButton } from "@/components/verification/VerifyProfileButt
 export default function DirectorSettings() {
   const { user: currentUser, updatePreferredCurrency, formatPrice } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const confirm = useConfirm();
-  const [activeTab, setActiveTab] = useState("preferences");
+
+  const tabFromQuery = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (!tab || tab === "overview") return "preferences";
+    if (tab === "subscriptions") return "subscription";
+    if (tab === "payment-history") return "history";
+    if (tab === "team") return "collaborators";
+    return tab;
+  }, [location.search]);
+
+  const [activeTab, setActiveTab] = useState(tabFromQuery);
+
+  useEffect(() => {
+    setActiveTab(tabFromQuery);
+  }, [tabFromQuery]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -208,36 +224,48 @@ export default function DirectorSettings() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-20">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Account Settings</h1>
-        <p className="text-muted-foreground">Manage your account preferences, notifications, subscription, and security.</p>
+    <div className="space-y-6 animate-fade-in pb-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            Account Settings
+            {currentUser?.isVerified && (
+              <Badge className="bg-emerald-600 text-white">
+                <ShieldCheck className="w-4 h-4 mr-1.5" />
+                Verified
+              </Badge>
+            )}
+          </h1>
+          <p className="text-muted-foreground">Manage your director workspace preferences, team, notifications, subscription, and security.</p>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-7 rounded-2xl p-1 bg-slate-100/80 border gap-1">
-          <TabsTrigger value="preferences" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
-            <Settings2 className="w-4 h-4" /> Preferences
-          </TabsTrigger>
-          <TabsTrigger value="collaborators" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
-            <Users className="w-4 h-4" /> Collaborators
-          </TabsTrigger>
-          <TabsTrigger value="verification" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all text-emerald-700 bg-emerald-50/50 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-            <ShieldCheck className="w-4 h-4" /> Verification
-          </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
-            <Bell className="w-4 h-4" /> Notifications
-          </TabsTrigger>
-          <TabsTrigger value="subscription" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
-            <CreditCard className="w-4 h-4" /> Subscription
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
-            <History className="w-4 h-4" /> History
-          </TabsTrigger>
-          <TabsTrigger value="security" className="flex items-center gap-2 rounded-xl text-sm font-semibold transition-all">
-            <ShieldCheck className="w-4 h-4" /> Security
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-2">
+          <TabsList className="h-auto p-1.5 gap-1.5 inline-flex rounded-2xl bg-muted/60 backdrop-blur-md border border-border/50 shadow-xs">
+            <TabsTrigger value="preferences" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <Settings2 className="w-4 h-4 mr-1.5" /> Preferences
+            </TabsTrigger>
+            <TabsTrigger value="collaborators" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <Users className="w-4 h-4 mr-1.5" /> Collaborators
+            </TabsTrigger>
+            <TabsTrigger value="verification" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all text-emerald-700 bg-emerald-50/50 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+              <ShieldCheck className="w-4 h-4 mr-1.5" /> Verification
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <Bell className="w-4 h-4 mr-1.5" /> Notifications
+            </TabsTrigger>
+            <TabsTrigger value="subscription" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <CreditCard className="w-4 h-4 mr-1.5" /> Subscription
+            </TabsTrigger>
+            <TabsTrigger value="history" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <History className="w-4 h-4 mr-1.5" /> Payment History
+            </TabsTrigger>
+            <TabsTrigger value="security" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <ShieldCheck className="w-4 h-4 mr-1.5" /> Security
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="collaborators" className="mt-6">
           <Collaborators />

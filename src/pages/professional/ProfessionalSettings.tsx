@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { authAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { KeyRound, Loader2, UserMinus, Bell, CreditCard, History, Download, Trash2, ShieldCheck } from "lucide-react";
+import { KeyRound, Loader2, UserMinus, Bell, CreditCard, History, Download, Trash2, ShieldCheck, Settings2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
@@ -17,10 +17,27 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge";
 import { VerifyProfileButton } from "@/components/verification/VerifyProfileButton";
 
+import { useLocation } from "react-router-dom";
+
 export default function ProfessionalSettings() {
   const { user: currentUser, updatePreferredCurrency, formatPrice } = useAuth();
+  const location = useLocation();
   const confirm = useConfirm();
-  const [activeTab, setActiveTab] = useState("overview");
+
+  const tabFromQuery = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (!tab || tab === "overview") return "preferences";
+    if (tab === "subscriptions") return "subscription";
+    if (tab === "payment-history") return "history";
+    return tab;
+  }, [location.search]);
+
+  const [activeTab, setActiveTab] = useState(tabFromQuery);
+
+  useEffect(() => {
+    setActiveTab(tabFromQuery);
+  }, [tabFromQuery]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -195,28 +212,47 @@ export default function ProfessionalSettings() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-4xl mx-auto pb-20">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Account Settings</h1>
-        <p className="text-muted-foreground">Manage your professional account, notifications, subscription, and security.</p>
+    <div className="space-y-6 animate-fade-in pb-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            Account Settings
+            {currentUser?.isVerified && (
+              <Badge className="bg-emerald-600 text-white">
+                <ShieldCheck className="w-4 h-4 mr-1.5" />
+                Verified
+              </Badge>
+            )}
+          </h1>
+          <p className="text-muted-foreground">Manage your professional account, notifications, subscription, and security.</p>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="overflow-x-auto pb-2">
-          <TabsList className="flex w-full min-w-[600px] rounded-2xl p-1 bg-slate-100/80 border">
-            <TabsTrigger value="overview" className="flex-1 rounded-xl text-sm font-semibold transition-all">Overview</TabsTrigger>
-            <TabsTrigger value="verification" className="flex-1 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 text-emerald-700 bg-emerald-50/50 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <ShieldCheck className="w-4 h-4" /> Verification
+          <TabsList className="h-auto p-1.5 gap-1.5 inline-flex rounded-2xl bg-muted/60 backdrop-blur-md border border-border/50 shadow-xs">
+            <TabsTrigger value="preferences" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <Settings2 className="w-4 h-4 mr-1.5" /> Preferences
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex-1 rounded-xl text-sm font-semibold transition-all">Notifications</TabsTrigger>
-            <TabsTrigger value="subscription" className="flex-1 rounded-xl text-sm font-semibold transition-all">Subscription</TabsTrigger>
-
-            <TabsTrigger value="history" className="flex-1 rounded-xl text-sm font-semibold transition-all">History</TabsTrigger>
-            <TabsTrigger value="security" className="flex-1 rounded-xl text-sm font-semibold transition-all">Security</TabsTrigger>
+            <TabsTrigger value="verification" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all text-emerald-700 bg-emerald-50/50 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+              <ShieldCheck className="w-4 h-4 mr-1.5" /> Verification
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <Bell className="w-4 h-4 mr-1.5" /> Notifications
+            </TabsTrigger>
+            <TabsTrigger value="subscription" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <CreditCard className="w-4 h-4 mr-1.5" /> Subscription
+            </TabsTrigger>
+            <TabsTrigger value="history" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <History className="w-4 h-4 mr-1.5" /> Payment History
+            </TabsTrigger>
+            <TabsTrigger value="security" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <ShieldCheck className="w-4 h-4 mr-1.5" /> Security
+            </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="overview" className="mt-6 space-y-6">
+        <TabsContent value="preferences" className="mt-6 space-y-6">
           <Card className="rounded-[32px] border-none shadow-xl overflow-hidden">
             <CardHeader>
               <CardTitle>Account Overview</CardTitle>

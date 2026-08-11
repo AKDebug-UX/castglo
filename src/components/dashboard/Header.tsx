@@ -171,92 +171,117 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 border-b border-border bg-card/90 backdrop-blur px-4 flex items-center justify-between">
+    <header className="sticky top-0 z-30 h-16 border-b border-border/50 bg-background/80 backdrop-blur-xl px-4 lg:px-6 flex items-center justify-between shadow-xs transition-all duration-300">
+      {/* Subtle top accent bar */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#009698] via-[#00c9cc] to-[#009698] opacity-80" />
+
       <Button 
         variant="ghost" 
         size="icon" 
-        className="lg:hidden"
+        className="lg:hidden hover:bg-primary/10 rounded-xl"
         onClick={onMenuClick}
       >
-        <Menu className="w-5 h-5" />
+        <Menu className="w-5 h-5 text-foreground" />
       </Button>
 
       <div className="flex-1" />
 
       <div className="flex items-center gap-3">
+        {/* Notifications Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="relative rounded-xl hover:bg-primary/10 transition-colors">
+              <Bell className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
               {unreadCount > 0 && (
                 <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary shadow-xs"></span>
                 </span>
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <div className="p-2 font-medium">Notifications</div>
-            <DropdownMenuSeparator />
-             {notifications.length > 0 ? (
-               notifications.map((notification: any, index: number) => (
-                  <DropdownMenuItem key={notification._id || notification.id || index} asChild>
-                    <Link 
-                      to={getNotificationLink(notification)} 
-                      onClick={() => handleNotificationClick(notification)}
-                      className="flex items-start gap-3 p-2 cursor-pointer"
-                    >
-                      <div className={`mt-1 h-2 w-2 rounded-full ${(typeof notification.isRead === 'boolean' ? notification.isRead : notification.read) ? "bg-transparent" : "bg-primary"}`} />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground">{notification.message}</p>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-               ))
-            ) : (
-              <div className="p-4 text-sm text-center text-muted-foreground">No new notifications</div>
-            )}
-            <DropdownMenuSeparator />
+          <DropdownMenuContent align="end" className="w-84 p-2 rounded-2xl border border-border/60 shadow-xl backdrop-blur-md bg-card/95">
+            <div className="flex items-center justify-between px-3 py-2">
+              <span className="font-semibold text-sm">Notifications</span>
+              {unreadCount > 0 && (
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
+            <DropdownMenuSeparator className="my-1" />
+            <div className="max-h-72 overflow-y-auto space-y-1 py-1">
+              {notifications.length > 0 ? (
+                notifications.map((notification: any, index: number) => {
+                  const isUnread = !(typeof notification.isRead === 'boolean' ? notification.isRead : notification.read);
+                  return (
+                    <DropdownMenuItem key={notification._id || notification.id || index} asChild>
+                      <Link 
+                        to={getNotificationLink(notification)} 
+                        onClick={() => handleNotificationClick(notification)}
+                        className={`flex items-start gap-3 p-2.5 rounded-xl cursor-pointer transition-colors ${
+                          isUnread ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/60"
+                        }`}
+                      >
+                        <div className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${isUnread ? "bg-primary shadow-xs animate-pulse" : "bg-transparent"}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-foreground truncate">{notification.title}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{notification.message}</p>
+                        </div>
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })
+              ) : (
+                <div className="p-6 text-xs text-center text-muted-foreground">No new notifications</div>
+              )}
+            </div>
+            <DropdownMenuSeparator className="my-1" />
             <DropdownMenuItem asChild>
-              <Link to={getNotificationPath()} className="justify-center p-2 cursor-pointer">
+              <Link to={getNotificationPath()} className="justify-center p-2 text-xs font-semibold text-primary hover:text-primary/80 cursor-pointer rounded-xl">
                 View All Notifications
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* User Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={user?.profilePicture || getAvatarUrl(user?.fullName)} alt={user?.fullName || "User"} />
-                <AvatarFallback>{getInitials(user?.fullName || "")}</AvatarFallback>
+                <AvatarFallback className="bg-primary/10 text-primary font-bold">{getInitials(user?.fullName || "")}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-             <div className="px-2 py-1.5 text-sm font-medium truncate">
-               {user?.email}
-             </div>
-             <DropdownMenuSeparator />
+          <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl border border-border/60 shadow-xl backdrop-blur-md bg-card/95">
+            <div className="px-3 py-2">
+              <p className="text-sm font-bold text-foreground truncate">{user?.fullName || "Account"}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              {user?.role && (
+                <span className="inline-block mt-1.5 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  {user.role.replace("_", " ")}
+                </span>
+              )}
+            </div>
+            <DropdownMenuSeparator className="my-1" />
             <DropdownMenuItem asChild>
-              <Link to={getProfilePath()} className="cursor-pointer">
-                <UserCircle className="w-4 h-4 mr-2" />
+              <Link to={getProfilePath()} className="cursor-pointer rounded-xl text-xs font-medium py-2">
+                <UserCircle className="w-4 h-4 mr-2.5 text-primary" />
                 Profile
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={getSettingsPath()} className="cursor-pointer">
-                <Settings className="w-4 h-4 mr-2" />
+              <Link to={getSettingsPath()} className="cursor-pointer rounded-xl text-xs font-medium py-2">
+                <Settings className="w-4 h-4 mr-2.5 text-muted-foreground" />
                 Settings
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-             <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
-               <LogOut className="w-4 h-4 mr-2" />
-               Sign Out
+            <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-xl text-xs font-medium py-2">
+              <LogOut className="w-4 h-4 mr-2.5" />
+              Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

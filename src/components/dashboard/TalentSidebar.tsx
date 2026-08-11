@@ -57,7 +57,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
 
   const settingsLinks = useMemo(
     () => [
-      { title: "Overview", href: "/talent/account-settings", Icon: Settings },
+      { title: "Preferences", href: "/talent/account-settings", Icon: Settings },
       { title: "Security", href: "/talent/account-settings?tab=security", Icon: Shield },
       { title: "Subscriptions", href: "/talent/account-settings?tab=subscriptions", Icon: BadgeCheck },
 

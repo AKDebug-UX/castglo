@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, ShieldCheck, Upload, CreditCard, Bell, KeyRound, UserMinus, History, Trash2, Download, Mail } from "lucide-react";
+import { Loader2, ShieldCheck, Upload, CreditCard, Bell, KeyRound, UserMinus, History, Trash2, Download, Mail, Settings2 } from "lucide-react";
 import { authAPI, profileAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { VerifyProfileButton } from "@/components/verification/VerifyProfileButton";
 
 type SettingsTab =
+  | "preferences"
   | "overview"
   | "verification"
   | "security"
@@ -33,10 +34,12 @@ export default function AccountSettings() {
   const confirm = useConfirm();
   const tabFromQuery = useMemo(() => {
     const params = new URLSearchParams(location.search);
-    return (params.get("tab") || "overview") as SettingsTab;
+    const tab = params.get("tab");
+    if (!tab || tab === "overview") return "preferences";
+    return tab as SettingsTab;
   }, [location.search]);
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>("overview");
+  const [activeTab, setActiveTab] = useState<SettingsTab>(tabFromQuery);
   const { user: currentUser, updatePreferredCurrency, formatPrice, enableTwoFactor, disableTwoFactor } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -277,20 +280,29 @@ export default function AccountSettings() {
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as SettingsTab)}>
         <div className="overflow-x-auto pb-2">
-          <TabsList className="h-auto p-1 gap-1 inline-flex">
-            <TabsTrigger value="overview" className="py-2 px-4">Overview</TabsTrigger>
-            <TabsTrigger value="verification" className="py-2 px-4 flex items-center gap-1.5 font-medium text-emerald-700 bg-emerald-50/50 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
-              <ShieldCheck className="w-4 h-4" /> Verification
+          <TabsList className="h-auto p-1.5 gap-1.5 inline-flex rounded-2xl bg-muted/60 backdrop-blur-md border border-border/50 shadow-xs">
+            <TabsTrigger value="preferences" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              <Settings2 className="w-4 h-4 mr-1.5" /> Preferences
             </TabsTrigger>
-            <TabsTrigger value="security" className="py-2 px-4">Security</TabsTrigger>
-            <TabsTrigger value="subscriptions" className="py-2 px-4">Subscriptions</TabsTrigger>
-
-            <TabsTrigger value="payment-history" className="py-2 px-4">Payment History</TabsTrigger>
-            <TabsTrigger value="notifications" className="py-2 px-4">Notifications</TabsTrigger>
+            <TabsTrigger value="verification" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all text-emerald-700 bg-emerald-50/50 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+              <ShieldCheck className="w-4 h-4 mr-1.5" /> Verification
+            </TabsTrigger>
+            <TabsTrigger value="security" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              Security
+            </TabsTrigger>
+            <TabsTrigger value="subscriptions" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              Subscriptions
+            </TabsTrigger>
+            <TabsTrigger value="payment-history" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              Payment History
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="py-2.5 px-4 rounded-xl font-semibold text-xs transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm">
+              Notifications
+            </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="overview" className="mt-6 space-y-6">
+        <TabsContent value="preferences" className="mt-6 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Account Overview</CardTitle>
