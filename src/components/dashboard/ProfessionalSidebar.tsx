@@ -26,7 +26,7 @@ export function ProfessionalSidebar({ className }: ProfessionalSidebarProps) {
   const navItems = [
     { title: "Dashboard", href: "/professional", Icon: LayoutDashboard },
     { title: "Profile", href: "/professional/profile", Icon: User },
-    { title: "Deliverable History", href: user?.id ? `/professional/${user.id}?tab=deliverables` : "/professional/profile", Icon: Award },
+    { title: "Deliverable History", href: "/professional/deliverable-history", Icon: Award },
     { title: "Services", href: "/professional/services", Icon: Briefcase },
     { title: "Browse Talents", href: "/professional/talents", Icon: Search },
     { title: "My Collaborations", href: "/collaborations", Icon: FolderKanban },

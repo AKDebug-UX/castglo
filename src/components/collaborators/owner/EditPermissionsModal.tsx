@@ -112,19 +112,20 @@ export const EditPermissionsModal: React.FC<EditPermissionsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl bg-slate-950 border-slate-800 text-white p-6 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+          <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Edit3 className="w-5 h-5 text-primary" />
             <span>Edit Collaborator Permissions</span>
           </DialogTitle>
-          <DialogDescription className="text-slate-400 text-sm">
-            Updating permissions for <span className="text-slate-200 font-medium">{collaborator.inviteEmail}</span>
+          <DialogDescription className="text-slate-500 dark:text-slate-400 text-sm">
+            Updating permissions for{' '}
+            <span className="text-slate-700 dark:text-slate-200 font-semibold">{collaborator.inviteEmail}</span>
           </DialogDescription>
         </DialogHeader>
 
         {formError && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm my-2">
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm my-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{formError}</span>
           </div>
@@ -133,7 +134,7 @@ export const EditPermissionsModal: React.FC<EditPermissionsModalProps> = ({
         <div className="space-y-5 py-2">
           {/* Access Scope selector */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               Access Scope
             </label>
             <RadioGroup
@@ -145,17 +146,17 @@ export const EditPermissionsModal: React.FC<EditPermissionsModalProps> = ({
                 onClick={() => setAccessScope('all_projects')}
                 className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                   accessScope === 'all_projects'
-                    ? 'bg-primary/10 border-primary/40 text-white'
-                    : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                    ? 'bg-primary/10 border-primary/40'
+                    : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
               >
                 <RadioGroupItem value="all_projects" id="edit-scope-all" className="mt-1" />
                 <div>
-                  <div className="flex items-center gap-1.5 font-medium text-sm text-slate-100">
-                    <Globe className="w-4 h-4 text-emerald-400" />
+                  <div className="flex items-center gap-1.5 font-semibold text-sm text-slate-800 dark:text-slate-100">
+                    <Globe className="w-4 h-4 text-emerald-500" />
                     <span>All Projects</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">Workspace-wide permissions</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Workspace-wide permissions</p>
                 </div>
               </div>
 
@@ -163,17 +164,17 @@ export const EditPermissionsModal: React.FC<EditPermissionsModalProps> = ({
                 onClick={() => setAccessScope('selected_projects')}
                 className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                   accessScope === 'selected_projects'
-                    ? 'bg-primary/10 border-primary/40 text-white'
-                    : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                    ? 'bg-primary/10 border-primary/40'
+                    : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
               >
                 <RadioGroupItem value="selected_projects" id="edit-scope-selected" className="mt-1" />
                 <div>
-                  <div className="flex items-center gap-1.5 font-medium text-sm text-slate-100">
-                    <FolderKanban className="w-4 h-4 text-purple-400" />
+                  <div className="flex items-center gap-1.5 font-semibold text-sm text-slate-800 dark:text-slate-100">
+                    <FolderKanban className="w-4 h-4 text-purple-500" />
                     <span>Selected Projects</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">Specific project grants</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Specific project grants</p>
                 </div>
               </div>
             </RadioGroup>
@@ -182,7 +183,7 @@ export const EditPermissionsModal: React.FC<EditPermissionsModalProps> = ({
           {/* Permissions Configuration */}
           {accessScope === 'all_projects' ? (
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
                 Global Workspace Permissions
               </p>
               <PermissionsPanel
@@ -192,7 +193,7 @@ export const EditPermissionsModal: React.FC<EditPermissionsModalProps> = ({
             </div>
           ) : (
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
                 Project Grants & Permissions
               </p>
               <ProjectGrantSelector
@@ -203,12 +204,12 @@ export const EditPermissionsModal: React.FC<EditPermissionsModalProps> = ({
           )}
         </div>
 
-        <DialogFooter className="flex items-center justify-between gap-3 pt-4 border-t border-slate-800">
+        <DialogFooter className="flex items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             onClick={onClose}
-            className="text-slate-400 hover:text-white"
+            className="rounded-xl h-10 font-semibold px-5"
           >
             Cancel
           </Button>
@@ -217,7 +218,7 @@ export const EditPermissionsModal: React.FC<EditPermissionsModalProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="bg-primary hover:bg-primary/90 text-white font-medium flex items-center gap-2"
+            className="rounded-xl h-10 font-semibold px-5 flex items-center gap-2"
           >
             {isSubmitting ? (
               <>

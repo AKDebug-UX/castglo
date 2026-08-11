@@ -47,33 +47,33 @@ export const RevokeConfirmDialog: React.FC<RevokeConfirmDialogProps> = ({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <AlertDialogContent className="bg-slate-950 border-slate-800 text-white max-w-md">
+      <AlertDialogContent className="rounded-2xl shadow-2xl sm:max-w-md">
         <AlertDialogHeader>
-          <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 mb-3">
+          <div className="w-12 h-12 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive mb-3">
             <AlertTriangle className="w-6 h-6" />
           </div>
-          <AlertDialogTitle className="text-xl font-bold text-white">
+          <AlertDialogTitle className="text-xl font-bold">
             Revoke Collaborator Access?
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-slate-300 text-sm mt-2">
+          <AlertDialogDescription className="text-slate-500 dark:text-slate-400 text-sm mt-2">
             Are you sure you want to revoke access for{' '}
-            <strong className="text-white">{collaborator.inviteEmail}</strong>?
+            <strong className="text-slate-800 dark:text-slate-200">{collaborator.inviteEmail}</strong>?
             <br />
             <br />
             They will immediately lose access to all projects and applicant records in your workspace.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="mt-6 flex items-center justify-end gap-3">
+        <AlertDialogFooter className="mt-6 gap-3">
           <AlertDialogCancel
             onClick={onClose}
-            className="border-slate-700 bg-transparent text-slate-300 hover:bg-slate-800 hover:text-white"
+            className="rounded-xl h-10 font-semibold px-5"
           >
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleRevoke}
             disabled={isSubmitting}
-            className="bg-rose-600 hover:bg-rose-700 text-white font-medium flex items-center gap-2"
+            className="bg-destructive hover:bg-destructive/80 text-white rounded-xl h-10 font-semibold px-5 border-none flex items-center gap-2"
           >
             {isSubmitting ? (
               <>

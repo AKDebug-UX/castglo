@@ -41,11 +41,10 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const navItems = useMemo(() => {
-    const historyLink = user?.id ? `/talent/${user.id}?tab=deliverables` : "/talent/profile";
     return [
       { title: "Dashboard", href: "/talent", Icon: LayoutDashboard },
       { title: "Profile", href: "/talent/profile", Icon: User },
-      { title: "Deliverable History", href: historyLink, Icon: Award },
+      { title: "Deliverable History", href: "/talent/deliverable-history", Icon: Award },
       { title: "Create Auditions", href: "/talent/create-audition", Icon: Video },
       { title: "Browse Casting Calls", href: "/talent/browse-cast", Icon: Search },
       { title: "My Applications", href: "/talent/applications", Icon: FileText },
@@ -54,7 +53,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
       { title: "Notifications", href: "/talent/notifications", Icon: Bell },
       { title: "Audition", href: "/talent/audition", Icon: Video },
     ];
-  }, [user]);
+  }, []);
 
   const settingsLinks = useMemo(
     () => [

@@ -35,7 +35,6 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
   const [inviteEmail, setInviteEmail] = useState<string>('');
   const [accessScope, setAccessScope] = useState<AccessScope>('all_projects');
 
-  // Global permissions state for all_projects scope
   const [globalPermissions, setGlobalPermissions] = useState<Permissions>({
     viewApplicants: true,
     moveApplicants: true,
@@ -46,9 +45,7 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
     manageCollaborators: false,
   });
 
-  // Project grants state for selected_projects scope
   const [projectGrants, setProjectGrants] = useState<ProjectGrantItem[]>([]);
-
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -101,7 +98,6 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
   const handleSubmit = async () => {
     setFormError(null);
 
-    // Validation
     if (accessScope === 'all_projects') {
       const hasAnyPerm = Object.values(globalPermissions).some(Boolean);
       if (!hasAnyPerm) {
@@ -154,13 +150,13 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-xl bg-slate-950 border-slate-800 text-white p-6 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+          <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Mail className="w-5 h-5 text-primary" />
             <span>Invite Workspace Collaborator</span>
           </DialogTitle>
-          <DialogDescription className="text-slate-400 text-sm">
+          <DialogDescription className="text-slate-500 dark:text-slate-400 text-sm">
             {step === 1
               ? 'Enter team member details and select their access scope.'
               : `Configure permission access level for ${inviteEmail}`}
@@ -168,7 +164,7 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
         </DialogHeader>
 
         {formError && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm my-2">
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm my-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{formError}</span>
           </div>
@@ -177,8 +173,8 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
         {step === 1 && (
           <div className="space-y-6 py-3">
             <div className="space-y-2">
-              <Label htmlFor="invite-email" className="text-sm font-medium text-slate-200">
-                Team Member Email <span className="text-rose-400">*</span>
+              <Label htmlFor="invite-email" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Team Member Email <span className="text-destructive">*</span>
               </Label>
               <div className="relative">
                 <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -191,13 +187,13 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
                     setInviteEmail(e.target.value);
                     if (formError) setFormError(null);
                   }}
-                  className="pl-9 bg-slate-900 border-slate-800 text-white placeholder:text-slate-500"
+                  className="pl-9 rounded-xl"
                 />
               </div>
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-medium text-slate-200">Access Scope</Label>
+              <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Access Scope</Label>
               <RadioGroup
                 value={accessScope}
                 onValueChange={(val) => setAccessScope(val as AccessScope)}
@@ -207,17 +203,17 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
                   onClick={() => setAccessScope('all_projects')}
                   className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
                     accessScope === 'all_projects'
-                      ? 'bg-primary/10 border-primary/40 text-white'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                      ? 'bg-primary/10 border-primary/40 dark:bg-primary/10'
+                      : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                   }`}
                 >
                   <RadioGroupItem value="all_projects" id="scope-all" className="mt-1" />
                   <div>
-                    <div className="flex items-center gap-1.5 font-medium text-sm text-slate-100">
-                      <Globe className="w-4 h-4 text-emerald-400" />
+                    <div className="flex items-center gap-1.5 font-semibold text-sm text-slate-800 dark:text-slate-100">
+                      <Globe className="w-4 h-4 text-emerald-500" />
                       <span>All Projects</span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Grant permissions across all existing and future projects in your workspace.
                     </p>
                   </div>
@@ -227,17 +223,17 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
                   onClick={() => setAccessScope('selected_projects')}
                   className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
                     accessScope === 'selected_projects'
-                      ? 'bg-primary/10 border-primary/40 text-white'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                      ? 'bg-primary/10 border-primary/40 dark:bg-primary/10'
+                      : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
                   }`}
                 >
                   <RadioGroupItem value="selected_projects" id="scope-selected" className="mt-1" />
                   <div>
-                    <div className="flex items-center gap-1.5 font-medium text-sm text-slate-100">
-                      <FolderKanban className="w-4 h-4 text-purple-400" />
+                    <div className="flex items-center gap-1.5 font-semibold text-sm text-slate-800 dark:text-slate-100">
+                      <FolderKanban className="w-4 h-4 text-purple-500" />
                       <span>Selected Projects</span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                       Limit access to specific projects with granular per-project permissions.
                     </p>
                   </div>
@@ -251,7 +247,7 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
           <div className="space-y-4 py-2">
             {accessScope === 'all_projects' ? (
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
                   Global Workspace Permissions
                 </p>
                 <PermissionsPanel
@@ -261,7 +257,7 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
               </div>
             ) : (
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">
                   Select Projects & Assign Permissions
                 </p>
                 <ProjectGrantSelector
@@ -273,13 +269,13 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
           </div>
         )}
 
-        <DialogFooter className="flex items-center justify-between gap-3 pt-4 border-t border-slate-800">
+        <DialogFooter className="flex items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
           {step === 2 ? (
             <Button
               type="button"
               variant="outline"
               onClick={() => setStep(1)}
-              className="border-slate-700 text-slate-300 hover:bg-slate-800"
+              className="rounded-xl h-10 font-semibold px-5"
             >
               Back
             </Button>
@@ -288,7 +284,7 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
               type="button"
               variant="ghost"
               onClick={handleClose}
-              className="text-slate-400 hover:text-white"
+              className="rounded-xl h-10 font-semibold px-5"
             >
               Cancel
             </Button>
@@ -298,7 +294,7 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
             <Button
               type="button"
               onClick={handleNextStep}
-              className="bg-primary hover:bg-primary/90 text-white font-medium"
+              className="rounded-xl h-10 font-semibold px-5"
             >
               Continue to Permissions
             </Button>
@@ -307,7 +303,7 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="bg-primary hover:bg-primary/90 text-white font-medium flex items-center gap-2"
+              className="rounded-xl h-10 font-semibold px-5 flex items-center gap-2"
             >
               {isSubmitting ? (
                 <>

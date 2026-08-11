@@ -38,7 +38,6 @@ export const ProjectGrantSelector: React.FC<ProjectGrantSelectorProps> = ({
     const fetchProjects = async () => {
       try {
         setIsLoading(true);
-        // Try projects endpoint first, fallback to casting calls
         let res;
         try {
           res = await api.get('/projects/me');
@@ -101,17 +100,17 @@ export const ProjectGrantSelector: React.FC<ProjectGrantSelectorProps> = ({
     return (
       <div className="flex items-center justify-center p-8 text-slate-400">
         <Loader2 className="w-6 h-6 animate-spin mr-2 text-primary" />
-        <span>Loading projects...</span>
+        <span className="text-sm">Loading projects...</span>
       </div>
     );
   }
 
   if (projects.length === 0) {
     return (
-      <div className="p-6 text-center border border-dashed border-slate-800 rounded-xl text-slate-400 text-sm">
-        <Film className="w-8 h-8 mx-auto mb-2 text-slate-500" />
-        <p>No active projects found in your workspace.</p>
-        <p className="text-xs text-slate-500 mt-1">Create a project first to grant specific project access.</p>
+      <div className="p-6 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-slate-400 text-sm">
+        <Film className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-500" />
+        <p className="font-medium text-slate-600 dark:text-slate-400">No active projects found in your workspace.</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Create a project first to grant specific project access.</p>
       </div>
     );
   }
@@ -124,11 +123,11 @@ export const ProjectGrantSelector: React.FC<ProjectGrantSelectorProps> = ({
           placeholder="Search projects..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 bg-slate-900/80 border-slate-800 text-slate-100 placeholder:text-slate-500"
+          className="pl-9 rounded-xl"
         />
       </div>
 
-      <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+      <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
         {filteredProjects.map((project) => {
           const grant = grants.find((g) => g.projectId === project.id);
           const isSelected = !!grant;
@@ -139,8 +138,8 @@ export const ProjectGrantSelector: React.FC<ProjectGrantSelectorProps> = ({
               key={project.id}
               className={`rounded-xl border transition-all ${
                 isSelected
-                  ? 'bg-slate-900/90 border-primary/40'
-                  : 'bg-slate-950/40 border-slate-850 hover:border-slate-750'
+                  ? 'bg-primary/5 border-primary/30 dark:bg-primary/10'
+                  : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
               <div className="flex items-center justify-between p-3.5">
@@ -154,12 +153,11 @@ export const ProjectGrantSelector: React.FC<ProjectGrantSelectorProps> = ({
                     onCheckedChange={(checked) =>
                       !disabled && handleToggleProject(project.id, !!checked)
                     }
-                    className="border-slate-600 data-[state=checked]:bg-primary"
                   />
                   <div>
-                    <h4 className="font-medium text-sm text-slate-100">{project.title}</h4>
+                    <h4 className="font-semibold text-sm text-slate-800 dark:text-slate-100">{project.title}</h4>
                     {project.category && (
-                      <span className="text-xs text-slate-400">{project.category}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{project.category}</span>
                     )}
                   </div>
                 </div>
@@ -168,18 +166,19 @@ export const ProjectGrantSelector: React.FC<ProjectGrantSelectorProps> = ({
                   <button
                     type="button"
                     onClick={() => setExpandedProjectId(isExpanded ? null : project.id)}
-                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium px-2 py-1 rounded bg-primary/10"
+                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-semibold px-2.5 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/15 transition-colors"
                   >
-                    <span>Configure permissions</span>
+                    <span>Configure</span>
                     {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>
                 )}
               </div>
 
               {isSelected && isExpanded && (
-                <div className="px-4 pb-4 pt-2 border-t border-slate-800/80 bg-slate-950/60 rounded-b-xl">
-                  <p className="text-xs text-slate-400 mb-3 font-medium">
-                    Permissions for <span className="text-slate-200">{project.title}</span>:
+                <div className="px-4 pb-4 pt-3 border-t border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/40 rounded-b-xl">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 font-medium">
+                    Permissions for{' '}
+                    <span className="text-slate-700 dark:text-slate-200 font-semibold">{project.title}</span>:
                   </p>
                   <PermissionsPanel
                     permissions={grant.permissions}

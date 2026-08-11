@@ -48,6 +48,7 @@ const DeliverableDetailPage = lazy(() => import("./pages/DeliverableDetailPage")
 const WhatsNew = lazy(() => import("./pages/WhatsNew"));
 const AcceptInvitationPage = lazy(() => import("./pages/collaborators/AcceptInvitationPage"));
 const MyCollaborationsPage = lazy(() => import("./pages/collaborators/MyCollaborationsPage"));
+const DeliverableHistoryPage = lazy(() => import("./pages/DeliverableHistoryPage"));
 const CollaboratorProjects = lazy(() => import("./pages/director/CollaboratorProjects"));
 const Collaborators = lazy(() => import("./pages/director/Collaborators"));
 const CollaborationsLayout = lazy(() => import("./components/dashboard/CollaborationsLayout").then(m => ({ default: m.CollaborationsLayout })));
@@ -268,6 +269,7 @@ const App = () => {
                 <Route path="create-audition" element={<InstantAudition />} />
                 <Route path="livestream/:id" element={<Livestream />} />
                 <Route path="verification-process" element={<VerificationProcess />} />
+                <Route path="deliverable-history" element={<DeliverableHistoryPage />} />
               </Route>
 
               {/* Director Dashboard Routes */}
@@ -298,6 +300,7 @@ const App = () => {
                 <Route path="collaborators" element={<Collaborators />} />
                 <Route path="settings/team" element={<Collaborators />} />
                 <Route path="livestream/:id" element={<Livestream />} />
+                <Route path="deliverable-history" element={<DeliverableHistoryPage />} />
               </Route>
 
               {/* Professional Dashboard Routes */}
@@ -317,6 +320,7 @@ const App = () => {
                 <Route path="messages" element={<ProfessionalMessages />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="settings" element={<ProfessionalSettings />} />
+                <Route path="deliverable-history" element={<DeliverableHistoryPage />} />
               </Route>
 
               {/* Admin Dashboard Routes */}

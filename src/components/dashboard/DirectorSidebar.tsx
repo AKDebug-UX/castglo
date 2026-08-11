@@ -52,7 +52,7 @@ export function DirectorSidebar({ className }: DirectorSidebarProps) {
   const topNavItems = [
     ...(!isCollaboratorMode ? [{ title: "Dashboard", href: "/director", Icon: LayoutDashboard }] : []),
     ...(!isCollaboratorMode ? [{ title: "Profile", href: "/director/profile", Icon: UserCircle }] : []),
-    ...(!isCollaboratorMode ? [{ title: "Deliverable History", href: user?.id ? `/director/${user.id}?tab=deliverables` : "/director/profile", Icon: Award }] : []),
+    ...(!isCollaboratorMode ? [{ title: "Deliverable History", href: "/director/deliverable-history", Icon: Award }] : []),
     { title: "Projects", href: "/director/projects", Icon: FolderOpen },
   ];
 

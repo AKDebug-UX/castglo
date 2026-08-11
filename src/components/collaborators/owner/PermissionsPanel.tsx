@@ -74,7 +74,7 @@ export const PermissionsPanel: React.FC<PermissionsPanelProps> = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5">
       {PERMISSION_ITEMS.map(({ key, title, description, icon: Icon, isCritical }) => {
         const isChecked = !!permissions[key];
         return (
@@ -83,8 +83,8 @@ export const PermissionsPanel: React.FC<PermissionsPanelProps> = ({
             onClick={() => !disabled && handleToggle(key, !isChecked)}
             className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer ${
               isChecked
-                ? 'bg-primary/10 border-primary/40 text-white'
-                : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                ? 'bg-primary/8 border-primary/30 dark:bg-primary/10'
+                : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
             } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <Checkbox
@@ -92,24 +92,24 @@ export const PermissionsPanel: React.FC<PermissionsPanelProps> = ({
               checked={isChecked}
               onCheckedChange={(checked) => handleToggle(key, !!checked)}
               disabled={disabled}
-              className="mt-1 border-slate-600 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              className="mt-0.5"
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <Icon className={`w-4 h-4 ${isChecked ? 'text-primary' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${isChecked ? 'text-primary' : 'text-slate-400 dark:text-slate-500'}`} />
                 <label
                   htmlFor={`perm-${key}`}
-                  className="font-medium text-sm text-slate-100 cursor-pointer"
+                  className="font-semibold text-sm text-slate-800 dark:text-slate-100 cursor-pointer"
                 >
                   {title}
                 </label>
                 {isCritical && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
                     <AlertTriangle className="w-3 h-3" /> Can invite others
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>
             </div>
           </div>
         );
