@@ -646,11 +646,9 @@ export default function SubmitAudition() {
           <h1 className="text-3xl font-bold">{isProfessional ? "Professional Service Proposal" : "Talent Application Form"}</h1>
           <p className="text-muted-foreground">{isProfessional ? "Submit your proposal and portfolio details to the Casting Director." : "Submit your application and portfolio for this role."}</p>
         </div>
-        {import.meta.env.DEV && (
           <Button variant="outline" onClick={handleAutoFill} type="button">
             Auto-fill Mock Data
           </Button>
-        )}
       </div>
 
       {/* Casting Info */}

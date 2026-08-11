@@ -195,8 +195,7 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
 
   return (
     <div className="space-y-6">
-      {import.meta.env.DEV && (
-        <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4">
           <Button 
             variant="outline" 
             onClick={() => {
@@ -209,7 +208,6 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
             Auto-fill Mock Data
           </Button>
         </div>
-      )}
       <div className="space-y-10">
       {sections.map(([section, fields]) => (
         <Card key={section}>

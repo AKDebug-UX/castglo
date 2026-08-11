@@ -237,8 +237,7 @@ export function UnifiedProfessionalProfileForm({
 
   return (
     <div className="space-y-8">
-      {import.meta.env.DEV && (
-        <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4">
           <Button 
             variant="outline" 
             onClick={() => {
@@ -251,7 +250,6 @@ export function UnifiedProfessionalProfileForm({
             Auto-fill Mock Data
           </Button>
         </div>
-      )}
 
       {activeTab === "media" && (
         <Card className="rounded-[2rem] border shadow-card overflow-hidden">
