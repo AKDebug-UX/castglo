@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, User, Video, Loader2 } from "lucide-react";
+import { Search, User, Video, Loader2, Film, Briefcase, Plus } from "lucide-react";
 import { castingCallAPI, profileAPI, livestreamAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatLocation, formatBudget } from "@/lib/utils";
@@ -121,13 +121,13 @@ export function HeroSection() {
   ];
 
   return (
-    <section className="bg-[#DEFCFE] py-12 lg:py-16">
+    <section className="bg-gradient-to-b from-[#eefcfd] via-[#f7fdfd] to-white py-12 lg:py-16">
       <div className="container">
         <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1fr,300px] xl:grid-cols-[300px,1fr,300px]">
           {/* Left Sidebar - Featured Casting Calls */}
-          <div className="bg-[#F1FBFB] xl:block hidden shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
-            <div className="rounded-xl p-2 mb-2">
-              <h3 className="font-semibold text-black text-md">Featured Castings</h3>
+          <div className="bg-white/80 backdrop-blur-md border border-border/60 xl:block hidden shadow-lg rounded-2xl p-4 flex flex-col h-[700px]">
+            <div className="p-2 mb-2">
+              <h3 className="font-bold text-foreground text-base">Featured Castings</h3>
             </div>
             <div 
               ref={castingScrollRef}
@@ -135,14 +135,14 @@ export function HeroSection() {
             >
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <Loader2 className="w-6 h-6 animate-spin text-[#009698]" />
                 </div>
               ) : (
                 <div className="space-y-3 pb-10">
                   {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : []).map((call, index) => {
                     const castingId = call._id || call.id;
                     return (
-                      <div key={`${castingId || index}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
+                      <div key={`${castingId || index}-${index}`} className="rounded-xl bg-card overflow-hidden border border-border/50 shadow-xs">
                         <div className="relative h-48">
                           <img 
                             src={call.project_image || newsProduction} 
@@ -154,8 +154,8 @@ export function HeroSection() {
                             <p className="text-[10px] text-white/80">{formatLocation(call.location)} • {call.category}</p>
                           </div>
                         </div>
-                        <div className="p-2">
-                          <Button variant="outline" size="sm" className="w-full text-xs h-8 text-primary border-primary hover:bg-primary/5" asChild>
+                        <div className="p-2.5">
+                          <Button variant="outline" size="sm" className="w-full text-xs h-8 text-[#009698] border-[#009698]/30 hover:bg-[#009698]/10 rounded-lg font-semibold" asChild>
                             <Link to={castingId ? `/cast/${castingId}` : "/sign-in"}>View Details</Link>
                           </Button>
                         </div>
@@ -171,30 +171,31 @@ export function HeroSection() {
           <div className="space-y-8">
             {/* Hero Text */}
             <div className="space-y-3">
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl text-foreground">
                 Where Talent
                 <br />
-                Meets <span className="text-primary">Opportunity</span>
+                Meets <span className="text-[#009698]">Opportunity</span>
               </h1>
-              <p className="text-sm text-muted-foreground max-w-md">
+              <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
                 Connect casting directors with exceptional talent. Discover your next role or find the perfect performer for your production.
               </p>
             </div>
 
-            {/* Tab Buttons */}
-            <div className="flex flex-wrap gap-2">
+            {/* Hub Navigation Buttons */}
+            <div className="flex flex-wrap items-center gap-2.5">
               <Button 
-                variant={"tab-outline"}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-                size="sm"
+                variant="outline"
+                className="rounded-xl border-border/80 bg-white dark:bg-card shadow-xs hover:border-[#009698] hover:text-[#009698] font-semibold text-xs h-10 px-4 transition-all hover:scale-105"
                 asChild
               >
-                <Link to="/browse-talent">Talent Hub</Link>
+                <Link to="/browse-talent" className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-[#009698]" />
+                  <span>Talent Hub</span>
+                </Link>
               </Button>
               <Button 
-                variant={"tab-outline"}
-                className="bg-secondary text-white hover:text-secondary"
-                size="sm"
+                variant="secondary"
+                className="rounded-xl text-white shadow-sm hover:shadow-md font-semibold text-xs h-10 px-4 transition-all hover:scale-105"
                 onClick={() => {
                   const element = document.getElementById('browse-castings');
                   if (element) {
@@ -202,28 +203,33 @@ export function HeroSection() {
                   }
                 }}
               >
-                Casting Hub
+                <Film className="w-4 h-4 text-[#fff]" />
+                <span>Casting Hub</span>
               </Button>
               <Button 
-                variant={"tab-outline"}
-                size="sm"
+                variant="outline"
+                className="rounded-xl border-border/80 bg-white dark:bg-card shadow-xs hover:border-[#009698] hover:text-[#009698] font-semibold text-xs h-10 px-4 transition-all hover:scale-105"
                 asChild
               >
-                <Link to="/professional">Professional Hub</Link>
+                <Link to="/professional" className="flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-[#009698]" />
+                  <span>Professional Hub</span>
+                </Link>
               </Button>
               <Button 
-                variant={"tab-outline"}
-                className="bg-[#5443DB] text-white hover:bg-[#5443DB]/90"
-                size="sm"
+                className="rounded-xl bg-[#009698] hover:bg-[#007f81] text-white shadow-sm hover:shadow-md font-semibold text-xs h-10 px-4 transition-all hover:scale-105"
                 asChild
               >
-                <Link to="/director/create">Post a Job</Link>
+                <Link to="/director/create" className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  <span>Post a Job</span>
+                </Link>
               </Button>
             </div>
 
             {/* Search Card */}
-            <div className="rounded-xl bg-card p-5 shadow-card">
-              <h3 className="font-semibold mb-3 text-sm">Search Talent</h3>
+            <div className="rounded-2xl bg-white dark:bg-card p-6 shadow-md border border-border/60">
+              <h3 className="font-bold mb-4 text-sm text-foreground">Search Talent</h3>
               <form onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
@@ -231,20 +237,20 @@ export function HeroSection() {
                 window.location.href = `/browse-talent?search=${keyword}`;
               }} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Keyword</label>
-                  <Input name="keyword" placeholder="e.g. Actor, Model" className="h-9 text-sm" />
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Keyword</label>
+                  <Input name="keyword" placeholder="e.g. Actor, Model" className="h-10 rounded-xl text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Location</label>
-                  <Input name="location" placeholder="e.g. Los Angeles" className="h-9 text-sm" />
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Location</label>
+                  <Input name="location" placeholder="e.g. Los Angeles" className="h-10 rounded-xl text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Category</label>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Category</label>
                   <Select name="category">
-                    <SelectTrigger className="h-9 text-sm">
+                    <SelectTrigger className="h-10 rounded-xl text-sm">
                       <SelectValue placeholder="Select Category" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="rounded-xl">
                       <SelectItem value="film">Film</SelectItem>
                       <SelectItem value="tv">Television</SelectItem>
                       <SelectItem value="commercial">Commercial</SelectItem>
@@ -254,8 +260,9 @@ export function HeroSection() {
                   </Select>
                 </div>
                 <div className="flex items-end">
-                  <Button type="submit" className="w-full bg-[#5443DB] text-white h-9" size="sm">
-                    Search Talent
+                  <Button type="submit" className="w-full bg-[#009698] hover:bg-[#007f81] text-white h-10 rounded-xl font-semibold shadow-sm transition-all hover:shadow" size="default">
+                    <Search className="w-4 h-4 mr-2" />
+                    <span>Search Talent</span>
                   </Button>
                 </div>
               </form>
@@ -365,9 +372,9 @@ export function HeroSection() {
           </div>
 
           {/* Right Sidebar - Discover Talent */}
-          <div className="bg-[#F9F3FF] lg:block shadow-xl rounded-xl p-3 flex flex-col h-[700px]">
-            <div className="rounded-xl p-2 mb-2">
-              <h3 className="font-semibold text-black text-md">Discover Talent</h3>
+          <div className="bg-white/80 backdrop-blur-md border border-border/60 lg:block shadow-lg rounded-2xl p-4 flex flex-col h-[700px]">
+            <div className="p-2 mb-2">
+              <h3 className="font-bold text-foreground text-base">Discover Talent</h3>
             </div>
             <div 
               ref={talentScrollRef}
@@ -375,12 +382,12 @@ export function HeroSection() {
             >
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <Loader2 className="w-6 h-6 animate-spin text-[#009698]" />
                 </div>
               ) : (
                 <div className="space-y-3 pb-10">
-                  {(featuredTalents.length > 0 ? [...featuredTalents, ...featuredTalents] : []).map((talent, index) => (
-                    <div key={`${talent._id}-${index}`} className="rounded-xl bg-card overflow-hidden shadow-card card-elevated">
+                  {(featuredTalents.length > 0 ? [...featuredTalents, ...featuredTalents] : []).map((talent: any, index: number) => (
+                    <div key={`${talent._id}-${index}`} className="rounded-xl bg-card overflow-hidden border border-border/50 shadow-xs">
                       <div className="relative aspect-square">
                         <img 
                           src={talent.talent?.headshots?.[0]?.url || talentMichael} 
@@ -394,8 +401,8 @@ export function HeroSection() {
                           </p>
                         </div>
                       </div>
-                      <div className="p-2">
-                        <Button variant="outline" size="sm" className="w-full text-xs h-8 text-secondary border-secondary hover:bg-secondary/5" asChild>
+                      <div className="p-2.5">
+                        <Button variant="outline" size="sm" className="w-full text-xs h-8 text-[#009698] border-[#009698]/30 hover:bg-[#009698]/10 rounded-lg font-semibold" asChild>
                           <Link to={talent.userId ? `/talent/${typeof talent.userId === 'object' ? (talent.userId?._id || talent.userId?.id) : talent.userId}` : "#"}>View Profile</Link>
                         </Button>
                       </div>
