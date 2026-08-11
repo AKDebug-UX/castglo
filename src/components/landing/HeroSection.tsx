@@ -19,18 +19,18 @@ export function HeroSection() {
   const [publicStreams, setPublicStreams] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const castingScrollRef = useRef(null);
-  const talentScrollRef = useRef(null);
-  const streamScrollRef = useRef(null);
+  const castingScrollRef = useRef<HTMLDivElement | null>(null);
+  const talentScrollRef = useRef<HTMLDivElement | null>(null);
+  const streamScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
         const [callsRes, profilesRes, streamsRes] = await Promise.all([
-          castingCallAPI.getAll({ limit: 5, status: 'open' }).catch(err => ({ data: { success: false } })),
-          profileAPI.search({ limit: 4, userRole: 'talent' }).catch(err => ({ data: { success: false } })),
-          livestreamAPI.getAll().catch(err => ({ data: { success: false } }))
+          castingCallAPI.getAll({ limit: 5, status: "open" }).catch(() => ({ data: { success: false } })),
+          profileAPI.search({ limit: 4, userRole: "talent" }).catch(() => ({ data: { success: false } })),
+          livestreamAPI.getAll().catch(() => ({ data: { success: false } }))
         ]);
 
         if (callsRes.data?.success && Array.isArray(callsRes.data.data.castingCalls)) {
@@ -48,11 +48,11 @@ export function HeroSection() {
         }
 
         if (streamsRes.data?.success && Array.isArray(streamsRes.data.data)) {
-          setPublicStreams(streamsRes.data.data.filter((s) => {
+          setPublicStreams(streamsRes.data.data.filter((s: any) => {
             if (!s) return false;
             if (s.isPublic === false) return false;
             
-            const hostId = typeof s.hostId === 'object' ? s.hostId?._id : s.hostId;
+            const hostId = typeof s.hostId === "object" ? s.hostId?._id : s.hostId;
             return hostId !== user?.id;
           }).slice(0, 4));
         }
@@ -66,40 +66,40 @@ export function HeroSection() {
     };
 
     fetchData();
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (castingScrollRef.current && featuredCalls.length > 0) {
         const { scrollTop, scrollHeight, clientHeight } = castingScrollRef.current;
         if (scrollTop + clientHeight >= scrollHeight - 10) {
-          castingScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+          castingScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
         } else {
-          castingScrollRef.current.scrollBy({ top: 200, behavior: 'smooth' });
+          castingScrollRef.current.scrollBy({ top: 200, behavior: "smooth" });
         }
       }
       
       if (talentScrollRef.current && featuredTalents.length > 0) {
         const { scrollTop, scrollHeight, clientHeight } = talentScrollRef.current;
         if (scrollTop + clientHeight >= scrollHeight - 10) {
-          talentScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+          talentScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
         } else {
-          talentScrollRef.current.scrollBy({ top: 200, behavior: 'smooth' });
+          talentScrollRef.current.scrollBy({ top: 200, behavior: "smooth" });
         }
       }
 
       if (streamScrollRef.current) {
         const { scrollTop, scrollHeight, clientHeight } = streamScrollRef.current;
         if (scrollTop + clientHeight >= scrollHeight - 10) {
-          streamScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+          streamScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
         } else {
-          streamScrollRef.current.scrollBy({ top: 200, behavior: 'smooth' });
+          streamScrollRef.current.scrollBy({ top: 200, behavior: "smooth" });
         }
       }
     }, 4000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [featuredCalls.length, featuredTalents.length]);
 
   const newsArticles = [
     {
@@ -139,7 +139,7 @@ export function HeroSection() {
                 </div>
               ) : (
                 <div className="space-y-3 pb-10">
-                  {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : []).map((call, index) => {
+                  {(featuredCalls.length > 0 ? [...featuredCalls, ...featuredCalls] : []).map((call: any, index: number) => {
                     const castingId = call._id || call.id;
                     return (
                       <div key={`${castingId || index}-${index}`} className="rounded-xl bg-card overflow-hidden border border-border/50 shadow-xs">
@@ -194,16 +194,16 @@ export function HeroSection() {
                 </Link>
               </Button>
               <Button 
-                variant="secondary"
-                className="rounded-xl text-white shadow-sm hover:shadow-md font-semibold text-xs h-10 px-4 transition-all hover:scale-105"
+                variant="outline"
+                className="rounded-xl border-border/80 bg-white dark:bg-card shadow-xs hover:border-[#009698] hover:text-[#009698] font-semibold text-xs h-10 px-4 transition-all hover:scale-105"
                 onClick={() => {
-                  const element = document.getElementById('browse-castings');
+                  const element = document.getElementById("browse-castings");
                   if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' });
+                    element.scrollIntoView({ behavior: "smooth" });
                   }
                 }}
               >
-                <Film className="w-4 h-4 text-[#fff]" />
+                <Film className="w-4 h-4 text-[#009698]" />
                 <span>Casting Hub</span>
               </Button>
               <Button 
@@ -298,46 +298,6 @@ export function HeroSection() {
                 </p>
               </div>
             </div>
-
-            {/* Active Public Auditions */}
-            {/* {publicStreams.length > 0 && (
-              <div className="pt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold flex items-center gap-2">
-                    <div className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-                    Live Auditions
-                  </h2>
-                  <Link to="/talent/livestreams" className="text-xs text-primary font-bold hover:underline">
-                    View All
-                  </Link>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {publicStreams.map((stream) => (
-                    <Card key={stream._id} className="border-destructive/10 bg-destructive/[0.02] overflow-hidden group hover:shadow-lg transition-all duration-300">
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded-2xl bg-destructive/10 flex items-center justify-center">
-                            <Video className="h-6 w-6 text-destructive" />
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="font-bold text-sm group-hover:text-destructive transition-colors truncate">{stream.title}</h3>
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              {stream.viewerCount || 0} watching • {stream.category || "Audition"}
-                            </p>
-                          </div>
-                        </div>
-                        <Button size="sm" variant="destructive" className="h-8 rounded-lg text-[10px] font-bold px-4" asChild>
-                          <Link to={`/talent/livestream/${stream._id}`}>
-                            {(typeof stream.hostId === 'object' ? stream.hostId._id : stream.hostId) === user?.id ? "Start" : "Join"}
-                          </Link>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )} */}
 
             {/* Industry News */}
             <div>
