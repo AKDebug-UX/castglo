@@ -82,9 +82,11 @@ export default function Step1Basics({
               <Select value={formData.project_status} onValueChange={(v) => handleSelectChange("project_status", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Draft">Draft</SelectItem>
                   <SelectItem value="Open for Applications">Open for Applications</SelectItem>
+                  <SelectItem value="Draft">Draft</SelectItem>
                   <SelectItem value="Invite Only">Invite Only</SelectItem>
+                  <SelectItem value="Paused">Paused</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { formatLocation, formatBudget, resolveMediaUrl } from "@/lib/utils";
+import { formatLocation, formatBudget, resolveMediaUrl, getApiErrorMessage } from "@/lib/utils";
 import { getProjectCoverImage } from "@/lib/project.utils";
 
 import castingIndieDrama from "@/assets/casting-indie-drama.jpg";
@@ -70,10 +70,10 @@ export default function BrowseCast() {
       } else {
         setCastings([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch casting calls:", error);
       setCastings([]);
-      toast.error(error.response?.data?.message || "Server issue detected. Please try again later.");
+      toast.error(getApiErrorMessage(error, "Server issue detected. Please try again later."));
     } finally {
       setIsLoading(false);
     }

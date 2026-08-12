@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Check, X, Inbox, Zap, Send, Trash2, Archive } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminAPI, castingCallAPI } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/utils';
 
 export default function AdminCastingCallsPending() {
   const [castingCalls, setCastingCalls] = useState([]);
@@ -74,7 +75,7 @@ export default function AdminCastingCallsPending() {
         setCastingCalls(list);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to fetch casting calls');
+      toast.error(getApiErrorMessage(error, 'Failed to fetch casting calls'));
       setCastingCalls([]);
     } finally {
       setIsLoading(false);
@@ -93,7 +94,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to approve casting call');
+      toast.error(getApiErrorMessage(error, 'Failed to approve casting call'));
     }
   };
 
@@ -105,7 +106,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to reject casting call');
+      toast.error(getApiErrorMessage(error, 'Failed to reject casting call'));
     }
   };
 
@@ -117,7 +118,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to close casting call');
+      toast.error(getApiErrorMessage(error, 'Failed to close casting call'));
     }
   };
 
@@ -129,7 +130,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to boost casting call');
+      toast.error(getApiErrorMessage(error, 'Failed to boost casting call'));
     }
   };
 
@@ -141,7 +142,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to instantly publish casting call');
+      toast.error(getApiErrorMessage(error, 'Failed to instantly publish casting call'));
     }
   };
 
@@ -154,7 +155,7 @@ export default function AdminCastingCallsPending() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to delete casting call');
+      toast.error(getApiErrorMessage(error, 'Failed to delete casting call'));
     }
   };
 

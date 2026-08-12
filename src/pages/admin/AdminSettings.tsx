@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsPanel";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function AdminSettings() {
   const { user: currentUser } = useAuth();
@@ -60,7 +61,7 @@ export default function AdminSettings() {
       toast.success("Password updated successfully");
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update password");
+      toast.error(getApiErrorMessage(error, "Failed to update password"));
     } finally {
       setIsSaving(false);
     }
@@ -72,7 +73,7 @@ export default function AdminSettings() {
       await userAPI.updateProfile({ notificationSettings });
       toast.success("Notification preferences saved successfully!");
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update notification settings");
+      toast.error(getApiErrorMessage(error, "Failed to update notification settings"));
     } finally {
       setIsSaving(false);
     }
@@ -98,7 +99,7 @@ export default function AdminSettings() {
       localStorage.removeItem("token");
       window.location.href = "/";
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to delete account");
+      toast.error(getApiErrorMessage(error, "Failed to delete account"));
     } finally {
       setIsSaving(false);
     }

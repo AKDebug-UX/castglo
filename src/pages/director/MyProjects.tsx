@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { castingCallAPI, subscriptionAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { formatLocation } from "@/lib/utils";
+import { formatLocation, getApiErrorMessage } from "@/lib/utils";
 import { getStripe } from "@/lib/stripe";
 import { getStatusLabel, getStatusClass, isOpenStatus, isDraftStatus, getProjectDeadline } from "@/lib/project.utils";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -154,8 +154,7 @@ export function DirectorProjects() {
         setProjects(prev => prev.filter(p => (p._id || p.id) !== id));
       }
     } catch (error: any) {
-      const message = error?.response?.data?.message || "Failed to delete project";
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, "Failed to delete project"));
     }
   };
 
@@ -169,8 +168,8 @@ export function DirectorProjects() {
       } else {
         toast.error(response.data.message || "Failed to close project");
       }
-    } catch (error) {
-      toast.error("An error occurred while closing the project");
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error, "An error occurred while closing the project"));
       console.error(error);
     }
   };
@@ -205,8 +204,8 @@ export function DirectorProjects() {
         toast.success("Project duplicated as draft");
         fetchProjects();
       }
-    } catch (error) {
-      toast.error("Failed to duplicate project");
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error, "Failed to duplicate project"));
     } finally {
       setIsDuplicating(null);
     }
@@ -236,11 +235,11 @@ export function DirectorProjects() {
           toast.error("Invalid response from server.");
         }
       } else {
-        toast.error("Could not initiate payment. Please try again.");
+        toast.error(response.data?.message || "Could not initiate payment. Please try again.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Payment initiation failed:", error);
-      toast.error("Failed to initiate payment");
+      toast.error(getApiErrorMessage(error, "Failed to initiate payment"));
     } finally {
       setIsProcessingPayment(null);
     }

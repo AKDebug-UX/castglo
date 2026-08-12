@@ -93,4 +93,9 @@ export interface CastingFormData {
   confirm_right_to_post: boolean;
   confirm_legal_safeguarding_compliance: boolean;
   confirm_platform_policy: boolean;
+
+  // Internal / edit-mode status tracking
+  _dbStatus?: string;
+  _originalDbStatus?: string;
+  status?: string;
 }

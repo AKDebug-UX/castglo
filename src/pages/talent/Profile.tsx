@@ -10,7 +10,7 @@ import { Camera, Loader2, ShieldCheck, Upload, X, Image as ImageIcon, Youtube, M
 import { authAPI, profileAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAvatarUrl, getInitials } from "@/lib/utils";
+import { getAvatarUrl, getInitials, getApiErrorMessage } from "@/lib/utils";
 import { UnifiedTalentProfileForm } from "@/components/profile/UnifiedTalentProfileForm";
 import { UNIFIED_FIELD_IDS, validateUnifiedTalentProfile, isMinorFromAgeGroup, UNIFIED_TALENT_PROFILE_FIELD_SPEC } from "@/lib/unifiedTalentProfile";
 
@@ -1067,7 +1067,7 @@ export default function Profile() {
       await fetchProfileData();
       toast.success("Profile updated successfully");
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update profile");
+      toast.error(getApiErrorMessage(error, "Failed to update profile"));
     } finally {
       setIsSaving(false);
     }

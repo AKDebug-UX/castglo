@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ArrowLeft, Upload, Loader2, File, Image as ImageIcon, Video, Zap } from "lucide-react";
 import { castingCallAPI, applicationAPI, uploadAPI, projectAPI, profileAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { formatLocation } from "@/lib/utils";
+import { formatLocation, getApiErrorMessage } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 
@@ -67,8 +67,10 @@ export default function SubmitAudition() {
   });
 
   const [headshotFile, setHeadshotFile] = useState<File | null>(null);
+  const [uploadedHeadshotUrl, setUploadedHeadshotUrl] = useState<string | null>(null);
   const [useProfileHeadshot, setUseProfileHeadshot] = useState(false);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [uploadedMediaUrl, setUploadedMediaUrl] = useState<string | null>(null);
 
   const handleAutoFill = () => {
     setFormData(prev => ({
@@ -466,12 +468,14 @@ export default function SubmitAudition() {
   const handleHeadshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setHeadshotFile(e.target.files[0]);
+      setUploadedHeadshotUrl(null); // Reset cache when user chooses a new headshot
     }
   };
 
   const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setMediaFile(e.target.files[0]);
+      setUploadedMediaUrl(null); // Reset cache when user chooses a new media file
     }
   };
 
@@ -484,7 +488,7 @@ export default function SubmitAudition() {
     if (!formData.why_suitable.trim()) return toast.error("Please explain why you are suitable");
     if (!formData.relevant_experience.trim()) return toast.error("Relevant Experience is required");
     if (formData.skills.length === 0) return toast.error("Please select at least one skill");
-    if (!headshotFile && !useProfileHeadshot) {
+    if (!headshotFile && !uploadedHeadshotUrl && !useProfileHeadshot) {
       return toast.error(isProfessional ? "Please upload a logo/photo or select your profile picture" : "Please upload a headshot or select your profile picture");
     }
     
@@ -512,14 +516,18 @@ export default function SubmitAudition() {
 
     try {
       // Upload Headshot or use Profile Picture
-      let headshotUrl = "";
+      let headshotUrl = uploadedHeadshotUrl || "";
       if (useProfileHeadshot && user?.profilePicture) {
         headshotUrl = user.profilePicture;
-      } else if (headshotFile) {
+      } else if (!headshotUrl && headshotFile) {
         const headshotData = new FormData();
         headshotData.append("image", headshotFile);
         const headshotRes = await uploadAPI.uploadImage(headshotData);
         headshotUrl = headshotRes.data?.data?.url || headshotRes.data?.url;
+        if (headshotUrl) {
+          setUploadedHeadshotUrl(headshotUrl);
+          setHeadshotFile(null); // Marked as uploaded so it won't be re-uploaded on retry
+        }
       }
 
       if (!headshotUrl && useProfileHeadshot) {
@@ -531,12 +539,16 @@ export default function SubmitAudition() {
       }
 
       // Upload Media if exists
-      let mediaUrl = "";
-      if (mediaFile) {
+      let mediaUrl = uploadedMediaUrl || "";
+      if (!mediaUrl && mediaFile) {
         const mediaData = new FormData();
         mediaData.append("image", mediaFile);
         const mediaRes = await uploadAPI.uploadImage(mediaData);
         mediaUrl = mediaRes.data?.data?.url || mediaRes.data?.url;
+        if (mediaUrl) {
+          setUploadedMediaUrl(mediaUrl);
+          setMediaFile(null); // Marked as uploaded so it won't be re-uploaded on retry
+        }
       }
 
       const metaData = {
@@ -578,7 +590,7 @@ export default function SubmitAudition() {
         navigate("/talent/applications");
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to submit application");
+      toast.error(getApiErrorMessage(error, "Failed to submit application"));
     } finally {
       setIsSubmitting(false);
     }

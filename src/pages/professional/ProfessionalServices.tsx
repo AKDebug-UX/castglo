@@ -38,6 +38,7 @@ import { serviceAPI, uploadAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function ProfessionalServices() {
   const { user, formatPrice } = useAuth();
@@ -49,6 +50,7 @@ export default function ProfessionalServices() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -140,6 +142,7 @@ export default function ProfessionalServices() {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
+      setUploadedImageUrl(null); // Reset cache for newly chosen image
       const reader = new FileReader();
       reader.onloadend = () => {
         setSelectedImage(reader.result as string);
@@ -156,12 +159,17 @@ export default function ProfessionalServices() {
 
     setIsSubmitting(true);
     try {
-      let imageUrl = selectedImage && !selectedImage.startsWith('data:') ? selectedImage : undefined;
-      if (imageFile) {
+      let imageUrl = uploadedImageUrl || (selectedImage && !selectedImage.startsWith('data:') ? selectedImage : undefined);
+      if (imageFile && !uploadedImageUrl) {
         const uploadFormData = new FormData();
         uploadFormData.append("image", imageFile);
         const uploadRes = await uploadAPI.uploadImage(uploadFormData);
-        imageUrl = uploadRes.data?.data?.url || uploadRes.data?.url;
+        const uploaded = uploadRes.data?.data?.url || uploadRes.data?.url;
+        if (uploaded) {
+          imageUrl = uploaded;
+          setUploadedImageUrl(uploaded);
+          setImageFile(null); // Marked as uploaded so it won't re-upload on retry
+        }
       }
 
       const payload = {
@@ -207,7 +215,7 @@ export default function ProfessionalServices() {
         fetchServices();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || `Failed to ${editingService ? "update" : "create"} service`);
+      toast.error(getApiErrorMessage(error, `Failed to ${editingService ? "update" : "create"} service`));
     } finally {
       setIsSubmitting(false);
     }
@@ -222,8 +230,8 @@ export default function ProfessionalServices() {
         toast.success("Service deleted");
         fetchServices();
       }
-    } catch (error) {
-      toast.error("Failed to delete service");
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error, "Failed to delete service"));
     }
   };
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { leadAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function Contact() {
   const [isLoading, setIsLoading] = useState(false);
@@ -23,16 +24,9 @@ export default function Contact() {
     setIsLoading(true);
 
     try {
-      const payload = {
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
-        email: formData.email,
-        subject: formData.subject,
-        message: formData.message,
-      };
-
-      const response = await leadAPI.create(payload);
+      const response = await leadAPI.submitContact(formData);
       if (response.data.success) {
-        toast.success("Message sent successfully!");
+        toast.success("Message sent successfully! We will get back to you soon.");
         setFormData({
           firstName: "",
           lastName: "",
@@ -43,8 +37,8 @@ export default function Contact() {
       } else {
         toast.error(response.data.message || "Failed to send message");
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "An error occurred");
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error, "An error occurred while sending your message"));
     } finally {
       setIsLoading(false);
     }

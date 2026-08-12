@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Upload, Link as LinkIcon, FileCheck, X, FileText, Image as ImageIcon } from "lucide-react";
 import { applicationAPI, uploadAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface ProjectSubmissionModalProps {
   submission?: any;
@@ -149,7 +150,7 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
       }
     } catch (error: any) {
       console.error(error);
-      toast.error(error.response?.data?.message || "An error occurred during submission.");
+      toast.error(getApiErrorMessage(error, "An error occurred during submission."));
     } finally {
       setIsSubmitting(false);
     }

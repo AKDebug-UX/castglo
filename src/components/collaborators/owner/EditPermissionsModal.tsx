@@ -15,6 +15,7 @@ import { Collaborator, AccessScope, Permissions, UpdateCollaboratorDto } from '@
 import { collaboratorAPI } from '@/lib/api';
 import { toast } from 'sonner';
 import { Loader2, Edit3, Globe, FolderKanban, Save, AlertCircle } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/utils';
 
 interface EditPermissionsModalProps {
   collaborator: Collaborator | null;
@@ -102,9 +103,9 @@ export const EditPermissionsModal: React.FC<EditPermissionsModalProps> = ({
         onClose();
       }
     } catch (err: any) {
-      setFormError(
-        err?.response?.data?.message || 'Failed to update collaborator permissions'
-      );
+      const message = getApiErrorMessage(err, 'Failed to update collaborator permissions');
+      setFormError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { authAPI, profileAPI, userAPI } from "@/lib/api";
-import { getAvatarUrl, getInitials } from "@/lib/utils";
+import { getAvatarUrl, getInitials, getApiErrorMessage } from "@/lib/utils";
 import { toast } from "sonner";
 import { UnifiedProfessionalProfileForm } from "@/components/profile/UnifiedProfessionalProfileForm";
 import {
@@ -523,7 +523,7 @@ export default function ProfessionalProfile() {
       await fetchProfile();
       toast.success("Professional profile updated successfully");
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update profile");
+      toast.error(getApiErrorMessage(error, "Failed to update profile"));
     } finally {
       setIsSaving(false);
     }

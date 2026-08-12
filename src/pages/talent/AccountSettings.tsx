@@ -18,6 +18,7 @@ import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsP
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { VerifyProfileButton } from "@/components/verification/VerifyProfileButton";
+import { getApiErrorMessage } from "@/lib/utils";
 
 type SettingsTab =
   | "preferences"
@@ -207,7 +208,7 @@ export default function AccountSettings() {
       toast.success("Password updated successfully");
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to update password");
+      toast.error(getApiErrorMessage(e, "Failed to update password"));
     } finally {
       setIsSaving(false);
     }
@@ -233,7 +234,7 @@ export default function AccountSettings() {
       localStorage.removeItem("token");
       window.location.href = "/";
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to delete account");
+      toast.error(getApiErrorMessage(e, "Failed to delete account"));
     } finally {
       setIsSaving(false);
     }
@@ -247,7 +248,7 @@ export default function AccountSettings() {
       toast.success("Payment method removed");
       setPaymentMethods(prev => prev.filter(pm => pm.id !== id));
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to remove payment method");
+      toast.error(getApiErrorMessage(e, "Failed to remove payment method"));
     } finally {
       setIsSaving(false);
     }

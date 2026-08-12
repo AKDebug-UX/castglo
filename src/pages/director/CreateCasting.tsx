@@ -8,7 +8,7 @@ import { castingCallAPI, uploadAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
-import { resolveMediaUrl } from "@/lib/utils";
+import { resolveMediaUrl, getApiErrorMessage } from "@/lib/utils";
 import {
   parseMetaFromAttachments,
   buildMetaRolesById,
@@ -326,6 +326,7 @@ export default function CreateCasting() {
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -369,15 +370,17 @@ export default function CreateCasting() {
             // Prefer parsedMeta for fields the backend doesn't natively store,
             // then override with live backend values where they exist.
             const metaTop = parsedMeta || {};
+            const dbStatus = data.status || data.project_status || metaTop.status || metaTop.project_status || "active";
 
             setFormData(prev => ({
               ...prev,
               ...metaTop,      // fill in all meta fields first
+              _dbStatus: dbStatus, // track original DB status
               // Then explicitly override with reliable backend/meta values:
               project_title: data.project_title || data.projectName || data.title || metaTop.project_title || "",
               project_type: toProjectTypeLabel(data.project_type || data.projectType || data.productionType || metaTop.project_type) || "Film",
               full_project_description: data.full_project_description || data.description || metaTop.full_project_description || "",
-              project_status: toProjectStatusLabel(data.project_status || data.status || metaTop.project_status) || "Open for Applications",
+              project_status: toProjectStatusLabel(dbStatus),
               short_project_summary: data.short_project_summary || metaTop.short_project_summary || "",
               internal_project_reference: data.internal_project_reference || metaTop.internal_project_reference || "",
               casting_company_name: data.casting_company_name || metaTop.casting_company_name || "",
@@ -544,6 +547,7 @@ export default function CreateCasting() {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
+      setUploadedImageUrl(null); // Clear previous uploaded URL so the new file gets uploaded once
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
@@ -616,11 +620,41 @@ export default function CreateCasting() {
     window.scrollTo(0, 0);
   };
 
+  const goToLastStep = () => {
+    for (let s = 1; s < totalSteps; s++) {
+      if (!validateStep(s)) {
+        setStep(s);
+        window.scrollTo(0, 0);
+        return;
+      }
+    }
+    setStep(totalSteps);
+    window.scrollTo(0, 0);
+  };
+
+  const handleStepClick = (targetStep: number) => {
+    if (targetStep < step) {
+      setStep(targetStep);
+      window.scrollTo(0, 0);
+    } else if (targetStep > step) {
+      for (let s = 1; s < targetStep; s++) {
+        if (!validateStep(s)) {
+          setStep(s);
+          window.scrollTo(0, 0);
+          return;
+        }
+      }
+      setStep(targetStep);
+      window.scrollTo(0, 0);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent, statusOverride?: string) => {
     e.preventDefault();
     
-    // Only allow final submission if on the last step, unless explicitly updating from edit mode
-    if (statusOverride !== "draft" && statusOverride !== "edit_update" && step !== totalSteps) {
+    // Only allow final submission if on the last step, unless saving draft
+    if (statusOverride !== "draft" && step !== totalSteps) {
+      goToLastStep();
       return;
     }
 
@@ -653,7 +687,18 @@ export default function CreateCasting() {
         projectAttachments: ["__META__:" + metaString],
       };
 
-      if (imageFile) {
+      // On edit side: preserve and send back the current status of the call from the DB
+      if (isEditMode && formData._dbStatus && statusOverride !== "draft") {
+        payload.status = formData._dbStatus;
+      }
+
+      // Check if we already have an uploaded URL or need to upload the chosen image file
+      let coverImageUrl = uploadedImageUrl;
+      if (!coverImageUrl && typeof formData.project_cover_image === "string" && !formData.project_cover_image.startsWith("data:")) {
+        coverImageUrl = formData.project_cover_image;
+      }
+
+      if (imageFile && !uploadedImageUrl) {
         try {
           const uploadFormData = new FormData();
           // Use the new /upload/image endpoint which expects "image" field
@@ -662,14 +707,20 @@ export default function CreateCasting() {
           const uploadRes = await uploadAPI.uploadImage(uploadFormData);
           const imageUrl = uploadRes.data?.data?.url || uploadRes.data?.url;
           if (imageUrl) {
-            payload.projectAttachments.push(imageUrl);
+            coverImageUrl = imageUrl;
+            setUploadedImageUrl(imageUrl);
+            setImageFile(null); // Marked as uploaded so it won't be re-uploaded on retry
+            setFormData(prev => ({ ...prev, project_cover_image: imageUrl }));
           }
         } catch (uploadErr) {
           console.error("Image upload failed:", uploadErr);
-          toast.error("Image upload failed. Project saved without cover image.");
+          const uploadErrMsg = getApiErrorMessage(uploadErr, "Image upload failed");
+          toast.error(`${uploadErrMsg}. Project continuing without cover image.`);
         }
-      } else if (formData.project_cover_image) {
-        payload.projectAttachments.push(formData.project_cover_image);
+      }
+
+      if (coverImageUrl) {
+        payload.projectAttachments.push(coverImageUrl);
       }
 
       let response;
@@ -701,7 +752,8 @@ export default function CreateCasting() {
             }));
           } catch (roleErr) {
             console.error("Failed to add/update roles:", roleErr);
-            toast.error("Project saved, but some roles failed to attach or update. Please check the project details.");
+            const roleErrMsg = getApiErrorMessage(roleErr, "some roles failed to attach or update");
+            toast.error(`Project saved, but ${roleErrMsg}. Please check the project details.`);
           }
         }
 
@@ -728,7 +780,8 @@ export default function CreateCasting() {
             return;
           } catch (checkoutErr) {
             console.error("Checkout initiation failed:", checkoutErr);
-            toast.error("Failed to initiate payment. Project saved.");
+            const checkoutErrMsg = getApiErrorMessage(checkoutErr, "Failed to initiate payment");
+            toast.error(`${checkoutErrMsg}. Project saved.`);
             navigate("/director/projects");
             return;
           }
@@ -738,12 +791,11 @@ export default function CreateCasting() {
         navigate("/director/projects");
       }
     } catch (error: any) {
-      const errorMsg = error.response?.data?.message || "";
+      const errorMsg = getApiErrorMessage(error, isEditMode ? "Failed to update project" : "Failed to create project");
       if (errorMsg.toLowerCase().includes("limit") || errorMsg.toLowerCase().includes("upgrade")) {
         setShowLimitModal(true);
-      } else {
-        toast.error(errorMsg || "Failed to save project");
       }
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -801,7 +853,7 @@ export default function CreateCasting() {
           { num: 5, label: "Media" },
           { num: 6, label: "Publish" }
         ].map(s => (
-          <div key={s.num} className="flex flex-col items-center gap-2 cursor-pointer" onClick={() => { if(s.num < step) setStep(s.num) }}>
+          <div key={s.num} className="flex flex-col items-center gap-2 cursor-pointer" onClick={() => handleStepClick(s.num)}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors border-2 ${
               step >= s.num ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-muted"
             }`}>
@@ -840,7 +892,7 @@ export default function CreateCasting() {
         </div>
       )}
 
-      <form onSubmit={(e) => handleSubmit(e)} onKeyDown={handleKeyDown}>
+      <form onSubmit={(e) => handleSubmit(e)}>
         <fieldset disabled={!canEdit} className="space-y-6">
         {/* STEP 1: PROJECT BASICS & PRODUCTION DETAILS */}
         {step === 1 && (
@@ -920,12 +972,12 @@ export default function CreateCasting() {
               </Button>
             )}
 
-            {isEditMode && canEdit && step < totalSteps && (
+            {canEdit && step < totalSteps && (
               <Button 
-                key="submit-form-button-edit" 
+                key="submit-form-button-jump" 
                 type="button" 
                 variant="outline"
-                onClick={(e) => handleSubmit(e as any, "edit_update")}
+                onClick={goToLastStep}
                 disabled={isSubmitting} 
                 className="min-w-32 border-primary text-primary hover:bg-primary/10"
               >

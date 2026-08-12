@@ -18,6 +18,7 @@ import { collaboratorAPI } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Loader2, Mail, Globe, FolderKanban, Send, AlertCircle } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/utils';
 
 interface InviteCollaboratorModalProps {
   isOpen: boolean;
@@ -135,14 +136,16 @@ export const InviteCollaboratorModal: React.FC<InviteCollaboratorModalProps> = (
         handleClose();
       }
     } catch (err: any) {
-      const message =
-        err?.response?.data?.message ||
-        (err?.response?.status === 409
+      const message = getApiErrorMessage(
+        err,
+        err?.response?.status === 409
           ? 'An active invitation already exists for this email address'
           : err?.response?.status === 403
           ? 'You do not have permission to invite collaborators'
-          : 'Failed to send invitation');
+          : 'Failed to send invitation'
+      );
       setFormError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

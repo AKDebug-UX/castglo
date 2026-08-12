@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, Loader2, Upload, Eye, Save } from "lucide-react";
 import { profileAPI, userAPI, authAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { getAvatarUrl, getInitials } from "@/lib/utils";
+import { getAvatarUrl, getInitials, getApiErrorMessage } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { UnifiedCastingDirectorProfileForm } from "@/components/profile/UnifiedCastingDirectorProfileForm";
 import { UNIFIED_CASTING_DIRECTOR_FIELD_IDS, UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC } from "@/lib/unifiedCastingDirectorProfile/fieldSpec";
@@ -270,7 +270,7 @@ export default function DirectorProfile() {
       await fetchProfileData();
       toast.success("Casting profile updated successfully");
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update profile");
+      toast.error(getApiErrorMessage(error, "Failed to update profile"));
     } finally {
       setIsSaving(false);
     }

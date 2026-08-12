@@ -19,6 +19,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsPanel";
 import { VerifyProfileButton } from "@/components/verification/VerifyProfileButton";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function DirectorSettings() {
   const { user: currentUser, updatePreferredCurrency, formatPrice } = useAuth();
@@ -173,7 +174,7 @@ export default function DirectorSettings() {
       toast.success("Password updated successfully");
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update password");
+      toast.error(getApiErrorMessage(error, "Failed to update password"));
     } finally {
       setIsSaving(false);
     }
@@ -199,7 +200,7 @@ export default function DirectorSettings() {
       localStorage.removeItem("token");
       window.location.href = "/";
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to delete account");
+      toast.error(getApiErrorMessage(e, "Failed to delete account"));
     } finally {
       setIsSaving(false);
     }

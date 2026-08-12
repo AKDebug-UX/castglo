@@ -162,13 +162,49 @@ export function toProjectTypeLabel(value: any): string {
 
 export function toProjectStatusLabel(value: any): string {
   const v = String(value || "").trim();
-  if (!v) return "";
+  if (!v) return "Open for Applications";
   const s = v.toLowerCase();
-  if (s === "open" || s === "active") return "Open for Applications";
+  if (s === "open" || s === "active" || s === "open_for_applications" || s === "published")
+    return "Open for Applications";
   if (s === "draft") return "Draft";
-  if (s === "closed") return "Closed";
+  if (s === "closed" || s === "cancelled") return "Closed";
+  if (s === "paused") return "Paused";
+  if (s === "pending" || s === "pending_review" || s === "pending_approval") return "Pending";
+  if (s === "invite_only" || s === "invite only") return "Invite Only";
   if (s === "filled") return "Role Filled";
-  return v;
+  return v.charAt(0).toUpperCase() + v.slice(1);
+}
+
+export function toBackendProjectStatus(
+  projectStatusLabel: string,
+  originalDbStatus?: string,
+  statusOverride?: string
+): string {
+  if (statusOverride) return statusOverride;
+
+  const s = (projectStatusLabel || "").toLowerCase().trim();
+
+  // If status in the form is unchanged from what was on the DB, preserve the exact DB status
+  if (originalDbStatus && toProjectStatusLabel(originalDbStatus).toLowerCase() === s) {
+    return originalDbStatus;
+  }
+
+  if (s === "draft") return "draft";
+  if (s.includes("open") || s.includes("active") || s.includes("published")) {
+    if (originalDbStatus && ["active", "published", "open", "open_for_applications"].includes(originalDbStatus.toLowerCase())) {
+      return originalDbStatus;
+    }
+    return "active";
+  }
+  if (s.includes("closed") || s.includes("cancelled")) return "closed";
+  if (s.includes("paused")) return "paused";
+  if (s.includes("pending")) return "pending";
+  if (s.includes("invite")) return "invite_only";
+  if (s.includes("filled")) return "filled";
+
+  if (originalDbStatus) return originalDbStatus;
+
+  return "active";
 }
 
 // ── __META__ blob helpers ──────────────────────────────────────────────────────
@@ -505,12 +541,23 @@ export function buildProjectPayload(formData: any, statusOverride?: string): any
     status:
       statusOverride === "draft" || isBoosted
         ? "draft"
-        : formData.project_status?.toLowerCase().includes("open")
-        ? "active"
-        : "draft",
+        : (formData._dbStatus || formData._originalDbStatus || toBackendProjectStatus(
+            formData.project_status,
+            formData.status,
+            statusOverride
+          )),
   };
 
-  if (formData.project_website) payload.projectWebsite = formData.project_website;
+  if (formData.project_website) {
+    const rawWebsite = String(formData.project_website).trim();
+    if (rawWebsite) {
+      if (/^https?:\/\//i.test(rawWebsite)) {
+        payload.projectWebsite = rawWebsite;
+      } else if (rawWebsite.includes(".") && !rawWebsite.includes(" ")) {
+        payload.projectWebsite = `https://${rawWebsite}`;
+      }
+    }
+  }
   if (formData.director_name) payload.directorBio = `Directed by ${formData.director_name}`;
 
   return payload;

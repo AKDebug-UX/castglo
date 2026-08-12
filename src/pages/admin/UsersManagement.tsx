@@ -22,6 +22,7 @@ import { Eye, Ban, Trash2, Loader2, CheckCircle2, Gift, RefreshCcw } from "lucid
 import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { getApiErrorMessage } from "@/lib/utils";
 
 const getRoleBadgeVariant = (role: string) => {
   switch (role?.toLowerCase()) {
@@ -53,8 +54,8 @@ export default function UsersManagement() {
       if (response.data.success) {
         setUsers(response.data.data.users || []);
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch users");
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error, "Failed to fetch users"));
     } finally {
       setIsLoading(false);
     }
@@ -72,8 +73,8 @@ export default function UsersManagement() {
         toast.success("User suspended successfully");
         fetchUsers();
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to suspend user");
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error, "Failed to suspend user"));
     } finally {
       setIsActionLoading(false);
     }
@@ -87,8 +88,8 @@ export default function UsersManagement() {
         toast.success("User unsuspended successfully");
         fetchUsers();
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to unsuspend user");
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error, "Failed to unsuspend user"));
     } finally {
       setIsActionLoading(false);
     }
@@ -102,8 +103,8 @@ export default function UsersManagement() {
         toast.success("User verified successfully");
         fetchUsers();
       }
-    } catch (error) {
-      const message = error.response?.data?.message || "Failed to verify user";
+    } catch (error: any) {
+      const message = getApiErrorMessage(error, "Failed to verify user");
       if (message.toLowerCase().includes("profile not found")) {
         toast.error("User cannot be verified yet: They haven't created their profile.");
       } else {
@@ -126,8 +127,8 @@ export default function UsersManagement() {
         setTrialUser(null);
         fetchUsers();
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to grant free trial");
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error, "Failed to grant free trial"));
     } finally {
       setIsActionLoading(false);
     }
@@ -149,8 +150,8 @@ export default function UsersManagement() {
         toast.success("User deleted successfully");
         fetchUsers();
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete user");
+    } catch (error: any) {
+      toast.error(getApiErrorMessage(error, "Failed to delete user"));
     } finally {
       setIsActionLoading(false);
     }
