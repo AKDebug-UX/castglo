@@ -174,6 +174,8 @@ export default function LivestreamPage() {
   const joinHostIdRef = useRef<string | undefined>(undefined);
   const resolvedAppIdRef = useRef<string>("");
 
+  const [isBroadcasterOverride, setIsBroadcasterOverride] = useState<boolean | null>(null);
+
   const isOwner = Boolean(
     streamData && user && (() => {
       const hostId = typeof streamData.hostId === 'object' ? (streamData.hostId?._id || streamData.hostId?.id) : streamData.hostId;
@@ -190,7 +192,8 @@ export default function LivestreamPage() {
       });
     })()
   );
-  const isBroadcaster = isOwner || isCoHost;
+  const isBroadcaster = isBroadcasterOverride !== null ? isBroadcasterOverride : (isOwner || isCoHost);
+  const setIsBroadcaster = (val: boolean) => setIsBroadcasterOverride(val);
 
   const inviteLink = `${window.location.origin}/livestream/${id}`;
 
@@ -637,83 +640,28 @@ export default function LivestreamPage() {
     return num.toString();
   };
 
+  // 1. Fetch initial chat history and participants ONCE when entering stream
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token && id && id !== 'undefined') {
-      socketService.connect(token);
+    if (!id || id === 'undefined') return;
 
-      // Listen for real-time livestream chat messages
-      const handleNewMessage = (data: any) => {
-        const msg = data.message || data;
-        // Verify it belongs to the current livestream
-        if (msg.livestreamId === id || msg.streamId === id) {
-          setChatMessages((prev) => {
-            if (prev.some((m: any) => m.id === msg._id)) return prev;
-            
-            const senderId = msg.senderId || msg.sender?._id || msg.sender;
-            const isSelf = Boolean((user?.id || user?._id) && senderId && String(user?.id || user?._id) === String(senderId));
-            const displayName = isSelf 
-              ? (user?.fullName || "Me") 
-              : (msg.senderName || msg.sender?.fullName || "Participant");
-              
-            const formattedMessage = {
-              id: msg._id,
-              sender: displayName,
-              text: msg.message || msg.text,
-              createdAt: msg.createdAt || new Date().toISOString(),
-              timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              isSelf
-            };
-            return [...prev, formattedMessage];
-          });
-        }
-      };
+    let isMounted = true;
 
-      // Listen for stream ended event
-      const handleStreamEnded = (data: any) => {
-        if ((data.streamId === id || data.livestreamId === id) && !isBroadcaster) {
-          toast.info("The host has ended the livestream.");
-          setTimeout(() => navigate(-1), 3000);
-        }
-      };
-
-      socketService.on('new_livestream_message', handleNewMessage);
-      socketService.on('livestream_ended', handleStreamEnded);
-
-      return () => {
-        socketService.off('new_livestream_message', handleNewMessage);
-        socketService.off('livestream_ended', handleStreamEnded);
-      };
-    }
-  }, [id, user?.id, user?._id, user?.fullName, isBroadcaster, navigate]);
-
-  useEffect(() => {
-    const pollRef = { active: true };
-    let timeoutId: NodeJS.Timeout;
-    const currentUserId = user?.id || user?._id;
-
-    const fetchMessagesAndStatus = async () => {
-      if (!id || id === 'undefined' || !pollRef.active) return;
-
-      // If socket is connected, we only poll occasionally (every 45s) as a sanity check
-      const socketConnected = socketService.isConnected();
-      const interval = socketConnected ? 45000 : 15000;
-
+    const loadInitialHistory = async () => {
       try {
-        const [msgRes, myRes, publicRes, partRes] = await Promise.all([
+        const [msgRes, partRes] = await Promise.all([
           livestreamAPI.getMessages(id).catch(() => ({ data: [] })),
-          livestreamAPI.getMyStreams().catch(() => ({ data: { success: false } })),
-          livestreamAPI.getAll().catch(() => ({ data: { success: false } })),
           livestreamAPI.getParticipants(id).catch(() => ({ data: { success: false } }))
         ]);
 
-        // Handle messages more robustly
+        if (!isMounted) return;
+
+        // Process message history
         const rawMessages = msgRes.data?.data || (Array.isArray(msgRes.data) ? msgRes.data : []);
         if (Array.isArray(rawMessages)) {
           const currentUserId = user?.id || user?._id;
           const currentUserName = user?.fullName;
           const formattedMessages = rawMessages
-            .map((msg) => {
+            .map((msg: any) => {
               const senderId = msg.senderId || msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' && msg.sender.length === 24 ? msg.sender : null);
               const senderName = msg.senderName || msg.sender?.fullName || (typeof msg.sender === 'string' && msg.sender.length !== 24 ? msg.sender : null);
               const isSelf = Boolean(
@@ -721,7 +669,6 @@ export default function LivestreamPage() {
                 (currentUserName && senderName && String(currentUserName).toLowerCase() === String(senderName).toLowerCase())
               );
               
-              // Resolve display name
               let displayName = "Unknown";
               if (isSelf) {
                 displayName = user?.fullName || "Me";
@@ -739,333 +686,308 @@ export default function LivestreamPage() {
                 text: msg.message || msg.text,
                 createdAt: msg.createdAt || new Date().toISOString(),
                 timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                isSelf: isSelf
+                isSelf
               };
             })
-            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
           
-          setChatMessages(prev => {
-            if (formattedMessages.length === 0) return prev;
-            
-            // Retain any optimistic messages whose text hasn't been saved to DB yet
-            const savedTexts = new Set(formattedMessages.map(m => m.text));
-            const activeOptimistic = prev.filter(m => String(m.id).startsWith('temp-') && !savedTexts.has(m.text));
-            const combined = [...formattedMessages, ...activeOptimistic];
-
-            // Deduplicate/check equality before updating (checking both ID and isSelf status to handle async auth loading)
-            if (prev.length === combined.length && 
-                prev.every((msg, idx) => msg.id === combined[idx]?.id && msg.isSelf === combined[idx]?.isSelf)) {
-              return prev;
-            }
-            return combined;
-          });
+          setChatMessages(formattedMessages);
         }
 
-        let currentStream = null;
-        try {
-          const directRes = await livestreamAPI.getOne(id);
-          if (directRes.data?.success && directRes.data.data) {
-            currentStream = directRes.data.data;
-          }
-        } catch (err) {
-          console.warn("Direct polling stream fetch failed, falling back to list scan:", err);
-        }
-
-        if (!currentStream) {
-          if (myRes.data?.success && Array.isArray(myRes.data.data)) {
-            currentStream = myRes.data.data.find((s) => s._id === id || s.id === id);
-          }
-          if (!currentStream && publicRes.data?.success && Array.isArray(publicRes.data.data)) {
-            currentStream = publicRes.data.data.find((s) => s._id === id || s.id === id);
-          }
-        }
-
-        if (currentStream && currentStream.status === 'ended' && !isBroadcaster) {
-          toast.info("The host has ended the livestream.");
-          setTimeout(() => navigate(-1), 3000);
-          pollRef.active = false;
-          return;
-        }
-
-        if (currentStream) {
-          setStreamData(currentStream);
-          if (currentStream.layout && (currentStream.layout === "grid" || currentStream.layout === "speaker" || currentStream.layout === "cinema")) {
-            setLayoutMode(currentStream.layout);
-          }
-          if (currentStream.likeCount !== undefined) {
-            setLikeCount(currentStream.likeCount);
-          }
-        }
-
+        // Process initial participants list
         if (partRes.data?.success && Array.isArray(partRes.data.data)) {
-          const apiParticipants = partRes.data.data.map((p) => ({
+          const currentUserId = user?.id || user?._id;
+          const apiParticipants = partRes.data.data.map((p: any) => ({
             id: String(p._id || p.id),
             name: p.fullName || p.name || "Unknown",
             role: p.role || "viewer",
-            isSelf: String(p._id || p.id) === String(user?.id || user?._id),
+            isSelf: String(p._id || p.id) === String(currentUserId),
             isMicOn: p.isMicOn ?? (p.role === 'host' || p.role === 'co-host'),
             isCamOn: p.isCamOn ?? (p.role === 'host' || p.role === 'co-host'),
             headline: p.headline,
             skills: p.skills
           }));
-          
-          setParticipants(prev => {
-            if (JSON.stringify(apiParticipants) === JSON.stringify(prev)) return prev;
-            return apiParticipants;
-          });
+          setParticipants(apiParticipants);
         }
-      } catch (error) {
-        console.error("Polling error:", error);
-      } finally {
-        if (pollRef.active) {
-          timeoutId = setTimeout(fetchMessagesAndStatus, interval);
-        }
+      } catch (err) {
+        console.error("Failed to load initial livestream data:", err);
       }
     };
 
-    fetchMessagesAndStatus();
+    loadInitialHistory();
 
-    // Socket listeners for livestream
-    if (id && id !== 'undefined') {
-      const handleConnect = () => {
-        console.log("Socket connected/reconnected, joining livestream room:", id);
-        socketService.emit('join_livestream', id);
-      };
+    return () => {
+      isMounted = false;
+    };
+  }, [id, user?.id, user?._id]);
 
-      if (socketService.isConnected()) {
-        handleConnect();
-      }
+  // 2. Real-time WebSocket connection and events for live chat, participants, and stream state
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token || !id || id === 'undefined') return;
 
-      socketService.on('connect', handleConnect);
+    // Ensure socket is connected with user auth token
+    socketService.connect(token);
 
-      const handleNewLivestreamMessage = (data) => {
-        const msg = data.message || data; // Handle both wrapped and direct payloads
-        if (!msg || (!msg.text && !msg.message)) return;
-        
-        setChatMessages(prev => {
-          const msgId = msg._id || msg.id;
-          const currentUserId = user?.id || user?._id;
-          const currentUserName = user?.fullName;
-          
-          const senderId = msg.senderId || msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' && msg.sender.length === 24 ? msg.sender : null);
-          const senderName = msg.senderName || msg.sender?.fullName || (typeof msg.sender === 'string' && msg.sender.length !== 24 ? msg.sender : null);
-          
-          const isSelf = Boolean(
-            (currentUserId && senderId && String(currentUserId) === String(senderId)) ||
-            (currentUserName && senderName && String(currentUserName).toLowerCase() === String(senderName).toLowerCase())
-          );
+    const handleConnect = () => {
+      console.log("Socket connected/reconnected, joining livestream room:", id);
+      socketService.emit('join_livestream', id);
+    };
 
-          // Deduplicate optimistic messages for the sender
-          if (msgId && prev.some(m => m.id === msgId)) return prev;
-          if (isSelf && prev.some(m => m.isSelf && (m.text === (msg.message || msg.text) || m.id === msgId))) return prev;
-          
-          // Resolve display name
-          let displayName = "Unknown";
-          if (isSelf) {
-            displayName = user?.fullName || "Me";
-          } else if (senderName) {
-            displayName = senderName;
-          } else if (typeof msg.sender === 'object' && msg.sender?.fullName) {
-            displayName = msg.sender.fullName;
-          } else if (typeof msg.sender === 'string') {
-            displayName = msg.sender.length === 24 ? "Participant" : msg.sender;
-          }
+    if (socketService.isConnected()) {
+      handleConnect();
+    }
 
-          return [...prev, {
-            id: msgId || Date.now().toString(),
+    socketService.on('connect', handleConnect);
+
+    // Unified live chat message listener
+    const handleIncomingMessage = (data: any) => {
+      const msg = data.message || data;
+      if (!msg || (!msg.text && !msg.message)) return;
+
+      // Filter by streamId if present in payload
+      const msgStreamId = msg.streamId || msg.livestreamId;
+      if (msgStreamId && String(msgStreamId) !== String(id)) return;
+
+      setChatMessages((prev: any[]) => {
+        const msgId = msg._id || msg.id;
+        const currentUserId = user?.id || user?._id;
+        const currentUserName = user?.fullName;
+
+        const senderId = msg.senderId || msg.sender?._id || msg.sender?.id || (typeof msg.sender === 'string' && msg.sender.length === 24 ? msg.sender : null);
+        const senderName = msg.senderName || msg.sender?.fullName || (typeof msg.sender === 'string' && msg.sender.length !== 24 ? msg.sender : null);
+
+        const isSelf = Boolean(
+          (currentUserId && senderId && String(currentUserId) === String(senderId)) ||
+          (currentUserName && senderName && String(currentUserName).toLowerCase() === String(senderName).toLowerCase())
+        );
+
+        // Deduplicate messages by ID or text for sender
+        if (msgId && prev.some(m => m.id === msgId)) return prev;
+        if (isSelf && prev.some(m => m.isSelf && (m.text === (msg.message || msg.text) || m.id === msgId))) return prev;
+
+        let displayName = "Unknown";
+        if (isSelf) {
+          displayName = user?.fullName || "Me";
+        } else if (senderName) {
+          displayName = senderName;
+        } else if (typeof msg.sender === 'object' && msg.sender?.fullName) {
+          displayName = msg.sender.fullName;
+        } else if (typeof msg.sender === 'string') {
+          displayName = msg.sender.length === 24 ? "Participant" : msg.sender;
+        }
+
+        return [
+          ...prev,
+          {
+            id: msgId || `socket-${Date.now()}-${Math.random()}`,
             sender: displayName,
             text: msg.message || msg.text,
+            createdAt: msg.createdAt || new Date().toISOString(),
             timestamp: new Date(msg.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isSelf: isSelf
-          }];
-        });
-      };
+            isSelf
+          }
+        ];
+      });
+    };
 
-      socketService.on('livestream_message', handleNewLivestreamMessage);
+    socketService.on('livestream_message', handleIncomingMessage);
+    socketService.on('new_livestream_message', handleIncomingMessage);
 
-      const handleParticipantJoined = (data) => {
-        const newUser = data.participant;
-        if (!newUser) return;
-        setParticipants(prev => {
-          if (prev.some(p => String(p.id) === String(newUser._id || newUser.id))) return prev;
-          return [...prev, {
-            id: String(newUser._id || newUser.id),
-            name: newUser.fullName,
+    // Stream ended event
+    const handleStreamEnded = (data: any) => {
+      const endedStreamId = data?.streamId || data?.livestreamId || data?.id;
+      if (!endedStreamId || String(endedStreamId) === String(id)) {
+        if (!isBroadcaster) {
+          toast.info("The host has ended the livestream.");
+          setTimeout(() => navigate(-1), 3000);
+        }
+      }
+    };
+    socketService.on('livestream_ended', handleStreamEnded);
+
+    // Participant joined
+    const handleParticipantJoined = (data: any) => {
+      const newUser = data.participant || data.user || data;
+      if (!newUser || !newUser.fullName) return;
+      const newUserId = String(newUser._id || newUser.id);
+
+      setParticipants((prev: any[]) => {
+        if (prev.some(p => String(p.id) === newUserId)) return prev;
+        return [
+          ...prev,
+          {
+            id: newUserId,
+            name: newUser.fullName || newUser.name || "Participant",
             role: newUser.role || "viewer",
-            isSelf: String(user?.id || user?._id) === String(newUser._id || newUser.id),
+            isSelf: String(user?.id || user?._id) === newUserId,
             isMicOn: false,
             isCamOn: false,
             headline: newUser.headline,
             skills: newUser.skills
-          }];
-        });
-        toast.info(`${newUser.fullName} joined the live`);
-      };
-
-      const handleParticipantLeft = (data) => {
-        const userId = data.userId;
-        setParticipants(prev => prev.filter(p => String(p.id) !== String(userId)));
-      };
-
-      const handleCohostPromoted = async (data) => {
-        const { streamId } = data;
-        toast.success("You have been promoted to Co-Host!", { 
-          duration: 5000,
-          icon: "🎙️" 
-        });
-        // Re-call start to get publisher token and switch to publishing mode
-        if (id) {
-          try {
-            const startRes = await livestreamAPI.start(id);
-            if (startRes.data.success) {
-              const { token, channelName } = startRes.data.data;
-              // Leave current channel and join as publisher
-              if (agoraClientRef.current) {
-                const appId = startRes.data.data?.appId || startRes.data.data?.agoraAppId || resolvedAppIdRef.current || import.meta.env.VITE_AGORA_APP_ID;
-                await agoraClientRef.current.leave();
-                await agoraClientRef.current.join(appId, channelName, token, String(user?.id || user?._id));
-                // Create and publish local tracks
-                const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
-                setLocalAudioTrack(audioTrack);
-                setLocalVideoTrack(videoTrack);
-                await agoraClientRef.current.publish([audioTrack, videoTrack]);
-                setIsJoined(true);
-                setIsBroadcaster(true);
-                // Inform others we are now broadcasting
-                socketService.emit('toggle_camera', { streamId: id, isCamOn: true });
-              }
-            }
-          } catch (error) {
-            console.error("Re-join as co-host error:", error);
-            toast.error("Failed to switch to broadcasting mode");
           }
-        }
-      };
+        ];
+      });
+      toast.info(`${newUser.fullName} joined the live`);
+    };
+    socketService.on('participant_joined', handleParticipantJoined);
 
-      const handleCohostAdded = (data) => {
-        const { userId, stream } = data;
-        setStreamData(stream);
-        
-        // Update local participants role
-        setParticipants(prev => prev.map(p => 
-          String(p.id) === String(userId) ? { ...p, role: "co-host" } : p
-        ));
+    // Participant left
+    const handleParticipantLeft = (data: any) => {
+      const leftUserId = String(data.userId || data._id || data.id || "");
+      if (leftUserId) {
+        setParticipants((prev: any[]) => prev.filter(p => String(p.id) !== leftUserId));
+      }
+    };
+    socketService.on('participant_left', handleParticipantLeft);
 
-        const promotedUser = participants.find(p => String(p.id) === String(userId));
-        if (promotedUser && String(userId) !== String(user?.id)) {
-          toast.info(`${promotedUser.name} is now a Co-Host`);
-        }
-      };
-
-      const handleCohostDemoted = async (data) => {
-        toast.error("Your Co-Host permissions have been removed.", { 
-          duration: 5000,
-          icon: "🚫" 
-        });
-        // Disable local media tracks if they were on and stop publishing
-        if (localVideoTrack) {
-          localVideoTrack.stop();
-          localVideoTrack.close();
-        }
-        if (localAudioTrack) {
-          localAudioTrack.stop();
-          localAudioTrack.close();
-        }
-        setLocalVideoTrack(null);
-        setLocalAudioTrack(null);
-        setIsMicOn(false);
-        setIsCamOn(false);
-        setIsBroadcaster(false);
-
-        // Re-join as viewer (subscriber)
-        if (id) {
-          try {
-            const joinRes = await livestreamAPI.join(id);
-            if (joinRes.data.success) {
-              const { token, channelName } = joinRes.data.data;
-              if (agoraClientRef.current) {
-                const appId = joinRes.data.data?.appId || joinRes.data.data?.agoraAppId || resolvedAppIdRef.current || import.meta.env.VITE_AGORA_APP_ID;
-                await agoraClientRef.current.leave();
-                await agoraClientRef.current.join(appId, channelName, token, String(user?.id || user?._id));
-                setIsJoined(true);
-              }
+    // Co-host promoted
+    const handleCohostPromoted = async (data: any) => {
+      toast.success("You have been promoted to Co-Host!", { 
+        duration: 5000,
+        icon: "🎙️" 
+      });
+      if (id) {
+        try {
+          const startRes = await livestreamAPI.start(id);
+          if (startRes.data.success) {
+            const { token, channelName } = startRes.data.data;
+            if (agoraClientRef.current) {
+              const appId = startRes.data.data?.appId || startRes.data.data?.agoraAppId || resolvedAppIdRef.current || import.meta.env.VITE_AGORA_APP_ID;
+              await agoraClientRef.current.leave();
+              await agoraClientRef.current.join(appId, channelName, token, String(user?.id || user?._id));
+              const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks();
+              setLocalAudioTrack(audioTrack);
+              setLocalVideoTrack(videoTrack);
+              await agoraClientRef.current.publish([audioTrack, videoTrack]);
+              setIsJoined(true);
+              setIsBroadcaster(true);
+              socketService.emit('toggle_camera', { streamId: id, isCamOn: true });
             }
-          } catch (error) {
-            console.error("Re-join as viewer error:", error);
           }
+        } catch (error) {
+          console.error("Re-join as co-host error:", error);
+          toast.error("Failed to switch to broadcasting mode");
         }
-      };
+      }
+    };
+    socketService.on('cohost_promoted', handleCohostPromoted);
 
-      socketService.on('participant_joined', handleParticipantJoined);
-      socketService.on('participant_left', handleParticipantLeft);
-      socketService.on('cohost_promoted', handleCohostPromoted);
-      socketService.on('cohost_added', handleCohostAdded);
-      socketService.on('cohost_demoted', handleCohostDemoted);
+    // Co-host added
+    const handleCohostAdded = (data: any) => {
+      const { userId, stream } = data;
+      if (stream) setStreamData(stream);
+      
+      setParticipants((prev: any[]) => prev.map(p => 
+        String(p.id) === String(userId) ? { ...p, role: "co-host" } : p
+      ));
 
-      const handleLayoutChanged = (data) => {
-        const { layout } = data;
-        if (layout && (layout === "grid" || layout === "speaker" || layout === "cinema")) {
-          setLayoutMode(layout);
+      const promotedUser = participants.find((p: any) => String(p.id) === String(userId));
+      if (promotedUser && String(userId) !== String(user?.id)) {
+        toast.info(`${promotedUser.name} is now a Co-Host`);
+      }
+    };
+    socketService.on('cohost_added', handleCohostAdded);
+
+    // Co-host demoted
+    const handleCohostDemoted = async () => {
+      toast.error("Your Co-Host permissions have been removed.", { 
+        duration: 5000,
+        icon: "🚫" 
+      });
+      if (localVideoTrack) {
+        localVideoTrack.stop();
+        localVideoTrack.close();
+      }
+      if (localAudioTrack) {
+        localAudioTrack.stop();
+        localAudioTrack.close();
+      }
+      setLocalVideoTrack(null);
+      setLocalAudioTrack(null);
+      setIsMicOn(false);
+      setIsCamOn(false);
+      setIsBroadcaster(false);
+
+      if (id) {
+        try {
+          const joinRes = await livestreamAPI.join(id);
+          if (joinRes.data.success) {
+            const { token, channelName } = joinRes.data.data;
+            if (agoraClientRef.current) {
+              const appId = joinRes.data.data?.appId || joinRes.data.data?.agoraAppId || resolvedAppIdRef.current || import.meta.env.VITE_AGORA_APP_ID;
+              await agoraClientRef.current.leave();
+              await agoraClientRef.current.join(appId, channelName, token, String(user?.id || user?._id));
+              setIsJoined(true);
+            }
+          }
+        } catch (error) {
+          console.error("Re-join as viewer error:", error);
         }
-      };
+      }
+    };
+    socketService.on('cohost_demoted', handleCohostDemoted);
 
-      socketService.on('layout_changed', handleLayoutChanged);
+    // Layout changed
+    const handleLayoutChanged = (data: any) => {
+      const { layout } = data;
+      if (layout && (layout === "grid" || layout === "speaker" || layout === "cinema")) {
+        setLayoutMode(layout);
+      }
+    };
+    socketService.on('layout_changed', handleLayoutChanged);
 
-      const handleIncomingReaction = (data) => {
-        const { emoji } = data;
-        const id = Date.now() + Math.random();
-        const left = Math.floor(Math.random() * 80) + 10; // Random position 10% to 90%
-        
-        setReactions(prev => [...prev, { id, emoji, left }]);
-        
-        // Remove reaction after animation finishes (3 seconds)
-        setTimeout(() => {
-          setReactions(prev => prev.filter(r => r.id !== id));
-        }, 3000);
-      };
+    // Reactions
+    const handleIncomingReaction = (data: any) => {
+      const { emoji } = data;
+      const rid = Date.now() + Math.random();
+      const left = Math.floor(Math.random() * 80) + 10;
+      
+      setReactions(prev => [...prev, { id: rid, emoji, left }]);
+      setTimeout(() => {
+        setReactions(prev => prev.filter(r => r.id !== rid));
+      }, 3000);
+    };
+    socketService.on('livestream_reaction', handleIncomingReaction);
 
-      socketService.on('livestream_reaction', handleIncomingReaction);
+    // Likes
+    const handleIncomingLike = (data: any) => {
+      const { count } = data;
+      if (count !== undefined) setLikeCount(count);
+      
+      const rid = Date.now() + Math.random();
+      const left = Math.floor(Math.random() * 80) + 10;
+      setReactions(prev => [...prev, { id: rid, emoji: "💖", left }]);
+      setTimeout(() => {
+        setReactions(prev => prev.filter(r => r.id !== rid));
+      }, 3000);
+    };
+    socketService.on('livestream_like', handleIncomingLike);
 
-      const handleIncomingLike = (data) => {
-        const { count } = data;
-        if (count !== undefined) setLikeCount(count);
-        
-        // Trigger a floating heart reaction automatically
-        const rid = Date.now() + Math.random();
-        const left = Math.floor(Math.random() * 80) + 10;
-        setReactions(prev => [...prev, { id: rid, emoji: "💖", left }]);
-        setTimeout(() => {
-          setReactions(prev => prev.filter(r => r.id !== rid));
-        }, 3000);
-      };
+    // User camera toggle
+    const handleUserCameraToggled = (data: any) => {
+      const { userId, isCamOn } = data;
+      setRemoteCameraStatus(prev => ({ ...prev, [userId]: isCamOn }));
+    };
+    socketService.on('user_camera_toggled', handleUserCameraToggled);
 
-      socketService.on('livestream_like', handleIncomingLike);
-
-      const handleUserCameraToggled = (data) => {
-        const { userId, isCamOn } = data;
-        setRemoteCameraStatus(prev => ({ ...prev, [userId]: isCamOn }));
-      };
-
-      socketService.on('user_camera_toggled', handleUserCameraToggled);
-
-      return () => {
-        pollRef.active = false;
-        if (timeoutId) clearTimeout(timeoutId);
-        socketService.off('connect', handleConnect);
-        socketService.off('livestream_message', handleNewLivestreamMessage);
-        socketService.off('participant_joined', handleParticipantJoined);
-        socketService.off('participant_left', handleParticipantLeft);
-        socketService.off('cohost_promoted', handleCohostPromoted);
-        socketService.off('cohost_added', handleCohostAdded);
-        socketService.off('cohost_demoted', handleCohostDemoted);
-        socketService.off('layout_changed', handleLayoutChanged);
-        socketService.off('livestream_reaction', handleIncomingReaction);
-        socketService.off('livestream_like', handleIncomingLike);
-        socketService.off('user_camera_toggled', handleUserCameraToggled);
-        socketService.emit('leave_livestream', id);
-      };
-    }
-  }, [id, user?.id, user?._id, isBroadcaster]);
+    return () => {
+      socketService.off('connect', handleConnect);
+      socketService.off('livestream_message', handleIncomingMessage);
+      socketService.off('new_livestream_message', handleIncomingMessage);
+      socketService.off('livestream_ended', handleStreamEnded);
+      socketService.off('participant_joined', handleParticipantJoined);
+      socketService.off('participant_left', handleParticipantLeft);
+      socketService.off('cohost_promoted', handleCohostPromoted);
+      socketService.off('cohost_added', handleCohostAdded);
+      socketService.off('cohost_demoted', handleCohostDemoted);
+      socketService.off('layout_changed', handleLayoutChanged);
+      socketService.off('livestream_reaction', handleIncomingReaction);
+      socketService.off('livestream_like', handleIncomingLike);
+      socketService.off('user_camera_toggled', handleUserCameraToggled);
+      socketService.emit('leave_livestream', id);
+    };
+  }, [id, user?.id, user?._id, isBroadcaster, navigate]);
 
   const [chatInput, setChatInput] = useState("");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
