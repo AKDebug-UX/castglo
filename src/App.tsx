@@ -93,7 +93,6 @@ const UsersManagement = lazy(() => import("./pages/admin/UsersManagement"));
 const FreeTierManagement = lazy(() => import("./pages/admin/FreeTierManagement"));
 const AdminBookings = lazy(() => import("./pages/admin/AdminBookings"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
-const VerificationManagement = lazy(() => import("./pages/admin/VerificationManagement"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminProfile = lazy(() => import("./pages/admin/AdminProfile"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
@@ -340,7 +339,6 @@ const App = () => {
                 <Route path="free-tier" element={<FreeTierManagement />} />
                 <Route path="bookings" element={<AdminBookings />} />
                 <Route path="notifications" element={<AdminNotifications />} />
-                <Route path="verification" element={<VerificationManagement />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="leads" element={<AdminLeads />} />
                 <Route path="subscriptions" element={<AdminSubscriptions />} />

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarIcon, Clock, MapPin, DollarSign, Loader2, CheckCircle2 } from "lucide-react";
-import { bookingAPI } from "@/lib/api";
+import { bookingAPI, messagingAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -36,8 +36,9 @@ export function BookingDialog({ isOpen, onOpenChange, talent }: BookingDialogPro
 
     setIsLoading(true);
     try {
+      const talentId = talent?.userId?._id || talent?.userId?.id || talent?.userId || talent?._id || talent?.id;
       const payload = {
-        talentId: talent?.userId?._id || talent?.userId?.id || talent?._id || talent?.id,
+        talentId,
         serviceName: formData.serviceName,
         date: formData.date,
         time: formData.time,
@@ -47,13 +48,32 @@ export function BookingDialog({ isOpen, onOpenChange, talent }: BookingDialogPro
         status: "Pending"
       };
 
-      const response = await bookingAPI.create(payload);
-      if (response.data?.success || response.data?.status === "success" || response.status === 200 || response.status === 201) {
-        setIsSuccess(true);
-        toast.success("Booking request sent successfully!");
+      try {
+        const response = await bookingAPI.create(payload);
+        if (response.data?.success || response.data?.status === "success" || response.status === 200 || response.status === 201) {
+          setIsSuccess(true);
+          toast.success("Booking request sent successfully!");
+          return;
+        }
+      } catch (err: any) {
+        if (err.response?.status === 404 || err.response?.data?.error === "Route not found") {
+          // Fallback to messaging system when backend /bookings endpoint is 404
+          const convRes = await messagingAPI.getOrCreateConversation(talentId);
+          const conversationData = convRes.data?.data || convRes.data;
+          const conversationId = conversationData?._id || conversationData?.id;
+          
+          if (conversationId) {
+            const bookingText = `📅 BOOKING REQUEST\n• Service: ${formData.serviceName}\n• Date: ${formData.date}\n• Time: ${formData.time || 'N/A'}\n• Location: ${formData.location || 'N/A'}\n• Offered Amount: ${formatPrice(Number(formData.amount))}\n${formData.notes ? `• Notes: ${formData.notes}` : ''}`;
+            await messagingAPI.sendMessage({ conversationId, text: bookingText });
+            setIsSuccess(true);
+            toast.success("Booking request sent via direct message!");
+            return;
+          }
+        }
+        throw err;
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create booking");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.response?.data?.error || "Failed to create booking");
     } finally {
       setIsLoading(false);
     }

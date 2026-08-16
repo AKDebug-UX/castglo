@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/pagination";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { formatLocation } from "@/lib/utils";
+import { formatLocation, resolveMediaUrl } from "@/lib/utils";
 
 export default function BrowseTalent() {
   const [search, setSearch] = useState("");
@@ -87,6 +87,85 @@ export default function BrowseTalent() {
 
   const currentDetails = categoryDetails[activeCategory] || categoryDetails["Actors & Performers"];
 
+  const normalizeBrowseTalent = (talentItem: any) => {
+    const tp = talentItem?.talentProfile || talentItem?.talent || talentItem?.unifiedTalentProfile || talentItem;
+    const userObj =
+      (talentItem?.userId && typeof talentItem.userId === "object" ? talentItem.userId : null) ||
+      (talentItem?.user && typeof talentItem.user === "object" ? talentItem.user : null) ||
+      (tp?.userId && typeof tp.userId === "object" ? tp.userId : null) ||
+      (tp?.user && typeof tp.user === "object" ? tp.user : null);
+
+    const userId =
+      (typeof talentItem?.userId === "string" ? talentItem.userId : undefined) ||
+      userObj?._id ||
+      userObj?.id ||
+      (typeof tp?.userId === "string" ? tp.userId : undefined) ||
+      tp?.userId?._id ||
+      tp?.userId?.id ||
+      tp?._id ||
+      tp?.id ||
+      talentItem?._id ||
+      talentItem?.id;
+
+    const fullName =
+      tp?.fullName ||
+      userObj?.fullName ||
+      talentItem?.fullName ||
+      talentItem?.displayName ||
+      talentItem?.display_name ||
+      userObj?.displayName ||
+      tp?.displayName ||
+      (tp?.firstName || talentItem?.firstName || userObj?.firstName
+        ? `${tp?.firstName || talentItem?.firstName || userObj?.firstName || ""} ${tp?.lastName || talentItem?.lastName || userObj?.lastName || ""}`.trim()
+        : "Talent Member");
+
+    const rawPic =
+      talentItem?.profilePicture ||
+      talentItem?.profileImage ||
+      tp?.profilePicture ||
+      tp?.profileImage ||
+      tp?.avatar ||
+      tp?.profilePhoto ||
+      userObj?.profilePicture ||
+      userObj?.avatar ||
+      tp?.headshots?.[0]?.url ||
+      (typeof tp?.headshots?.[0] === "string" ? tp.headshots[0] : undefined) ||
+      talentItem?.talent?.headshots?.[0]?.url ||
+      talentItem?.headshots?.[0]?.url;
+
+    const imageSrc = resolveMediaUrl(rawPic) || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop";
+
+    const category =
+      tp?.primaryTalentType ||
+      talentItem?.primaryTalentType ||
+      (Array.isArray(tp?.talentType) ? tp.talentType[0] : tp?.talentType) ||
+      (Array.isArray(talentItem?.talentType) ? talentItem.talentType[0] : talentItem?.talentType) ||
+      talentItem?.category ||
+      talentItem?.userRole ||
+      "Actor & Performer";
+
+    const city = tp?.city || tp?.location?.city || talentItem?.location?.city || talentItem?.city || talentItem?.current_city;
+    const country = tp?.country || tp?.location?.country || talentItem?.location?.country || talentItem?.country || talentItem?.current_country;
+    let locationText = "Remote";
+    if (city || country) {
+      locationText = [city, country].filter(Boolean).join(", ");
+    } else if (talentItem?.location) {
+      locationText = formatLocation(talentItem.location);
+    }
+
+    const rating = talentItem?.rating || tp?.rating || "4.8";
+
+    return {
+      id: userId || talentItem?._id || crypto.randomUUID(),
+      userId: userId || talentItem?._id,
+      fullName,
+      imageSrc,
+      category,
+      locationText,
+      rating,
+    };
+  };
+
   const fetchTalents = async (page = 1) => {
     setIsLoading(true);
     try {
@@ -97,21 +176,31 @@ export default function BrowseTalent() {
         "Crew": "crew"
       };
 
+      const selectedCategory = categoryMap[activeCategory] || "talent";
+
       const response = await profileAPI.search({ 
         search, 
-        userRole: "talent", // Force to talent as requested
+        userRole: selectedCategory === "crew" ? "industry_professional" : "talent",
+        category: selectedCategory,
+        talentType: selectedCategory,
         page,
         limit: itemsPerPage
       });
       
-      if (response.data.success && response.data.data?.profiles) {
-        setTalents(response.data.data.profiles);
-        const total = response.data.data.pagination?.total || 0;
-        setTotalPages(Math.ceil(total / itemsPerPage));
-      } else {
-        setTalents([]);
-        setTotalPages(0);
-      }
+      const rawData = response.data;
+      const profiles = Array.isArray(rawData?.data?.profiles)
+        ? rawData.data.profiles
+        : Array.isArray(rawData?.profiles)
+        ? rawData.profiles
+        : Array.isArray(rawData?.data)
+        ? rawData.data
+        : Array.isArray(rawData)
+        ? rawData
+        : [];
+      
+      setTalents(profiles);
+      const total = rawData?.data?.pagination?.total || rawData?.pagination?.total || profiles.length;
+      setTotalPages(Math.ceil(total / itemsPerPage) || 1);
     } catch (error) {
       console.error("Failed to fetch talents", error);
       setTalents([]);
@@ -131,18 +220,28 @@ export default function BrowseTalent() {
         "Crew": "crew"
       };
 
+      const selectedCategory = categoryMap[activeCategory] || "talent";
+
       const response = await profileAPI.search({ 
-        userRole: "talent", // Force to talent
+        userRole: selectedCategory === "crew" ? "industry_professional" : "talent",
+        category: selectedCategory,
         page: 1,
         limit: 4,
         sort: "newest"
       });
       
-      if (response.data.success && response.data.data?.profiles) {
-        setNewTalents(response.data.data.profiles);
-      } else {
-        setNewTalents([]);
-      }
+      const rawData = response.data;
+      const profiles = Array.isArray(rawData?.data?.profiles)
+        ? rawData.data.profiles
+        : Array.isArray(rawData?.profiles)
+        ? rawData.profiles
+        : Array.isArray(rawData?.data)
+        ? rawData.data
+        : Array.isArray(rawData)
+        ? rawData
+        : [];
+
+      setNewTalents(profiles);
     } catch (error) {
       console.error("Failed to fetch new talents", error);
       setNewTalents([]);
@@ -277,48 +376,51 @@ export default function BrowseTalent() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {talents.map((talent) => (
-                  <Card key={talent._id} className="overflow-hidden border border-slate-100 shadow-sm bg-white rounded-xl group">
-                    <CardContent className="p-0">
-                      <div className="relative aspect-square overflow-hidden bg-slate-100">
-                        <img 
-                          src={talent.talent?.headshots?.[0]?.url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
-                          className="w-full h-full object-cover object-top transition-transform group-hover:scale-105"
-                          alt={talent.userId?.fullName}
-                        />
-                        <div className="absolute top-2 right-2">
-                          <Badge className="bg-white/90 backdrop-blur text-slate-900 border-none font-bold text-xs px-2 py-1 flex items-center gap-1 shadow-sm">
-                            <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                            {talent.rating || "4.8"}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="p-5 space-y-4">
-                        <div className="space-y-1">
-                          <h3 className="font-bold text-xl text-slate-900 leading-tight">{talent.userId?.fullName}</h3>
-                          <p className="text-[#009698] font-medium text-lg">
-                            {talent.category || talent.userRole}
-                          </p>
-                          <p className="text-slate-400 flex items-center gap-1.5 text-lg font-light">
-                            <MapPin className="w-4 h-4" />
-                            {formatLocation(talent.location)}
-                          </p>
+                {talents.map((talentItem) => {
+                  const talent = normalizeBrowseTalent(talentItem);
+                  return (
+                    <Card key={talent.id} className="overflow-hidden border border-slate-100 shadow-sm bg-white rounded-xl group">
+                      <CardContent className="p-0">
+                        <div className="relative aspect-square overflow-hidden bg-slate-100">
+                          <img 
+                            src={talent.imageSrc} 
+                            className="w-full h-full object-cover object-top transition-transform group-hover:scale-105"
+                            alt={talent.fullName}
+                          />
+                          <div className="absolute top-2 right-2">
+                            <Badge className="bg-white/90 backdrop-blur text-slate-900 border-none font-bold text-xs px-2 py-1 flex items-center gap-1 shadow-sm">
+                              <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                              {talent.rating}
+                            </Badge>
+                          </div>
                         </div>
 
-                        <Button 
-                          variant="outline" 
-                          className="w-full h-12 border-slate-200 text-slate-900 font-medium text-lg rounded-xl hover:bg-slate-50 transition-colors mt-2"
-                          asChild
-                        >
-                          <Link to={talent.userId ? `/talent/${typeof talent.userId === 'object' ? (talent.userId?._id || talent.userId?.id) : talent.userId}` : (talent._id ? `/talent/${talent._id}` : "#")}>
-                            View Profile
-                          </Link>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="p-5 space-y-4">
+                          <div className="space-y-1">
+                            <h3 className="font-bold text-xl text-slate-900 leading-tight">{talent.fullName}</h3>
+                            <p className="text-[#009698] font-medium text-lg capitalize">
+                              {talent.category}
+                            </p>
+                            <p className="text-slate-400 flex items-center gap-1.5 text-lg font-light">
+                              <MapPin className="w-4 h-4 shrink-0 text-slate-400" />
+                              <span className="truncate">{talent.locationText}</span>
+                            </p>
+                          </div>
+
+                          <Button 
+                            variant="outline" 
+                            className="w-full h-12 border-slate-200 text-slate-900 font-medium text-lg rounded-xl hover:bg-slate-50 transition-colors mt-2"
+                            asChild
+                          >
+                            <Link to={`/talent/${talent.userId || talent.id}`}>
+                              View Profile
+                            </Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -343,31 +445,34 @@ export default function BrowseTalent() {
               </div>
             ) : newTalents.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                {newTalents.map((talent) => (
-                  <Card key={talent._id} className="overflow-hidden border border-slate-100 shadow-sm bg-white rounded-3xl group/card hover:shadow-xl transition-all duration-300">
-                    <CardContent className="p-0">
-                      <div className="relative aspect-square overflow-hidden bg-slate-50">
-                        <img 
-                          src={talent.talent?.headshots?.[0]?.url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop"} 
-                          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover/card:scale-105"
-                          alt={talent.userId?.fullName}
-                        />
-                        <div className="absolute bottom-4 left-4">
-                          <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-bold text-xs px-3 py-1 shadow-lg">
-                            New Talent
-                          </Badge>
+                {newTalents.map((talentItem) => {
+                  const talent = normalizeBrowseTalent(talentItem);
+                  return (
+                    <Card key={talent.id} className="overflow-hidden border border-slate-100 shadow-sm bg-white rounded-3xl group/card hover:shadow-xl transition-all duration-300">
+                      <CardContent className="p-0">
+                        <div className="relative aspect-square overflow-hidden bg-slate-50">
+                          <img 
+                            src={talent.imageSrc} 
+                            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover/card:scale-105"
+                            alt={talent.fullName}
+                          />
+                          <div className="absolute bottom-4 left-4">
+                            <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none font-bold text-xs px-3 py-1 shadow-lg">
+                              New Talent
+                            </Badge>
+                          </div>
                         </div>
-                      </div>
-                      <div className="p-5">
-                        <h3 className="font-bold text-lg text-slate-900 leading-tight mb-1">{talent.userId?.fullName}</h3>
-                        <p className="text-[#009698] text-sm font-semibold uppercase tracking-wider mb-4">{talent.category || talent.userRole}</p>
-                        <Button variant="outline" className="w-full rounded-xl border-slate-200 font-bold group-hover/card:bg-primary group-hover/card:text-white transition-all" asChild>
-                          <Link to={talent.userId ? `/talent/${typeof talent.userId === 'object' ? (talent.userId?._id || talent.userId?.id) : talent.userId}` : (talent._id ? `/talent/${talent._id}` : "#")}>View Profile</Link>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        <div className="p-5">
+                          <h3 className="font-bold text-lg text-slate-900 leading-tight mb-1">{talent.fullName}</h3>
+                          <p className="text-[#009698] text-sm font-semibold uppercase tracking-wider mb-4 capitalize">{talent.category}</p>
+                          <Button variant="outline" className="w-full rounded-xl border-slate-200 font-bold group-hover/card:bg-primary group-hover/card:text-white transition-all" asChild>
+                            <Link to={`/talent/${talent.userId || talent.id}`}>View Profile</Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">

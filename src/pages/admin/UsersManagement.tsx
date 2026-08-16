@@ -230,7 +230,7 @@ export default function UsersManagement() {
                     <TableCell>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
-                        {!user.isVerified && (
+                        {/* {!user.isVerified && (
                           <Button 
                             variant="ghost" 
                             size="icon-sm" 
@@ -240,7 +240,7 @@ export default function UsersManagement() {
                           >
                             <CheckCircle2 className="w-4 h-4 text-success" />
                           </Button>
-                        )}
+                        )} */}
                         <Button 
                           variant="ghost" 
                           size="icon-sm" 
