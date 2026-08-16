@@ -65,7 +65,15 @@ export default function UsersManagement() {
     fetchUsers();
   }, []);
 
-  const handleSuspend = async (userId: string) => {
+  const getUserId = (u: any) =>
+    u?._id || u?.id || u?.userId?._id || u?.userId?.id || (typeof u?.userId === 'string' ? u.userId : '') || (typeof u === 'string' ? u : '');
+
+  const handleSuspend = async (userTarget: any) => {
+    const userId = getUserId(userTarget);
+    if (!userId) {
+      toast.error("Invalid user ID");
+      return;
+    }
     setIsActionLoading(true);
     try {
       const response = await adminAPI.suspendUser(userId, "Violating platform terms");
@@ -80,7 +88,12 @@ export default function UsersManagement() {
     }
   };
 
-  const handleUnsuspend = async (userId: string) => {
+  const handleUnsuspend = async (userTarget: any) => {
+    const userId = getUserId(userTarget);
+    if (!userId) {
+      toast.error("Invalid user ID");
+      return;
+    }
     setIsActionLoading(true);
     try {
       const response = await adminAPI.unsuspendUser(userId);
@@ -95,7 +108,12 @@ export default function UsersManagement() {
     }
   };
 
-  const handleVerify = async (userId: string) => {
+  const handleVerify = async (userTarget: any) => {
+    const userId = getUserId(userTarget);
+    if (!userId) {
+      toast.error("Invalid user ID");
+      return;
+    }
     setIsActionLoading(true);
     try {
       const response = await adminAPI.verifyUser(userId);
@@ -116,13 +134,17 @@ export default function UsersManagement() {
   };
 
   const handleGrantTrialSubmit = async () => {
-    if (!trialUser || isNaN(Number(trialDays))) return;
+    const userId = getUserId(trialUser);
+    if (!userId || isNaN(Number(trialDays))) {
+      toast.error("Invalid user or trial period");
+      return;
+    }
 
     setIsActionLoading(true);
     try {
-      const response = await adminAPI.grantTrial(trialUser._id, Number(trialDays));
+      const response = await adminAPI.grantTrial(userId, Number(trialDays));
       if (response.data.success) {
-        toast.success(`Granted ${trialDays} days of free trial to ${trialUser.fullName}!`);
+        toast.success(`Granted ${trialDays} days of free trial to ${trialUser?.fullName || 'user'}!`);
         setIsGrantTrialOpen(false);
         setTrialUser(null);
         fetchUsers();
@@ -140,7 +162,12 @@ export default function UsersManagement() {
     setIsGrantTrialOpen(true);
   };
 
-  const handleDelete = async (userId: string) => {
+  const handleDelete = async (userTarget: any) => {
+    const userId = getUserId(userTarget);
+    if (!userId) {
+      toast.error("Invalid user ID");
+      return;
+    }
     if (!await confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
     
     setIsActionLoading(true);
@@ -257,7 +284,7 @@ export default function UsersManagement() {
                           <Button 
                             variant="ghost" 
                             size="icon-sm" 
-                            onClick={() => handleUnsuspend(user._id)}
+                            onClick={() => handleUnsuspend(user)}
                             disabled={isActionLoading}
                             title="Unsuspend User"
                           >
@@ -267,7 +294,7 @@ export default function UsersManagement() {
                           <Button 
                             variant="ghost" 
                             size="icon-sm" 
-                            onClick={() => handleSuspend(user._id)}
+                            onClick={() => handleSuspend(user)}
                             disabled={isActionLoading || user.status === 'suspended'}
                             title="Suspend User"
                           >
@@ -278,7 +305,7 @@ export default function UsersManagement() {
                           variant="ghost" 
                           size="icon-sm" 
                           className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(user._id)}
+                          onClick={() => handleDelete(user)}
                           disabled={isActionLoading}
                           title="Delete User"
                         >
