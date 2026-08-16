@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import {
   Sparkles, Search, Filter, MapPin, User, RefreshCw,
   ExternalLink, ChevronDown, Loader2, Users,
-  ArrowRight, XCircle, SlidersHorizontal
+  ArrowRight, XCircle, SlidersHorizontal, CheckCircle2,
+  Film, Briefcase, Languages, Ruler
 } from "lucide-react";
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger
@@ -29,6 +30,7 @@ interface TalentProfile {
   city?: string;
   country?: string;
   talentType?: string[];
+  primaryTalentType?: string;
   gender?: string;
   age?: number;
   ethnicity?: string;
@@ -38,8 +40,15 @@ interface TalentProfile {
   showreelUrl?: string;
   headshots?: { url: string }[];
   profilePicture?: string;
+  profileImage?: string;
   unionStatus?: string;
+  shortBio?: string;
+  agencyName?: string;
+  height?: string;
+  build?: string;
+  isVerified?: boolean;
   matchScore?: number;
+  scoreBreakdown?: Record<string, number>;
   appliedProjects: string[];
   appliedRoles: string[];
 }
@@ -152,12 +161,17 @@ export default function MatchedTalent() {
     const rawHeadshots = tp?.headshots || raw?.talent?.headshots || raw?.headshots || raw?.media?.additionalPhotos || tp?.media?.additionalPhotos || [];
     const headshots = Array.isArray(rawHeadshots) ? rawHeadshots : [];
 
+    const primaryTalentType = raw?.primaryTalentType || tp?.primaryTalentType || (Array.isArray(raw?.talentType) ? raw.talentType[0] : raw?.talentType);
+    const scoreBreakdown = raw?.scoreBreakdown || tp?.scoreBreakdown;
+
     const rawPic =
+      raw?.profilePicture ||
+      raw?.profileImage ||
       tp?.profilePicture ||
+      tp?.profileImage ||
       tp?.avatar ||
       tp?.profilePhoto ||
       (headshots.length > 0 ? (typeof headshots[0] === "string" ? headshots[0] : headshots[0]?.url) : undefined) ||
-      raw?.profilePicture ||
       userObj?.profilePicture ||
       userObj?.avatar ||
       raw?.talent?.headshots?.[0]?.url ||
@@ -170,9 +184,18 @@ export default function MatchedTalent() {
     const accents = tp?.accents || raw?.accents || raw?.talent?.accents;
     const showreelUrl = tp?.showreelUrl || tp?.showreel || raw?.showreelUrl || raw?.showreel || raw?.media?.showreel?.url;
 
+    const shortBio = tp?.shortBio || tp?.fullBio || raw?.shortBio || raw?.fullBio;
+    const agencyName = tp?.agencyName || raw?.agencyName || tp?.agency || raw?.agency;
+    const height = tp?.appearance?.height || tp?.height || raw?.height;
+    const build = tp?.appearance?.build || tp?.build || raw?.build;
+    const isVerified = raw?.isVerified ?? tp?.isVerified ?? false;
+
+    const resolvedId = raw?._id || raw?.id || tp?._id || tp?.id || userId || crypto.randomUUID();
+    const resolvedUserId = userId || raw?.id || raw?._id || tp?.id || tp?._id;
+
     return {
-      _id: raw?._id || tp?._id || userId || crypto.randomUUID(),
-      userId,
+      _id: resolvedId,
+      userId: resolvedUserId,
       fullName,
       city,
       country,
@@ -180,12 +203,20 @@ export default function MatchedTalent() {
       age,
       ethnicity,
       skills,
+      primaryTalentType: primaryTalentType ? String(primaryTalentType) : undefined,
+      scoreBreakdown: scoreBreakdown && typeof scoreBreakdown === "object" ? scoreBreakdown : undefined,
       languages: Array.isArray(languages) ? languages : [],
       accents: Array.isArray(accents) ? accents : [],
       showreelUrl,
       headshots,
       profilePicture,
+      profileImage: profilePicture,
       unionStatus,
+      shortBio,
+      agencyName,
+      height: height ? String(height) : undefined,
+      build: build ? String(build) : undefined,
+      isVerified: Boolean(isVerified),
     };
   };
 
@@ -621,62 +652,150 @@ export default function MatchedTalent() {
             const score = talent.matchScore ?? 0;
             const matchStyle = getMatchColor(score);
             return (
-              <Card key={talent._id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
-                {/* Header gradient */}
-                <div className="h-20 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent relative">
-                  {/* Match badge pinned to top right */}
-                  <div className={`absolute top-2 right-2 text-xs font-bold px-2 py-0.5 rounded-full border ${matchStyle.bg} ${matchStyle.text}`}>
-                    {score}% · {matchStyle.label}
+              <Card key={talent._id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-200/80 flex flex-col justify-between">
+                <div>
+                  {/* Header gradient */}
+                  <div className="h-20 bg-gradient-to-br from-primary/20 via-secondary/10 to-transparent relative p-3 flex items-start justify-between">
+                    {talent.unionStatus ? (
+                      <Badge variant="outline" className="text-[10px] font-semibold bg-background/80 backdrop-blur border-slate-300 text-slate-700">
+                        {talent.unionStatus}
+                      </Badge>
+                    ) : <div />}
+                    {/* Match badge */}
+                    <div className={`text-xs font-bold px-2 py-0.5 rounded-full border shadow-sm ${matchStyle.bg} ${matchStyle.text}`}>
+                      {score}% · {matchStyle.label}
+                    </div>
                   </div>
-                </div>
 
-                <CardContent className="px-4 pb-4 -mt-10">
-                  <Avatar className="h-16 w-16 border-4 border-background shadow-md mb-3">
-                    <AvatarImage
-                      src={
-                        talent.profilePicture ||
-                        resolveMediaUrl((talent.headshots as any)?.[0]?.url) ||
-                        (typeof (talent.headshots as any)?.[0] === "string" ? resolveMediaUrl((talent.headshots as any)[0]) : undefined)
-                      }
-                    />
-                    <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
-                      {(talent.fullName || "?").slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <CardContent className="px-4 pb-3 -mt-10 space-y-3">
+                    {/* Avatar & Verification */}
+                    <div className="flex items-end justify-between">
+                      <Avatar className="h-16 w-16 border-4 border-background shadow-md">
+                        <AvatarImage
+                          src={
+                            talent.profilePicture ||
+                            resolveMediaUrl((talent.headshots as any)?.[0]?.url) ||
+                            (typeof (talent.headshots as any)?.[0] === "string" ? resolveMediaUrl((talent.headshots as any)[0]) : undefined)
+                          }
+                        />
+                        <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
+                          {(talent.fullName || "?").slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
 
-                  <h3 className="font-bold text-sm leading-tight">{talent.fullName || "Unknown Talent"}</h3>
-                  {(talent.city || talent.country) && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-3 h-3" />
-                      {[talent.city, talent.country].filter(Boolean).join(", ")}
-                    </p>
-                  )}
-
-                  {(talent.age !== undefined || talent.gender) && (
-                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {[talent.age !== undefined ? `Age ${talent.age}` : null, talent.gender].filter(Boolean).join(" · ")}
-                    </p>
-                  )}
-
-                  {/* Skills */}
-                  {talent.skills && talent.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {talent.skills.slice(0, 3).map(s => (
-                        <span key={s} className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground">{s}</span>
-                      ))}
-                      {talent.skills.length > 3 && (
-                        <span className="text-[10px] text-muted-foreground">+{talent.skills.length - 3}</span>
+                      {talent.isVerified && (
+                        <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-200 gap-1 text-[11px] font-medium px-2 py-0.5">
+                          <CheckCircle2 className="w-3 h-3 text-blue-600" /> Verified
+                        </Badge>
                       )}
                     </div>
-                  )}
 
-                  <div className="flex gap-2 mt-4">
+                    <div>
+                      <h3 className="font-bold text-base leading-tight text-slate-900 group-hover:text-primary transition-colors flex items-center gap-1.5">
+                        {talent.fullName || "Unknown Talent"}
+                      </h3>
+
+                      {talent.primaryTalentType && (
+                        <p className="text-xs font-semibold text-primary mt-0.5 capitalize">
+                          {talent.primaryTalentType}
+                        </p>
+                      )}
+                      
+                      {/* Location */}
+                      {(talent.city || talent.country) && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <MapPin className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                          <span className="truncate">{[talent.city, talent.country].filter(Boolean).join(", ")}</span>
+                        </p>
+                      )}
+
+                      {/* Age, Gender & Ethnicity */}
+                      {(talent.age !== undefined || talent.gender || talent.ethnicity) && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <User className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                          <span>{[talent.age !== undefined ? `Age ${talent.age}` : null, talent.gender, talent.ethnicity].filter(Boolean).join(" · ")}</span>
+                        </p>
+                      )}
+
+                      {/* Height & Build */}
+                      {(talent.height || talent.build) && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <Ruler className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                          <span>{[talent.height ? `${talent.height} cm` : null, talent.build].filter(Boolean).join(" · ")}</span>
+                        </p>
+                      )}
+
+                      {/* Agency / Manager */}
+                      {talent.agencyName && (
+                        <p className="text-xs text-slate-600 flex items-center gap-1 mt-1 font-medium">
+                          <Briefcase className="w-3.5 h-3.5 shrink-0 text-primary/70" />
+                          <span className="truncate">{talent.agencyName}</span>
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Short Bio Snippet */}
+                    {talent.shortBio && (
+                      <p className="text-xs text-slate-600 line-clamp-2 bg-slate-50 p-2 rounded-lg italic border border-slate-100">
+                        "{talent.shortBio}"
+                      </p>
+                    )}
+
+                    {/* Languages & Accents */}
+                    {((talent.languages && talent.languages.length > 0) || (talent.accents && talent.accents.length > 0)) && (
+                      <div className="flex items-center gap-1 text-[11px] text-muted-foreground flex-wrap">
+                        <Languages className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>
+                          {[
+                            talent.languages?.length ? `Lang: ${talent.languages.slice(0, 2).join(", ")}` : null,
+                            talent.accents?.length ? `Accents: ${talent.accents.slice(0, 2).join(", ")}` : null
+                          ].filter(Boolean).join(" | ")}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Score breakdown tags */}
+                    {talent.scoreBreakdown && Object.keys(talent.scoreBreakdown).length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {Object.entries(talent.scoreBreakdown).map(([k, v]) => (
+                          <span key={k} className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200/80 px-1.5 py-0.5 rounded font-medium capitalize">
+                            {k}: +{v}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Skills */}
+                    {talent.skills && talent.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {talent.skills.slice(0, 3).map(s => (
+                          <span key={s} className="text-[10px] bg-slate-100 font-medium px-2 py-0.5 rounded-md text-slate-700 border border-slate-200/60">{s}</span>
+                        ))}
+                        {talent.skills.length > 3 && (
+                          <span className="text-[10px] text-slate-500 font-semibold self-center">+{talent.skills.length - 3}</span>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </div>
+
+                {/* Card Actions */}
+                <CardContent className="px-4 pb-4 pt-0">
+                  <div className="flex gap-2 pt-2 border-t border-slate-100">
                     <Button asChild size="sm" variant="outline" className="flex-1 gap-1 text-xs h-8">
                       <Link to={`/talent/${talent.userId || talent._id}`}>
                         <ExternalLink className="w-3 h-3" /> Profile
                       </Link>
                     </Button>
+
+                    {talent.showreelUrl && (
+                      <Button asChild size="sm" variant="secondary" className="gap-1 text-xs h-8 px-2" title="Watch Showreel">
+                        <a href={talent.showreelUrl} target="_blank" rel="noopener noreferrer">
+                          <Film className="w-3 h-3 text-primary" />
+                        </a>
+                      </Button>
+                    )}
+
                     <Button
                       size="sm"
                       className="flex-1 gap-1 text-xs h-8"
