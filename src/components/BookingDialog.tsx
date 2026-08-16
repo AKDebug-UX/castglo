@@ -37,7 +37,7 @@ export function BookingDialog({ isOpen, onOpenChange, talent }: BookingDialogPro
     setIsLoading(true);
     try {
       const payload = {
-        talentId: talent.userId?._id || talent.userId?.id || talent._id,
+        talentId: talent?.userId?._id || talent?.userId?.id || talent?._id || talent?.id,
         serviceName: formData.serviceName,
         date: formData.date,
         time: formData.time,
@@ -48,7 +48,7 @@ export function BookingDialog({ isOpen, onOpenChange, talent }: BookingDialogPro
       };
 
       const response = await bookingAPI.create(payload);
-      if (response.data.success) {
+      if (response.data?.success || response.data?.status === "success" || response.status === 200 || response.status === 201) {
         setIsSuccess(true);
         toast.success("Booking request sent successfully!");
       }

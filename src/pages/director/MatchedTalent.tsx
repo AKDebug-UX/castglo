@@ -107,36 +107,85 @@ export default function MatchedTalent() {
 
   // Normalize talent function
   const normalizeTalent = (raw: any): Omit<TalentProfile, 'appliedProjects' | 'appliedRoles'> => {
-    const userObj = raw?.userId && typeof raw.userId === "object" ? raw.userId : null;
-    const userId = userObj?._id || userObj?.id || (typeof raw?.userId === "string" ? raw.userId : undefined);
-    const fullName = userObj?.fullName || raw?.fullName || raw?.displayName || raw?.display_name;
-    const city = raw?.location?.city || raw?.city || raw?.current_city || raw?.unifiedTalentProfile?.city;
-    const country = raw?.location?.country || raw?.country || raw?.current_country || raw?.unifiedTalentProfile?.country;
-    const skills = raw?.skills || raw?.unifiedTalentProfile?.skills || raw?.talent?.skills || [];
-    const headshots = raw?.talent?.headshots || raw?.headshots || raw?.media?.additionalPhotos || [];
-    const profilePicture =
+    const tp = raw?.talentProfile || raw?.talent || raw?.unifiedTalentProfile || raw?.profile;
+    const userObj =
+      (raw?.userId && typeof raw.userId === "object" ? raw.userId : null) ||
+      (raw?.user && typeof raw.user === "object" ? raw.user : null) ||
+      (tp?.userId && typeof tp.userId === "object" ? tp.userId : null) ||
+      (tp?.user && typeof tp.user === "object" ? tp.user : null);
+
+    const userId =
+      userObj?._id ||
+      userObj?.id ||
+      (typeof raw?.userId === "string" ? raw.userId : undefined) ||
+      (typeof tp?.userId === "string" ? tp.userId : undefined) ||
+      tp?.userId?._id ||
+      tp?.userId?.id ||
+      tp?._id ||
+      tp?.id ||
+      raw?._id ||
+      raw?.id;
+
+    const fullName =
+      tp?.fullName ||
+      userObj?.fullName ||
+      raw?.fullName ||
+      raw?.displayName ||
+      raw?.display_name ||
+      userObj?.displayName ||
+      tp?.displayName ||
+      (tp?.firstName || raw?.firstName || userObj?.firstName
+        ? `${tp?.firstName || raw?.firstName || userObj?.firstName || ""} ${tp?.lastName || raw?.lastName || userObj?.lastName || ""}`.trim()
+        : undefined);
+
+    const city = tp?.city || tp?.location?.city || raw?.location?.city || raw?.city || raw?.current_city || raw?.unifiedTalentProfile?.city;
+    const country = tp?.country || tp?.location?.country || raw?.location?.country || raw?.country || raw?.current_country || raw?.unifiedTalentProfile?.country;
+    const gender = tp?.gender || tp?.appearance?.gender || raw?.gender || raw?.talent?.gender || raw?.talent?.appearance?.gender;
+    const rawAge = tp?.age || raw?.age || raw?.talent?.age;
+    const parsedAge = typeof rawAge === "number" ? rawAge : rawAge ? parseInt(String(rawAge), 10) : undefined;
+    const age = parsedAge && !isNaN(parsedAge) ? parsedAge : undefined;
+    const ethnicity = tp?.ethnicity || tp?.appearance?.ethnicity || raw?.ethnicity || raw?.talent?.ethnicity || raw?.talent?.appearance?.ethnicity;
+
+    const rawSkills = tp?.skills || raw?.skills || raw?.unifiedTalentProfile?.skills || raw?.talent?.skills || [];
+    const skills = Array.isArray(rawSkills) ? rawSkills : typeof rawSkills === "string" ? [rawSkills] : [];
+
+    const rawHeadshots = tp?.headshots || raw?.talent?.headshots || raw?.headshots || raw?.media?.additionalPhotos || tp?.media?.additionalPhotos || [];
+    const headshots = Array.isArray(rawHeadshots) ? rawHeadshots : [];
+
+    const rawPic =
+      tp?.profilePicture ||
+      tp?.avatar ||
+      tp?.profilePhoto ||
+      (headshots.length > 0 ? (typeof headshots[0] === "string" ? headshots[0] : headshots[0]?.url) : undefined) ||
       raw?.profilePicture ||
       userObj?.profilePicture ||
+      userObj?.avatar ||
       raw?.talent?.headshots?.[0]?.url ||
       raw?.headshots?.[0]?.url ||
       raw?.media?.additionalPhotos?.[0]?.url;
 
+    const profilePicture = rawPic ? resolveMediaUrl(rawPic) : undefined;
+    const unionStatus = tp?.unionStatus || raw?.unionStatus || raw?.talent?.unionStatus;
+    const languages = tp?.languages || raw?.languages || raw?.talent?.languages;
+    const accents = tp?.accents || raw?.accents || raw?.talent?.accents;
+    const showreelUrl = tp?.showreelUrl || tp?.showreel || raw?.showreelUrl || raw?.showreel || raw?.media?.showreel?.url;
+
     return {
-      _id: raw?._id || userId || crypto.randomUUID(),
+      _id: raw?._id || tp?._id || userId || crypto.randomUUID(),
       userId,
       fullName,
       city,
       country,
-      gender: raw?.gender || raw?.talent?.gender || raw?.talent?.appearance?.gender,
-      age: raw?.age || raw?.talent?.age,
-      ethnicity: raw?.ethnicity || raw?.talent?.ethnicity || raw?.talent?.appearance?.ethnicity,
-      skills: Array.isArray(skills) ? skills : [],
-      languages: raw?.languages || raw?.talent?.languages,
-      accents: raw?.accents || raw?.talent?.accents,
-      showreelUrl: raw?.showreelUrl || raw?.showreel || raw?.media?.showreel?.url,
-      headshots: Array.isArray(headshots) ? headshots : [],
-      profilePicture: resolveMediaUrl(profilePicture),
-      unionStatus: raw?.unionStatus || raw?.talent?.unionStatus,
+      gender,
+      age,
+      ethnicity,
+      skills,
+      languages: Array.isArray(languages) ? languages : [],
+      accents: Array.isArray(accents) ? accents : [],
+      showreelUrl,
+      headshots,
+      profilePicture,
+      unionStatus,
     };
   };
 
@@ -217,20 +266,28 @@ export default function MatchedTalent() {
         if (selectedProject !== "all" && selectedRole !== "all") {
           // Fetch matches from API
           const matchesRes = await projectAPI.getMatches(selectedProject, selectedRole);
-          if (matchesRes.data?.success) {
-            const talents = Array.isArray(matchesRes.data.data)
-              ? matchesRes.data.data
-              : (matchesRes.data.data?.talents || matchesRes.data.data?.matches || []);
-            
-            setAllTalents(talents.map(t => ({
-              ...normalizeTalent(t),
-              matchScore: t.matchScore || t.score || 0,
-              appliedProjects: [],
-              appliedRoles: []
-            })));
-          } else {
-            setAllTalents([]);
+          const rawData = matchesRes.data;
+          let talents: any[] = [];
+          if (Array.isArray(rawData)) {
+            talents = rawData;
+          } else if (Array.isArray(rawData?.data)) {
+            talents = rawData.data;
+          } else if (Array.isArray(rawData?.data?.matches)) {
+            talents = rawData.data.matches;
+          } else if (Array.isArray(rawData?.data?.talents)) {
+            talents = rawData.data.talents;
+          } else if (Array.isArray(rawData?.matches)) {
+            talents = rawData.matches;
+          } else if (Array.isArray(rawData?.talents)) {
+            talents = rawData.talents;
           }
+
+          setAllTalents(talents.map((t: any) => ({
+            ...normalizeTalent(t),
+            matchScore: t.matchScore ?? t.score ?? t.match_score ?? t.matchPercentage ?? 0,
+            appliedProjects: [],
+            appliedRoles: []
+          })));
         } else if (selectedProject !== "all" || selectedRole !== "all") {
           // Fallback to loading applicants only if either project or role is selected
           const targetProj = selectedProject !== "all" ? projects.find(p => (p._id || p.id) === selectedProject) : null;
@@ -356,10 +413,10 @@ export default function MatchedTalent() {
   const displayedTalents = useMemo(() => {
     return rankedTalents.filter(t => {
       if (searchQuery && !t.fullName?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (filterGender !== "any" && t.gender !== filterGender) return false;
+      if (filterGender !== "any" && t.gender?.toLowerCase() !== filterGender.toLowerCase()) return false;
       if (t.age && (t.age < filterAgeMin || t.age > filterAgeMax)) return false;
-      if (filterEthnicity !== "any" && t.ethnicity !== filterEthnicity) return false;
-      if (filterUnion !== "any" && t.unionStatus !== filterUnion) return false;
+      if (filterEthnicity !== "any" && t.ethnicity?.toLowerCase() !== filterEthnicity.toLowerCase()) return false;
+      if (filterUnion !== "any" && t.unionStatus?.toLowerCase() !== filterUnion.toLowerCase()) return false;
       if ((t.matchScore ?? 0) < minScore) return false;
       return true;
     }).sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
@@ -568,9 +625,9 @@ export default function MatchedTalent() {
                   <Avatar className="h-16 w-16 border-4 border-background shadow-md mb-3">
                     <AvatarImage
                       src={
-                        resolveMediaUrl((talent as any)?.talent?.headshots?.[0]?.url) ||
+                        talent.profilePicture ||
                         resolveMediaUrl((talent.headshots as any)?.[0]?.url) ||
-                        talent.profilePicture
+                        (typeof (talent.headshots as any)?.[0] === "string" ? resolveMediaUrl((talent.headshots as any)[0]) : undefined)
                       }
                     />
                     <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
@@ -586,10 +643,10 @@ export default function MatchedTalent() {
                     </p>
                   )}
 
-                  {talent.age && (
+                  {(talent.age !== undefined || talent.gender) && (
                     <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                      <User className="w-3 h-3" /> Age {talent.age}
-                      {talent.gender && ` · ${talent.gender}`}
+                      <User className="w-3 h-3" />
+                      {[talent.age !== undefined ? `Age ${talent.age}` : null, talent.gender].filter(Boolean).join(" · ")}
                     </p>
                   )}
 

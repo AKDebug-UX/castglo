@@ -49,6 +49,7 @@ export const API_ENDPOINTS = {
     WITHDRAW: (applicationId: string) => `/applications/${applicationId}`,
   },
   BOOKINGS: {
+    CREATE: '/bookings',
     PROFESSIONAL_ME: '/bookings/professional/me',
     UPDATE_STATUS: (id: string) => `/bookings/${id}/status`,
     STATS: '/bookings/professional/stats',
@@ -320,6 +321,7 @@ export const submissionAPI = {
 
 // --- BOOKINGS ENDPOINTS ---
 export const bookingAPI = {
+  create: (data: any) => api.post(API_ENDPOINTS.BOOKINGS.CREATE, data),
   getProfessionalMe: (params?: any) => api.get(API_ENDPOINTS.BOOKINGS.PROFESSIONAL_ME, { params }),
   getProfessionalBookings: (params?: any) => api.get(API_ENDPOINTS.BOOKINGS.PROFESSIONAL_ME, { params }),
   updateStatus: (id: string, status: string) => api.patch(API_ENDPOINTS.BOOKINGS.UPDATE_STATUS(id), { status }),
