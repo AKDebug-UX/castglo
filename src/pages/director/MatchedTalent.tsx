@@ -432,11 +432,20 @@ export default function MatchedTalent() {
     setInvitingTalentId(talentId);
     try {
       const castingCallId = selectedProject !== "all" ? selectedProject : undefined;
-      await messagingAPI.getOrCreateConversation(talentId, castingCallId);
+      try {
+        if (castingCallId) {
+          await messagingAPI.getOrCreateConversation(talentId, castingCallId);
+        } else {
+          await messagingAPI.getOrCreateConversation(talentId);
+        }
+      } catch {
+        // Fallback to direct conversation if project-bound conversation fails (e.g. talent has not applied yet)
+        await messagingAPI.getOrCreateConversation(talentId);
+      }
       toast.success("Invite ready. Send your message to the talent.");
       navigate(`/director/messages?talentId=${encodeURIComponent(talentId)}`);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to invite talent.");
+      toast.error(err?.response?.data?.error || err?.response?.data?.message || "Failed to invite talent.");
     } finally {
       setInvitingTalentId("");
     }
