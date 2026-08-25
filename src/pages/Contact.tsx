@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Input } from "@/components/ui/input";
@@ -8,32 +10,35 @@ import { leadAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/utils";
+import { contactSchema, ContactFormValues } from "@/lib/validations";
 
 export default function Contact() {
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    subject: "",
-    message: "",
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ContactFormValues>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      subject: "",
+      message: "",
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: ContactFormValues) => {
     setIsLoading(true);
 
     try {
-      const response = await leadAPI.submitContact(formData);
+      const response = await leadAPI.submitContact(data);
       if (response.data.success) {
         toast.success("Message sent successfully! We will get back to you soon.");
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          subject: "",
-          message: "",
-        });
+        reset();
       } else {
         toast.error(response.data.message || "Failed to send message");
       }
@@ -42,11 +47,6 @@ export default function Contact() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
   return (
@@ -61,60 +61,74 @@ export default function Contact() {
             </p>
 
             <div className="mt-6 rounded-xl bg-card p-6 shadow-card">
-              <form className="space-y-4" onSubmit={handleSubmit}>
+              <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">First Name</label>
                     <Input 
+                      {...register("firstName")}
                       id="firstName"
                       placeholder="John" 
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      required
+                      disabled={isLoading}
+                      className={errors.firstName ? "border-destructive focus-visible:ring-destructive" : ""}
                     />
+                    {errors.firstName && (
+                      <p className="text-xs font-medium text-destructive mt-1">{errors.firstName.message}</p>
+                    )}
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Last Name</label>
                     <Input 
+                      {...register("lastName")}
                       id="lastName"
                       placeholder="Doe" 
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      required
+                      disabled={isLoading}
+                      className={errors.lastName ? "border-destructive focus-visible:ring-destructive" : ""}
                     />
+                    {errors.lastName && (
+                      <p className="text-xs font-medium text-destructive mt-1">{errors.lastName.message}</p>
+                    )}
                   </div>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Email</label>
                   <Input 
+                    {...register("email")}
                     id="email"
                     type="email" 
                     placeholder="you@example.com" 
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
+                    disabled={isLoading}
+                    className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
+                  {errors.email && (
+                    <p className="text-xs font-medium text-destructive mt-1">{errors.email.message}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Subject</label>
                   <Input 
+                    {...register("subject")}
                     id="subject"
                     placeholder="I’d like to learn more" 
-                    value={formData.subject}
-                    onChange={handleChange}
-                    required
+                    disabled={isLoading}
+                    className={errors.subject ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
+                  {errors.subject && (
+                    <p className="text-xs font-medium text-destructive mt-1">{errors.subject.message}</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Message</label>
                   <Textarea 
+                    {...register("message")}
                     id="message"
                     placeholder="Tell us how we can help" 
-                    className="min-h-[120px]" 
-                    value={formData.message}
-                    onChange={handleChange}
-                    required
+                    className={`min-h-[120px] ${errors.message ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    disabled={isLoading}
                   />
+                  {errors.message && (
+                    <p className="text-xs font-medium text-destructive mt-1">{errors.message.message}</p>
+                  )}
                 </div>
                 <Button className="w-full" variant="hero" disabled={isLoading}>
                   {isLoading ? (

@@ -8,6 +8,7 @@ import { Loader2, Upload, Link as LinkIcon, FileCheck, X, FileText, Image as Ima
 import { applicationAPI, uploadAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/utils";
+import { optionalUrlSchema } from "@/lib/validations";
 
 interface ProjectSubmissionModalProps {
   submission?: any;
@@ -105,6 +106,14 @@ export function ProjectSubmissionModal({ submission, isOpen, onClose }: ProjectS
     if (!targetSubmissionId) {
       toast.error("Please select a project to submit work for.");
       return;
+    }
+
+    if (externalLink.trim()) {
+      const urlCheck = optionalUrlSchema.safeParse(externalLink.trim());
+      if (!urlCheck.success) {
+        toast.error(urlCheck.error.errors[0]?.message || "Invalid External Link URL.");
+        return;
+      }
     }
 
     if (files.length === 0 && !externalLink.trim() && !description.trim()) {

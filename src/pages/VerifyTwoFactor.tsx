@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, ArrowLeft, AlertCircle } from "lucide-react";
+import { twoFactorCodeSchema } from "@/lib/validations";
 
 export default function VerifyTwoFactor() {
   const location = useLocation();
@@ -28,10 +29,12 @@ export default function VerifyTwoFactor() {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!normalizedCode) {
-      setErrorMsg("Please enter your authenticator code or backup code.");
+    const validationResult = twoFactorCodeSchema.safeParse({ code: normalizedCode });
+    if (!validationResult.success) {
+      setErrorMsg(validationResult.error.errors[0]?.message || "Invalid verification code.");
       return;
     }
+
     if (!tempToken) {
       toast.error("Session expired. Please sign in again.");
       navigate("/sign-in", { replace: true });

@@ -11,6 +11,7 @@ import {
   FolderKanban, Upload, Trash2, Plus, Loader2, Link2, Film, Image as ImageIcon, PlayCircle 
 } from "lucide-react";
 import { toast } from "sonner";
+import { deliverableSchema, requiredUrlSchema } from "@/lib/validations";
 
 interface DeliverableFormModalProps {
   isOpen: boolean;
@@ -121,12 +122,20 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
   };
 
   const handleAddMediaUrl = () => {
-    if (!customMediaInput.trim()) return;
+    const trimmed = customMediaInput.trim();
+    if (!trimmed) return;
     if (mediaUrls.length >= 3) {
       toast.error("Maximum 3 media items allowed.");
       return;
     }
-    setMediaUrls((prev) => [...prev, customMediaInput.trim()]);
+
+    const urlCheck = requiredUrlSchema.safeParse(trimmed);
+    if (!urlCheck.success) {
+      toast.error(urlCheck.error.errors[0]?.message || "Invalid URL. Must start with http:// or https://");
+      return;
+    }
+
+    setMediaUrls((prev) => [...prev, trimmed]);
     setCustomMediaInput("");
   };
 
@@ -137,35 +146,37 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim()) {
-      toast.error("Project Title is required.");
+    const rawPayload = {
+      title,
+      role,
+      productionType,
+      year: Number(year),
+      description,
+      mediaUrls,
+      projectId: projectId || undefined,
+    };
+
+    const validationResult = deliverableSchema.safeParse(rawPayload);
+    if (!validationResult.success) {
+      const firstErr = validationResult.error.errors[0];
+      toast.error(firstErr?.message || "Please fix validation errors in the form.");
       return;
     }
-    if (!role.trim()) {
-      toast.error("Your Role / Credit is required.");
-      return;
-    }
-    if (!description.trim()) {
-      toast.error("Project Description is required.");
-      return;
-    }
-    if (year < 1900 || year > currentYear + 1) {
-      toast.error(`Year must be between 1900 and ${currentYear + 1}`);
-      return;
-    }
+
+    const validatedData = validationResult.data;
 
     setIsSubmitting(true);
     const payload: any = {
-      title: title.trim(),
-      role: role.trim(),
-      productionType,
-      year: Number(year),
-      description: description.trim(),
-      mediaUrls,
+      title: validatedData.title,
+      role: validatedData.role,
+      productionType: validatedData.productionType,
+      year: validatedData.year,
+      description: validatedData.description,
+      mediaUrls: validatedData.mediaUrls || [],
     };
 
-    if (projectId) {
-      payload.projectId = projectId;
+    if (validatedData.projectId) {
+      payload.projectId = validatedData.projectId;
     }
 
     try {

@@ -10,7 +10,7 @@ import './ProfileEditDashboard.css';
 const profileSchema = z.object({
   // Base Profile (User/Profile)
   fullName: z.string().min(2, 'Name is too short'),
-  bio: z.string().max(1000, 'Bio is too long'),
+  bio: z.string().max(1000, 'Bio is too long').optional().or(z.literal('')),
   city: z.string().optional(),
   country: z.string().optional(),
 
@@ -25,13 +25,13 @@ const profileSchema = z.object({
   // Professional Fields
   displayName: z.string().optional(),
   businessName: z.string().optional(),
-  yearsOfExperience: z.number().min(0).default(0),
+  yearsOfExperience: z.number().min(0, 'Years of experience cannot be negative').default(0),
   studioAccess: z.boolean().default(false),
   insuranceAvailable: z.boolean().default(false),
   dbsChecked: z.boolean().default(false),
   ndaFriendly: z.boolean().default(false),
   depositRequired: z.boolean().default(false),
-  depositPercentage: z.number().min(0).max(100).default(0),
+  depositPercentage: z.number().min(0).max(100, 'Percentage must be between 0 and 100').default(0),
 
   // Casting Fields
   companyName: z.string().optional(),
@@ -41,10 +41,9 @@ const profileSchema = z.object({
 
   // Guardian Consent
   guardianConsent: z.object({
-    fullName: z.string().optional(),
+    guardianName: z.string().optional(),
     relationship: z.string().optional(),
-    email: z.string().optional(),
-    phone: z.string().optional(),
+    guardianContact: z.string().optional(),
     consentGiven: z.boolean().default(false),
   }).optional(),
   emergencyContact: z.object({

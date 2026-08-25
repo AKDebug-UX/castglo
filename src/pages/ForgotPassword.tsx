@@ -1,30 +1,39 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Mail } from "lucide-react";
+import { ArrowLeft, Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { forgotPasswordSchema, ForgotPasswordFormValues } from "@/lib/validations";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { forgotPassword } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
 
-    if (!email) {
-      toast.error("Please enter your email address");
-      return;
-    }
+  const emailValue = watch("email");
 
+  const onSubmit = async (data: ForgotPasswordFormValues) => {
     setIsLoading(true);
 
     try {
-      const { error } = await forgotPassword(email);
+      const { error } = await forgotPassword(data.email);
 
       if (error) {
         toast.error(error);
@@ -55,7 +64,7 @@ export default function ForgotPassword() {
             </div>
             <h1 className="text-2xl font-bold mb-2">Check Your Email</h1>
             <p className="text-muted-foreground mb-6">
-              We've sent a password reset link to <strong>{email}</strong>
+              We've sent a password reset link to <strong>{emailValue}</strong>
             </p>
             <p className="text-sm text-muted-foreground mb-6">
               Didn't receive the email? Check your spam folder or{" "}
@@ -67,7 +76,6 @@ export default function ForgotPassword() {
               </button>
             </p>
 
-            {/* Demo link - in production this would be sent via email */}
             <div className="bg-muted/50 rounded-lg p-4 mb-6">
               <p className="text-xs text-muted-foreground mb-2">Demo: Click below to reset password</p>
               <Button asChild variant="outline" size="sm">
@@ -102,20 +110,30 @@ export default function ForgotPassword() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Email</label>
               <Input
+                {...register("email")}
                 type="email"
                 placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                disabled={isLoading}
+                className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
               />
+              {errors.email && (
+                <p className="text-xs font-medium text-destructive mt-1">{errors.email.message}</p>
+              )}
             </div>
 
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-              {isLoading ? "Sending..." : "Send Reset Link"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                "Send Reset Link"
+              )}
             </Button>
           </form>
 
