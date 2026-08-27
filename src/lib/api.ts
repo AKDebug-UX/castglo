@@ -556,7 +556,8 @@ export const adminAPI = {
 
 // --- LEAD ENDPOINTS ---
 export const leadAPI = {
-  create: (data) => api.post(API_ENDPOINTS.LEADS.CREATE, data),
+  create: (data: any) => api.post(API_ENDPOINTS.LEADS.CREATE, data),
+  submitContact: (data: any) => api.post(API_ENDPOINTS.LEADS.CREATE, data),
 };
 
 // --- UPLOAD ENDPOINTS ---
