@@ -335,7 +335,28 @@ export const bookingAPI = {
 export const livestreamAPI = {
   create: (data) => api.post(API_ENDPOINTS.LIVESTREAM.CREATE, data),
   getAll: (params?) => api.get(API_ENDPOINTS.LIVESTREAM.GET_ALL, { params }),
-  getOne: (id: string) => api.get(`/livestream/${id}`),
+  getOne: async (id: string) => {
+    try {
+      const [myRes, publicRes] = await Promise.all([
+        api.get(API_ENDPOINTS.LIVESTREAM.GET_MY_STREAMS).catch(() => ({ data: { success: false } })),
+        api.get(API_ENDPOINTS.LIVESTREAM.GET_ALL).catch(() => ({ data: { success: false } }))
+      ]);
+
+      const myStreams = Array.isArray(myRes.data?.data) ? myRes.data.data : (Array.isArray(myRes.data) ? myRes.data : []);
+      const publicStreams = Array.isArray(publicRes.data?.data) ? publicRes.data.data : (Array.isArray(publicRes.data) ? publicRes.data : []);
+      
+      const stream = [...myStreams, ...publicStreams].find(
+        (s: any) => s._id === id || s.id === id
+      );
+
+      if (stream) {
+        return { data: { success: true, data: stream } };
+      }
+    } catch (err) {
+      console.warn("Error finding stream by ID:", err);
+    }
+    return { data: { success: false, data: null } };
+  },
   getActive: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_ACTIVE),
   getMyStreams: () => api.get(API_ENDPOINTS.LIVESTREAM.GET_MY_STREAMS),
   postMessage: (id: string, message: string) => api.post(API_ENDPOINTS.LIVESTREAM.POST_MESSAGE(id), { text: message }),
