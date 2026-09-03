@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IRemoteUser } from "agora-rtc-sdk-ng";
+import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IAgoraRTCRemoteUser } from "agora-rtc-sdk-ng";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -73,7 +73,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 // Component to handle Agora remote tracks
-const RemoteVideoPlayer = ({ user, isPaused }: { user: IRemoteUser, isPaused?: boolean }) => {
+const RemoteVideoPlayer = ({ user, isPaused }: { user: IAgoraRTCRemoteUser, isPaused?: boolean }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -152,7 +152,8 @@ export default function LivestreamPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [localVideoRef, previewVideoRef] = [useRef<HTMLVideoElement>(null), useRef<HTMLVideoElement>(null)];
+  const localVideoRef = useRef<HTMLDivElement>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
   const [layoutMode, setLayoutMode] = useState<"grid" | "speaker" | "cinema">("grid");
   const [isPaused, setIsPaused] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -170,7 +171,7 @@ export default function LivestreamPage() {
   const agoraClientRef = useRef<IAgoraRTCClient | null>(null);
   const [localVideoTrack, setLocalVideoTrack] = useState<ICameraVideoTrack | null>(null);
   const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
-  const [remoteUsers, setRemoteUsers] = useState<IRemoteUser[]>([]);
+  const [remoteUsers, setRemoteUsers] = useState<IAgoraRTCRemoteUser[]>([]);
   const joinHostIdRef = useRef<string | undefined>(undefined);
   const resolvedAppIdRef = useRef<string>("");
 
@@ -267,14 +268,10 @@ export default function LivestreamPage() {
 
   // Update local video element when joined or camera toggled
   useEffect(() => {
-    if (isJoined && isCamOn && localVideoRef.current) {
-      if (localVideoTrack) {
-        localVideoTrack.play(localVideoRef.current);
-      } else if (localStream) {
-        localVideoRef.current.srcObject = localStream;
-      }
+    if (isJoined && isCamOn && localVideoRef.current && localVideoTrack) {
+      localVideoTrack.play(localVideoRef.current);
     }
-  }, [isJoined, isCamOn, localStream, localVideoTrack]);
+  }, [isJoined, isCamOn, localVideoTrack]);
 
   // Handle Remote Video Playback
   useEffect(() => {
@@ -389,7 +386,7 @@ export default function LivestreamPage() {
     if (!isUserInList && user) {
       realParticipants.push({
         id: String(user.id || user._id),
-        name: user.fullName || user.name,
+        name: user.fullName || (user as any).name || "",
         role: user.role,
         isSelf: true,
         isMicOn: !isBroadcaster ? false : isMicOn,
@@ -1731,7 +1728,7 @@ export default function LivestreamPage() {
               <Button 
                 variant="destructive" 
                 className="h-9 px-4 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-2 transition-all shadow-xs" 
-                onClick={handleLeave}
+                onClick={() => handleLeave()}
               >
                 <PhoneOff className="w-3.5 h-3.5" />
                 <span>{isOwner ? "End Audition" : "Leave Session"}</span>

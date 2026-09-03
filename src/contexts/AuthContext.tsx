@@ -4,11 +4,13 @@ import { toast } from "sonner";
 
 export type UserRole = "talent" | "casting_director" | "industry_professional" | "admin";
 
-interface User {
+export interface User {
   id: string;
+  _id?: string;
   email: string;
   role: UserRole;
   fullName: string;
+  name?: string;
   profilePicture?: string;
   isEmailVerified: boolean;
   isVerified?: boolean;
