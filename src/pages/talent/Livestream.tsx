@@ -38,7 +38,7 @@ import {
   X,
   RotateCw
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getApiErrorMessage } from "@/lib/utils";
 import { livestreamAPI } from "@/lib/api";
 import { socketService } from "@/lib/socket";
 import { toast } from "sonner";
@@ -212,6 +212,11 @@ export default function LivestreamPage() {
   useEffect(() => {
     const initMedia = async () => {
       if (!isBroadcaster) return; // Only broadcasters need media access
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setIsCamOn(false);
+        setIsMicOn(false);
+        return;
+      }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: true,
@@ -222,10 +227,30 @@ export default function LivestreamPage() {
           previewVideoRef.current.srcObject = stream;
         }
       } catch (error) {
-        console.error("Error accessing media devices:", error);
-        toast.error("Could not access camera or microphone");
+        console.warn("Could not access both camera & microphone:", error);
+        // Try fallback to audio only or video only if user allowed one device
+        try {
+          const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          setLocalStream(audioStream);
+          setIsCamOn(false);
+          toast.info("Camera access denied or unavailable. Audio enabled.");
+          return;
+        } catch (audioErr) {}
+
+        try {
+          const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setLocalStream(videoStream);
+          if (previewVideoRef.current) {
+            previewVideoRef.current.srcObject = videoStream;
+          }
+          setIsMicOn(false);
+          toast.info("Microphone access denied or unavailable. Video enabled.");
+          return;
+        } catch (videoErr) {}
+
         setIsCamOn(false);
         setIsMicOn(false);
+        toast.warning("Camera and Microphone permissions are blocked in your browser settings.");
       }
     };
 
@@ -440,17 +465,19 @@ export default function LivestreamPage() {
       // Step A: Fetch Connection Details
       // You must call the join endpoint (for viewers) or start endpoint (for hosts)
       let response;
-      const hostId = typeof streamData?.hostId === 'object' ? (streamData.hostId?._id || streamData.hostId?.id) : streamData?.hostId;
-      joinHostIdRef.current = hostId ? String(hostId) : undefined;
+      const rawHostId = typeof streamData?.hostId === 'object' ? (streamData.hostId?._id || streamData.hostId?.id) : streamData?.hostId;
+      const cleanHostId = (rawHostId && String(rawHostId) !== 'undefined' && String(rawHostId) !== 'null') ? String(rawHostId) : undefined;
+      joinHostIdRef.current = cleanHostId;
 
       if (isBroadcaster) {
         response = await livestreamAPI.start(id);
       } else {
-        response = await livestreamAPI.join(id, joinHostIdRef.current);
+        response = await livestreamAPI.join(id, cleanHostId);
       }
 
       if (!response.data.success) {
-        throw new Error(response.data.message || "Failed to get connection details from server");
+        const serverErr = response.data.error || response.data.message || "Failed to get connection details from server";
+        throw new Error(serverErr);
       }
 
       const rawData = response.data.data;
@@ -548,16 +575,41 @@ export default function LivestreamPage() {
 
       // 5. Host-Specific Logic: Publish Local Tracks
       if (isBroadcaster) {
-        const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-        const videoTrack = await AgoraRTC.createCameraVideoTrack();
+        let audioTrack: IMicrophoneAudioTrack | null = null;
+        let videoTrack: ICameraVideoTrack | null = null;
+
+        try {
+          if (isMicOn) {
+            audioTrack = await AgoraRTC.createMicrophoneAudioTrack().catch((err) => {
+              console.warn("Microphone track creation failed or permission denied:", err);
+              return null;
+            });
+          }
+          if (isCamOn) {
+            videoTrack = await AgoraRTC.createCameraVideoTrack().catch((err) => {
+              console.warn("Camera track creation failed or permission denied:", err);
+              return null;
+            });
+          }
+        } catch (mediaErr) {
+          console.warn("Media track initialization error:", mediaErr);
+        }
         
         // Final check before publishing to avoid DISCONNECTING state error
         if (isMountedRef.current && client.connectionState === "CONNECTED") {
-          setLocalAudioTrack(audioTrack);
-          setLocalVideoTrack(videoTrack);
+          const tracksToPublish = [audioTrack, videoTrack].filter(Boolean) as (IMicrophoneAudioTrack | ICameraVideoTrack)[];
+
+          if (audioTrack) setLocalAudioTrack(audioTrack);
+          if (videoTrack) setLocalVideoTrack(videoTrack);
           
-          await client.publish([audioTrack, videoTrack]);
-          console.log("Published local tracks as host");
+          if (tracksToPublish.length > 0) {
+            await client.publish(tracksToPublish);
+            console.log("Published local tracks as host:", tracksToPublish.length);
+          } else {
+            toast.warning("Camera and Microphone permissions were denied in browser settings. You joined the session as a viewer.", {
+              duration: 5000
+            });
+          }
           
           // Cleanup preview stream
           if (localStream) {
@@ -569,17 +621,18 @@ export default function LivestreamPage() {
             isMounted: isMountedRef.current, 
             state: client.connectionState 
           });
-          audioTrack.close();
-          videoTrack.close();
+          audioTrack?.close();
+          videoTrack?.close();
         }
       }
 
       setIsJoined(true);
       toast.success(isBroadcaster ? "Started the live audition" : "Joined the live audition");
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Agora Implementation Error:", error);
-      toast.error(error.message || "Failed to connect to the session");
+      const errMsg = getApiErrorMessage(error, "Failed to connect to the session");
+      toast.error(errMsg);
     } finally {
       setIsLoading(false);
     }
@@ -1275,73 +1328,70 @@ export default function LivestreamPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-4 bg-[#0F1115] text-white">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-slate-400 animate-pulse font-medium">Connecting to broadcast...</p>
+      <div className="flex flex-col items-center justify-center h-screen gap-3 bg-slate-950 text-slate-100 font-sans">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-slate-400 text-xs font-medium">Connecting to broadcast studio...</p>
       </div>
     );
   }
 
   if (!isJoined) {
     return (
-      <div className="min-h-screen bg-[#0F1115] text-white flex flex-col items-center justify-center p-4">
-        <div className="max-w-5xl w-full grid gap-12 lg:grid-cols-[1fr,400px] items-center">
-          <div className="aspect-video bg-[#181A20] rounded-3xl relative overflow-hidden border border-white/5 shadow-2xl">
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 font-sans">
+        <div className="max-w-5xl w-full grid gap-10 lg:grid-cols-[1fr,380px] items-center">
+          <div className="aspect-video bg-slate-900 rounded-2xl relative overflow-hidden border border-slate-800 shadow-2xl">
             {isBroadcaster ? (
               <>
                 {isCamOn ? (
                   <video ref={previewVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full gap-4">
-                    <Avatar className="w-32 h-32 border-4 border-white/5 bg-slate-800"><AvatarFallback className="text-4xl">{user?.fullName?.[0]}</AvatarFallback></Avatar>
-                    {/* <p className="text-slate-400 font-medium uppercase text-xs tracking-widest">Camera Off</p> */}
+                  <div className="flex flex-col items-center justify-center h-full gap-4 bg-slate-900">
+                    <Avatar className="w-24 h-24 border-2 border-slate-800 bg-slate-800"><AvatarFallback className="text-2xl font-semibold text-slate-300">{user?.fullName?.[0]}</AvatarFallback></Avatar>
+                    <p className="text-slate-400 font-medium text-xs">Camera is off</p>
                   </div>
                 )}
-                <div className="absolute bottom-6 right-6 flex items-center gap-3">
-                  <Button variant="ghost" size="icon" className={`rounded-full h-12 w-12 backdrop-blur-md ${!isMicOn ? "bg-destructive text-white" : "bg-white/10 text-white"}`} onClick={() => setIsMicOn(!isMicOn)}>
-                    {isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-slate-950/80 backdrop-blur-md p-1.5 rounded-xl border border-slate-800 z-10">
+                  <Button variant="ghost" size="icon" className={`rounded-lg h-9 w-9 transition-all ${!isMicOn ? "bg-rose-600 text-white" : "bg-slate-800 text-slate-200 hover:bg-slate-700"}`} onClick={() => setIsMicOn(!isMicOn)}>
+                    {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                   </Button>
-                  <Button variant="ghost" size="icon" className={`rounded-full h-12 w-12 backdrop-blur-md ${!isCamOn ? "bg-destructive text-white" : "bg-white/10 text-white"}`} onClick={() => setIsCamOn(!isCamOn)}>
-                    {isCamOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                  <Button variant="ghost" size="icon" className={`rounded-lg h-9 w-9 transition-all ${!isCamOn ? "bg-rose-600 text-white" : "bg-slate-800 text-slate-200 hover:bg-slate-700"}`} onClick={() => setIsCamOn(!isCamOn)}>
+                    {isCamOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
                   </Button>
                 </div>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full gap-6 bg-gradient-to-br from-[#181A20] to-[#0F1115]">
-                <div className="relative">
-                  <Avatar className="w-40 h-40 border-8 border-white/5 shadow-2xl">
-                    <AvatarFallback className="bg-primary/10 text-primary text-5xl font-black">{streamData?.hostId?.fullName?.[0] || "H"}</AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-primary rounded-full border-4 border-[#181A20]" />
-                </div>
-                <div className="text-center space-y-2">
-                  <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] animate-pulse">Waiting for host to start...</p>
-                  <p className="text-xs text-slate-500">You will be joining as a viewer</p>
+              <div className="flex flex-col items-center justify-center h-full gap-5 bg-slate-900">
+                <Avatar className="w-28 h-28 border-4 border-slate-800 shadow-xl">
+                  <AvatarFallback className="bg-primary/10 text-teal-400 text-3xl font-bold">{streamData?.hostId?.fullName?.[0] || "H"}</AvatarFallback>
+                </Avatar>
+                <div className="text-center space-y-1">
+                  <p className="text-slate-400 font-medium text-xs">Waiting for the host to start...</p>
+                  <p className="text-[11px] text-slate-500">You will be joining as a viewer</p>
                 </div>
               </div>
             )}
           </div>
-          <div className="space-y-8">
-            <div className="text-center lg:text-left space-y-2">
-              <h1 className="text-4xl font-black tracking-tight uppercase">{isOwner ? "Ready to start?" : "Ready to join?"}</h1>
-              <p className="text-slate-500 text-lg font-medium">{streamData?.title}</p>
+          <div className="space-y-6">
+            <div className="space-y-1.5">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-100">{isOwner ? "Ready to start broadcast?" : "Ready to join audition?"}</h1>
+              <p className="text-slate-400 text-sm font-normal line-clamp-2">{streamData?.title}</p>
             </div>
-            <div className="bg-[#181A20] border border-white/5 rounded-2xl p-6 space-y-4 shadow-xl">
-              <div className="flex items-center gap-4">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary"><Users className="w-5 h-5" /></div>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
+              <div className="flex items-center gap-3.5">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-teal-400"><Users className="w-4 h-4" /></div>
                 <div>
-                  <p className="text-sm font-bold">
-                    {participants.length} { participants.length === 1 ? 'person' : 'people' } in the room
+                  <p className="text-xs font-semibold text-slate-200">
+                    {participants.length} { participants.length === 1 ? 'participant' : 'participants' } in room
                   </p>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">
-                    {isOwner ? "You are ready to start" : `Host: ${streamData?.hostId?.fullName || "Loading..."}`}
+                  <p className="text-[11px] text-slate-400">
+                    {isOwner ? "Host workspace" : `Host: ${streamData?.hostId?.fullName || "Loading..."}`}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-3">
-              <Button type="button" size="lg" className="h-14 rounded-2xl text-lg font-black uppercase shadow-xl shadow-primary/20" onClick={(e) => { e.preventDefault(); handleJoin(e); }}>{isOwner ? "Start session" : streamData?.status === 'live' ? "Join now" : "Join waiting room"}</Button>
-              <Button type="button" variant="ghost" size="lg" className="h-14 rounded-2xl text-slate-500 font-bold uppercase hover:text-white" onClick={(e) => { e.preventDefault(); navigate(-1); }}>Cancel</Button>
+            <div className="flex flex-col gap-2.5">
+              <Button type="button" size="lg" className="h-11 rounded-xl text-sm font-semibold bg-primary hover:bg-primary text-white shadow-sm transition-all" onClick={(e) => { e.preventDefault(); handleJoin(e); }}>{isOwner ? "Start Live Stream" : streamData?.status === 'live' ? "Join Now" : "Join Waiting Room"}</Button>
+              <Button type="button" variant="ghost" size="lg" className="h-11 rounded-xl text-slate-400 text-xs font-medium hover:text-white hover:bg-slate-900" onClick={(e) => { e.preventDefault(); navigate(-1); }}>Cancel</Button>
             </div>
           </div>
         </div>
@@ -1350,92 +1400,82 @@ export default function LivestreamPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0B0D11] text-white overflow-hidden font-sans">
-      {/* Header with Glassmorphism */}
-      <div className="h-16 border-b border-white/5 bg-[#12141A]/80 backdrop-blur-xl flex items-center justify-between px-6 z-50 shrink-0 shadow-sm">
-        <div className="flex items-center gap-5">
+    <div className="h-screen flex flex-col bg-slate-950 text-slate-100 overflow-hidden font-sans">
+      {/* Header Bar */}
+      <div className="h-14 border-b border-slate-800/80 bg-slate-950 flex items-center justify-between px-6 z-50 shrink-0 shadow-xs">
+        <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all" 
+            className="text-slate-400 hover:text-white hover:bg-slate-900 h-8 w-8 rounded-lg transition-all" 
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </Button>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-3">
-              <h1 className="font-bold text-base tracking-tight truncate max-w-[250px]">{streamData?.title}</h1>
-              <Badge variant="secondary" className="bg-primary/10 text-[10px] text-primary border-none h-5 px-2 font-bold uppercase tracking-wider">
-                {streamData?.category || "Audition"}
-              </Badge>
-            </div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Live Broadcast</span>
+          <div className="flex items-center gap-3">
+            <h1 className="font-semibold text-sm text-slate-100 tracking-tight truncate max-w-[280px]">{streamData?.title}</h1>
+            <Badge variant="secondary" className="bg-slate-900 text-slate-300 text-[10px] border border-slate-800 h-5 px-2 font-medium">
+              {streamData?.category || "Audition"}
+            </Badge>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-medium">
+              <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+              <span>LIVE</span>
             </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-5 px-5 py-2 bg-white/5 rounded-2xl border border-white/5 text-[12px] font-bold shadow-inner">
-            <div className="flex items-center gap-2 group cursor-help">
-              <Users className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-              <span className="text-slate-300">
-                {participants.length} 
-                <span className="text-slate-500 text-[10px] ml-0.5 uppercase">participants</span>
-              </span>
-            </div>
-            <div className="w-px h-4 bg-white/10" />
-            <div className="flex items-center gap-2 group cursor-help">
-              <Shield className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
-              <span className="text-slate-300 uppercase text-[10px]">Secure</span>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-900 rounded-lg border border-slate-800 text-xs text-slate-300 font-medium">
+            <Users className="w-3.5 h-3.5 text-slate-400" />
+            <span>{participants.length}</span>
+            <span className="text-slate-500 text-[10px]">in room</span>
           </div>
-          <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-slate-400 hover:text-white hover:bg-white/5 transition-all">
-            <Share2 className="w-5 h-5" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 px-3 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-medium flex items-center gap-1.5 transition-all"
+            onClick={handleCopyLink}
+          >
+            {isCopied ? <Check className="w-3.5 h-3.5 text-teal-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+            <span>{isCopied ? "Copied" : "Share Link"}</span>
           </Button>
         </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden relative">
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#0B0D11] relative">
+        <div className="flex-1 flex flex-col min-w-0 bg-slate-950 relative">
           <div className="flex-1 relative flex items-center justify-center p-4 lg:p-6 overflow-hidden">
             <div ref={videoContainerRef} className={cn(
-              "w-full h-full max-w-6xl rounded-[2rem] overflow-hidden shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-white/5 relative group transition-all duration-500 p-4",
+              "w-full h-full max-w-6xl rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-slate-900 relative group transition-all p-3",
               layoutMode === "grid" && (isBroadcaster ? remoteUsers.length + 1 : remoteUsers.length) > 1 
-                ? "grid grid-cols-1 md:grid-cols-2 gap-4" 
+                ? "grid grid-cols-1 md:grid-cols-2 gap-3" 
                 : "relative"
             )}>
               {/* Local Broadcaster (Host/Co-Host) */}
               {isBroadcaster && (
                 <div className={cn(
-                  "relative w-full h-full rounded-2xl overflow-hidden bg-[#12141A]",
+                  "relative w-full h-full rounded-xl overflow-hidden bg-slate-900 border border-slate-800",
                   (layoutMode === "speaker" || layoutMode === "cinema") && isOwner && "absolute inset-0 z-10",
-                  (layoutMode === "speaker" || layoutMode === "cinema") && !isOwner && "hidden" // Only owner is main in speaker/cinema
+                  (layoutMode === "speaker" || layoutMode === "cinema") && !isOwner && "hidden"
                 )}>
                   {isCamOn ? (
-                    <div className="w-full h-full bg-black">
+                    <div className="w-full h-full bg-slate-950">
                       <div ref={localVideoRef} className="w-full h-full object-cover scale-x-[-1]" />
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11]">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl animate-pulse" />
-                        <Avatar className="w-24 h-24 border-4 border-white/5 shadow-2xl relative z-10">
-                          <AvatarFallback className="bg-[#252831] text-primary text-3xl font-black">
-                            {user?.fullName?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      {/* <div className="flex flex-col items-center gap-1.5 relative z-10">
-                        <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">Camera Off</p>
-                        <div className="h-1 w-8 bg-primary/30 rounded-full" />
-                      </div> */}
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-slate-900">
+                      <Avatar className="w-20 h-20 border border-slate-800 shadow-lg">
+                        <AvatarFallback className="bg-slate-800 text-teal-400 text-2xl font-bold">
+                          {user?.fullName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <p className="text-slate-400 font-medium text-xs">Camera is off</p>
                     </div>
                   )}
-                  <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 text-[10px] font-bold z-20">
-                    You {isOwner && "(Host)"} {!isMicOn && <MicOff className="inline-block ml-2 w-3 h-3 text-destructive" />}
+                  <div className="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-800 text-xs font-medium text-slate-200 z-20 flex items-center gap-1.5">
+                    <span>You {isOwner && "(Host)"}</span>
+                    {!isMicOn && <MicOff className="w-3 h-3 text-rose-500" />}
                   </div>
                 </div>
               )}
@@ -1447,39 +1487,30 @@ export default function LivestreamPage() {
                   String(typeof ch === 'object' ? ch._id || ch.id : ch) === String(remoteUser.uid)
                 );
                 
-                // Only show host and co-hosts in the main area
                 if (!isHost && !isCoHostRemote) return null;
 
                 return (
                   <div key={remoteUser.uid} className={cn(
-                    "relative w-full h-full rounded-2xl overflow-hidden bg-[#12141A]",
-                    // In speaker/cinema, host is always main
+                    "relative w-full h-full rounded-xl overflow-hidden bg-slate-900 border border-slate-800",
                     (layoutMode === "speaker" || layoutMode === "cinema") && isHost && "absolute inset-0 z-10",
-                    // In speaker, co-hosts are floating
-                    layoutMode === "speaker" && !isHost && "absolute top-6 right-6 w-56 aspect-video z-20 shadow-2xl border border-white/10",
-                    // In cinema, co-hosts are at the bottom (this list will be handled below if needed, but let's keep them here for now)
+                    layoutMode === "speaker" && !isHost && "absolute top-4 right-4 w-52 aspect-video z-20 shadow-xl border border-slate-800",
                     layoutMode === "cinema" && !isHost && "hidden" 
                   )}>
                     {remoteCameraStatus[String(remoteUser.uid)] === false ? (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11]">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl animate-pulse" />
-                          <Avatar className="w-24 h-24 border-4 border-white/5 shadow-2xl relative z-10">
-                            <AvatarFallback className="bg-[#252831] text-primary text-3xl font-black">
-                              {participants.find(p => String(p.id) === String(remoteUser.uid))?.name?.[0] || "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-                        {/* <div className="flex flex-col items-center gap-1.5 relative z-10">
-                          <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">Camera Off</p>
-                          <div className="h-1 w-8 bg-primary/30 rounded-full" />
-                        </div> */}
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-slate-900">
+                        <Avatar className="w-20 h-20 border border-slate-800 shadow-lg">
+                          <AvatarFallback className="bg-slate-800 text-teal-400 text-2xl font-bold">
+                            {participants.find(p => String(p.id) === String(remoteUser.uid))?.name?.[0] || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <p className="text-slate-400 font-medium text-xs">Camera is off</p>
                       </div>
                     ) : (
                       <RemoteVideoPlayer user={remoteUser} isPaused={isPaused} />
                     )}
-                    <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 text-[10px] font-bold z-20">
-                      {isHost ? "Host" : "Co-Host"} {!remoteUser.hasAudio && <MicOff className="inline-block ml-2 w-3 h-3 text-destructive" />}
+                    <div className="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-800 text-xs font-medium text-slate-200 z-20 flex items-center gap-1.5">
+                      <span>{isHost ? "Host" : "Co-Host"}</span>
+                      {!remoteUser.hasAudio && <MicOff className="w-3 h-3 text-rose-500" />}
                     </div>
                   </div>
                 );
@@ -1487,18 +1518,18 @@ export default function LivestreamPage() {
 
               {/* Cinema Mode Co-Host Bar */}
               {layoutMode === "cinema" && (isBroadcaster ? remoteUsers.length + 1 : remoteUsers.length) > 1 && (
-                <div className="absolute bottom-24 left-6 right-6 h-32 flex items-center gap-4 overflow-x-auto no-scrollbar z-20 pb-2">
+                <div className="absolute bottom-20 left-4 right-4 h-28 flex items-center gap-3 overflow-x-auto no-scrollbar z-20 pb-1">
                   {/* Local Co-Host in Cinema Bar */}
                   {isBroadcaster && !isOwner && (
-                    <div className="h-full aspect-video rounded-xl overflow-hidden bg-[#12141A] shrink-0 border border-white/10 shadow-xl relative">
+                    <div className="h-full aspect-video rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-slate-800 shadow-lg relative">
                       {isCamOn ? (
                         <div ref={localVideoRef} className="w-full h-full object-cover scale-x-[-1]" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-800">
-                          <Avatar className="h-10 w-10"><AvatarFallback>{user?.fullName?.[0]}</AvatarFallback></Avatar>
+                        <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                          <Avatar className="h-9 w-9"><AvatarFallback>{user?.fullName?.[0]}</AvatarFallback></Avatar>
                         </div>
                       )}
-                      <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded-lg text-[8px] font-bold">You</div>
+                      <div className="absolute bottom-1.5 left-1.5 bg-slate-950/80 px-2 py-0.5 rounded text-[10px] font-medium">You</div>
                     </div>
                   )}
                   {/* Remote Co-Hosts in Cinema Bar */}
@@ -1509,20 +1540,19 @@ export default function LivestreamPage() {
                     );
                     return !isHost && isCoHostRemote;
                   }).map(ru => (
-                    <div key={ru.uid} className="h-full aspect-video rounded-xl overflow-hidden bg-[#12141A] shrink-0 border border-white/10 shadow-xl relative">
+                    <div key={ru.uid} className="h-full aspect-video rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-slate-800 shadow-lg relative">
                       {remoteCameraStatus[String(ru.uid)] === false ? (
-                        <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 bg-slate-800">
-                          <Avatar className="h-10 w-10 border border-white/10 shadow-lg">
-                            <AvatarFallback className="bg-[#252831] text-primary text-xs font-bold">
+                        <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-slate-900">
+                          <Avatar className="h-8 w-8 border border-slate-800">
+                            <AvatarFallback className="bg-slate-800 text-teal-400 text-xs font-bold">
                               {participants.find(p => String(p.id) === String(ru.uid))?.name?.[0] || "?"}
                             </AvatarFallback>
                           </Avatar>
-                          <p className="text-[7px] text-slate-400 font-black uppercase tracking-widest">Off</p>
                         </div>
                       ) : (
                         <RemoteVideoPlayer user={ru} isPaused={isPaused} />
                       )}
-                      <div className="absolute bottom-2 left-2 bg-black/60 px-2 py-0.5 rounded-lg text-[8px] font-bold">Co-Host</div>
+                      <div className="absolute bottom-1.5 left-1.5 bg-slate-950/80 px-2 py-0.5 rounded text-[10px] font-medium">Co-Host</div>
                     </div>
                   ))}
                 </div>
@@ -1530,16 +1560,13 @@ export default function LivestreamPage() {
 
               {/* Placeholder for Viewers if no one is broadcasting */}
               {!isBroadcaster && remoteUsers.length === 0 && (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-8 bg-gradient-to-br from-[#1A1D24] to-[#0B0D11] absolute inset-0">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-                    <Avatar className="w-48 h-48 border-[12px] border-white/5 shadow-[0_0_80px_rgba(0,0,0,0.4)] relative z-10">
-                      <AvatarFallback className="bg-primary/10 text-primary text-6xl font-black">
-                        {streamData?.hostId?.fullName?.[0] || "H"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                  <p className="text-slate-400 font-black uppercase text-[11px] tracking-[0.4em]">Waiting for host...</p>
+                <div className="w-full h-full flex flex-col items-center justify-center gap-5 bg-slate-900 absolute inset-0">
+                  <Avatar className="w-32 h-32 border-4 border-slate-800 shadow-2xl">
+                    <AvatarFallback className="bg-slate-800 text-teal-400 text-4xl font-bold">
+                      {streamData?.hostId?.fullName?.[0] || "H"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="text-slate-400 font-medium text-xs">Waiting for the host to start the broadcast...</p>
                 </div>
               )}
 
@@ -1599,12 +1626,12 @@ export default function LivestreamPage() {
               </div>
 
               {/* Status Tags */}
-              <div className="absolute top-6 left-6 flex items-center gap-3 z-30">
-                <Badge className="bg-destructive hover:bg-destructive text-white border-none px-4 py-1.5 font-black uppercase text-[10px] tracking-[0.2em] shadow-lg shadow-destructive/20 rounded-full">
-                  Live
-                </Badge>
-                <div className="px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-2 text-[10px] font-bold text-white shadow-lg">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="absolute top-4 left-4 flex items-center gap-2 z-30">
+                <div className="bg-rose-600 text-white border-none px-2.5 py-0.5 font-semibold text-[11px] rounded-md shadow-md flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  LIVE
+                </div>
+                <div className="px-2.5 py-0.5 bg-slate-950/80 backdrop-blur-md rounded-md border border-slate-800 text-[11px] font-medium text-slate-300">
                   HD 1080P
                 </div>
               </div>
@@ -1625,7 +1652,7 @@ export default function LivestreamPage() {
               </div>
 
               {/* Other Viewers Small Grid (Not Host/Co-Host) */}
-              <div className="absolute top-6 right-6 w-56 space-y-4 z-30 pointer-events-none">
+              <div className="absolute top-4 right-4 w-52 space-y-3 z-30 pointer-events-none">
                 {remoteUsers.filter(ru => {
                   const isHost = String(ru.uid) === String(streamData?.hostId?._id || streamData?.hostId?.id || streamData?.hostId);
                   const isCoHostRemote = Array.isArray(streamData?.coHosts) && streamData.coHosts.some((ch) => 
@@ -1633,22 +1660,22 @@ export default function LivestreamPage() {
                   );
                   return !isHost && !isCoHostRemote;
                 }).map((remoteUser) => (
-                  <div key={remoteUser.uid} className="aspect-video bg-black/40 backdrop-blur-2xl rounded-2xl border border-white/10 overflow-hidden relative shadow-2xl group/mini pointer-events-auto transition-transform hover:scale-105 duration-300">
+                  <div key={remoteUser.uid} className="aspect-video bg-slate-900 rounded-xl border border-slate-800 overflow-hidden relative shadow-lg group/mini pointer-events-auto transition-transform hover:scale-105 duration-300">
                     {remoteCameraStatus[String(remoteUser.uid)] === false ? (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-[#1A1D24]">
-                        <Avatar className="h-8 w-8 border border-white/5 shadow-md">
-                          <AvatarFallback className="bg-[#252831] text-primary text-[10px] font-bold">
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-slate-900">
+                        <Avatar className="h-7 w-7 border border-slate-800">
+                          <AvatarFallback className="bg-slate-800 text-slate-300 text-[10px] font-medium">
                             {participants.find(p => String(p.id) === String(remoteUser.uid))?.name?.[0] || "?"}
                           </AvatarFallback>
                         </Avatar>
-                        <p className="text-[6px] text-slate-500 font-black uppercase tracking-tighter">Off</p>
+                        <p className="text-[9px] text-slate-500 font-medium">Off</p>
                       </div>
                     ) : (
                       <RemoteVideoPlayer user={remoteUser} isPaused={isPaused} />
                     )}
-                    <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-xl px-2.5 py-1.5 rounded-xl flex items-center justify-between border border-white/5">
-                      <span className="text-[9px] font-bold truncate pr-2 text-white/90 tracking-tight">Viewer {remoteUser.uid}</span>
-                      {!remoteUser.hasAudio && <MicOff className="w-3 h-3 text-destructive" />}
+                    <div className="absolute bottom-1.5 left-1.5 right-1.5 bg-slate-950/80 backdrop-blur-md px-2 py-1 rounded-md flex items-center justify-between border border-slate-800">
+                      <span className="text-[10px] font-medium truncate pr-2 text-slate-200">Viewer {remoteUser.uid}</span>
+                      {!remoteUser.hasAudio && <MicOff className="w-3 h-3 text-rose-500" />}
                     </div>
                   </div>
                 ))}
@@ -1657,100 +1684,90 @@ export default function LivestreamPage() {
           </div>
 
           {/* Bottom Action Bar */}
-          <div className="h-auto min-h-[6rem] py-4 lg:h-24 bg-[#12141A]/60 backdrop-blur-2xl border-t border-white/5 px-4 lg:px-8 flex flex-col lg:flex-row items-center justify-between shrink-0 relative z-30 gap-4 lg:gap-0">
-            <div className="flex items-center gap-4 lg:gap-8 w-full lg:w-1/3">
-              <div className="flex items-center gap-4 group cursor-pointer">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-all" />
-                  <Avatar className="h-14 w-14 border-2 border-white/10 shadow-2xl transition-transform group-hover:scale-105">
-                    <AvatarFallback className="bg-[#252831] text-primary text-lg font-bold">
-                      {streamData?.hostId?.fullName?.[0] || "H"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 bg-emerald-500 border-4 border-[#12141A] rounded-full shadow-lg" />
-                </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <p className="text-base font-bold text-white group-hover:text-primary transition-colors tracking-tight">
-                      {streamData?.hostId?.fullName || "Host Name"}
-                    </p>
-                    {isOwner && <Shield className="w-3.5 h-3.5 text-primary" />}
-                  </div>
-                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">Audition Director</p>
-                </div>
+          <div className="h-16 bg-slate-950 border-t border-slate-800/80 px-6 flex items-center justify-between shrink-0 relative z-30">
+            <div className="flex items-center gap-3 w-1/3">
+              <Avatar className="h-9 w-9 border border-slate-800">
+                <AvatarFallback className="bg-slate-800 text-slate-200 text-xs font-medium">
+                  {streamData?.hostId?.fullName?.[0] || "H"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <p className="text-xs font-semibold text-slate-100 truncate">
+                  {streamData?.hostId?.fullName || "Host Name"}
+                </p>
+                <p className="text-[10px] text-slate-400 font-normal">Audition Host</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 w-full lg:w-auto justify-center">
+            <div className="flex items-center gap-2.5 justify-center">
               {isBroadcaster ? (
-                <div className="flex items-center bg-white/5 p-1.5 rounded-[1.25rem] border border-white/5 shadow-inner">
+                <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 shadow-xs">
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`h-10 lg:h-12 w-10 lg:w-12 rounded-xl transition-all ${!isMicOn ? "bg-destructive/10 text-destructive hover:bg-destructive/20" : "text-slate-400 hover:text-white hover:bg-white/10"}`} 
+                    className={`h-9 w-9 rounded-lg transition-all ${!isMicOn ? "bg-rose-600 text-white" : "text-slate-300 hover:bg-slate-800"}`} 
                     onClick={() => setIsMicOn(!isMicOn)}
+                    title={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
                   >
-                    {isMicOn ? <Mic className="w-4 lg:w-5 h-4 lg:h-5" /> : <MicOff className="w-4 lg:w-5 h-4 lg:h-5" />}
+                    {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                   </Button>
-                  <div className="w-px h-6 lg:h-8 bg-white/10 mx-1 lg:mx-1.5" />
+                  <div className="w-px h-5 bg-slate-800 mx-1" />
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`h-10 lg:h-12 w-10 lg:w-12 rounded-xl transition-all ${!isCamOn ? "bg-destructive/10 text-destructive hover:bg-destructive/20" : "text-slate-400 hover:text-white hover:bg-white/10"}`} 
+                    className={`h-9 w-9 rounded-lg transition-all ${!isCamOn ? "bg-rose-600 text-white" : "text-slate-300 hover:bg-slate-800"}`} 
                     onClick={() => setIsCamOn(!isCamOn)}
+                    title={isCamOn ? "Turn Off Camera" : "Turn On Camera"}
                   >
-                    {isCamOn ? <Video className="w-4 lg:w-5 h-4 lg:h-5" /> : <VideoOff className="w-4 lg:w-5 h-4 lg:h-5" />}
+                    {isCamOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
                   </Button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2.5 px-4 lg:px-6 py-2 lg:py-3 bg-primary/5 border border-primary/10 rounded-2xl shadow-inner">
-                  <div className="w-2 lg:w-2.5 h-2 lg:h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_12px_rgba(var(--primary),0.5)]" />
-                  <span className="text-[10px] lg:text-[11px] font-black uppercase tracking-[0.2em] lg:tracking-[0.25em] text-primary">Live Viewing</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg">
+                  <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                  <span className="text-xs font-medium text-slate-300">Live Viewing Mode</span>
                 </div>
               )}
               <Button 
                 variant="destructive" 
-                className="h-12 lg:h-14 px-6 lg:px-8 rounded-2xl font-black uppercase text-[10px] lg:text-xs tracking-widest gap-2 lg:gap-3 shadow-2xl shadow-destructive/20 hover:scale-[1.02] active:scale-[0.98] transition-all" 
+                className="h-9 px-4 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs flex items-center gap-2 transition-all shadow-xs" 
                 onClick={handleLeave}
               >
-                <PhoneOff className="w-4 h-4" />
-                <span className="hidden sm:inline">{isOwner ? "End Audition" : "Leave Session"}</span>
-                <span className="sm:hidden">{isOwner ? "End" : "Leave"}</span>
+                <PhoneOff className="w-3.5 h-3.5" />
+                <span>{isOwner ? "End Audition" : "Leave Session"}</span>
               </Button>
             </div>
 
-            <div className="flex items-center justify-end gap-3 lg:gap-4 w-full lg:w-1/3">
+            <div className="flex items-center justify-end gap-3 w-1/3">
               <div 
-                className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-white/5 border border-white/5 rounded-xl text-slate-400 hover:text-primary transition-colors group cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 hover:text-rose-400 transition-colors cursor-pointer text-xs font-medium active:scale-95"
                 onClick={handleLike}
               >
-                <Heart className="w-3.5 lg:w-4 h-3.5 lg:h-4 group-hover:scale-110 group-hover:fill-current transition-all" />
-                <span className="text-[10px] lg:text-xs font-bold tracking-tight">{formatCount(likeCount)}</span>
+                <Heart className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-400" />
+                <span>{formatCount(likeCount)}</span>
               </div>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className={`h-12 lg:h-14 w-12 lg:w-14 rounded-2xl transition-all ${showSidebar ? "bg-primary/10 text-primary border border-primary/20 shadow-lg" : "text-slate-400 hover:text-white hover:bg-white/5"}`} 
+                className={`h-9 w-9 rounded-lg transition-all ${showSidebar ? "bg-slate-800 text-white border border-slate-700" : "bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800"}`} 
                 onClick={() => setShowSidebar(!showSidebar)}
+                title="Toggle Sidebar"
               >
-                <MessageSquare className="w-5 lg:w-6 h-5 lg:h-6" />
+                <MessageSquare className="w-4 h-4" />
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Sidebar - Polished Chat & Stats */}
+        {/* Sidebar - Clean Activity & Chat */}
         <div className={cn(
-          "transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] border-l border-white/5 bg-[#12141A] flex flex-col shadow-2xl z-40 lg:relative absolute right-0 top-0 bottom-0",
-          showSidebar ? "w-full md:w-[380px] translate-x-0" : "w-0 translate-x-full overflow-hidden border-none"
+          "transition-all duration-300 border-l border-slate-800/80 bg-slate-950 flex flex-col shadow-xl z-40 lg:relative absolute right-0 top-0 bottom-0",
+          showSidebar ? "w-full md:w-[360px] translate-x-0" : "w-0 translate-x-full overflow-hidden border-none"
         )}>
-          <div className="flex flex-col h-full min-w-[320px] md:min-w-[380px]">
-            <div className="h-20 px-6 border-b border-white/5 flex items-center justify-between bg-[#12141A]/50 backdrop-blur-xl">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-1 bg-primary rounded-full" />
-                <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">Stream Activity</h2>
-              </div>
-              <div className="flex items-center gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5">
+          <div className="flex flex-col h-full min-w-[320px] md:min-w-[360px]">
+            <div className="h-14 px-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-950">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Room Activity</h2>
+              <div className="flex items-center gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800">
                 {[
                   { id: "chat", icon: MessageSquare, label: "Chat" },
                   { id: "people", icon: Users, label: "People" },
@@ -1760,19 +1777,19 @@ export default function LivestreamPage() {
                     key={tab.id}
                     variant="ghost" 
                     size="icon" 
-                    className={`h-9 w-9 rounded-lg transition-all ${activeTab === tab.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-500 hover:text-slate-300 hover:bg-white/5"}`} 
+                    className={`h-7 w-7 rounded-md text-xs transition-all ${activeTab === tab.id ? "bg-slate-800 text-slate-100 shadow-xs" : "text-slate-400 hover:text-slate-200"}`} 
                     onClick={() => setActiveTab(tab.id)}
                   >
-                    <tab.icon className="w-4.5 h-4.5" />
+                    <tab.icon className="w-3.5 h-3.5" />
                   </Button>
                 ))}
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-9 w-9 rounded-lg text-slate-500 hover:text-white lg:hidden" 
+                  className="h-7 w-7 rounded-md text-slate-400 hover:text-white lg:hidden" 
                   onClick={() => setShowSidebar(false)}
                 >
-                  <X className="w-4.5 h-4.5" />
+                  <X className="w-3.5 h-3.5" />
                 </Button>
               </div>
             </div>
@@ -1781,8 +1798,8 @@ export default function LivestreamPage() {
               {activeTab === "chat" && (
                 <div className="absolute inset-0 flex flex-col">
                   <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-white/5 hover:scrollbar-thumb-white/10 transition-all">
-                    <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 text-[11px] text-slate-400 leading-relaxed text-center italic shadow-inner">
-                      Welcome to the live audition room! Keep conversations professional and focused on the talent.
+                    <div className="bg-slate-900/60 rounded-xl p-3 border border-slate-800 text-xs text-slate-400 leading-relaxed text-center font-normal">
+                      Welcome to the live audition room. Keep messages professional.
                     </div>
                     {chatMessages.map((msg, index) => {
                       const isLastFromSameSender = index > 0 && chatMessages[index - 1].sender === msg.sender;
@@ -1790,47 +1807,47 @@ export default function LivestreamPage() {
                         <div 
                           key={msg.id} 
                           className={cn(
-                            "flex w-full animate-in fade-in slide-in-from-bottom-3 duration-500",
+                            "flex w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
                             msg.isSelf ? "justify-end" : "justify-start",
-                            isLastFromSameSender ? "mt-1" : "mt-6"
+                            isLastFromSameSender ? "mt-1" : "mt-4"
                           )}
                         >
                           <div className={cn(
-                            "max-w-[85%] space-y-1.5",
+                            "max-w-[85%] space-y-1",
                             msg.isSelf ? "items-end" : "items-start"
                           )}>
                             {!isLastFromSameSender && (
                               <div className={cn(
-                                "flex items-center gap-2 mb-1.5 px-1",
+                                "flex items-center gap-1.5 mb-1 px-0.5",
                                 msg.isSelf ? "flex-row-reverse" : "flex-row"
                               )}>
-                                <Avatar className="h-6 w-6 border border-white/10 shadow-sm">
+                                <Avatar className="h-5 w-5 border border-slate-800">
                                   <AvatarFallback className={cn(
-                                    "text-[9px] font-bold",
-                                    msg.isSelf ? "bg-primary/20 text-primary" : "bg-white/5 text-slate-400"
+                                    "text-[9px] font-medium",
+                                    msg.isSelf ? "bg-primary/20 text-teal-300" : "bg-slate-800 text-slate-400"
                                   )}>
                                     {msg.sender?.[0]}
                                   </AvatarFallback>
                                 </Avatar>
                                 <span className={cn(
-                                  "text-[10px] font-black uppercase tracking-widest",
-                                  msg.isSelf ? "text-primary" : "text-slate-400"
+                                  "text-[11px] font-medium",
+                                  msg.isSelf ? "text-teal-400" : "text-slate-400"
                                 )}>
                                   {msg.sender}
                                 </span>
                               </div>
                             )}
                             <div className={cn(
-                              "px-4 py-3 rounded-2xl text-[12px] shadow-sm transition-all hover:shadow-md",
+                              "px-3.5 py-2.5 rounded-xl text-xs transition-all",
                               msg.isSelf 
-                                ? "bg-primary text-white rounded-tr-none" 
-                                : "bg-white/5 text-slate-300 rounded-tl-none border border-white/5"
+                                ? "bg-primary text-white rounded-tr-xs" 
+                                : "bg-slate-900 text-slate-200 rounded-tl-xs border border-slate-800"
                             )}>
-                              <p className="leading-relaxed break-words tracking-tight">{msg.text}</p>
+                              <p className="leading-relaxed break-words">{msg.text}</p>
                             </div>
                             {!isLastFromSameSender && (
                               <p className={cn(
-                                "text-[8px] text-slate-600 px-2 font-black uppercase tracking-tighter",
+                                "text-[9px] text-slate-500 px-1 font-normal",
                                 msg.isSelf ? "text-right" : "text-left"
                               )}>
                                 {msg.timestamp}
@@ -1843,13 +1860,13 @@ export default function LivestreamPage() {
                     <div ref={chatEndRef} className="h-2" />
                   </div>
                   
-                  {/* Modern Chat Input Area */}
-                  <div className="p-6 bg-[#12141A] border-t border-white/5 space-y-4">
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
+                  {/* Clean Studio Chat Input Area */}
+                  <div className="p-4 bg-slate-950 border-t border-slate-800/80 space-y-3">
+                    <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none no-scrollbar">
                       {["👏", "💖", "🔥", "💯", "🎭", "✨", "🙌"].map(emoji => (
                         <button 
                           key={emoji} 
-                          className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 hover:scale-110 active:scale-90 transition-all text-base border border-white/5" 
+                          className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg bg-slate-900 hover:bg-slate-800 text-xs border border-slate-800 transition-all cursor-pointer" 
                           onClick={() => sendReaction(emoji)}
                         >
                           {emoji}
@@ -1859,7 +1876,7 @@ export default function LivestreamPage() {
                     <div className="relative group">
                       <Input 
                         placeholder="Type a message..." 
-                        className="bg-[#0B0D11] border-white/10 focus:border-primary/50 rounded-2xl h-14 text-sm pl-5 pr-14 transition-all shadow-inner focus-visible:ring-0" 
+                        className="bg-slate-900 border-slate-800 focus:border-slate-700 rounded-xl h-10 text-xs pl-3 pr-10 text-slate-200 placeholder:text-slate-500 focus-visible:ring-0" 
                         value={chatInput} 
                         onChange={(e) => setChatInput(e.target.value)} 
                         onKeyDown={(e) => e.key === "Enter" && handleSendMessage()} 
@@ -1868,13 +1885,13 @@ export default function LivestreamPage() {
                         variant="ghost" 
                         size="icon" 
                         className={cn(
-                          "absolute right-2 top-2 h-10 w-10 rounded-xl transition-all",
-                          chatInput.trim() ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-600"
+                          "absolute right-1.5 top-1.5 h-7 w-7 rounded-lg transition-all",
+                          chatInput.trim() ? "bg-primary text-white hover:bg-primary" : "text-slate-600"
                         )} 
                         onClick={handleSendMessage} 
                         disabled={!chatInput.trim()}
                       >
-                        <Play className="w-4 h-4 fill-current rotate-0" />
+                        <Play className="w-3.5 h-3.5 fill-current rotate-0" />
                       </Button>
                     </div>
                   </div>
@@ -2002,7 +2019,7 @@ export default function LivestreamPage() {
                                 <DropdownMenuContent align="end" className="w-52 bg-[#12141A] border-white/10 text-white rounded-2xl p-2 shadow-2xl">
                                   <DropdownMenuLabel className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] px-3 py-2">Moderation Tools</DropdownMenuLabel>
                                   <DropdownMenuItem className="text-xs gap-3 py-3 rounded-xl cursor-pointer hover:bg-white/5 transition-colors" onClick={() => handleMuteUser(p.id, p.name)}>
-                                    {p.isMicOn ? <MicOff className="w-4 h-4 text-slate-400" /> : <Mic className="w-4 h-4 text-emerald-500" />}
+                                    {p.isMicOn ? <MicOff className="w-4 h-4 text-slate-400" /> : <Mic className="w-4 h-4 text-primary" />}
                                     <span className="font-bold">{p.isMicOn ? "Mute Talent" : "Unmute Talent"}</span>
                                   </DropdownMenuItem>
                                   {p.role !== "co-host" && p.role !== "host" && (
@@ -2050,15 +2067,15 @@ export default function LivestreamPage() {
                             className="h-8 w-8 text-slate-500 hover:text-white transition-all group-hover:scale-110" 
                             onClick={handleCopyLink}
                           >
-                            {isCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                            {isCopied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
                           </Button>
                         </div>
                       </div>
                       <div className="space-y-2.5 relative z-10">
                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Global Visibility</p>
                         <div className="flex items-center gap-3 p-3.5 bg-white/5 rounded-xl border border-white/5">
-                          <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                            <Globe className="w-4 h-4 text-emerald-500" />
+                          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Globe className="w-4 h-4 text-primary" />
                           </div>
                           <p className="text-xs font-black text-slate-200 uppercase tracking-[0.1em]">{streamData?.visibility || "Public Session"}</p>
                         </div>

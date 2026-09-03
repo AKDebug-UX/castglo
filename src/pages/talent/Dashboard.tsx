@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -108,7 +108,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 animate-fade-in pb-8">
       {/* Welcome Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#009698] via-[#008183] to-[#006e70] p-6 lg:p-8 text-white shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-primary p-6 lg:p-8 text-white shadow-xl">
         <div className="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-16 w-48 h-48 rounded-full bg-white/5 blur-2xl pointer-events-none" />
         
