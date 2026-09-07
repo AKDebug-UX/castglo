@@ -23,6 +23,7 @@ export interface PortfolioMediaGalleryProps {
   setProfileData: any;
   pendingProfilePhoto: any;
   setPendingProfilePhoto: any;
+  handleProfilePhotoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   pendingPortfolioPhotos: any[];
   setPendingPortfolioPhotos?: React.Dispatch<React.SetStateAction<any[]>>;
   removePendingPortfolioPhoto: (index: number) => void;
@@ -43,6 +44,7 @@ export function PortfolioMediaGallery({
   setProfileData,
   pendingProfilePhoto,
   setPendingProfilePhoto,
+  handleProfilePhotoSelect,
   pendingPortfolioPhotos,
   setPendingPortfolioPhotos,
   removePendingPortfolioPhoto,
@@ -82,58 +84,111 @@ export function PortfolioMediaGallery({
       </div>
 
       {/* ── Main Profile Photo ── */}
-      {(pendingProfilePhoto?.preview || profileData?.profilePicture) && (
-        <div className="space-y-4 pb-6 border-b border-gray-100">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="font-bold text-lg">Main Profile Photo</p>
-              <p className="text-xs text-muted-foreground">
-                This is your primary representative image across the platform.
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
-              className="text-[#009698] hover:bg-[#009698]/5 font-bold"
-            >
-              <label htmlFor="profile-photo-upload" className="cursor-pointer">
-                Change Main Photo
-              </label>
-            </Button>
+      <div className="space-y-4 pb-6 border-b border-gray-100">
+        <input
+          type="file"
+          id="profile-photo-upload"
+          accept="image/*"
+          className="hidden"
+          onChange={handleProfilePhotoSelect}
+          disabled={isSaving}
+        />
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="font-bold text-lg">Main Profile Photo</p>
+            <p className="text-xs text-muted-foreground">
+              This is your primary representative image across the platform.
+            </p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="text-[#009698] hover:bg-[#009698]/5 font-bold"
+          >
+            <label htmlFor="profile-photo-upload" className="cursor-pointer">
+              {pendingProfilePhoto?.preview || profileData?.profilePicture
+                ? "Change Main Photo"
+                : "Upload Main Photo"}
+            </label>
+          </Button>
+        </div>
 
-          <div className="relative w-full sm:w-64 aspect-square rounded-3xl overflow-hidden border-4 border-white shadow-xl group">
+        <div className="relative w-full sm:w-64 aspect-square rounded-3xl overflow-hidden border-4 border-white shadow-xl group bg-gray-100 flex items-center justify-center">
+          {pendingProfilePhoto?.preview || profileData?.profilePicture ? (
             <img
               src={pendingProfilePhoto?.preview || profileData?.profilePicture}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              alt="Main Profile Photo"
             />
+          ) : (
+            <label
+              htmlFor="profile-photo-upload"
+              className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground cursor-pointer hover:bg-gray-200/50 w-full h-full transition-colors"
+            >
+              <div className="w-16 h-16 rounded-full bg-[#009698]/10 text-[#009698] flex items-center justify-center mb-2 shadow-inner">
+                <Camera className="w-8 h-8" />
+              </div>
+              <span className="text-sm font-bold text-gray-700">No profile photo set</span>
+              <span className="text-xs text-[#009698] font-semibold mt-1">Click to select photo</span>
+            </label>
+          )}
+
+          {(pendingProfilePhoto?.preview || profileData?.profilePicture) && (
             <div className="absolute top-4 left-4">
               <Badge className="bg-[#009698] text-white border-none px-3 py-1 shadow-lg">
                 PRIMARY HEADSHOT
               </Badge>
             </div>
-            {pendingProfilePhoto && (
-              <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex items-center justify-center">
-                <div className="bg-white px-4 py-2 rounded-2xl shadow-xl flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-[#009698]" />
-                  <span className="text-sm font-bold text-[#009698]">
-                    Uploading...
-                  </span>
-                </div>
+          )}
+
+          {pendingProfilePhoto && (
+            <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="bg-white px-4 py-2 rounded-2xl shadow-xl flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-[#009698]" />
+                <span className="text-sm font-bold text-[#009698]">
+                  New Photo Selected
+                </span>
               </div>
-            )}
-            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <label
-                htmlFor="profile-photo-upload"
-                className="h-12 w-12 rounded-full bg-white text-[#009698] flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-transform"
-              >
-                <Camera className="w-6 h-6" />
-              </label>
             </div>
+          )}
+
+          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <label
+              htmlFor="profile-photo-upload"
+              className="h-12 w-12 rounded-full bg-white text-[#009698] flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-transform"
+            >
+              <Camera className="w-6 h-6" />
+            </label>
           </div>
         </div>
-      )}
+
+        {pendingProfilePhoto && (
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              onClick={() => handleSave(true)}
+              disabled={isSaving}
+              className="bg-[#009698] hover:bg-[#009698]/90 text-white font-bold px-6 py-2.5 rounded-xl shadow-md text-sm flex items-center gap-2"
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Upload className="w-4 h-4" />
+              )}
+              Save New Profile Photo
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPendingProfilePhoto(null)}
+              disabled={isSaving}
+              className="rounded-xl text-xs"
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* ── Mixed Media Grid: Photos + Videos ── */}
       <div className="space-y-6 pt-4">

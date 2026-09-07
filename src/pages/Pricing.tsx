@@ -103,23 +103,33 @@ export default function Pricing() {
     fetchPlans();
   }, []);
 
-  const handleSubscribe = async (plan) => {
+  const handleSubscribe = async (plan: Plan) => {
     // If user is already logged in, redirect to Stripe checkout
     if (user) {
       setIsProcessing(plan.planKey);
       try {
         const response = await subscriptionAPI.createCheckoutSession({
+          planKey: plan.planKey,
           planName: plan.planKey,
-          billingCycle: billingCycle
+          plan: plan.planKey,
+          category: plan.category || activeTab,
+          billingCycle: billingCycle,
+          cycle: billingCycle,
         });
 
-        if (response.data.success && response.data.data.url) {
-          window.location.href = response.data.data.url;
+        const checkoutUrl = response.data?.data?.url || response.data?.url;
+        if ((response.data?.success || response.status === 200) && checkoutUrl) {
+          window.location.href = checkoutUrl;
         } else {
-          toast.error("Could not initiate checkout. Please try again.");
+          toast.error(response.data?.message || "Could not initiate checkout. Please try again.");
         }
-      } catch (error) {
-        toast.error(error.response?.data?.message || "An unexpected error occurred");
+      } catch (error: any) {
+        const errMsg =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          "An unexpected error occurred";
+        toast.error(errMsg);
       } finally {
         setIsProcessing(null);
       }

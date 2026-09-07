@@ -127,7 +127,7 @@ export const SUBSCRIPTION_PLANS = [
     }
   },
   {
-    planKey: "iirectorrectorrectorrector_pro",
+    planKey: "cd_pro",
     name: "Pro",
     category: "casting_director",
     description: "Best for active agencies, production teams and companies posting regularly.",

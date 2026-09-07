@@ -103,7 +103,7 @@ export default function Profile() {
       if (!unified.current_state) unified.current_state = tp.currentState || (typeof addrRaw === 'object' ? addrRaw.state : "");
       if (!unified.current_country) unified.current_country = tp.currentCountry || (typeof addrRaw === 'object' ? addrRaw.country : "") || combinedData.country;
       if (!unified.gender) unified.gender = tp.gender || combinedData.gender;
-      if (!unified.primary_talent_type) unified.primary_talent_type = tp.primaryTalentType || combinedData.talentTypes?.[0];
+      if (!unified.primary_talent_type) unified.primary_talent_type = tp.primaryTalentType || combinedData.talentTypes?.[0] || "Actor / Performer";
       if (!unified.additional_talent_types) unified.additional_talent_types = tp.additionalTalentTypes || combinedData.talentTypes?.slice(1);
       if (!unified.dateOfBirth) {
         unified.dateOfBirth = tp.dateOfBirth;
@@ -117,8 +117,8 @@ export default function Profile() {
       if (!unified.short_bio) unified.short_bio = tp.shortBio || combinedData.bio;
       if (!unified.full_bio) unified.full_bio = tp.fullBio;
       if (!unified.career_goals) unified.career_goals = typeof tp.careerGoals === 'string' ? tp.careerGoals : (Array.isArray(tp.careerGoals) ? tp.careerGoals.join(', ') : "");
-      if (!unified.years_of_experience) unified.years_of_experience = tp.yearsOfExperience;
-      if (!unified.experience_level) unified.experience_level = tp.experienceLevel;
+      if (!unified.years_of_experience) unified.years_of_experience = tp.yearsOfExperience || "No experience yet";
+      if (!unified.experience_level) unified.experience_level = tp.experienceLevel || "Beginner";
 
       if (unified.right_to_work === undefined && tp.rightToWork !== undefined) unified.right_to_work = tp.rightToWork === true || tp.rightToWork === "Yes" ? "Yes" : "No";
       if (unified.valid_passport === undefined && tp.validPassport !== undefined) unified.valid_passport = tp.validPassport === true || tp.validPassport === "Yes" ? "Yes" : "No";
@@ -776,7 +776,7 @@ export default function Profile() {
         gender: unifiedPayload.gender,
         currentCity: unifiedPayload.current_city,
         currentCountry: unifiedPayload.current_country,
-        primaryTalentType: unifiedPayload.primary_talent_type,
+        primaryTalentType: unifiedPayload.primary_talent_type || profileData?.primaryTalentType || profileData?.talentProfile?.primaryTalentType || "Actor / Performer",
         languagesSpoken: unifiedPayload.languages_spoken || [],
 
         // Basic Info fields
@@ -811,8 +811,8 @@ export default function Profile() {
         internationalAvailability: !!(unifiedPayload.international_availability === "Yes" || unifiedPayload.international_availability === true),
         remoteWorkOpen: !!(unifiedPayload.remote_work_open === "Yes" || unifiedPayload.remote_work_open === true),
         careerGoals: typeof unifiedPayload.career_goals === 'string' ? unifiedPayload.career_goals : (Array.isArray(unifiedPayload.career_goals) ? unifiedPayload.career_goals.join(', ') : ""),
-        yearsOfExperience: unifiedPayload.years_of_experience,
-        experienceLevel: unifiedPayload.experience_level,
+        yearsOfExperience: unifiedPayload.years_of_experience || profileData?.yearsOfExperience || profileData?.talentProfile?.yearsOfExperience || "No experience yet",
+        experienceLevel: unifiedPayload.experience_level || profileData?.experienceLevel || profileData?.talentProfile?.experienceLevel || "Beginner",
         representationStatus: unifiedPayload.representation_status || "Self-represented",
         agencyName: unifiedPayload.agency_name,
         agencyContactDetails: unifiedPayload.agency_contact_details,
@@ -1105,25 +1105,38 @@ export default function Profile() {
 
         <div className="relative flex flex-col md:flex-row items-center gap-8">
           <div className="relative group">
-            <Avatar className="h-32 w-32 border-4 border-white/20 shadow-2xl transition-transform duration-500 group-hover:scale-105">
-              <AvatarImage
-                src={
-                  pendingProfilePhoto?.preview ||
-                  profileData?.profilePicture ||
-                  profileData?.talent?.headshots?.[0]?.url ||
-                  getAvatarUrl(profileName)
-                }
-                className="object-cover"
-              />
-              <AvatarFallback className="bg-white/20 text-white font-bold text-3xl backdrop-blur-md">
-                {getInitials(profileName)}
-              </AvatarFallback>
-            </Avatar>
+            <input
+              type="file"
+              id="hero-profile-photo-upload"
+              accept="image/*"
+              className="hidden"
+              onChange={handleProfilePhotoSelect}
+              disabled={isSaving}
+            />
+            <label htmlFor="hero-profile-photo-upload" className="cursor-pointer block relative">
+              <Avatar className="h-32 w-32 border-4 border-white/20 shadow-2xl transition-transform duration-500 group-hover:scale-105">
+                <AvatarImage
+                  src={
+                    pendingProfilePhoto?.preview ||
+                    profileData?.profilePicture ||
+                    profileData?.talent?.headshots?.[0]?.url ||
+                    getAvatarUrl(profileName)
+                  }
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-white/20 text-white font-bold text-3xl backdrop-blur-md">
+                  {getInitials(profileName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Camera className="w-8 h-8 text-white drop-shadow-md" />
+              </div>
+            </label>
             {pendingProfilePhoto && (
               <Button
                 size="sm"
                 variant="secondary"
-                className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-white text-[#009698] hover:bg-gray-100 shadow-xl border-none h-8 px-3 text-xs font-bold animate-in zoom-in-50 duration-300"
+                className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-white text-[#009698] hover:bg-gray-100 shadow-xl border-none h-8 px-3 text-xs font-bold animate-in zoom-in-50 duration-300 whitespace-nowrap z-20"
                 onClick={handleSaveProfilePhoto}
                 disabled={isSaving}
               >
@@ -1210,6 +1223,7 @@ export default function Profile() {
         onTabChange={setActiveTab}
         pendingProfilePhoto={pendingProfilePhoto}
         setPendingProfilePhoto={setPendingProfilePhoto}
+        handleProfilePhotoSelect={handleProfilePhotoSelect}
         pendingPortfolioPhotos={pendingPortfolioPhotos}
         setPendingPortfolioPhotos={setPendingPortfolioPhotos}
         removePendingPortfolioPhoto={removePendingPortfolioPhoto}

@@ -40,6 +40,7 @@ interface UnifiedTalentProfileFormProps {
   showTabs?: boolean;
   pendingProfilePhoto?: any;
   setPendingProfilePhoto?: any;
+  handleProfilePhotoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   pendingPortfolioPhotos?: any[];
   removePendingPortfolioPhoto?: (index: number) => void;
   handlePortfolioSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -329,6 +330,7 @@ export function UnifiedTalentProfileForm({
   showTabs = true,
   pendingProfilePhoto,
   setPendingProfilePhoto,
+  handleProfilePhotoSelect,
   pendingPortfolioPhotos,
   removePendingPortfolioPhoto,
   handlePortfolioSelect,
@@ -853,6 +855,10 @@ export function UnifiedTalentProfileForm({
           fields={UNIFIED_TALENT_PROFILE_FIELD_SPEC}
           values={values}
           title="Profile Overview"
+          onFieldValueChange={(id, val) => setFieldValue(id, val)}
+          onSave={onSave}
+          isSaving={isSaving}
+          isEditable={true}
         />
       );
     }
@@ -1033,6 +1039,7 @@ export function UnifiedTalentProfileForm({
             setProfileData={onChange}
             pendingProfilePhoto={pendingProfilePhoto}
             setPendingProfilePhoto={setPendingProfilePhoto}
+            handleProfilePhotoSelect={handleProfilePhotoSelect}
             pendingPortfolioPhotos={pendingPortfolioPhotos || []}
             removePendingPortfolioPhoto={removePendingPortfolioPhoto!}
             handlePortfolioSelect={handlePortfolioSelect!}
@@ -1111,6 +1118,7 @@ export function UnifiedTalentProfileForm({
                       setProfileData={onChange}
                       pendingProfilePhoto={pendingProfilePhoto}
                       setPendingProfilePhoto={setPendingProfilePhoto}
+                      handleProfilePhotoSelect={handleProfilePhotoSelect}
                       pendingPortfolioPhotos={pendingPortfolioPhotos || []}
                       removePendingPortfolioPhoto={removePendingPortfolioPhoto!}
                       handlePortfolioSelect={handlePortfolioSelect!}

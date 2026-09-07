@@ -711,6 +711,14 @@ export default function ProfessionalProfile() {
             fields={UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC} 
             values={{...profileData, ...(profileData?.unifiedProfessionalProfile || {})}} 
             title="Professional Profile Summary" 
+            onFieldValueChange={(id, val) => setProfileData((prev: any) => ({
+              ...prev,
+              [id]: val,
+              unifiedProfessionalProfile: { ...(prev?.unifiedProfessionalProfile || {}), [id]: val }
+            }))}
+            onSave={() => handleSave(false)}
+            isSaving={isSaving}
+            isEditable={true}
           />
           <div className="flex justify-end pt-4">
             <Button 

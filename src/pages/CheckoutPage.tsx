@@ -54,17 +54,27 @@ export default function CheckoutPage() {
     try {
       setIsProcessing(true);
       const response = await subscriptionAPI.createCheckoutSession({
+        planKey: selectedPlan.planKey,
         planName: selectedPlan.planKey,
+        plan: selectedPlan.planKey,
+        category: selectedPlan.category,
         billingCycle,
+        cycle: billingCycle,
       });
 
-      if (response.data.success && response.data.data.url) {
-        window.location.href = response.data.data.url; // Redirect to Stripe
+      const checkoutUrl = response.data?.data?.url || response.data?.url;
+      if ((response.data?.success || response.status === 200) && checkoutUrl) {
+        window.location.href = checkoutUrl; // Redirect to Stripe
       } else {
-        toast.error('Could not initiate checkout. Please try again.');
+        toast.error(response.data?.message || 'Could not initiate checkout. Please try again.');
       }
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'An unexpected error occurred.');
+    } catch (err: any) {
+      const errMsg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'An unexpected error occurred.';
+      toast.error(errMsg);
     } finally {
       setIsProcessing(false);
     }

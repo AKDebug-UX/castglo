@@ -440,6 +440,14 @@ export default function DirectorProfile() {
             fields={UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC}
             values={{ ...profileData, ...(profileData?.unifiedCastingDirectorProfile || {}) }}
             title="Casting Director Profile Summary"
+            onFieldValueChange={(id, val) => setProfileData((prev: any) => ({
+              ...prev,
+              [id]: val,
+              unifiedCastingDirectorProfile: { ...(prev?.unifiedCastingDirectorProfile || {}), [id]: val }
+            }))}
+            onSave={() => handleSave(false)}
+            isSaving={isSaving}
+            isEditable={true}
           />
           <div className="flex justify-end pt-4">
             <Button
