@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { adminAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function AdminAnalytics() {
   const [analytics, setAnalytics] = useState(null);
@@ -27,7 +28,7 @@ export default function AdminAnalytics() {
           setAnalytics(response.data.data);
         }
       } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to load analytics");
+        toast.error(getApiErrorMessage(error, "Failed to load analytics"));
       } finally {
         setIsLoading(false);
       }

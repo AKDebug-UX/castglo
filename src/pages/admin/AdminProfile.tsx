@@ -7,7 +7,7 @@ import { Loader2, Camera, Save, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { userAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { getAvatarUrl, getInitials } from "@/lib/utils";
+import { getAvatarUrl, getInitials, getApiErrorMessage } from "@/lib/utils";
 
 export default function AdminProfile() {
   const { user, refreshUser } = useAuth();
@@ -51,7 +51,7 @@ export default function AdminProfile() {
       await refreshUser();
       toast.success("Profile updated successfully");
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update profile");
+      toast.error(getApiErrorMessage(error, "Failed to update profile"));
     } finally {
       setIsSaving(false);
     }

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Send, Users, ShieldCheck, Info } from "lucide-react";
 import { notificationAPI, adminAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function AdminNotifications() {
   const [isSending, setIsSending] = useState(false);
@@ -85,7 +86,7 @@ export default function AdminNotifications() {
         });
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to send notification");
+      toast.error(getApiErrorMessage(error, "Failed to send notification"));
     } finally {
       setIsSending(false);
     }

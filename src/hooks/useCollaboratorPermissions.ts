@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { collaboratorAPI } from '@/lib/api';
 import { Collaborator, Permissions } from '@/types/collaborator';
+import { getApiErrorMessage } from '@/lib/utils';
 
 export function useCollaboratorPermissions(targetProjectId?: string) {
   const { user } = useAuth();
@@ -23,7 +24,7 @@ export function useCollaboratorPermissions(targetProjectId?: string) {
         setCollaborations(res.data.data || []);
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Failed to load collaborations');
+      setError(getApiErrorMessage(err, 'Failed to load collaborations'));
     } finally {
       setIsLoading(false);
     }

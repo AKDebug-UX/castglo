@@ -7,6 +7,7 @@ import { Loader2, UserCheck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminLeadsAPI } from '@/lib/api';
 import { useConfirm } from '@/contexts/ConfirmContext';
+import { getApiErrorMessage } from '@/lib/utils';
 
 export default function AdminLeads() {
   const confirm = useConfirm();
@@ -30,7 +31,7 @@ export default function AdminLeads() {
         }
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to fetch leads');
+      toast.error(getApiErrorMessage(error, 'Failed to fetch leads'));
       setLeads([]);
     } finally {
       setIsLoading(false);
@@ -49,7 +50,7 @@ export default function AdminLeads() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to convert lead');
+      toast.error(getApiErrorMessage(error, 'Failed to convert lead'));
     }
   };
 
@@ -62,7 +63,7 @@ export default function AdminLeads() {
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to delete lead');
+      toast.error(getApiErrorMessage(error, 'Failed to delete lead'));
     }
   };
 

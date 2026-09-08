@@ -1,43 +1,44 @@
- import { useState, useEffect } from "react";
- import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
- import { Button } from "@/components/ui/button";
- import { Badge } from "@/components/ui/badge";
- import { Avatar, AvatarFallback } from "@/components/ui/avatar";
- import {
-   Dialog,
-   DialogContent,
-   DialogHeader,
-   DialogTitle,
-   DialogFooter,
- } from "@/components/ui/dialog";
- import {
-   Table,
-   TableBody,
-   TableCell,
-   TableHead,
-   TableHeader,
-   TableRow,
- } from "@/components/ui/table";
- import { Eye, Loader2, Calendar, Clock, DollarSign, User } from "lucide-react";
- import { adminAPI } from "@/lib/api";
- import { toast } from "sonner";
- import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Eye, Loader2, Calendar, Clock, DollarSign, User } from "lucide-react";
+import { adminAPI } from "@/lib/api";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { getApiErrorMessage } from "@/lib/utils";
 
- export default function AdminBookings() {
-   const { formatPrice } = useAuth();
-   const [bookings, setBookings] = useState([]);
-   const [isLoading, setIsLoading] = useState(true);
-   const [stats, setStats] = useState([]);
-   const [selectedBooking, setSelectedBooking] = useState(null);
-   const [isActionLoading, setIsActionLoading] = useState(false);
+export default function AdminBookings() {
+  const { formatPrice } = useAuth();
+  const [bookings, setBookings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState([]);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
-   const fetchData = async () => {
-     setIsLoading(true);
-     try {
-       const [bookingsRes, statsRes] = await Promise.all([
-         adminAPI.getAdminBookings(),
-         adminAPI.getAdminBookingStats()
-       ]);
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [bookingsRes, statsRes] = await Promise.all([
+        adminAPI.getAdminBookings(),
+        adminAPI.getAdminBookingStats()
+      ]);
 
        if (bookingsRes.data.success) {
          setBookings(bookingsRes.data.data.bookings || []);
@@ -52,7 +53,7 @@
          ]);
        }
      } catch (error) {
-       toast.error(error.response?.data?.message || "Failed to load bookings");
+       toast.error(getApiErrorMessage(error, "Failed to load bookings"));
      } finally {
        setIsLoading(false);
      }
@@ -72,7 +73,7 @@
          fetchData();
        }
      } catch (error) {
-       toast.error(error.response?.data?.message || "Failed to update status");
+       toast.error(getApiErrorMessage(error, "Failed to update status"));
      } finally {
        setIsActionLoading(false);
      }

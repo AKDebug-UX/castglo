@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { projectAPI } from "@/lib/api";
 import { parseMetaFromAttachments, getProjectCoverImage } from "@/lib/project.utils";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export interface ProjectWithRoles {
   /** The raw project object returned by the backend, with `roles` array attached */
@@ -105,7 +106,7 @@ export function useProjectWithRoles(id: string | undefined): ProjectWithRoles {
       } catch (err: any) {
         console.error("useProjectWithRoles error:", err);
         if (!cancelled) {
-          setError(err?.response?.data?.message || "Failed to load project");
+          setError(getApiErrorMessage(err, "Failed to load project"));
         }
       } finally {
         if (!cancelled) setIsLoading(false);

@@ -130,75 +130,111 @@ export function resolveMediaUrl(value: any, apiBaseUrl?: string) {
  */
 export function getApiErrorMessage(error: any, fallback = "An unexpected error occurred"): string {
   if (!error) return fallback;
-  if (typeof error === "string") return error;
 
-  const data = error.response?.data;
+  if (typeof error === "string") {
+    const trimmed = error.trim();
+    if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
+      return "Server returned an invalid response. Please try again later.";
+    }
+    return trimmed;
+  }
+
+  const response = error.response;
+  const status = response?.status;
+  const data = response?.data;
+
   if (data) {
-    if (typeof data === "string" && data.trim()) return data.trim();
-
-    // 1. Array of error strings in data.data (e.g. ["\"projectWebsite\" must be a valid uri"])
-    if (Array.isArray(data.data) && data.data.length > 0) {
-      const messages = data.data
-        .map((e: any) => {
-          if (typeof e === "string") {
-            return e.replace(/^["']|["']$/g, "").replace(/\\"/g, '"');
-          }
-          return e?.msg || e?.message || (typeof e === "object" ? JSON.stringify(e) : String(e));
-        })
-        .filter(Boolean);
-      if (messages.length > 0) return messages.join(", ");
+    if (typeof data === "string" && data.trim()) {
+      const trimmed = data.trim();
+      if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
+        return `Server error (${status ? `HTTP ${status}` : "Error"}). Please try again later.`;
+      }
+      return trimmed;
     }
 
-    // 2. Array of errors in data.errors (e.g. express-validator or validation errors)
+    const extracted: string[] = [];
+
+    const processItem = (item: any) => {
+      if (!item) return;
+      if (typeof item === "string" && item.trim()) {
+        const cleaned = item.replace(/^["']|["']$/g, "").replace(/\\"/g, '"').trim();
+        if (cleaned) extracted.push(cleaned);
+      } else if (typeof item === "object") {
+        const msg = item.message || item.msg || item.detail || item.error;
+        if (typeof msg === "string" && msg.trim()) {
+          extracted.push(msg.trim());
+        } else if (item.field && item.message) {
+          extracted.push(`${item.field}: ${item.message}`);
+        }
+      }
+    };
+
+    // 1. data.errors (array or object)
     if (Array.isArray(data.errors) && data.errors.length > 0) {
-      const messages = data.errors
-        .map((e: any) => {
-          if (typeof e === "string") {
-            return e.replace(/^["']|["']$/g, "").replace(/\\"/g, '"');
-          }
-          return e?.msg || e?.message || (typeof e === "object" ? JSON.stringify(e) : String(e));
-        })
-        .filter(Boolean);
-      if (messages.length > 0) return messages.join(", ");
+      data.errors.forEach(processItem);
+    } else if (data.errors && typeof data.errors === "object") {
+      Object.entries(data.errors).forEach(([field, val]) => {
+        if (typeof val === "string" && val.trim()) {
+          extracted.push(val.trim());
+        } else if (val && typeof val === "object") {
+          processItem(val);
+        }
+      });
     }
 
-    // 3. Object of field errors in data.errors (e.g. { project_title: "Title is required" })
-    if (data.errors && typeof data.errors === "object") {
-      const values = Object.values(data.errors)
-        .map((v: any) => (typeof v === "string" ? v : v?.msg || v?.message || ""))
-        .filter(Boolean);
-      if (values.length > 0) return values.join(", ");
+    // 2. data.data (array or object)
+    if (extracted.length === 0) {
+      if (Array.isArray(data.data) && data.data.length > 0) {
+        data.data.forEach(processItem);
+      } else if (data.data && typeof data.data === "object") {
+        Object.values(data.data).forEach(processItem);
+      }
     }
 
-    // 4. Object of field errors in data.data
-    if (data.data && typeof data.data === "object" && !Array.isArray(data.data)) {
-      const values = Object.values(data.data)
-        .map((v: any) => (typeof v === "string" ? v : v?.msg || v?.message || ""))
-        .filter(Boolean);
-      if (values.length > 0) return values.join(", ");
+    // 3. data.message (array, string, or object)
+    if (extracted.length === 0 && data.message) {
+      if (Array.isArray(data.message) && data.message.length > 0) {
+        data.message.forEach(processItem);
+      } else if (typeof data.message === "string" && data.message.trim()) {
+        const msg = data.message.trim();
+        if (msg.toLowerCase() !== "validation error") {
+          extracted.push(msg);
+        }
+      } else if (typeof data.message === "object") {
+        processItem(data.message);
+      }
     }
 
-    // 5. Specific message / error if not generic "Validation error"
-    if (typeof data.message === "string" && data.message.trim() && data.message.trim().toLowerCase() !== "validation error") {
-      return data.message.trim();
-    }
-    if (typeof data.error === "string" && data.error.trim() && data.error.trim().toLowerCase() !== "validation error") {
-      return data.error.trim();
+    // 4. data.error (string, array, or object)
+    if (extracted.length === 0 && data.error) {
+      if (typeof data.error === "string" && data.error.trim()) {
+        const errStr = data.error.trim();
+        if (errStr.toLowerCase() !== "validation error") {
+          extracted.push(errStr);
+        }
+      } else if (Array.isArray(data.error) && data.error.length > 0) {
+        data.error.forEach(processItem);
+      } else if (typeof data.error === "object") {
+        processItem(data.error);
+      }
     }
 
-    // 6. Direct message or error string fallback
-    if (typeof data.message === "string" && data.message.trim()) {
-      return data.message.trim();
+    // 5. data.detail / data.details
+    if (extracted.length === 0) {
+      const details = data.details || data.detail;
+      if (details) {
+        if (Array.isArray(details)) details.forEach(processItem);
+        else processItem(details);
+      }
     }
-    if (typeof data.error === "string" && data.error.trim()) {
-      return data.error.trim();
-    }
-    if (typeof data.data === "string" && data.data.trim()) {
-      return data.data.trim();
+
+    if (extracted.length > 0) {
+      const uniqueMsgs = Array.from(new Set(extracted));
+      return uniqueMsgs.join(", ");
     }
   }
 
-  // Axios or standard Error message
+  // Axios or standard Error object message
   if (error.message && typeof error.message === "string" && error.message.trim()) {
     if (error.message.includes("Network Error")) {
       return "Network error. Please check your internet connection and try again.";

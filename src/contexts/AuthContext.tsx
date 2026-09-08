@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authAPI, userAPI, twoFactorAuthAPI } from "@/lib/api";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export type UserRole = "talent" | "casting_director" | "industry_professional" | "admin";
 
@@ -72,15 +73,12 @@ const buildUserObj = (userData: any): User => {
   };
 };
 
-const getErrorMessage = (data: any, fallback: string): string => {
-  if (!data) return fallback;
-  if (data.data && typeof data.data === "object") {
-    const values = Object.values(data.data);
-    if (values.length > 0 && typeof values[0] === "string") {
-      return values.join(", ");
-    }
+const getErrorMessage = (errOrData: any, fallback: string): string => {
+  if (!errOrData) return fallback;
+  if (errOrData?.response || errOrData?.status || errOrData?.config) {
+    return getApiErrorMessage(errOrData, fallback);
   }
-  return data.error || data.message || fallback;
+  return getApiErrorMessage({ response: { data: errOrData } }, fallback);
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {

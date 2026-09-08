@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Search, Eye, Info, ShieldAlert, Globe, Clock, User, FileText, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminAPI } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ export default function AdminActionLogs() {
         setLogs(list);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to fetch action logs');
+      toast.error(getApiErrorMessage(error, 'Failed to fetch action logs'));
       setLogs([]);
     } finally {
       setIsLoading(false);
