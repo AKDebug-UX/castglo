@@ -38,11 +38,42 @@ export default function TalentProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
-  // Helper to merge arrays/comma-separated strings
-  const mergeList = (val1: any, val2: any) => {
-    const arr1 = Array.isArray(val1) ? val1 : (val1 ? String(val1).split(',').map(s => s.trim()) : []);
-    const arr2 = Array.isArray(val2) ? val2 : (val2 ? String(val2).split(',').map(s => s.trim()) : []);
-    return [...new Set([...arr1, ...arr2])].filter(Boolean);
+  // Helper to merge arrays/comma-separated strings, objects, or multiple inputs
+  const mergeList = (...inputs: any[]): string[] => {
+    const results: string[] = [];
+
+    const processItem = (item: any) => {
+      if (!item) return;
+      if (Array.isArray(item)) {
+        item.forEach(processItem);
+      } else if (typeof item === 'object') {
+        const val = item.name || item.label || item.value || item.skill || item.title;
+        if (typeof val === 'string' && val.trim()) {
+          results.push(val.trim());
+        }
+      } else if (typeof item === 'string') {
+        const trimmed = item.trim();
+        if (!trimmed) return;
+        if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(processItem);
+              return;
+            }
+          } catch {
+            // ignore JSON parse error
+          }
+        }
+        trimmed.split(',').forEach((s) => {
+          const cleaned = s.replace(/[\[\]"']/g, '').trim();
+          if (cleaned) results.push(cleaned);
+        });
+      }
+    };
+
+    inputs.forEach(processItem);
+    return [...new Set(results)].filter(Boolean);
   };
 
   useEffect(() => {
@@ -143,7 +174,41 @@ export default function TalentProfile() {
           ? [primaryType, ...rawRoles.filter(r => r !== primaryType)]
           : rawRoles;
       })(),
-      skills: mergeList(talent.skills, base.skills || base.specific_skills),
+      skills: (() => {
+        const directSkills = mergeList(
+          talent.skills,
+          talent.keySkills,
+          talent.talentProfile?.skills,
+          talent.talentProfile?.keySkills,
+          talent.talent?.skills,
+          talent.userId?.skills,
+          base.skills,
+          base.specific_skills,
+          base.specificSkills,
+          base.core_skills,
+          base.key_skills,
+          base.actor_special_skills,
+          base.singer_genres,
+          base.musician_genres,
+          base.musician_instruments,
+          base.dancer_additional_styles,
+          base.dancer_primary_style,
+          base.voice_work_type,
+          base.creator_content_types
+        );
+
+        // Derive role-specific capabilities if available
+        const capabilitySkills: string[] = [];
+        if (base.singer_can_harmonise === "Yes" || base.singer_can_harmonise === true) capabilitySkills.push("Harmonisation");
+        if (base.singer_sight_read === "Yes" || base.singer_sight_read === true) capabilitySkills.push("Sight-Reading");
+        if (base.singer_songwriting === "Yes" || base.singer_songwriting === true) capabilitySkills.push("Songwriting");
+        if (base.singer_studio_experience === "Yes" || base.singer_studio_experience === true) capabilitySkills.push("Studio Recording");
+        if (base.singer_live_experience === "Yes" || base.singer_live_experience === true) capabilitySkills.push("Live Performance");
+        if (base.dancer_choreography_experience === "Yes" || base.dancer_choreography_experience === true) capabilitySkills.push("Choreography");
+        if (base.musician_composition_skills === "Yes" || base.musician_composition_skills === true) capabilitySkills.push("Composition");
+
+        return mergeList(directSkills, capabilitySkills);
+      })(),
       instagram: base.instagram_url || base.instagramUrl || base.social_instagram,
       linkedin: base.linkedin_url || base.linkedinUrl || base.social_linkedin || base.social_tiktok,
       youtube: base.social_youtube || base.youtubeUrl,
@@ -381,11 +446,15 @@ export default function TalentProfile() {
                             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Key Skills</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
-                            {talent.skills?.slice(0, 6).map((skill: string) => (
-                              <Badge key={skill} variant="secondary" className="bg-white border text-[9px] px-2 py-0">
-                                {skill}
-                              </Badge>
-                            )) || <span className="text-xs text-muted-foreground">None specified</span>}
+                            {t.skills && t.skills.length > 0 ? (
+                              t.skills.slice(0, 8).map((skill: string) => (
+                                <Badge key={skill} variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-medium px-2 py-0.5 rounded-md">
+                                  {skill}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">None specified</span>
+                            )}
                           </div>
                         </div>
                       </div>                      {/* Physical Stats Quick View */}
@@ -559,18 +628,33 @@ export default function TalentProfile() {
 
                   <TabsContent value="skills" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">
-                      <h2 className="font-bold text-2xl mb-6">Skills</h2>
-                      <div className="flex flex-wrap gap-2">
-                        {t.skills && t.skills.length > 0 ? (
-                          t.skills.map((skill: string) => (
-                            <Badge key={skill} variant="secondary" className="bg-white border text-xs px-3 py-1">
-                              {skill}
-                            </Badge>
-                          ))
-                        ) : (
-                          <p className="text-sm text-muted-foreground">No skills listed.</p>
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="font-bold text-2xl">Skills & Capabilities</h2>
+                        {t.skills && t.skills.length > 0 && (
+                          <Badge variant="outline" className="text-xs text-muted-foreground">
+                            {t.skills.length} listed
+                          </Badge>
                         )}
                       </div>
+                      {t.skills && t.skills.length > 0 ? (
+                        <div className="flex flex-wrap gap-2.5">
+                          {t.skills.map((skill: string) => (
+                            <Badge
+                              key={skill}
+                              variant="secondary"
+                              className="bg-primary/10 text-primary border-primary/20 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-xs hover:bg-primary/20 transition-colors"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-12 text-center bg-muted/10 rounded-2xl border-2 border-dashed">
+                          <CheckSquare className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">No skills listed yet.</p>
+                          <p className="text-xs text-muted-foreground mt-1">Skills and capabilities will appear here once added to the profile.</p>
+                        </div>
+                      )}
                     </Card>
                   </TabsContent>
 
