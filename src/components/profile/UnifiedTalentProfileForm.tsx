@@ -44,7 +44,7 @@ interface UnifiedTalentProfileFormProps {
   pendingPortfolioPhotos?: any[];
   removePendingPortfolioPhoto?: (index: number) => void;
   handlePortfolioSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  pendingPortfolioVideos?: { file: File; preview: string; name: string }[];
+  pendingPortfolioVideos?: { file: File; preview: string; name: string; caption?: string }[];
   removePendingPortfolioVideo?: (index: number) => void;
   handlePortfolioVideoSelect?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   setPendingPortfolioPhotos?: React.Dispatch<React.SetStateAction<any[]>>;
@@ -436,7 +436,8 @@ export function UnifiedTalentProfileForm({
   }, []);
 
   const isTalentUser = useMemo(() => {
-    return user?.role === "talent" || rootData?.userRole === "talent" || rootData?.role === "talent" || !user?.role || user?.role !== "professional";
+    const role = user?.role || rootData?.userRole || rootData?.role;
+    return role !== "industry_professional" && role !== "professional";
   }, [user, rootData]);
 
   const businessSections = useMemo(() => new Set(["Professional Identity", "Business & Facilities", "Business Terms"]), []);

@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { authAPI, profileAPI, userAPI } from "@/lib/api";
+import { authAPI, profileAPI, serviceAPI, userAPI } from "@/lib/api";
 import { getAvatarUrl, getInitials, getApiErrorMessage } from "@/lib/utils";
 import { toast } from "sonner";
 import { UnifiedProfessionalProfileForm } from "@/components/profile/UnifiedProfessionalProfileForm";
@@ -30,20 +30,6 @@ export default function ProfessionalProfile() {
   const [pendingPortfolioPhotos, setPendingPortfolioPhotos] = useState<{ file: File; preview: string; caption?: string }[]>([]);
   const [pendingPortfolioVideos, setPendingPortfolioVideos] = useState<{ file: File; preview: string; name: string; caption?: string }[]>([]);
   const [pendingIntroVideo, setPendingIntroVideo] = useState<File | null>(null);
-
-
-  const completionPercentage = useMemo(() => {
-    if (!profileData) return 0;
-    const unified = profileData.unifiedProfessionalProfile || {};
-    const coreFields = [
-      'full_name', 'email', 'phone_number', 'city', 'country',
-      'short_bio', 'primary_professional_type'
-    ];
-    const filled = coreFields.filter(f => unified[f] || profileData[f]).length;
-    // Add 1 if there's a profile photo
-    const hasPhoto = !!(profileData.profilePicture || profileData.headshots?.length);
-    return Math.round(((filled + (hasPhoto ? 1 : 0)) / (coreFields.length + 1)) * 100);
-  }, [profileData]);
 
   const profileName = useMemo(() => {
     return profileData?.professionalProfile?.fullName || profileData?.fullName || "Your Profile";
@@ -305,7 +291,8 @@ export default function ProfessionalProfile() {
     }
   };
 
-  const handleSave = async (skipValidation: boolean = false) => {
+  const handleSave = async (skipValidation: boolean | React.SyntheticEvent = false) => {
+    const isSkip = typeof skipValidation === "boolean" ? skipValidation : false;
     setIsSaving(true);
     try {
       const unifiedPayload = {
@@ -313,7 +300,7 @@ export default function ProfessionalProfile() {
         ...Object.fromEntries(Object.entries(profileData || {}).filter(([key]) => UNIFIED_PROFESSIONAL_FIELD_IDS.has(key))),
       };
 
-      const shouldValidateUnified = !skipValidation && Object.keys(unifiedPayload).length > 0;
+      const shouldValidateUnified = !isSkip && Object.keys(unifiedPayload).length > 0;
       if (shouldValidateUnified) {
         const validation = validateUnifiedProfessionalProfile(unifiedPayload);
         if (!validation.success) {
@@ -496,15 +483,6 @@ export default function ProfessionalProfile() {
 
       await profileAPI.updateProfessional(payload);
 
-      if (activeTab === "summary") {
-        return;
-      }
-
-      await profileAPI.updateProfessional(payload);
-
-      await refreshUser();
-      await fetchProfile();
-
       // 3. Optional: Extract service if filled in the form
       if (unifiedPayload.service_title) {
         try {
@@ -679,7 +657,7 @@ export default function ProfessionalProfile() {
             <Button
               size="lg"
               className="w-full bg-white text-[#009698] hover:bg-gray-100 font-bold shadow-lg transition-all duration-300 hover:-translate-y-1"
-              onClick={handleSave}
+              onClick={() => handleSave()}
               disabled={isSaving}
             >
               {isSaving ? (

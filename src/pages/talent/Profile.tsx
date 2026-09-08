@@ -21,8 +21,8 @@ export default function Profile() {
   const [profileData, setProfileData] = useState<any>(null);
 
   const [pendingProfilePhoto, setPendingProfilePhoto] = useState<{ file: File; preview: string } | null>(null);
-  const [pendingPortfolioPhotos, setPendingPortfolioPhotos] = useState<{ file: File; preview: string }[]>([]);
-  const [pendingPortfolioVideos, setPendingPortfolioVideos] = useState<{ file: File; preview: string; name: string }[]>([]);
+  const [pendingPortfolioPhotos, setPendingPortfolioPhotos] = useState<{ file: File; preview: string; caption?: string }[]>([]);
+  const [pendingPortfolioVideos, setPendingPortfolioVideos] = useState<{ file: File; preview: string; name: string; caption?: string }[]>([]);
   const [pendingIntroVideo, setPendingIntroVideo] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState("basic");
   

@@ -17,6 +17,7 @@ import {
 } from "@/lib/unifiedCastingDirectorProfile/fieldSpec";
 import { validateUnifiedCastingDirectorProfile } from "@/lib/unifiedCastingDirectorProfile/validation";
 import { ProfileSummaryView } from "@/components/profile/ProfileSummaryView";
+import { UnifiedCastingDirectorProfileForm } from "@/components/profile/UnifiedCastingDirectorProfileForm";
 
 export default function DirectorProfile() {
   const { user: authUser, refreshUser } = useAuth();
@@ -28,18 +29,6 @@ export default function DirectorProfile() {
 
   const snakeToCamel = (str: string) => str.replace(/([-_][a-z])/g, group => group.toUpperCase().replace('-', '').replace('_', ''));
   const camelToSnake = (str: string) => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-
-  const completionPercentage = useMemo(() => {
-    if (!profileData) return 0;
-    const unified = profileData.unifiedCastingDirectorProfile || {};
-    const coreFields = [
-      'full_name', 'email', 'phone_number', 'city', 'country',
-      'short_bio', 'primary_account_type'
-    ];
-    const filled = coreFields.filter(f => unified[f] || profileData[f]).length;
-    const hasPhoto = !!(profileData.profilePicture || profileData.headshots?.length);
-    return Math.round(((filled + (hasPhoto ? 1 : 0)) / (coreFields.length + 1)) * 100);
-  }, [profileData]);
 
   const profileName = useMemo(() => {
     return profileData?.castingDirectorProfile?.fullName || profileData?.fullName || "Director Profile";
