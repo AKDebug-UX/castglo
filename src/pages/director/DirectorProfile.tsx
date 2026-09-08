@@ -135,7 +135,7 @@ export default function DirectorProfile() {
       combinedData.unifiedCastingDirectorProfile = unified;
       setProfileData(combinedData);
     } catch (error) {
-      toast.error("Failed to load profile data");
+      toast.error(getApiErrorMessage(error, "Failed to load profile data"));
     } finally {
       setIsLoading(false);
     }
@@ -176,7 +176,7 @@ export default function DirectorProfile() {
       await fetchProfileData();
       toast.success("Profile photo updated successfully");
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update profile photo");
+      toast.error(getApiErrorMessage(error, "Failed to update profile photo"));
     } finally {
       setIsSaving(false);
     }

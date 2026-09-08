@@ -15,6 +15,7 @@ import {
   ArrowLeft, Film, Calendar, Link2, Edit2, Trash2, Loader2, Sparkles, User 
 } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function DeliverableDetailPage() {
   const { deliverableId, username } = useParams<{ deliverableId: string; username?: string }>();
@@ -41,7 +42,7 @@ export default function DeliverableDetailPage() {
       }
     } catch (err) {
       console.error("Error loading deliverable detail:", err);
-      toast.error("Project entry not found or unavailable.");
+      toast.error(getApiErrorMessage(err, "Project entry not found or unavailable."));
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +71,7 @@ export default function DeliverableDetailPage() {
         navigate(-1);
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to delete deliverable entry.");
+      toast.error(getApiErrorMessage(err, "Failed to delete deliverable entry."));
     }
   };
 

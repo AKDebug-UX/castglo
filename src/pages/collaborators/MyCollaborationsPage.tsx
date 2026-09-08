@@ -6,6 +6,7 @@ import { PendingInvitationsBanner } from '@/components/collaborators/invitee/Pen
 import { CollaboratorEmptyState } from '@/components/collaborators/shared/CollaboratorEmptyState';
 import { Loader2, FolderKanban } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/utils';
 
 export default function MyCollaborationsPage() {
   const [collaborations, setCollaborations] = useState<Collaborator[]>([]);
@@ -20,7 +21,7 @@ export default function MyCollaborationsPage() {
           setCollaborations(res.data.data);
         }
       } catch (err: any) {
-        toast.error(err?.response?.data?.message || 'Failed to load collaborations');
+        toast.error(getApiErrorMessage(err, 'Failed to load collaborations'));
       } finally {
         setIsLoading(false);
       }

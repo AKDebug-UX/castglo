@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, ArrowLeft, AlertCircle } from "lucide-react";
 import { twoFactorCodeSchema } from "@/lib/validations";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function VerifyTwoFactor() {
   const location = useLocation();
@@ -64,7 +65,7 @@ export default function VerifyTwoFactor() {
       };
       navigate(returnTo || roleRoutes[result.role || ""] || "/", { replace: true });
     } catch (err: any) {
-      setErrorMsg(err?.response?.data?.message || err?.message || "Something went wrong. Please try again.");
+      setErrorMsg(getApiErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +81,7 @@ export default function VerifyTwoFactor() {
       }
       toast.success("Verification code resent!");
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || "Something went wrong. Please try again.");
+      toast.error(getApiErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setIsResending(false);
     }

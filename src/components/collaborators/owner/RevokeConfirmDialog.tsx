@@ -13,6 +13,7 @@ import { Collaborator } from '@/types/collaborator';
 import { collaboratorAPI } from '@/lib/api';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle } from 'lucide-react';
+import { getApiErrorMessage } from '@/lib/utils';
 
 interface RevokeConfirmDialogProps {
   collaborator: Collaborator | null;
@@ -39,7 +40,7 @@ export const RevokeConfirmDialog: React.FC<RevokeConfirmDialogProps> = ({
       onSuccess();
       onClose();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to revoke collaborator access');
+      toast.error(getApiErrorMessage(err, 'Failed to revoke collaborator access'));
     } finally {
       setIsSubmitting(false);
     }

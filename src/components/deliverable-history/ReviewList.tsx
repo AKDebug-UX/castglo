@@ -6,6 +6,7 @@ import { deliverableHistoryAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Loader2, MessageSquare, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ReviewListProps {
@@ -89,7 +90,7 @@ export const ReviewList: React.FC<ReviewListProps> = ({
       setReviews((prev) => prev.filter((r) => r.id !== review.id));
       if (onReviewUpdated) onReviewUpdated();
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to delete review");
+      toast.error(getApiErrorMessage(error, "Failed to delete review"));
     }
   };
 

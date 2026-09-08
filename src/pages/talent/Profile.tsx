@@ -574,7 +574,7 @@ export default function Profile() {
       combinedData.unifiedTalentProfile = unified;
       setProfileData(combinedData);
     } catch (error) {
-      toast.error("Failed to load profile data");
+      toast.error(getApiErrorMessage(error, "Failed to load profile data"));
     } finally {
       setIsLoading(false);
     }
@@ -662,7 +662,7 @@ export default function Profile() {
       await fetchProfileData();
       toast.success("Profile photo updated successfully");
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update profile photo");
+      toast.error(getApiErrorMessage(error, "Failed to update profile photo"));
     } finally {
       setIsSaving(false);
     }
@@ -734,7 +734,7 @@ export default function Profile() {
           setPendingIntroVideo(null);
         } catch (e: any) {
           console.error("Video upload error:", e);
-          toast.error(e?.response?.data?.message || "Failed to upload introduction video");
+          toast.error(getApiErrorMessage(e, "Failed to upload introduction video"));
           setIsSaving(false);
           return;
         }
@@ -764,7 +764,7 @@ export default function Profile() {
           }
         } catch (e: any) {
           console.error("Portfolio video upload error:", e);
-          toast.error("Failed to upload one or more portfolio videos");
+          toast.error(getApiErrorMessage(e, "Failed to upload one or more portfolio videos"));
         }
       }
 

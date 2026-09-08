@@ -8,6 +8,7 @@ import { EmptyHistoryState } from "./EmptyHistoryState";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2, Award, FolderKanban } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface DeliverableHistoryTabProps {
@@ -57,7 +58,7 @@ export const DeliverableHistoryTab: React.FC<DeliverableHistoryTabProps> = ({
       }
     } catch (err) {
       console.error("Failed to load deliverable history:", err);
-      toast.error("Could not fetch deliverable history");
+      toast.error(getApiErrorMessage(err, "Could not fetch deliverable history"));
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
@@ -100,7 +101,7 @@ export const DeliverableHistoryTab: React.FC<DeliverableHistoryTabProps> = ({
         setSelectedEntryData(null);
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to delete deliverable entry.");
+      toast.error(getApiErrorMessage(err, "Failed to delete deliverable entry."));
     }
   };
 

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Loader2, ArrowLeft, FolderKanban, ChevronRight, Eye, Film, AlertCircle } from 'lucide-react';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/utils';
 
 export default function CollaboratorProjects() {
   const { collaboratorId } = useParams<{ collaboratorId: string }>();
@@ -153,7 +154,7 @@ export default function CollaboratorProjects() {
 
         setProjects(enrichedProjects);
       } catch (err: any) {
-        toast.error(err?.response?.data?.message || 'Failed to load workspace projects');
+        toast.error(getApiErrorMessage(err, 'Failed to load workspace projects'));
       } finally {
         setIsLoading(false);
       }

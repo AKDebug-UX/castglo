@@ -10,6 +10,7 @@ import { subscriptionAPI } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 import { SUBSCRIPTION_PLANS, ADD_ONS, LAUNCHING_OFFERS } from "@/config/subscriptionPlans";
 
@@ -124,12 +125,7 @@ export default function Pricing() {
           toast.error(response.data?.message || "Could not initiate checkout. Please try again.");
         }
       } catch (error: any) {
-        const errMsg =
-          error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.message ||
-          "An unexpected error occurred";
-        toast.error(errMsg);
+        toast.error(getApiErrorMessage(error, "An unexpected error occurred"));
       } finally {
         setIsProcessing(null);
       }

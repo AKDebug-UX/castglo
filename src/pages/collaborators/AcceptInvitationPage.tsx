@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, CheckCircle2, XCircle, LogIn, UserPlus, AlertCircle, Film, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/utils';
 
 export default function AcceptInvitationPage() {
   const [searchParams] = useSearchParams();
@@ -80,7 +81,7 @@ export default function AcceptInvitationPage() {
       }
     } catch (err: any) {
       const status = err?.response?.status;
-      const msg = err?.response?.data?.message || 'Failed to accept invitation';
+      const msg = getApiErrorMessage(err, 'Failed to accept invitation');
 
       if (status === 403 && err?.response?.data?.requiresAuth) {
         navigate(`/sign-in?redirect=${encodeURIComponent(`/collaborators/accept?token=${rawToken}`)}`);
@@ -112,7 +113,7 @@ export default function AcceptInvitationPage() {
         setStatusState('declined');
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to decline invitation');
+      toast.error(getApiErrorMessage(err, 'Failed to decline invitation'));
     } finally {
       setIsSubmitting(false);
     }

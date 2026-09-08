@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Flag, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface FlagReviewModalProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ export const FlagReviewModal: React.FC<FlagReviewModalProps> = ({
         toast.info("You've already reported this review.");
         onClose();
       } else {
-        toast.error(error?.response?.data?.message || "Failed to submit report. Please try again.");
+        toast.error(getApiErrorMessage(error, "Failed to submit report. Please try again."));
       }
     } finally {
       setIsSubmitting(false);

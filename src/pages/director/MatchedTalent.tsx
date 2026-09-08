@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/collapsible";
 import { castingCallAPI, messagingAPI, profileAPI, applicationAPI, projectAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { resolveMediaUrl } from "@/lib/utils";
+import { resolveMediaUrl, getApiErrorMessage } from "@/lib/utils";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 
@@ -252,8 +252,8 @@ export default function MatchedTalent() {
             setSelectedProject(firstProjId);
           }
         }
-      } catch {
-        toast.error("Failed to load projects.");
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, "Failed to load projects."));
       } finally {
         setProjectsLoaded(true);
       }
@@ -370,7 +370,7 @@ export default function MatchedTalent() {
           setAllTalents([]);
         }
       } catch (err: any) {
-        toast.error(err?.response?.data?.message || "Failed to load talent data.");
+        toast.error(getApiErrorMessage(err, "Failed to load talent data."));
       } finally {
         setIsLoading(false);
       }
@@ -476,7 +476,7 @@ export default function MatchedTalent() {
       toast.success("Invite ready. Send your message to the talent.");
       navigate(`/director/messages?talentId=${encodeURIComponent(talentId)}`);
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || err?.response?.data?.message || "Failed to invite talent.");
+      toast.error(getApiErrorMessage(err, "Failed to invite talent."));
     } finally {
       setInvitingTalentId("");
     }

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserPlus, Search, Loader2, Users, Clock, CheckCircle2, UserX } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/utils';
 
 export default function Collaborators() {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
@@ -33,7 +34,7 @@ export default function Collaborators() {
         setCollaborators(list);
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to load workspace collaborators');
+      toast.error(getApiErrorMessage(err, 'Failed to load workspace collaborators'));
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +53,7 @@ export default function Collaborators() {
         fetchCollaborators();
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to resend invitation');
+      toast.error(getApiErrorMessage(err, 'Failed to resend invitation'));
     } finally {
       setResendingId(null);
     }

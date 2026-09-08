@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Check, X, Download, Inbox } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminAPI } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/utils';
 
 export default function VerificationManagement() {
   const [requests, setRequests] = useState([]);
@@ -27,7 +28,7 @@ export default function VerificationManagement() {
         setStats(statsRes.data.data);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to fetch verification requests');
+      toast.error(getApiErrorMessage(error, 'Failed to fetch verification requests'));
       // Fallback for UI if API is not fully ready
       setRequests([]);
     } finally {
@@ -47,7 +48,7 @@ export default function VerificationManagement() {
         fetchData();
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update verification status.');
+      toast.error(getApiErrorMessage(error, 'Failed to update verification status.'));
     }
   };
 

@@ -17,6 +17,7 @@ import {
 import { livestreamAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiErrorMessage } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function LivestreamsList() {
@@ -50,7 +51,7 @@ export default function LivestreamsList() {
         }
       } catch (error) {
         console.error("Failed to fetch livestreams:", error);
-        toast.error("Failed to load virtual auditions");
+        toast.error(getApiErrorMessage(error, "Failed to load virtual auditions"));
       } finally {
         setIsLoading(false);
       }

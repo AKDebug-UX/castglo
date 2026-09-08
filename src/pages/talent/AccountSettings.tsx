@@ -174,7 +174,7 @@ export default function AccountSettings() {
           setInvoices(invRes.data.data.invoices || []);
         }
       } catch (e) {
-        toast.error("Failed to load account settings");
+        toast.error(getApiErrorMessage(e, "Failed to load account settings"));
       } finally {
         setIsLoading(false);
       }
@@ -188,7 +188,7 @@ export default function AccountSettings() {
       await userAPI.updateProfile({ notificationSettings });
       toast.success("Notification settings updated");
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to update notification settings");
+      toast.error(getApiErrorMessage(e, "Failed to update notification settings"));
     } finally {
       setIsSaving(false);
     }

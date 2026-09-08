@@ -11,6 +11,7 @@
  import { AlertTriangle, CheckCircle, XCircle, Play, Loader2 } from "lucide-react";
  import { adminAPI } from "@/lib/api";
  import { toast } from "sonner";
+ import { getApiErrorMessage } from "@/lib/utils";
 
  export default function ModerationQueue() {
    const [selectedContent, setSelectedContent] = useState(null);
@@ -43,7 +44,7 @@
          ]);
        }
      } catch (error) {
-       toast.error(error.response?.data?.message || "Failed to fetch moderation queue");
+       toast.error(getApiErrorMessage(error, "Failed to fetch moderation queue"));
      } finally {
        setIsLoading(false);
      }
@@ -63,7 +64,7 @@
          fetchModerationData();
        }
      } catch (error) {
-       toast.error(error.response?.data?.message || `Failed to ${status.toLowerCase()} content`);
+       toast.error(getApiErrorMessage(error, `Failed to ${status.toLowerCase()} content`));
      } finally {
        setIsActionLoading(false);
      }

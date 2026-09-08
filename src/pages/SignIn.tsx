@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { SocialLogin } from "@/components/auth/SocialLogin";
+import { getApiErrorMessage } from "@/lib/utils";
 
 
 const signInSchema = z.object({
@@ -87,7 +88,7 @@ export default function SignIn() {
       }
     } catch (err: any) {
       console.error("Sign In catch block error:", err);
-      toast.error(err?.response?.data?.message || err?.message || "Something went wrong. Please try again.");
+      toast.error(getApiErrorMessage(err, "Something went wrong. Please try again."));
     } finally {
       setIsLoading(false);
     }

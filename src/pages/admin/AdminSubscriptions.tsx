@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminAPI } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/utils';
 
 export default function AdminSubscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -27,7 +28,7 @@ export default function AdminSubscriptions() {
         }
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to fetch subscriptions');
+      toast.error(getApiErrorMessage(error, 'Failed to fetch subscriptions'));
       setSubscriptions([]);
     } finally {
       setIsLoading(false);

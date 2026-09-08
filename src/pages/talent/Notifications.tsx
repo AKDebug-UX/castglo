@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, CheckCircle, Clock, Loader2, Trash2, MailOpen } from "lucide-react";
 import { notificationAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getApiErrorMessage } from "@/lib/utils";
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -21,7 +21,7 @@ export default function Notifications() {
         setNotifications(Array.isArray(data) ? data : (data?.notifications || []));
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to load notifications");
+      toast.error(getApiErrorMessage(error, "Failed to load notifications"));
     } finally {
       setIsLoading(false);
     }
@@ -42,7 +42,7 @@ export default function Notifications() {
         }));
       }
     } catch (error) {
-      toast.error("Failed to mark notification as read");
+      toast.error(getApiErrorMessage(error, "Failed to mark notification as read"));
     }
   };
 
@@ -55,7 +55,7 @@ export default function Notifications() {
         toast.success("All notifications marked as read");
       }
     } catch (error) {
-      toast.error("Failed to mark all as read");
+      toast.error(getApiErrorMessage(error, "Failed to mark all as read"));
     } finally {
       setIsMarkingAllRead(false);
     }

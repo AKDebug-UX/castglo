@@ -11,6 +11,7 @@ import { authAPI, subscriptionAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { getApiErrorMessage } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +89,7 @@ export default function DirectorSettings() {
       await userAPI.updateProfile({ notificationSettings });
       toast.success("Notification preferences saved successfully!");
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update notification settings");
+      toast.error(getApiErrorMessage(error, "Failed to update notification settings"));
     } finally {
       setIsSaving(false);
     }

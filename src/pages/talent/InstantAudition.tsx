@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { livestreamAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function InstantAudition() {
   const navigate = useNavigate();
@@ -107,7 +108,7 @@ export default function InstantAudition() {
             toast.success(`Sent ${formData.invitedTalents.length} invitation(s)`);
           } catch (inviteError) {
             console.error("Failed to send invitations:", inviteError);
-            toast.error("Audition created, but failed to send some invitations");
+            toast.error(getApiErrorMessage(inviteError, "Audition created, but failed to send some invitations"));
           }
         }
 
@@ -120,7 +121,7 @@ export default function InstantAudition() {
         }
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create audition");
+      toast.error(getApiErrorMessage(error, "Failed to create audition"));
     } finally {
       setIsLoading(false);
     }

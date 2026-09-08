@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Send, AlertCircle, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface ReviewFormProps {
   deliverableId: string;
@@ -59,10 +60,7 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
       onSuccess();
     } catch (error: any) {
       const status = error?.response?.status;
-      const errData = error?.response?.data;
-      const msg = Array.isArray(errData?.data) && errData.data.length > 0
-        ? errData.data[0]
-        : errData?.message || errData?.error;
+      const msg = getApiErrorMessage(error, "Failed to submit review. Please try again.");
 
       if (status === 403) {
         setErrorMessage("Only verified co-workers / participants on this project are eligible to leave a review.");
@@ -71,7 +69,7 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
       } else if (status === 409) {
         setErrorMessage("You have already submitted a review for this deliverable.");
       } else {
-        toast.error(msg || "Failed to submit review. Please try again.");
+        toast.error(msg);
       }
     } finally {
       setIsSubmitting(false);

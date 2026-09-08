@@ -7,6 +7,7 @@ import { Calendar as CalendarIcon, Clock, MapPin, DollarSign, Loader2, CheckCirc
 import { bookingAPI, messagingAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface BookingDialogProps {
   isOpen: boolean;
@@ -73,7 +74,7 @@ export function BookingDialog({ isOpen, onOpenChange, talent }: BookingDialogPro
         throw err;
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || error.response?.data?.error || "Failed to create booking");
+      toast.error(getApiErrorMessage(error, "Failed to create booking"));
     } finally {
       setIsLoading(false);
     }

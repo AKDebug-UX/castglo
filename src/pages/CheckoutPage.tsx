@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -69,12 +70,7 @@ export default function CheckoutPage() {
         toast.error(response.data?.message || 'Could not initiate checkout. Please try again.');
       }
     } catch (err: any) {
-      const errMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        'An unexpected error occurred.';
-      toast.error(errMsg);
+      toast.error(getApiErrorMessage(err, 'An unexpected error occurred.'));
     } finally {
       setIsProcessing(false);
     }

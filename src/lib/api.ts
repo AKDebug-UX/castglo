@@ -513,6 +513,10 @@ export const applicationAPI = {
       API_ENDPOINTS.APPLICATIONS.COMMUNICATION(ensureValidId(id)),
       typeof message === "string" ? { message } : message
     ),
+  updateStatus: async (id: string, data: any) => {
+    const payload = typeof data === 'string' ? { status: data } : data;
+    return await applicationAPI.update(id, payload);
+  },
   withdraw: (id: string) => api.delete(API_ENDPOINTS.APPLICATIONS.WITHDRAW(ensureValidId(id))),
 };
 

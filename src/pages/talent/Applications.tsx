@@ -14,6 +14,7 @@ import { applicationAPI, castingCallAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { ApplicationDetailsModal } from "@/components/applications/ApplicationDetailsModal";
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { getApiErrorMessage } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
   "review": "bg-slate-500 text-white hover:bg-slate-600 capitalize",
@@ -115,7 +116,7 @@ export default function Applications() {
         }
       } catch (error) {
         console.error("Error loading applications:", error);
-        toast.error("Failed to load applications");
+        toast.error(getApiErrorMessage(error, "Failed to load applications"));
       } finally {
         setIsLoading(false);
       }
@@ -136,7 +137,7 @@ export default function Applications() {
       }
     } catch (error) {
       console.error(error);
-      toast.error("An error occurred while withdrawing");
+      toast.error(getApiErrorMessage(error, "An error occurred while withdrawing"));
     }
   };
 

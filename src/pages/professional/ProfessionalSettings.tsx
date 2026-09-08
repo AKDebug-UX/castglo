@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SUBSCRIPTION_PLANS } from "@/config/subscriptionPlans";
 import { TwoFactorSettingsPanel } from "@/components/settings/TwoFactorSettingsPanel";
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { getApiErrorMessage } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { VerifyProfileButton } from "@/components/verification/VerifyProfileButton";
@@ -89,7 +90,7 @@ export default function ProfessionalSettings() {
       await userAPI.updateProfile({ notificationSettings });
       toast.success("Notification preferences saved successfully!");
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Failed to update notification settings");
+      toast.error(getApiErrorMessage(error, "Failed to update notification settings"));
     } finally {
       setIsSaving(false);
     }
@@ -157,7 +158,7 @@ export default function ProfessionalSettings() {
       toast.success("Password updated successfully");
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to update password");
+      toast.error(getApiErrorMessage(e, "Failed to update password"));
     } finally {
       setIsSaving(false);
     }
@@ -183,7 +184,7 @@ export default function ProfessionalSettings() {
       localStorage.removeItem("token");
       window.location.href = "/";
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to delete account");
+      toast.error(getApiErrorMessage(e, "Failed to delete account"));
     } finally {
       setIsSaving(false);
     }
@@ -197,7 +198,7 @@ export default function ProfessionalSettings() {
       toast.success("Payment method removed");
       setPaymentMethods(prev => prev.filter(pm => pm.id !== id));
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Failed to remove payment method");
+      toast.error(getApiErrorMessage(e, "Failed to remove payment method"));
     } finally {
       setIsSaving(false);
     }

@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { getProjectDeadline } from "@/lib/project.utils";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface RoleItem {
   id: string;
@@ -167,7 +168,7 @@ export default function DirectorRoles() {
       setRoles(prev => prev.filter(r => r.id !== role.id));
       toast.success("Role deleted.");
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to delete role.");
+      toast.error(getApiErrorMessage(err, "Failed to delete role."));
     } finally {
       setDeletingId(null);
     }
@@ -199,7 +200,7 @@ export default function DirectorRoles() {
       toast.success("Role duplicated.");
       load(); // refresh
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to duplicate role.");
+      toast.error(getApiErrorMessage(err, "Failed to duplicate role."));
     } finally {
       setDuplicatingId(null);
     }

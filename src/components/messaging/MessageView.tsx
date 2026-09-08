@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Send, Loader2, MessageSquare, Search, ChevronLeft, ChevronDown, Smile, Paperclip, Phone, Video, MoreHorizontal, Check, CheckCheck, RefreshCw, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getApiErrorMessage } from "@/lib/utils";
 import { messagingAPI, userAPI, projectAPI } from "@/lib/api";
 import { socketService } from "@/lib/socket";
 import { toast } from "sonner";
@@ -529,7 +529,7 @@ export default function MessageView({
       toast.success("Messages refreshed");
     } catch (err) {
       console.error("Failed to refresh messages:", err);
-      toast.error("Failed to refresh messages");
+      toast.error(getApiErrorMessage(err, "Failed to refresh messages"));
     } finally {
       setIsRefreshing(false);
     }
@@ -864,7 +864,7 @@ export default function MessageView({
       if (error.response?.status === 403) {
         toast.error("You can only message casting directors if your application is shortlisted or accepted.");
       } else {
-        toast.error("Failed to send message");
+        toast.error(getApiErrorMessage(error, "Failed to send message"));
       }
     } finally {
       setIsSending(false);
@@ -939,7 +939,7 @@ export default function MessageView({
         }
       } catch (err: any) {
         console.error("Failed to create project chat:", err);
-        toast.error(err.response?.data?.message || "Failed to create project chat");
+        toast.error(getApiErrorMessage(err, "Failed to create project chat"));
       } finally {
         setIsSending(false);
       }
@@ -1004,7 +1004,7 @@ export default function MessageView({
       }
     } catch (error) {
       console.error("[MessageView] handleFormSubmit error:", error);
-      toast.error("Failed to send message");
+      toast.error(getApiErrorMessage(error, "Failed to send message"));
     } finally {
       setIsSending(false);
     }

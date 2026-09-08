@@ -12,6 +12,7 @@ import { Mail, ArrowLeft, ArrowRight, Loader2, Info, Eye, EyeOff } from "lucide-
 import { Badge } from "@/components/ui/badge";
 import { SocialLogin } from "@/components/auth/SocialLogin";
 import { signUpSchema, SignUpFormValues } from "@/lib/validations";
+import { getApiErrorMessage } from "@/lib/utils";
 
 const typeLabels: Record<string, { title: string; description: string; role: UserRole }> = {
   talent: {
@@ -108,7 +109,7 @@ export default function SignUp() {
       toast.success("Account created successfully!");
     } catch (error: any) {
       console.error("SignUp error:", error);
-      toast.error(error?.response?.data?.message || error?.message || "An error occurred during registration.");
+      toast.error(getApiErrorMessage(error, "An error occurred during registration."));
     } finally {
       setIsLoading(false);
     }

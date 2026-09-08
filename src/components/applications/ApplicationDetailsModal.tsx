@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { applicationAPI, castingCallAPI, userAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { Loader2, MessageSquare, Send } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -84,7 +85,7 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
       }
     } catch (error) {
       console.error(error);
-      toast.error("An error occurred loading application details");
+      toast.error(getApiErrorMessage(error, "An error occurred loading application details"));
     } finally {
       setIsLoading(false);
     }
@@ -105,7 +106,7 @@ export function ApplicationDetailsModal({ applicationId, isOpen, onClose }: Appl
       }
     } catch (error: any) {
       console.error(error);
-      toast.error(error.response?.data?.message || error.response?.data?.error || "An error occurred while sending your message");
+      toast.error(getApiErrorMessage(error, "An error occurred while sending your message"));
     } finally {
       setIsSending(false);
     }

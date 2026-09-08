@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { profileAPI } from "@/lib/api";
 import { toast } from "sonner";
-import { formatLocation } from "@/lib/utils";
+import { formatLocation, getApiErrorMessage } from "@/lib/utils";
 import { BookingDialog } from "@/components/BookingDialog";
 import { DeliverableHistoryTab } from "@/components/deliverable-history/DeliverableHistoryTab";
 import { useAuth } from "@/contexts/AuthContext";
@@ -56,7 +56,7 @@ export default function TalentProfile() {
           setTalent(response.data.data);
         }
       } catch (error) {
-        toast.error("Failed to load talent profile");
+        toast.error(getApiErrorMessage(error, "Failed to load talent profile"));
       } finally {
         setIsLoading(false);
       }

@@ -137,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return { error: getErrorMessage(response.data, "Sign in failed") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred during sign in") };
+      return { error: getErrorMessage(error, "An error occurred during sign in") };
     }
   };
 
@@ -159,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return { error: getErrorMessage(response.data, "Google authentication failed") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred during Google sign in") };
+      return { error: getErrorMessage(error, "An error occurred during Google sign in") };
     }
   };
 
@@ -169,7 +169,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.data.success) return {};
       return { error: getErrorMessage(response.data, "Registration failed") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred during registration") };
+      return { error: getErrorMessage(error, "An error occurred during registration") };
     }
   };
 
@@ -192,7 +192,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.data.success) return {};
       return { error: getErrorMessage(response.data, "An error occurred") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred") };
+      return { error: getErrorMessage(error, "An error occurred") };
     }
   };
 
@@ -202,7 +202,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.data.success) return {};
       return { error: getErrorMessage(response.data, "An error occurred") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred") };
+      return { error: getErrorMessage(error, "An error occurred") };
     }
   };
 
@@ -219,7 +219,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return { error: getErrorMessage(response.data, "An error occurred") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred") };
+      return { error: getErrorMessage(error, "An error occurred") };
     }
   };
 
@@ -229,7 +229,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.data.success) return {};
       return { error: getErrorMessage(response.data, "An error occurred") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred") };
+      return { error: getErrorMessage(error, "An error occurred") };
     }
   };
 
@@ -268,7 +268,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return { error: getErrorMessage(response.data, "Two-factor verification failed") };
     } catch (error: any) {
-      const msg: string = getErrorMessage(error.response?.data, "An error occurred while verifying two-factor code");
+      const msg: string = getErrorMessage(error, "An error occurred while verifying two-factor code");
       // Expired temp token detection
       if (
         error?.response?.status === 401 ||
@@ -288,7 +288,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.data.success) return {};
       return { error: getErrorMessage(response.data, "Failed to resend two-factor code") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred while resending two-factor code") };
+      return { error: getErrorMessage(error, "An error occurred while resending two-factor code") };
     }
   };
 
@@ -353,7 +353,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return { error: errMsg };
     } catch (error: any) {
-      const errMsg = getErrorMessage(error.response?.data, "An error occurred while starting 2FA enrolment");
+      const errMsg = getErrorMessage(error, "An error occurred while starting 2FA enrolment");
       if (errMsg.toLowerCase().includes("already enabled") && user) {
         const updated = { ...user, twoFactorEnabled: true };
         setUser(updated);
@@ -377,7 +377,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return { error: getErrorMessage(response.data, "Failed to confirm 2FA setup") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred while confirming 2FA") };
+      return { error: getErrorMessage(error, "An error occurred while confirming 2FA") };
     }
   };
 
@@ -394,7 +394,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return { error: getErrorMessage(response.data, "Failed to disable two-factor authentication") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred while disabling two-factor authentication") };
+      return { error: getErrorMessage(error, "An error occurred while disabling two-factor authentication") };
     }
   };
 
@@ -406,7 +406,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return { error: getErrorMessage(response.data, "Failed to regenerate backup codes") };
     } catch (error: any) {
-      return { error: getErrorMessage(error.response?.data, "An error occurred while regenerating backup codes") };
+      return { error: getErrorMessage(error, "An error occurred while regenerating backup codes") };
     }
   };
 
@@ -434,7 +434,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
           return { error: res.data.message || "Failed to update currency" };
         } catch (e: any) {
-          return { error: e?.response?.data?.message || "An error occurred" };
+          return { error: getErrorMessage(e, "Failed to update currency") };
         }
       },
       formatPrice: (amount: number | string | null | undefined) => {

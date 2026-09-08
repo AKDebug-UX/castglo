@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { deliverableSchema, requiredUrlSchema } from "@/lib/validations";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface DeliverableFormModalProps {
   isOpen: boolean;
@@ -114,7 +115,7 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
         toast.success(`Successfully uploaded ${uploaded.length} media file(s).`);
       }
     } catch (err) {
-      toast.error("Failed to upload media file. Please try again.");
+      toast.error(getApiErrorMessage(err, "Failed to upload media file. Please try again."));
     } finally {
       setIsUploadingMedia(false);
       e.target.value = "";
@@ -193,11 +194,7 @@ export const DeliverableFormModal: React.FC<DeliverableFormModalProps> = ({
       onSuccess(saved);
       onClose();
     } catch (err: any) {
-      const errData = err?.response?.data;
-      const errMsg = Array.isArray(errData?.data) && errData.data.length > 0
-        ? errData.data[0]
-        : errData?.message || errData?.error || "Failed to save project entry.";
-      toast.error(errMsg);
+      toast.error(getApiErrorMessage(err, "Failed to save project entry."));
     } finally {
       setIsSubmitting(false);
     }

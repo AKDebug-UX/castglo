@@ -435,7 +435,7 @@ export default function SubmitAudition() {
         }
       } catch (error: any) {
         console.error("fetchData error:", error);
-        toast.error("Failed to load details");
+        toast.error(getApiErrorMessage(error, "Failed to load details"));
       } finally {
         setIsLoading(false);
       }

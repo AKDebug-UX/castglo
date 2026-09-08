@@ -436,7 +436,7 @@ export default function LivestreamPage() {
         }
       } catch (error) {
         console.error("Failed to fetch stream:", error);
-        toast.error("Failed to load stream details");
+        toast.error(getApiErrorMessage(error, "Failed to load stream details"));
       } finally {
         setIsLoading(false);
       }
@@ -917,7 +917,7 @@ export default function LivestreamPage() {
           }
         } catch (error) {
           console.error("Re-join as co-host error:", error);
-          toast.error("Failed to switch to broadcasting mode");
+          toast.error(getApiErrorMessage(error, "Failed to switch to broadcasting mode"));
         }
       }
     };
@@ -1067,7 +1067,7 @@ export default function LivestreamPage() {
       }
     } catch (error) {
       console.error("Invite error:", error);
-      toast.error(error.response?.data?.message || "Failed to send invitations");
+      toast.error(getApiErrorMessage(error, "Failed to send invitations"));
     } finally {
       setIsInviting(false);
     }
@@ -1262,7 +1262,7 @@ export default function LivestreamPage() {
       }
     } catch (error) {
       console.error("Co-host promotion error:", error);
-      toast.error(error.response?.data?.message || "Failed to assign co-host");
+      toast.error(getApiErrorMessage(error, "Failed to assign co-host"));
     }
   };
 
@@ -1292,7 +1292,7 @@ export default function LivestreamPage() {
       }
     } catch (error) {
       console.error("Co-host removal error:", error);
-      toast.error(error.response?.data?.message || "Failed to remove co-host");
+      toast.error(getApiErrorMessage(error, "Failed to remove co-host"));
     }
   };
 
@@ -1317,7 +1317,7 @@ export default function LivestreamPage() {
       }
     } catch (error) {
       console.error("Failed to refresh participants:", error);
-      toast.error("Failed to update participant list");
+      toast.error(getApiErrorMessage(error, "Failed to update participant list"));
     } finally {
       setIsRefreshingParticipants(false);
     }

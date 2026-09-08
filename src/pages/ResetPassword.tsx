@@ -9,6 +9,7 @@ import { CheckCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { resetPasswordSchema, ResetPasswordFormValues } from "@/lib/validations";
+import { getApiErrorMessage } from "@/lib/utils";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -65,7 +66,7 @@ export default function ResetPassword() {
       toast.success("Password reset successfully!");
     } catch (error: any) {
       console.error("ResetPassword error:", error);
-      toast.error(error?.response?.data?.message || error?.message || "An error occurred. Please try again.");
+      toast.error(getApiErrorMessage(error, "An error occurred. Please try again."));
     } finally {
       setIsLoading(false);
     }

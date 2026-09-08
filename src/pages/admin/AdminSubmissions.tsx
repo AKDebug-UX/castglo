@@ -10,6 +10,7 @@ import { Loader2, Check, X, Search, Filter, Eye, Video, FileText, Calendar, User
 import { toast } from 'sonner';
 import { submissionAPI, applicationAPI } from '@/lib/api';
 import { format } from 'date-fns';
+import { getApiErrorMessage } from '@/lib/utils';
 
 const statusColors: Record<string, string> = {
   submitted: "bg-blue-500/10 text-blue-600 border-blue-200",
@@ -70,7 +71,7 @@ export default function AdminSubmissions() {
         await submissionAPI.updateStatus(id, newStatus);
       } catch {
         // Backup call to application API
-        await applicationAPI.updateStatus(id, { status: newStatus });
+        await applicationAPI.update(id, { status: newStatus });
       }
       toast.success(`Submission status updated to ${newStatus}`);
       fetchSubmissions();
@@ -78,7 +79,7 @@ export default function AdminSubmissions() {
         setSelectedSubmission({ ...selectedSubmission, status: newStatus });
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update status');
+      toast.error(getApiErrorMessage(err, 'Failed to update status'));
     } finally {
       setIsUpdating(false);
     }
