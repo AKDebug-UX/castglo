@@ -23,6 +23,7 @@ const navItems = [
   { Icon: User, label: "Profile", href: "/admin/profile" },
   { Icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
   { Icon: Film, label: "Casting Calls", href: "/admin/casting-calls" },
+  { Icon: FileVideo, label: "Submissions", href: "/admin/submissions" },
   { Icon: Users, label: "Users Management", href: "/admin/users" },
   { Icon: Clock, label: "Platform Settings", href: "/admin/free-tier" },
   { Icon: Calendar, label: "Bookings", href: "/admin/bookings" },

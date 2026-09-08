@@ -139,10 +139,10 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       case "casting_director":
         return "/director/profile";
       case "industry_professional":
-        return "/professional/settings";
+        return "/professional/profile";
       case "talent":
       default:
-        return "/talent/account-settings";
+        return "/talent/profile";
     }
   };
  

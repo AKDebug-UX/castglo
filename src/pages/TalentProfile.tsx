@@ -321,9 +321,6 @@ export default function TalentProfile() {
                       <TabsTrigger value="short_bio" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <User className="w-4 h-4" /> Short Bio
                       </TabsTrigger>
-                      <TabsTrigger value="cv_credits" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
-                        <FolderOpen className="w-4 h-4" /> CV / Credits
-                      </TabsTrigger>
                       <TabsTrigger value="skills" className="gap-2 px-4 h-9 data-[state=active]:bg-[#009698] data-[state=active]:text-white">
                         <CheckSquare className="w-4 h-4" /> Skills
                       </TabsTrigger>
@@ -558,24 +555,7 @@ export default function TalentProfile() {
                   </TabsContent>
 
 
-                  <TabsContent value="cv_credits" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
-                    <Card className="rounded-2xl p-8 border shadow-card bg-card">
-                      <h2 className="font-bold text-2xl mb-6">CV / Credits</h2>
-                      {t.cv_resume ? (
-                        <Button asChild className="bg-[#009698] hover:bg-[#009698]/90">
-                          <a href={t.cv_resume} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            View CV / Resume
-                          </a>
-                        </Button>
-                      ) : (
-                        <div className="py-16 text-center bg-muted/10 rounded-2xl border-2 border-dashed">
-                          <FolderOpen className="w-10 h-10 text-muted-foreground/30 mx-auto mb-4" />
-                          <p className="text-sm text-muted-foreground">No CV uploaded yet.</p>
-                        </div>
-                      )}
-                    </Card>
-                  </TabsContent>
+
 
                   <TabsContent value="skills" className="mt-4 space-y-6 animate-in fade-in slide-in-from-bottom-2">
                     <Card className="rounded-2xl p-8 border shadow-card bg-card">

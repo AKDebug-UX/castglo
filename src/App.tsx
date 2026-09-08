@@ -99,6 +99,7 @@ const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminSubscriptions = lazy(() => import("./pages/admin/AdminSubscriptions"));
 const AdminCastingCallsPending = lazy(() => import("./pages/admin/AdminCastingCallsPending"));
 const AdminActionLogs = lazy(() => import("./pages/admin/AdminActionLogs"));
+const AdminSubmissions = lazy(() => import("./pages/admin/AdminSubmissions"));
 
 // Professional Dashboard
 const ProfessionalLayout = lazy(() => import("./components/dashboard/ProfessionalLayout").then(m => ({ default: m.ProfessionalLayout })));
@@ -343,6 +344,8 @@ const App = () => {
                 <Route path="leads" element={<AdminLeads />} />
                 <Route path="subscriptions" element={<AdminSubscriptions />} />
                 <Route path="casting-calls" element={<AdminCastingCallsPending />} />
+                <Route path="submissions" element={<AdminSubmissions />} />
+                <Route path="auditions" element={<AdminSubmissions />} />
                 <Route path="action-logs" element={<AdminActionLogs />} />
               </Route>
 

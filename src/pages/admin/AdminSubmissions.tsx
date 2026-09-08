@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -33,6 +34,31 @@ export default function AdminSubmissions() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const getTalentName = (item: any) =>
+    item.talentName || item.user?.fullName || item.user?.name || item.talent?.fullName || item.talent?.name || item.talentId?.fullName || item.talentId?.name || 'Talent User';
+
+  const getTalentEmail = (item: any) =>
+    item.user?.email || item.talent?.email || item.talentId?.email || '';
+
+  const getTalentId = (item: any) =>
+    item.talentId?._id || item.talentId?.id || item.talent?._id || item.talent?.id ||
+    item.userId?._id || item.userId?.id || item.user?._id || item.user?.id ||
+    (typeof item.talentId === 'string' ? item.talentId : '') ||
+    (typeof item.userId === 'string' ? item.userId : '') || '';
+
+  const getCastingTitle = (item: any) =>
+    item.castingTitle || item.castingCall?.title || item.projectTitle || item.castingCallId?.title || item.projectId?.title || 'Casting Call';
+
+  const getCastingId = (item: any) =>
+    item.castingCall?._id || item.castingCallId?._id || item.castingCallId?.id ||
+    item.projectId?._id || item.projectId?.id ||
+    (typeof item.castingCallId === 'string' ? item.castingCallId : '') ||
+    (typeof item.castingCall === 'string' ? item.castingCall : '') ||
+    (typeof item.projectId === 'string' ? item.projectId : '') || '';
+
+  const getRoleName = (item: any) =>
+    item.roleName || item.role?.name || item.role?.title || 'Role';
+
   const fetchSubmissions = async () => {
     setIsLoading(true);
     try {
@@ -44,16 +70,19 @@ export default function AdminSubmissions() {
           list = resData;
         } else if (resData.success && Array.isArray(resData.data)) {
           list = resData.data;
-        } else if (resData.submissions && Array.isArray(resData.submissions)) {
-          list = resData.submissions;
-        } else if (resData.data?.submissions && Array.isArray(resData.data.submissions)) {
+        } else if (Array.isArray(resData.data?.submissions)) {
           list = resData.data.submissions;
+        } else if (Array.isArray(resData.data?.applications)) {
+          list = resData.data.applications;
+        } else if (Array.isArray(resData.submissions)) {
+          list = resData.submissions;
+        } else if (Array.isArray(resData.applications)) {
+          list = resData.applications;
         }
       }
       setSubmissions(list);
     } catch (error: any) {
       console.error('Failed to fetch submissions:', error);
-      // Fallback empty state with clear toast
       setSubmissions([]);
     } finally {
       setIsLoading(false);
@@ -75,7 +104,7 @@ export default function AdminSubmissions() {
       }
       toast.success(`Submission status updated to ${newStatus}`);
       fetchSubmissions();
-      if (selectedSubmission && selectedSubmission._id === id) {
+      if (selectedSubmission && (selectedSubmission._id === id || selectedSubmission.id === id)) {
         setSelectedSubmission({ ...selectedSubmission, status: newStatus });
       }
     } catch (err: any) {
@@ -86,9 +115,9 @@ export default function AdminSubmissions() {
   };
 
   const filteredSubmissions = submissions.filter((item) => {
-    const talentName = item.talentName || item.user?.name || item.talent?.name || item.talentId?.name || '';
-    const castingTitle = item.castingTitle || item.castingCall?.title || item.projectTitle || '';
-    const roleName = item.roleName || item.role?.name || '';
+    const talentName = getTalentName(item);
+    const castingTitle = getCastingTitle(item);
+    const roleName = getRoleName(item);
     const matchesSearch =
       talentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       castingTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -186,10 +215,12 @@ export default function AdminSubmissions() {
                 </TableHeader>
                 <TableBody>
                   {filteredSubmissions.map((sub: any) => {
-                    const talentName = sub.talentName || sub.user?.name || sub.talent?.name || sub.talentId?.name || 'Talent User';
-                    const talentEmail = sub.user?.email || sub.talent?.email || '';
-                    const castingTitle = sub.castingTitle || sub.castingCall?.title || sub.projectTitle || 'Casting Call';
-                    const roleName = sub.roleName || sub.role?.name || 'Role';
+                    const talentName = getTalentName(sub);
+                    const talentEmail = getTalentEmail(sub);
+                    const talentId = getTalentId(sub);
+                    const castingTitle = getCastingTitle(sub);
+                    const castingId = getCastingId(sub);
+                    const roleName = getRoleName(sub);
                     const status = sub.status || 'submitted';
                     const dateStr = sub.createdAt ? format(new Date(sub.createdAt), 'PPP') : 'N/A';
 
@@ -197,18 +228,42 @@ export default function AdminSubmissions() {
                       <TableRow key={sub._id || sub.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300">
+                            <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 shrink-0">
                               <User className="w-4 h-4" />
                             </div>
                             <div>
-                              <p className="font-semibold text-slate-900 dark:text-white leading-tight">{talentName}</p>
+                              {talentId ? (
+                                <Link
+                                  to={`/talent/${talentId}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="font-semibold text-slate-900 dark:text-white hover:text-primary transition-colors flex items-center gap-1 group"
+                                >
+                                  <span>{talentName}</span>
+                                  <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </Link>
+                              ) : (
+                                <p className="font-semibold text-slate-900 dark:text-white leading-tight">{talentName}</p>
+                              )}
                               {talentEmail && <p className="text-xs text-slate-400">{talentEmail}</p>}
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium text-slate-800 dark:text-slate-200">{castingTitle}</p>
+                            {castingId ? (
+                              <Link
+                                to={`/cast/${castingId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-slate-800 dark:text-slate-200 hover:text-primary transition-colors flex items-center gap-1 group"
+                              >
+                                <span>{castingTitle}</span>
+                                <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </Link>
+                            ) : (
+                              <p className="font-medium text-slate-800 dark:text-slate-200">{castingTitle}</p>
+                            )}
                             <p className="text-xs text-slate-400">Role: {roleName}</p>
                           </div>
                         </TableCell>
@@ -256,95 +311,138 @@ export default function AdminSubmissions() {
             </DialogDescription>
           </DialogHeader>
 
-          {selectedSubmission && (
-            <div className="space-y-4 py-2">
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border">
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Talent</p>
-                  <p className="font-semibold text-slate-900 dark:text-white mt-1">
-                    {selectedSubmission.talentName || selectedSubmission.user?.name || selectedSubmission.talent?.name || 'Talent User'}
-                  </p>
-                  {selectedSubmission.user?.email && (
-                    <p className="text-xs text-slate-500">{selectedSubmission.user.email}</p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Casting / Role</p>
-                  <p className="font-semibold text-slate-900 dark:text-white mt-1">
-                    {selectedSubmission.castingTitle || selectedSubmission.castingCall?.title || 'Casting Project'}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Role: {selectedSubmission.roleName || selectedSubmission.role?.name || 'Main Role'}
-                  </p>
-                </div>
-              </div>
+          {selectedSubmission && (() => {
+            const modalTalentName = getTalentName(selectedSubmission);
+            const modalTalentEmail = getTalentEmail(selectedSubmission);
+            const modalTalentId = getTalentId(selectedSubmission);
+            const modalCastingTitle = getCastingTitle(selectedSubmission);
+            const modalCastingId = getCastingId(selectedSubmission);
+            const modalRoleName = getRoleName(selectedSubmission);
 
-              {/* Cover Note / Message */}
-              {selectedSubmission.coverNote || selectedSubmission.message || selectedSubmission.notes ? (
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Cover Note</p>
-                  <div className="p-3 rounded border bg-white dark:bg-slate-950 text-sm text-slate-700 dark:text-slate-300">
-                    {selectedSubmission.coverNote || selectedSubmission.message || selectedSubmission.notes}
+            return (
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Talent</p>
+                    {modalTalentId ? (
+                      <Link
+                        to={`/talent/${modalTalentId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-slate-900 dark:text-white mt-1 hover:text-primary transition-colors inline-flex items-center gap-1 group"
+                      >
+                        <span>{modalTalentName}</span>
+                        <ExternalLink className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                      </Link>
+                    ) : (
+                      <p className="font-semibold text-slate-900 dark:text-white mt-1">
+                        {modalTalentName}
+                      </p>
+                    )}
+                    {modalTalentEmail && (
+                      <p className="text-xs text-slate-500">{modalTalentEmail}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Casting / Role</p>
+                    {modalCastingId ? (
+                      <Link
+                        to={`/cast/${modalCastingId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold text-slate-900 dark:text-white mt-1 hover:text-primary transition-colors inline-flex items-center gap-1 group"
+                      >
+                        <span>{modalCastingTitle}</span>
+                        <ExternalLink className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                      </Link>
+                    ) : (
+                      <p className="font-semibold text-slate-900 dark:text-white mt-1">
+                        {modalCastingTitle}
+                      </p>
+                    )}
+                    <p className="text-xs text-slate-500">
+                      Role: {modalRoleName}
+                    </p>
                   </div>
                 </div>
-              ) : null}
 
-              {/* Video URL / Showreel */}
-              {(selectedSubmission.showreel_url || selectedSubmission.videoUrl || selectedSubmission.mediaUrl) && (
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Audition Video / Showreel</p>
-                  <a
-                    href={selectedSubmission.showreel_url || selectedSubmission.videoUrl || selectedSubmission.mediaUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center text-sm font-medium text-primary hover:underline gap-1.5 p-2 rounded bg-primary/5 border border-primary/20"
-                  >
-                    <Video className="w-4 h-4 text-primary" />
-                    <span>Watch Audition Reel</span>
-                    <ExternalLink className="w-3.5 h-3.5 ml-1" />
-                  </a>
-                </div>
-              )}
+                {/* Cover Note / Message */}
+                {selectedSubmission.coverNote || selectedSubmission.message || selectedSubmission.notes ? (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Cover Note</p>
+                    <div className="p-3 rounded border bg-white dark:bg-slate-950 text-sm text-slate-700 dark:text-slate-300">
+                      {selectedSubmission.coverNote || selectedSubmission.message || selectedSubmission.notes}
+                    </div>
+                  </div>
+                ) : null}
 
-              {/* Moderation Actions */}
-              <div className="pt-4 border-t">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Change Submission Status</p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                    disabled={isUpdating}
-                    onClick={() => handleUpdateStatus(selectedSubmission._id || selectedSubmission.id, 'accepted')}
-                  >
-                    <Check className="w-4 h-4 mr-1" />
-                    Approve / Accept
-                  </Button>
+                {/* Video URL / Showreel */}
+                {(selectedSubmission.showreel_url || selectedSubmission.videoUrl || selectedSubmission.mediaUrl) && (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Audition Video / Showreel</p>
+                    <a
+                      href={selectedSubmission.showreel_url || selectedSubmission.videoUrl || selectedSubmission.mediaUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center text-sm font-medium text-primary hover:underline gap-1.5 p-2 rounded bg-primary/5 border border-primary/20"
+                    >
+                      <Video className="w-4 h-4 text-primary" />
+                      <span>Watch Audition Reel</span>
+                      <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                    </a>
+                  </div>
+                )}
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
-                    disabled={isUpdating}
-                    onClick={() => handleUpdateStatus(selectedSubmission._id || selectedSubmission.id, 'shortlist')}
-                  >
-                    Shortlist
-                  </Button>
+                {/* Moderation Actions */}
+                <div className="pt-4 border-t">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Change Submission Status</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                      disabled={isUpdating}
+                      onClick={() => handleUpdateStatus(selectedSubmission._id || selectedSubmission.id, 'accepted')}
+                    >
+                      <Check className="w-4 h-4 mr-1" />
+                      Approve / Accept
+                    </Button>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
-                    disabled={isUpdating}
-                    onClick={() => handleUpdateStatus(selectedSubmission._id || selectedSubmission.id, 'rejected')}
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Reject
-                  </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100"
+                      disabled={isUpdating}
+                      onClick={() => handleUpdateStatus(selectedSubmission._id || selectedSubmission.id, 'shortlist')}
+                    >
+                      Shortlist
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                      disabled={isUpdating}
+                      onClick={() => handleUpdateStatus(selectedSubmission._id || selectedSubmission.id, 'pending')}
+                    >
+                      Set Pending
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                      disabled={isUpdating}
+                      onClick={() => handleUpdateStatus(selectedSubmission._id || selectedSubmission.id, 'rejected')}
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Reject
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setIsDetailOpen(false)}>
