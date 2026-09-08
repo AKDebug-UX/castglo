@@ -276,6 +276,49 @@ export default function DirectorProfile() {
     }
   };
 
+  const completionPercentage = useMemo(() => {
+    if (!profileData) return 0;
+    const unified = profileData?.unifiedCastingDirectorProfile || {};
+    const isFilled = (val: any) => {
+      if (val === null || val === undefined || val === "") return false;
+      if (Array.isArray(val) && val.length === 0) return false;
+      return true;
+    };
+
+    // Tab 1: Basic Information (25%)
+    const basicFields = [
+      unified.full_name || profileData.fullName,
+      unified.display_name || profileData.displayName,
+      unified.professional_title || profileData.professional_title,
+      unified.short_bio || profileData.short_bio,
+      unified.city || profileData.city,
+      unified.country || profileData.country,
+    ];
+    const basicScore = (basicFields.filter(isFilled).length / basicFields.length) * 25;
+
+    // Tab 2: Professional Experience (25%)
+    const profFields = [
+      unified.primary_account_type || profileData.primary_account_type,
+      unified.years_of_experience || profileData.years_of_experience,
+      unified.experience_level || profileData.experience_level,
+    ];
+    const profScore = (profFields.filter(isFilled).length / profFields.length) * 25;
+
+    // Tab 3: Casting Preferences (25%)
+    const prefFields = [
+      unified.applicant_statuses || profileData.applicant_statuses,
+    ];
+    const prefScore = (prefFields.filter(isFilled).length / prefFields.length) * 25;
+
+    // Tab 4: Media & Links (25%)
+    const hasPhoto = isFilled(pendingProfilePhoto?.preview || profileData.profilePicture);
+    const hasWebsite = isFilled(unified.website || profileData.website);
+    const mediaItems = [hasPhoto, hasWebsite];
+    const mediaScore = (mediaItems.filter(Boolean).length / mediaItems.length) * 25;
+
+    return Math.min(100, Math.round(basicScore + profScore + prefScore + mediaScore));
+  }, [profileData, pendingProfilePhoto]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">

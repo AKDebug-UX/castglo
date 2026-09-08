@@ -21,7 +21,15 @@ export const unifiedProfessionalProfileSchema = z
     professional_title: z.string().min(2, "Professional title must be at least 2 characters").max(120, "Title is too long"),
     email: z.string().email(),
     phone_number: z.string().min(7, "Phone number is too short").max(30, "Phone number is too long"),
-    short_bio: z.string().min(50, "Short bio must be at least 50 characters").max(300, "Short bio cannot exceed 300 characters"),
+    short_bio: z
+      .string()
+      .max(300, "Short bio cannot exceed 300 characters")
+      .refine(
+        (val) => val.trim().split(/\s+/).filter(Boolean).length >= 10,
+        (val) => ({
+          message: `Short bio must contain at least 10 words (currently ${val.trim().split(/\s+/).filter(Boolean).length} ${val.trim().split(/\s+/).filter(Boolean).length === 1 ? "word" : "words"}).`,
+        })
+      ),
     full_bio: z.string().max(3000, "Full bio cannot exceed 3000 characters").optional(),
     city: z.string().min(2, "City must be at least 2 characters").max(100, "City name is too long"),
     country: z.string().min(2, "Country is required"),

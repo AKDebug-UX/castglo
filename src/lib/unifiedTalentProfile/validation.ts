@@ -33,7 +33,15 @@ export const unifiedTalentProfileSchema = z
     willing_to_travel: z.boolean(),
     international_availability: z.boolean(),
     remote_work_open: z.boolean().optional(),
-    short_bio: z.string().min(50, "Bio is too short (minimum 50 characters)").max(1000, "Bio is too long (maximum 1000 characters)"),
+    short_bio: z
+      .string()
+      .max(1000, "Bio is too long (maximum 1000 characters)")
+      .refine(
+        (val) => val.trim().split(/\s+/).filter(Boolean).length >= 10,
+        (val) => ({
+          message: `Short bio must contain at least 10 words (currently ${val.trim().split(/\s+/).filter(Boolean).length} ${val.trim().split(/\s+/).filter(Boolean).length === 1 ? "word" : "words"}).`,
+        })
+      ),
     career_goals: z.string().max(1000, "Career goals cannot exceed 1000 characters").optional(),
     languages_spoken: z.array(z.string()).optional(),
     fluent_languages: z.array(z.string()).optional(),

@@ -116,7 +116,7 @@ export const CORE_PROFILE_FIELDS: UnifiedFieldSpec[] = [
   { id: "willing_to_travel", label: "Willing to Travel for Work", section: "Availability", type: "select", options: ["Yes", "No"], required: true, searchable: true },
   { id: "international_availability", label: "Available for International Opportunities", section: "Availability", type: "select", options: ["Yes", "No"], required: true, searchable: true },
   { id: "remote_work_open", label: "Open to Remote / Virtual Work", section: "Availability", type: "select", options: ["Yes", "No"], required: false, searchable: true },
-  { id: "short_bio", label: "Short Bio", section: "About You", type: "textarea", required: true, searchable: true, validation: "50-1000 chars" },
+  { id: "short_bio", label: "Short Bio", section: "About You", type: "textarea", required: true, searchable: true, validation: "Min 10 words, max 1000 chars" },
   { id: "career_goals", label: "Career Goals", section: "About You", type: "textarea", required: false, searchable: false, validation: "Max 1000 chars" },
   { id: "languages_spoken", label: "Languages Spoken", section: "Basic Profile", type: "multi-select", required: true, searchable: true, optionSource: "languages", validation: "Store as array" },
   { id: "fluent_languages", label: "Fluent Languages", section: "Basic Profile", type: "multi-select", required: false, searchable: true, optionSource: "languages", validation: "Store as array" },

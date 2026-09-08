@@ -23,7 +23,15 @@ export const unifiedCastingDirectorProfileSchema = z
     full_name: z.string().min(2).max(100),
     display_name: z.string().min(2).max(100),
     professional_title: z.string().min(2).max(120),
-    short_bio: z.string().min(50).max(300),
+    short_bio: z
+      .string()
+      .max(300, "Short bio cannot exceed 300 characters")
+      .refine(
+        (val) => val.trim().split(/\s+/).filter(Boolean).length >= 10,
+        (val) => ({
+          message: `Short bio must contain at least 10 words (currently ${val.trim().split(/\s+/).filter(Boolean).length} ${val.trim().split(/\s+/).filter(Boolean).length === 1 ? "word" : "words"}).`,
+        })
+      ),
     city: z.string().min(2).max(100),
     country: z.string().min(2),
     primary_account_type: z.string(),

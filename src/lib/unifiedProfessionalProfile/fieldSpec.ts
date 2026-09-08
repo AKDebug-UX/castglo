@@ -75,7 +75,7 @@ const CORE_FIELDS: ProfessionalFieldSpec[] = [
   { id: "phone_number", label: "Phone Number", section: "Contact", type: "phone", required: true, searchable: false },
   { id: "profile_photo", label: "Profile Photo / Logo", section: "Media", type: "file", required: true, searchable: false },
   { id: "cover_image", label: "Cover Image / Banner", section: "Media", type: "file", required: false, searchable: false },
-  { id: "short_bio", label: "Short Bio", section: "About", type: "textarea", required: true, searchable: true, validation: "50-300 chars" },
+  { id: "short_bio", label: "Short Bio", section: "About", type: "textarea", required: true, searchable: true, validation: "Min 10 words, max 300 chars" },
   { id: "full_bio", label: "Full About Description", section: "About", type: "textarea", required: false, searchable: true, validation: "Max 3000 chars" },
   { id: "equipment_summary", label: "Primary Equipment / Gear", section: "About", type: "textarea", required: false, searchable: true, validation: "Max 1000 chars" },
   { id: "city", label: "City", section: "Location", type: "text", required: true, searchable: true, validation: "2-100 chars" },

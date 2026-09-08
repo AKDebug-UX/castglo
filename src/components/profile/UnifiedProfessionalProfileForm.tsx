@@ -208,8 +208,23 @@ export function UnifiedProfessionalProfileForm({
         );
       case "multi-select":
         return <MultiSelectChecklist options={options} selected={normalizeArray(value)} onChange={(next) => setFieldValue(field.id, next)} />;
-      case "textarea":
-        return <Textarea rows={4} value={value || ""} onChange={(e) => setFieldValue(field.id, e.target.value)} placeholder={`Enter ${field.label}`} />;
+      case "textarea": {
+        const textVal = String(value || "");
+        const wordCount = textVal ? textVal.trim().split(/\s+/).filter(Boolean).length : 0;
+        return (
+          <div className="space-y-1.5">
+            <Textarea rows={4} value={textVal} onChange={(e) => setFieldValue(field.id, e.target.value)} placeholder={`Enter ${field.label}`} />
+            {field.id === "short_bio" && (
+              <div className="flex justify-between items-center text-xs">
+                <span className={wordCount < 10 ? "text-amber-600 font-medium" : "text-emerald-600 font-medium"}>
+                  {wordCount < 10 ? `Minimum 10 words required (${wordCount}/10 words)` : `✓ ${wordCount} words (Minimum met)`}
+                </span>
+                <span className="text-muted-foreground">{textVal.length}/300 characters</span>
+              </div>
+            )}
+          </div>
+        );
+      }
       case "multi-item-text":
         return <Textarea rows={4} value={normalizeArray(value).join("\n")} onChange={(e) => setFieldValue(field.id, parseList(e.target.value))} placeholder="One item per line" />;
       case "number":

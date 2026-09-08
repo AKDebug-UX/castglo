@@ -1074,15 +1074,73 @@ export default function Profile() {
   };
 
   const completionPercentage = useMemo(() => {
+    if (!profileData) return 0;
     const unified = profileData?.unifiedTalentProfile || {};
-    const coreFields = [
-      'full_name', 'email', 'phone_number', 'dateOfBirth', 'age_group',
-      'gender', 'nationality', 'current_city', 'current_country',
-      'short_bio', 'primary_talent_type', 'profile_photo'
+
+    const isFilled = (val: any) => {
+      if (val === null || val === undefined || val === "") return false;
+      if (Array.isArray(val) && val.length === 0) return false;
+      return true;
+    };
+
+    // Tab 1: Basic Profile (25%)
+    const basicFields = [
+      unified.full_name || profileData.fullName,
+      unified.display_name || profileData.displayName || profileData.stageName,
+      unified.email || profileData.email,
+      unified.phone_number || profileData.phoneNumber || profileData.phone,
+      unified.dateOfBirth || profileData.dateOfBirth,
+      unified.gender || profileData.gender,
+      unified.nationality || profileData.nationality,
+      unified.current_city || profileData.currentCity || profileData.city,
+      unified.current_country || profileData.currentCountry || profileData.country,
+      unified.short_bio || profileData.bio,
     ];
-    const filled = coreFields.filter(f => unified[f] || profileData?.[f]).length;
-    return Math.round((filled / coreFields.length) * 100);
-  }, [profileData]);
+    const basicFilled = basicFields.filter(isFilled).length;
+    const basicScore = (basicFilled / basicFields.length) * 25;
+
+    // Tab 2: Professional (25%)
+    const profFields = [
+      unified.primary_talent_type || profileData.primaryTalentType,
+      unified.years_of_experience || profileData.yearsOfExperience,
+      unified.experience_level || profileData.experienceLevel,
+      unified.representation_status || profileData.representationStatus,
+      unified.languages_spoken || profileData.languagesSpoken || profileData.languages,
+      unified.natural_accent || profileData.naturalAccent,
+    ];
+    const profFilled = profFields.filter(isFilled).length;
+    const profScore = (profFilled / profFields.length) * 25;
+
+    // Tab 3: Appearance (25%)
+    const appearance = profileData.appearance || {};
+    const appFields = [
+      unified.height || appearance.height,
+      unified.weight || appearance.weight,
+      unified.build || appearance.build,
+      unified.eye_colour || appearance.eyeColour,
+      unified.hair_colour || appearance.hairColour,
+      unified.hair_length || appearance.hairLength,
+      unified.skin_tone || appearance.skinTone,
+      unified.shoe_size || appearance.shoeSize,
+      unified.chest_bust_measurement || appearance.chestBustMeasurement || unified.model_chest_bust,
+      unified.waist_measurement || appearance.waistMeasurement || unified.model_waist,
+      unified.hip_measurement || appearance.hipMeasurement || unified.model_hips,
+    ];
+    const appFilled = appFields.filter(isFilled).length;
+    const appScore = (appFilled / appFields.length) * 25;
+
+    // Tab 4: Portfolio (25%)
+    const hasMainPhoto = isFilled(pendingProfilePhoto?.preview || profileData.profilePicture || profileData?.talent?.headshots?.[0]?.url || unified.profile_photo);
+    const hasAdditionalPhotos = (profileData?.talent?.headshots?.length > 1) || (pendingPortfolioPhotos && pendingPortfolioPhotos.length > 0);
+    const hasVideo = isFilled(unified.intro_video) || (profileData?.talent?.portfolioVideos?.length > 0) || Boolean(pendingIntroVideo) || (pendingPortfolioVideos && pendingPortfolioVideos.length > 0);
+    const hasSocialLink = isFilled(unified.portfolio_url) || isFilled(unified.instagram_url) || isFilled(unified.linkedin_url) || isFilled(unified.social_youtube);
+
+    const portfolioItems = [hasMainPhoto, hasAdditionalPhotos, hasVideo, hasSocialLink];
+    const portfolioFilled = portfolioItems.filter(Boolean).length;
+    const portfolioScore = (portfolioFilled / portfolioItems.length) * 25;
+
+    return Math.min(100, Math.round(basicScore + profScore + appScore + portfolioScore));
+  }, [profileData, pendingProfilePhoto, pendingPortfolioPhotos, pendingPortfolioVideos, pendingIntroVideo]);
 
   const profileName = useMemo(() => {
     return profileData?.talentProfile?.fullName || profileData?.fullName || "Your Profile";

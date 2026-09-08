@@ -721,22 +721,35 @@ export function UnifiedTalentProfileForm({
 
         case "textarea":
         case "url-list":
-        case "multi-file-or-url":
+        case "multi-file-or-url": {
+          const textVal = toDisplayValue(value);
+          const wordCount = textVal ? textVal.trim().split(/\s+/).filter(Boolean).length : 0;
           return (
-            <Textarea
-              rows={4}
-              value={toDisplayValue(value)}
-              className={hasError ? 'border-destructive' : ''}
-              onChange={(e) => {
-                if (field.type === "url-list" || field.type === "multi-file-or-url") {
-                  setFieldValue(field.id, parseFreeList(e.target.value));
-                  return;
-                }
-                setFieldValue(field.id, e.target.value);
-              }}
-              placeholder={field.type === "url-list" ? "One URL per line" : `Enter ${field.label}`}
-            />
+            <div className="space-y-1.5">
+              <Textarea
+                rows={4}
+                value={textVal}
+                className={hasError ? 'border-destructive' : ''}
+                onChange={(e) => {
+                  if (field.type === "url-list" || field.type === "multi-file-or-url") {
+                    setFieldValue(field.id, parseFreeList(e.target.value));
+                    return;
+                  }
+                  setFieldValue(field.id, e.target.value);
+                }}
+                placeholder={field.type === "url-list" ? "One URL per line" : `Enter ${field.label}`}
+              />
+              {field.id === "short_bio" && (
+                <div className="flex justify-between items-center text-xs">
+                  <span className={wordCount < 10 ? "text-amber-600 font-medium" : "text-emerald-600 font-medium"}>
+                    {wordCount < 10 ? `Minimum 10 words required (${wordCount}/10 words)` : `✓ ${wordCount} words (Minimum met)`}
+                  </span>
+                  <span className="text-muted-foreground">{textVal.length}/1000 characters</span>
+                </div>
+              )}
+            </div>
           );
+        }
 
         case "file":
           return (

@@ -529,6 +529,55 @@ export default function ProfessionalProfile() {
     }
   };
 
+  const completionPercentage = useMemo(() => {
+    if (!profileData) return 0;
+    const unified = profileData?.unifiedProfessionalProfile || {};
+    const isFilled = (val: any) => {
+      if (val === null || val === undefined || val === "") return false;
+      if (Array.isArray(val) && val.length === 0) return false;
+      return true;
+    };
+
+    // Tab 1: Basic & Contact (25%)
+    const basicFields = [
+      unified.full_name || profileData.fullName,
+      unified.display_name || profileData.displayName || profileData.stageName,
+      unified.email || profileData.email,
+      unified.phone_number || profileData.phoneNumber,
+      unified.city || profileData.city,
+      unified.country || profileData.country,
+      unified.short_bio || profileData.shortBio,
+    ];
+    const basicScore = (basicFields.filter(isFilled).length / basicFields.length) * 25;
+
+    // Tab 2: Professional Details & Services (25%)
+    const profFields = [
+      unified.professional_title || profileData.professionalTitle,
+      unified.primary_professional_type || profileData.primaryProfessionalType,
+      unified.years_of_experience || profileData.yearsOfExperience,
+      unified.experience_level || profileData.experienceLevel,
+      unified.serves_client_types || profileData.servesClientTypes,
+    ];
+    const profScore = (profFields.filter(isFilled).length / profFields.length) * 25;
+
+    // Tab 3: Terms & Booking (25%)
+    const termsFields = [
+      unified.availability_type || profileData.availabilityType,
+      unified.preferred_contact_method || profileData.preferredContactMethod,
+      unified.booking_method || profileData.bookingMethod,
+    ];
+    const termsScore = (termsFields.filter(isFilled).length / termsFields.length) * 25;
+
+    // Tab 4: Media & Portfolio (25%)
+    const hasPhoto = isFilled(pendingProfilePhoto?.preview || profileData.profilePicture || unified.profile_photo);
+    const hasPortfolio = (profileData?.professional?.portfolioItems?.length > 0) || (pendingPortfolioPhotos && pendingPortfolioPhotos.length > 0);
+    const hasLinks = isFilled(unified.portfolio_website) || isFilled(unified.instagram_url) || isFilled(unified.youtube_url);
+    const mediaItems = [hasPhoto, hasPortfolio, hasLinks];
+    const mediaScore = (mediaItems.filter(Boolean).length / mediaItems.length) * 25;
+
+    return Math.min(100, Math.round(basicScore + profScore + termsScore + mediaScore));
+  }, [profileData, pendingProfilePhoto, pendingPortfolioPhotos]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
