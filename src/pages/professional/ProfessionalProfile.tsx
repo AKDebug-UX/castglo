@@ -14,6 +14,7 @@ import { UnifiedProfessionalProfileForm } from "@/components/profile/UnifiedProf
 import {
   UNIFIED_PROFESSIONAL_FIELD_IDS,
   UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC,
+  shouldShowProfessionalField,
 } from "@/lib/unifiedProfessionalProfile/fieldSpec";
 import { validateUnifiedProfessionalProfile } from "@/lib/unifiedProfessionalProfile/validation";
 import { ProfileSummaryView } from "@/components/profile/ProfileSummaryView";
@@ -578,6 +579,13 @@ export default function ProfessionalProfile() {
     return Math.min(100, Math.round(basicScore + profScore + termsScore + mediaScore));
   }, [profileData, pendingProfilePhoto, pendingPortfolioPhotos]);
 
+  const visibleProfessionalFields = useMemo(() => {
+    const values = { ...profileData, ...(profileData?.unifiedProfessionalProfile || {}) };
+    return UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC.filter((field) =>
+      shouldShowProfessionalField(field, values)
+    );
+  }, [profileData]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
@@ -757,7 +765,7 @@ export default function ProfessionalProfile() {
 
         <TabsContent value="summary" className="mt-4 space-y-6">
           <ProfileSummaryView 
-            fields={UNIFIED_PROFESSIONAL_PROFILE_FIELD_SPEC} 
+            fields={visibleProfessionalFields} 
             values={{...profileData, ...(profileData?.unifiedProfessionalProfile || {})}} 
             title="Professional Profile Summary" 
             onFieldValueChange={(id, val) => setProfileData((prev: any) => ({

@@ -10,8 +10,11 @@ import { profileAPI, userAPI, authAPI } from "@/lib/api";
 import { toast } from "sonner";
 import { getAvatarUrl, getInitials, getApiErrorMessage } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { UnifiedCastingDirectorProfileForm } from "@/components/profile/UnifiedCastingDirectorProfileForm";
-import { UNIFIED_CASTING_DIRECTOR_FIELD_IDS, UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC } from "@/lib/unifiedCastingDirectorProfile/fieldSpec";
+import {
+  UNIFIED_CASTING_DIRECTOR_FIELD_IDS,
+  UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC,
+  shouldShowCastingDirectorField,
+} from "@/lib/unifiedCastingDirectorProfile/fieldSpec";
 import { validateUnifiedCastingDirectorProfile } from "@/lib/unifiedCastingDirectorProfile/validation";
 import { ProfileSummaryView } from "@/components/profile/ProfileSummaryView";
 
@@ -319,6 +322,13 @@ export default function DirectorProfile() {
     return Math.min(100, Math.round(basicScore + profScore + prefScore + mediaScore));
   }, [profileData, pendingProfilePhoto]);
 
+  const visibleDirectorFields = useMemo(() => {
+    const values = { ...profileData, ...(profileData?.unifiedCastingDirectorProfile || {}) };
+    return UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC.filter((field) =>
+      shouldShowCastingDirectorField(field, values)
+    );
+  }, [profileData]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
@@ -480,7 +490,7 @@ export default function DirectorProfile() {
 
         <TabsContent value="summary" className="mt-6 space-y-6">
           <ProfileSummaryView
-            fields={UNIFIED_CASTING_DIRECTOR_PROFILE_FIELD_SPEC}
+            fields={visibleDirectorFields}
             values={{ ...profileData, ...(profileData?.unifiedCastingDirectorProfile || {}) }}
             title="Casting Director Profile Summary"
             onFieldValueChange={(id, val) => setProfileData((prev: any) => ({

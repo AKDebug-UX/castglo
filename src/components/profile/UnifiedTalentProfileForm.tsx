@@ -435,8 +435,13 @@ export function UnifiedTalentProfileForm({
     }
   }, []);
 
+  const isTalentUser = useMemo(() => {
+    return user?.role === "talent" || rootData?.userRole === "talent" || rootData?.role === "talent" || !user?.role || user?.role !== "professional";
+  }, [user, rootData]);
+
+  const businessSections = useMemo(() => new Set(["Professional Identity", "Business & Facilities", "Business Terms"]), []);
+
   const tabGroups = useMemo(() => {
-    const isTalentUser = user?.role === "talent" || rootData?.userRole === "talent";
     return [
       {
         id: "basic",
@@ -484,11 +489,16 @@ export function UnifiedTalentProfileForm({
         sections: []
       }
     ];
-  }, [user, rootData]);
+  }, [isTalentUser]);
 
   const visibleFields = useMemo(
-    () => UNIFIED_TALENT_PROFILE_FIELD_SPEC.filter((field) => shouldShowField(field, values)),
-    [values]
+    () =>
+      UNIFIED_TALENT_PROFILE_FIELD_SPEC.filter((field) => {
+        if (!shouldShowField(field, values)) return false;
+        if (isTalentUser && businessSections.has(field.section)) return false;
+        return true;
+      }),
+    [values, isTalentUser, businessSections]
   );
 
   const sectionsByTab = useMemo(() => {
@@ -865,7 +875,7 @@ export function UnifiedTalentProfileForm({
     if (tabId === "summary") {
       return (
         <ProfileSummaryView
-          fields={UNIFIED_TALENT_PROFILE_FIELD_SPEC}
+          fields={visibleFields}
           values={values}
           title="Profile Overview"
           onFieldValueChange={(id, val) => setFieldValue(id, val)}
