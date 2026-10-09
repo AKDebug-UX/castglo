@@ -18,10 +18,10 @@ The following credentials can be used to test the platform's role-specific featu
 
 | Role | Email | Password |
 | :--- | :--- | :--- |
-| **Admin** | `akoredesalaudeen54@gmail.com` | `12345678` |
-| **Talent** | `dannyt@gmail.com` | `SecurePassword` |
-| **Industry Professional** | `dannyip@gmail.com` | `SecurePassword` |
-| **Casting Director** | `danny@gmail.com` | `SecurePassword` |
+| **Admin** | `admin@castglo.com` | `[CONFIGURED_IN_STAGING_VAULT]` |
+| **Talent** | `talent-test@castglo.com` | `[CONFIGURED_IN_STAGING_VAULT]` |
+| **Industry Professional** | `pro-test@castglo.com` | `[CONFIGURED_IN_STAGING_VAULT]` |
+| **Casting Director** | `director-test@castglo.com` | `[CONFIGURED_IN_STAGING_VAULT]` |
 
 ### 2.2 Public Discovery Experience
 - **Landing Page ([Index](https://castglo.vercel.app/))**: Live fetching of Featured Castings and Discoverable Talent.

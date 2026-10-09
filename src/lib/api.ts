@@ -282,6 +282,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('userData');
       // Redirect to login if necessary or handle session expiration
     }
     return Promise.reject(error);
