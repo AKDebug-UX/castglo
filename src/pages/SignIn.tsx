@@ -110,10 +110,11 @@ export default function SignIn() {
         <div className="bg-card rounded-2xl border shadow-sm p-6 sm:p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Email
               </label>
               <Input
+                id="email"
                 {...register("email")}
                 type="email"
                 placeholder="name@example.com"
@@ -127,7 +128,7 @@ export default function SignIn() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                   Password
                 </label>
                 <Link
@@ -139,6 +140,7 @@ export default function SignIn() {
               </div>
               <div className="relative">
                 <Input
+                  id="password"
                   {...register("password")}
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"

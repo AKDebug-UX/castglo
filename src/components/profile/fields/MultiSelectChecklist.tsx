@@ -19,6 +19,7 @@ export function MultiSelectChecklist({
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
     const isNoneSelected = selected.some(isNoneOption);
@@ -51,9 +52,8 @@ export function MultiSelectChecklist({
   // Close dropdown on outside click
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (inputRef.current && !inputRef.current.contains(event.target as Node)) {
-        // We delay slightly to allow click events on the list to fire
-        setTimeout(() => setIsOpen(false), 200);
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -63,7 +63,7 @@ export function MultiSelectChecklist({
   const isNoneSelected = useMemo(() => selected.some(isNoneOption), [selected]);
 
   return (
-    <div className="space-y-2 relative w-full">
+    <div ref={containerRef} className="space-y-2 relative w-full">
       <div
         className={`min-h-[44px] border rounded-xl p-2 flex flex-wrap gap-2 items-center bg-white/50 backdrop-blur-sm transition-all shadow-sm ${
           isNoneSelected 
@@ -129,6 +129,9 @@ export function MultiSelectChecklist({
               key={option}
               data-testid={`multi-select-option-${option}`}
               className="px-4 py-2.5 text-sm cursor-pointer hover:bg-[#009698]/10 hover:text-[#009698] rounded-lg transition-colors font-medium text-gray-700"
+              onMouseDown={(e) => {
+                e.preventDefault();
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 handleSelect(option);

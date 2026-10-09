@@ -2,6 +2,42 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Talent Flow', () => {
   test.beforeEach(async ({ page }) => {
+    // Mock auth/me API
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'talent123',
+            email: 'talent@example.com',
+            role: 'talent',
+            fullName: 'Test Talent',
+            isEmailVerified: true
+          }
+        }),
+      });
+    });
+
+    // Mock profiles/me API
+    await page.route('**/api/v1/profiles/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            fullName: 'Test Talent',
+            role: 'talent',
+            unifiedTalentProfile: {
+              primary_talent_type: 'Actor / Performer'
+            }
+          }
+        }),
+      });
+    });
+
     // Mock user profile API
     await page.route('**/api/v1/user/profile', async (route) => {
       await route.fulfill({
@@ -43,67 +79,96 @@ test.describe('Talent Flow', () => {
   });
 
   test('Talent can browse and apply for a casting call', async ({ page }) => {
-    // 1. Mock Casting Calls Search API
-    await page.route('**/api/v1/projects*', async (route) => {
+    // Mock applications/me API
+    await page.route('**/api/v1/applications/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, data: [] }),
+      });
+    });
+
+    const mockProject = {
+      _id: 'proj_mock_1',
+      id: 'proj_mock_1',
+      title: 'Global Commercial',
+      project_title: 'Global Commercial',
+      company: 'Big Casting',
+      casting_company_name: 'Big Casting',
+      type: 'Commercial',
+      project_type: 'Commercial',
+      description: 'A global commercial seeking great talent.',
+      full_project_description: 'A global commercial seeking great talent.',
+      status: 'published',
+      roles: [
+        { _id: 'role_mock_1', id: 'role_mock_1', role_name: 'Main Lead', role_status: 'Open' }
+      ]
+    };
+
+    // 1. Mock Casting Calls & Projects APIs
+    await page.route(/.*\/api\/v1\/casting-calls.*/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          data: [
-            {
-              _id: 'proj_mock_1',
-              project_title: 'Global Commercial',
-              casting_company_name: 'Big Casting',
-              project_type: 'Commercial',
-              roles: [
-                { _id: 'role_mock_1', role_name: 'Main Lead', role_status: 'Open' }
-              ]
-            }
-          ]
+          data: [mockProject]
         }),
       });
+    });
+
+    await page.route(/.*\/api\/v1\/projects.*/, async (route) => {
+      if (route.request().url().includes('proj_mock_1')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: mockProject
+          }),
+        });
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: [mockProject]
+          }),
+        });
+      }
     });
 
     // 2. Navigate to Browse Cast page
     await page.goto('/browse-cast');
-    await expect(page.locator('text=Global Commercial')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Global Commercial' })).toBeVisible();
 
-    // 3. Mock specific casting detail API
-    await page.route('**/api/v1/projects/proj_mock_1', async (route) => {
+    // 3. Click on the casting call to view details
+    await page.getByRole('link', { name: 'View Details' }).click();
+    await expect(page).toHaveURL(/\/cast\/proj_mock_1/);
+    await expect(page.locator('text=Main Lead')).toBeVisible();
+
+    // 4. Click Apply Now link
+    await page.getByRole('link', { name: 'Apply Now' }).click();
+    await expect(page).toHaveURL(/.*\/submit/);
+    
+    // 5. Fill the application form using form controls
+    await expect(page.locator('h1')).toContainText('Talent Application Form');
+    await page.click('button:has-text("Auto-fill Mock Data")');
+    await page.click('label[for="use-profile-headshot"]');
+
+    // 6. Mock Apply & Submit APIs
+    await page.route(/.*\/api\/v1\/projects\/.*\/apply.*/, async (route) => {
       await route.fulfill({
-        status: 200,
+        status: 201,
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          data: {
-            _id: 'proj_mock_1',
-            project_title: 'Global Commercial',
-            full_project_description: 'A global commercial seeking great talent.',
-            roles: [
-              { _id: 'role_mock_1', role_name: 'Main Lead', role_status: 'Open' }
-            ]
-          }
+          data: { _id: 'app_mock_1' }
         }),
       });
     });
 
-    // 4. Click on the casting call to view details
-    await page.click('text=Global Commercial');
-    await expect(page).toHaveURL(/\/cast\/proj_mock_1/);
-    await expect(page.locator('text=Main Lead')).toBeVisible();
-
-    // 5. Click Apply
-    await page.click('button:has-text("Apply Now")');
-    await expect(page).toHaveURL(/\/browse-cast\/proj_mock_1\/submit/);
-    
-    // 6. Fill the application form
-    await expect(page.locator('text=Talent Application Form')).toBeVisible();
-    await page.fill('textarea[name="cover_message"]', 'I am very interested in this role.');
-    await page.fill('input[name="skills"]', 'Acting');
-    await page.keyboard.press('Enter');
-
-    // 7. Mock Submit API
     await page.route('**/api/v1/applications', async (route) => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
@@ -114,16 +179,14 @@ test.describe('Talent Flow', () => {
             data: { _id: 'app_mock_1' }
           }),
         });
+      } else {
+        await route.fallback();
       }
     });
 
-    // 8. Submit the form
+    // 7. Submit the form and verify successful navigation to applications list
     await page.click('button:has-text("Submit Application")');
-
-    // 9. Verify success redirect or toast
-    // The exact behavior depends on the app, usually it shows a success page or redirects to dashboard/submissions.
-    // We can just check that the application API was called.
-    const applicationRequest = await page.waitForRequest('**/api/v1/applications');
-    expect(applicationRequest.method()).toBe('POST');
+    await expect(page).toHaveURL(/\/talent\/applications/, { timeout: 15000 });
+    await expect(page.locator('h1')).toContainText('My Applications');
   });
 });

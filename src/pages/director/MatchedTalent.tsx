@@ -265,7 +265,7 @@ export default function MatchedTalent() {
   useEffect(() => {
     if (!projectsLoaded) return;
     
-    let finalProjectId = searchParams.get("projectId") || searchParams.get("project");
+    const finalProjectId = searchParams.get("projectId") || searchParams.get("project");
     let finalRoleId = searchParams.get("roleId") || searchParams.get("role");
     
     if (finalProjectId) {

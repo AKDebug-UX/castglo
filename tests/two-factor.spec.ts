@@ -1,7 +1,7 @@
 import { test, expect, Page } from "@playwright/test";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-const BASE_URL = process.env.BASE_URL || "http://localhost:5173";
+const BASE_URL = process.env.BASE_URL || "";
 
 async function signInAs(
   page: Page,
@@ -11,7 +11,7 @@ async function signInAs(
   await page.goto(`${BASE_URL}/sign-in`);
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(password);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.getByRole("button", { name: "Sign In", exact: true }).click();
 }
 
 // ── Login 2FA Flow ────────────────────────────────────────────────────────────
@@ -38,8 +38,8 @@ test.describe("Login 2FA flow", () => {
     await page.goto(`${BASE_URL}/auth/2fa`, {
       state: { tempToken: "mock-temp-token" } as any,
     });
-    await expect(page.locator("#2fa-code-input")).toBeVisible();
-    await expect(page.locator("#2fa-verify-btn")).toBeVisible();
+    await expect(page.locator('[id="2fa-code-input"]')).toBeVisible();
+    await expect(page.locator('[id="2fa-verify-btn"]')).toBeVisible();
   });
 
   test("/verify-two-factor redirects to /auth/2fa", async ({ page }) => {
@@ -49,30 +49,51 @@ test.describe("Login 2FA flow", () => {
 
   test("verify button disabled when code is empty", async ({ page }) => {
     await page.goto(`${BASE_URL}/auth/2fa`);
-    const btn = page.locator("#2fa-verify-btn");
+    const btn = page.locator('[id="2fa-verify-btn"]');
     await expect(btn).toBeDisabled();
   });
 
   test("shows error when invalid TOTP code submitted", async ({ page }) => {
-    // Mock verifyLogin to return error
+    await page.route("**/api/v1/auth/login", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: { requiresTwoFactor: true, tempToken: "mock-temp-token-123" },
+        }),
+      });
+    });
+
     await page.route("**/api/v1/auth/2fa/verify", async (route) => {
       await route.fulfill({
         status: 400,
         contentType: "application/json",
         body: JSON.stringify({
           success: false,
-          message: "Invalid or expired code",
+          message: "Invalid verification code",
         }),
       });
     });
 
-    await page.goto(`${BASE_URL}/auth/2fa`);
-    await page.locator("#2fa-code-input").fill("000000");
-    await page.locator("#2fa-verify-btn").click();
-    await expect(page.getByText(/invalid or expired/i)).toBeVisible();
+    await signInAs(page, "user-with-2fa@test.com", "password123");
+    await page.locator('[id="2fa-code-input"]').fill("000000");
+    await page.locator('[id="2fa-verify-btn"]').click();
+    await expect(page.getByText(/invalid verification code/i)).toBeVisible();
   });
 
   test("redirects to sign-in on expired temp token (401)", async ({ page }) => {
+    await page.route("**/api/v1/auth/login", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: { requiresTwoFactor: true, tempToken: "mock-temp-token-123" },
+        }),
+      });
+    });
+
     await page.route("**/api/v1/auth/2fa/verify", async (route) => {
       await route.fulfill({
         status: 401,
@@ -81,9 +102,9 @@ test.describe("Login 2FA flow", () => {
       });
     });
 
-    await page.goto(`${BASE_URL}/auth/2fa`);
-    await page.locator("#2fa-code-input").fill("123456");
-    await page.locator("#2fa-verify-btn").click();
+    await signInAs(page, "user-with-2fa@test.com", "password123");
+    await page.locator('[id="2fa-code-input"]').fill("123456");
+    await page.locator('[id="2fa-verify-btn"]').click();
     await expect(page).toHaveURL(/\/sign-in/);
   });
 
@@ -110,13 +131,26 @@ test.describe("Login 2FA flow", () => {
     });
 
     await page.goto(`${BASE_URL}/auth/2fa`);
-    const input = page.locator("#2fa-code-input");
+    const input = page.locator('[id="2fa-code-input"]');
     await input.fill("ABCD-1234-EFGH");
-    const btn = page.locator("#2fa-verify-btn");
+    const btn = page.locator('[id="2fa-verify-btn"]');
     await expect(btn).not.toBeDisabled();
   });
 
   test("Google login with requiresTwoFactor redirects to /auth/2fa", async ({ page }) => {
+    await page.addInitScript(() => {
+      (window as any).google = {
+        accounts: {
+          id: {
+            initialize: (config: any) => {
+              (window as any)._googleCallback = config.callback;
+            },
+            renderButton: () => {},
+          },
+        },
+      };
+    });
+
     await page.route("**/api/v1/auth/google", async (route) => {
       await route.fulfill({
         status: 200,
@@ -128,27 +162,16 @@ test.describe("Login 2FA flow", () => {
       });
     });
 
-    // Mock Google signin by exposing the callback to window to simulate the button click
     await page.goto(`${BASE_URL}/sign-in`);
+    await expect(page.locator('[id="email"]')).toBeVisible();
+
     await page.evaluate(async () => {
-      // @ts-ignore
-      if (window.google?.accounts?.id?.callback) {
-        // @ts-ignore
-        await window.google.accounts.id.callback({ credential: "mock-id-token" });
-      } else {
-        // Fallback for playwright test environment without real Google script
-        const { useAuth } = await import('@/contexts/AuthContext');
-        // This is a simplified test hook, in a real scenario we might mock the context or API.
-        // Since we mocked the network route, we just need the app to call it.
+      if ((window as any)._googleCallback) {
+        await (window as any)._googleCallback({ credential: "mock-id-token" });
       }
     });
-    
-    // Instead of doing complicated component mocking, we can just test that the API is called correctly
-    // or simulate the credential response. Since this is an e2e test, the component will try to call the API.
-    // Let's just mock the button click if possible, or trigger the context function.
-    // Actually, since we only mocked the route, we need a way to trigger the google sign in. 
-    // We can evaluate a fetch directly to verify the route works, but the requirement is to test the app flow.
-    // Since SocialLogin is rendered, we can execute the function manually.
+
+    await expect(page).toHaveURL(/\/auth\/2fa/);
   });
 });
 
@@ -164,20 +187,46 @@ test.describe("2FA Settings Panel", () => {
           success: true,
           data: {
             _id: "u1",
+            id: "u1",
             email: "talent@test.com",
             role: "talent",
             fullName: "Test Talent",
-            emailVerified: true,
+            isEmailVerified: true,
             twoFactorEnabled: false,
           },
         }),
       });
     });
 
-    // Set a token so auth check passes
-    await page.goto(BASE_URL);
-    await page.evaluate(() => localStorage.setItem("token", "mock-jwt-token"));
-    await page.goto(`${BASE_URL}/talent/settings?tab=security`);
+    await page.route("**/api/v1/profiles/me", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: {
+            fullName: "Test Talent",
+            role: "talent",
+          },
+        }),
+      });
+    });
+
+    // Set auth state via addInitScript
+    await page.addInitScript(() => {
+      window.localStorage.setItem("token", "mock-jwt-token");
+      window.localStorage.setItem("userData", JSON.stringify({
+        _id: "u1",
+        id: "u1",
+        email: "talent@test.com",
+        role: "talent",
+        fullName: "Test Talent",
+        isEmailVerified: true,
+        twoFactorEnabled: false,
+      }));
+    });
+
+    await page.goto("/talent/account-settings?tab=security");
   });
 
   test("shows 'Set up 2FA' button when 2FA is disabled", async ({ page }) => {
@@ -224,8 +273,8 @@ test.describe("2FA Settings Panel", () => {
 
     await page.getByRole("button", { name: /set up 2fa/i }).click();
     await page.getByRole("button", { name: /next/i }).click();
-    await page.locator("#2fa-setup-code-input").fill("000000");
-    await page.locator("#2fa-setup-confirm-btn").click();
+    await page.locator('[id="2fa-setup-code-input"]').fill("000000");
+    await page.locator('[id="2fa-setup-confirm-btn"]').click();
     await expect(page.getByText(/invalid totp code/i)).toBeVisible();
   });
 
@@ -263,8 +312,8 @@ test.describe("2FA Settings Panel", () => {
 
     await page.getByRole("button", { name: /set up 2fa/i }).click();
     await page.getByRole("button", { name: /next/i }).click();
-    await page.locator("#2fa-setup-code-input").fill("123456");
-    await page.locator("#2fa-setup-confirm-btn").click();
+    await page.locator('[id="2fa-setup-code-input"]').fill("123456");
+    await page.locator('[id="2fa-setup-confirm-btn"]').click();
     await expect(page.getByText("ABC1-2345")).toBeVisible();
   });
 
@@ -276,12 +325,18 @@ test.describe("2FA Settings Panel", () => {
         contentType: "application/json",
         body: JSON.stringify({
           success: true,
-          data: { _id: "u1", email: "talent@test.com", role: "talent", fullName: "T", emailVerified: true, twoFactorEnabled: true },
+          data: { _id: "u1", id: "u1", email: "talent@test.com", role: "talent", fullName: "Test Talent", isEmailVerified: true, twoFactorEnabled: true },
         }),
       });
     });
 
-    await page.reload();
+    await page.evaluate(() => {
+      const u = JSON.parse(localStorage.getItem("userData") || "{}");
+      u.twoFactorEnabled = true;
+      localStorage.setItem("userData", JSON.stringify(u));
+    });
+
+    await page.goto("/talent/account-settings?tab=security");
     await page.getByRole("button", { name: /disable 2fa/i }).click();
     const confirmBtn = page.locator("#disable-2fa-confirm-btn");
     await expect(confirmBtn).toBeDisabled();
@@ -296,12 +351,18 @@ test.describe("2FA Settings Panel", () => {
         contentType: "application/json",
         body: JSON.stringify({
           success: true,
-          data: { _id: "u1", email: "talent@test.com", role: "talent", fullName: "T", emailVerified: true, twoFactorEnabled: true },
+          data: { _id: "u1", id: "u1", email: "talent@test.com", role: "talent", fullName: "Test Talent", isEmailVerified: true, twoFactorEnabled: true },
         }),
       });
     });
 
-    await page.reload();
+    await page.evaluate(() => {
+      const u = JSON.parse(localStorage.getItem("userData") || "{}");
+      u.twoFactorEnabled = true;
+      localStorage.setItem("userData", JSON.stringify(u));
+    });
+
+    await page.goto("/talent/account-settings?tab=security");
     await page.getByRole("button", { name: /backup codes/i }).click();
     const confirmBtn = page.locator("#regen-backup-codes-confirm-btn");
     await expect(confirmBtn).toBeVisible();

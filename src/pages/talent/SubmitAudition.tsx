@@ -173,11 +173,11 @@ export default function SubmitAudition() {
     return null;
   };
   
-  const useProfileData = (profileToUse: any = userProfile) => {
-    console.log("useProfileData called!", profileToUse);
+  const populateProfileData = (profileToUse: any = userProfile) => {
+    console.log("populateProfileData called!", profileToUse);
     
     // Make a deep copy of formData
-    let newFormData = { ...formData };
+    const newFormData = { ...formData };
     
     // Auto-fill common fields from profile with explicit mappings
     const fieldMappings: Record<string, string[]> = {
@@ -430,7 +430,7 @@ export default function SubmitAudition() {
           
           // Auto-fill form with profile data if no existing application
           if (castingRes.data.success && !hasExistingApplication) {
-            useProfileData(profile);
+            populateProfileData(profile);
           }
         }
       } catch (error: any) {

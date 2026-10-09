@@ -2,11 +2,11 @@ declare module '@didit-protocol/sdk-web' {
   export interface DiditOpenSelfieOptions {
     url: string;
     onComplete?: () => void;
-    onError?: (error: any) => void;
+    onError?: (error: unknown) => void;
   }
 
   export const DiditSdk: {
     openSelfie: (options: DiditOpenSelfieOptions) => void;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }

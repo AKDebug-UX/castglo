@@ -48,8 +48,10 @@ export default function Pricing() {
     const fetchPlans = async () => {
       try {
         const response = await subscriptionAPI.getPlans();
-        const apiPlans = response.data?.data?.data?.plans;
-        if (!response.data?.data?.success || !Array.isArray(apiPlans) || apiPlans.length === 0) {
+        const resData = response.data?.data?.data || response.data?.data || response.data;
+        const apiPlans = resData?.plans || (Array.isArray(resData) ? resData : (Array.isArray(response.data?.plans) ? response.data.plans : []));
+        const isSuccess = response.data?.success !== false && (response.data?.data?.success !== false);
+        if (!isSuccess || !Array.isArray(apiPlans) || apiPlans.length === 0) {
           return;
         }
 
@@ -63,7 +65,7 @@ export default function Pricing() {
           return NaN;
         };
 
-        const normalizedExtras: Plan[] = apiPlans
+        const normalizedPlans: Plan[] = apiPlans
           .map((p: any) => {
             const planKey = typeof p?.planKey === "string" ? p.planKey : typeof p?.key === "string" ? p.key : "";
             const name = typeof p?.name === "string" ? p.name : "";
@@ -90,11 +92,17 @@ export default function Pricing() {
               features,
             } satisfies Plan;
           })
-          .filter(Boolean)
-          .filter((p: Plan) => !localPlanKeys.has(p.planKey));
+          .filter(Boolean) as Plan[];
 
-        if (normalizedExtras.length > 0) {
-          setPlans([...(SUBSCRIPTION_PLANS as Plan[]), ...normalizedExtras]);
+        if (normalizedPlans.length > 0) {
+          const apiMap = new Map(normalizedPlans.map((p) => [p.planKey, p]));
+          const merged = (SUBSCRIPTION_PLANS as Plan[]).map((localPlan) => apiMap.get(localPlan.planKey) || localPlan);
+          for (const apiPlan of normalizedPlans) {
+            if (!localPlanKeys.has(apiPlan.planKey)) {
+              merged.push(apiPlan);
+            }
+          }
+          setPlans(merged);
         }
       } catch (error) {
         console.error("Error fetching plans:", error);
@@ -102,7 +110,7 @@ export default function Pricing() {
       }
     };
     fetchPlans();
-  }, []);
+  }, [localPlanKeys]);
 
   const handleSubscribe = async (plan: Plan) => {
     // If user is already logged in, redirect to Stripe checkout
@@ -251,6 +259,7 @@ export default function Pricing() {
                     .map((plan) => (
                       <Card
                         key={plan.planKey}
+                        data-testid={`plan-card-${plan.planKey}`}
                         className={`relative flex flex-col rounded-2xl border bg-white shadow-sm ${
                           plan.name === "Pro" ? "border-[#009698]/30 ring-1 ring-[#009698]/20" : "border-slate-200"
                         }`}
@@ -288,6 +297,7 @@ export default function Pricing() {
                         </CardContent>
                         <CardFooter className="pt-6 pb-6">
                           <Button 
+                            data-testid={`subscribe-btn-${plan.planKey}`}
                             className={`w-full h-11 rounded-xl font-semibold transition-colors ${
                               plan.pricing[billingCycle] === 0
                                 ? "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50"
@@ -309,9 +319,9 @@ export default function Pricing() {
                             ) : plan.pricing[billingCycle] === -1 ? (
                               "Contact Sales"
                             ) : plan.pricing[billingCycle] === 0 ? (
-                              "Join for Free"
+                              user ? "Current Plan" : "Join for Free"
                             ) : (
-                              "Get Started"
+                              "Subscribe"
                             )}
                           </Button>
                         </CardFooter>

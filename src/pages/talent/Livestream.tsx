@@ -236,7 +236,9 @@ export default function LivestreamPage() {
           setIsCamOn(false);
           toast.info("Camera access denied or unavailable. Audio enabled.");
           return;
-        } catch (audioErr) {}
+        } catch (audioErr) {
+          // Audio fallback failed; continue to next fallback
+        }
 
         try {
           const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -247,7 +249,9 @@ export default function LivestreamPage() {
           setIsMicOn(false);
           toast.info("Microphone access denied or unavailable. Video enabled.");
           return;
-        } catch (videoErr) {}
+        } catch (videoErr) {
+          // Video fallback failed; proceed to warning toast
+        }
 
         setIsCamOn(false);
         setIsMicOn(false);

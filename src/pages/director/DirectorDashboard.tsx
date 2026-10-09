@@ -167,7 +167,7 @@ export default function DirectorDashboard() {
           const auditionCount = allApps.filter((a: any) => ["audition_requested", "self_tape_requested"].includes((a.status || "").toLowerCase())).length;
           const offerCount = allApps.filter((a: any) => ["offer", "accepted"].includes((a.status || "").toLowerCase())).length;
 
-          let tally = {
+          const tally = {
             review: reviewCount,
             shortlisted: shortlistedCount,
             audition: auditionCount,

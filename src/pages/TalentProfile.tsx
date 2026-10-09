@@ -66,7 +66,7 @@ export default function TalentProfile() {
           }
         }
         trimmed.split(',').forEach((s) => {
-          const cleaned = s.replace(/[\[\]"']/g, '').trim();
+          const cleaned = s.replace(/[[\]"']/g, '').trim();
           if (cleaned) results.push(cleaned);
         });
       }

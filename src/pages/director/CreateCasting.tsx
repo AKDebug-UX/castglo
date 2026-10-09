@@ -350,7 +350,7 @@ export default function CreateCasting() {
             }
 
             // ── Extract __META__ blob ────────────────────────────────────
-            let parsedMeta: any = parseMetaFromAttachments(
+            const parsedMeta: any = parseMetaFromAttachments(
               data.projectAttachments,
               data.requirements
             );
@@ -682,7 +682,7 @@ export default function CreateCasting() {
 
       // Build project payload using shared util, then attach META blob
       const metaString = encodeURIComponent(JSON.stringify({ ...formData }));
-      let payload: any = {
+      const payload: any = {
         ...buildProjectPayload(formData, statusOverride),
         projectAttachments: ["__META__:" + metaString],
       };

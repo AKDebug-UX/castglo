@@ -17,6 +17,24 @@ test.describe('Payment and Subscription Flow', () => {
       });
     });
 
+    // Mock auth me API
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'user123',
+            email: 'user@example.com',
+            role: 'talent',
+            fullName: 'Test User',
+            isEmailVerified: true
+          }
+        }),
+      });
+    });
+
     // Mock subscription plans API
     await page.route('**/api/v1/subscriptions/plans', async (route) => {
       await route.fulfill({
@@ -88,8 +106,7 @@ test.describe('Payment and Subscription Flow', () => {
     });
 
     // 3. Click Subscribe on the Pro plan
-    // In our mocked data, the plan is "Pro Talent"
-    await page.click('button:has-text("Subscribe")');
+    await page.locator('[data-testid="plan-card-talent_pro"] button').click();
 
     // 4. Verify we arrived at the mock checkout page
     await expect(page.locator('text=Mock Checkout Page')).toBeVisible();

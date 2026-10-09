@@ -2,7 +2,43 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Talent Profile Form', () => {
   test.beforeEach(async ({ page }) => {
-    // Mock the profile API with a consistent state
+    // Mock auth/me API
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: '69dd0cb5a972b9ff330ec7ad',
+            email: 'talent@example.com',
+            role: 'talent',
+            fullName: 'Test Talent',
+            isEmailVerified: true
+          }
+        }),
+      });
+    });
+
+    // Mock profiles/me API
+    await page.route('**/api/v1/profiles/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            fullName: 'Test Talent',
+            unifiedTalentProfile: {
+              primary_talent_type: 'Actor / Performer',
+              distinguishing_features: []
+            }
+          }
+        }),
+      });
+    });
+
+    // Mock legacy/alternate profile endpoint
     await page.route('**/api/v1/user/profile', async (route) => {
       await route.fulfill({
         status: 200,
@@ -12,8 +48,8 @@ test.describe('Talent Profile Form', () => {
           data: {
             fullName: 'Test Talent',
             unifiedTalentProfile: {
-                primary_talent_type: 'Actor / Performer',
-                distinguishing_features: []
+              primary_talent_type: 'Actor / Performer',
+              distinguishing_features: []
             }
           }
         }),
@@ -75,8 +111,8 @@ test.describe('Talent Profile Form', () => {
     await expect(field.getByTestId('multi-select-tag-None')).toBeVisible();
     await expect(field.getByTestId('multi-select-tag-Freckles')).not.toBeVisible();
     
-    // Verify others hidden from dropdown when None is selected
-    await input.click();
+    // Verify input is hidden and options closed when None is selected
+    await expect(input).not.toBeVisible();
     await expect(page.locator('text=Freckles')).not.toBeVisible();
     
     // Remove None via the X button

@@ -146,7 +146,7 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
             </SelectContent>
           </Select>
         );
-      case "select":
+      case "select": {
         const isBooleanSelect = options.includes("Yes") && options.includes("No");
         return (
           <Select 
@@ -164,6 +164,7 @@ export function UnifiedCastingDirectorProfileForm({ rootData, onChange, onSave, 
             </SelectContent>
           </Select>
         );
+      }
       case "multi-select":
         return <MultiSelectChecklist options={options} selected={asArray(value)} onChange={(next) => setFieldValue(field.id, next)} />;
       case "textarea":

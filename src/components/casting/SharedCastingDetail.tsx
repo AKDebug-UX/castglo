@@ -79,7 +79,9 @@ export default function SharedCastingDetail({
           } catch(e) {
             meta = JSON.parse(metaStr);
           }
-        } catch (e) {}
+        } catch (e) {
+          // Ignore invalid JSON in attachments metadata
+        }
         break;
       } else if (typeof r === "string" && r.trim().startsWith("__META__:")) {
         try {
@@ -89,7 +91,9 @@ export default function SharedCastingDetail({
           } catch(e) {
             meta = JSON.parse(metaStr);
           }
-        } catch (e) {}
+        } catch (e) {
+          // Ignore invalid JSON in requirements metadata
+        }
         break;
       }
     }

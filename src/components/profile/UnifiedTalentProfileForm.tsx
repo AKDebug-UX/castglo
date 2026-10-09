@@ -585,8 +585,8 @@ export function UnifiedTalentProfileForm({
       else if (value === "No") finalValue = false;
     }
 
-    let nextUnified = { ...unified, [fieldId]: finalValue };
-    let nextRoot = { ...rootData, [fieldId]: finalValue };
+    const nextUnified = { ...unified, [fieldId]: finalValue };
+    const nextRoot = { ...rootData, [fieldId]: finalValue };
 
     // Special logic: ensure primary and additional talent types are mutually exclusive
     if (fieldId === "primary_talent_type") {

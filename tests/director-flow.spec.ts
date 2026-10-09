@@ -2,6 +2,42 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Casting Director Flow', () => {
   test.beforeEach(async ({ page }) => {
+    // Mock auth/me API
+    await page.route('**/api/v1/auth/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'dir123',
+            email: 'director@example.com',
+            role: 'casting_director',
+            fullName: 'Director Dan',
+            isEmailVerified: true
+          }
+        }),
+      });
+    });
+
+    // Mock profiles/me API
+    await page.route('**/api/v1/profiles/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            fullName: 'Director Dan',
+            role: 'casting_director',
+            unifiedCastingDirectorProfile: {
+              company_name: 'Dan Casting Co.'
+            }
+          }
+        }),
+      });
+    });
+
     // Mock user profile API
     await page.route('**/api/v1/user/profile', async (route) => {
       await route.fulfill({
@@ -30,16 +66,72 @@ test.describe('Casting Director Flow', () => {
     });
 
     // Mock initial projects list
-    await page.route('**/api/v1/projects*', async (route) => {
-      if (route.request().method() === 'GET') {
+    await page.route(/.*\/api\/v1\/projects.*/, async (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+      if (method === 'POST') {
         await route.fulfill({
-          status: 200,
+          status: 201,
           contentType: 'application/json',
-          body: JSON.stringify({ success: true, data: [] }),
+          body: JSON.stringify({
+            success: true,
+            data: {
+              _id: 'proj123',
+              id: 'proj123',
+              project_title: 'New E2E Project',
+              roles: [{ _id: 'role1', role_name: 'Lead Actor' }]
+            }
+          }),
         });
       } else {
-        await route.continue();
+        const projectData = {
+          _id: 'proj123',
+          id: 'proj123',
+          title: 'New E2E Project',
+          project_title: 'New E2E Project',
+          projectName: 'New E2E Project',
+          roles: [{ _id: 'role1', role_name: 'Lead Actor' }]
+        };
+
+        if (url.includes('proj123')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ success: true, data: projectData }),
+          });
+        } else {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ success: true, data: [projectData] }),
+          });
+        }
       }
+    });
+
+    // Mock applicants API
+    await page.route(/.*\/api\/v1\/applications.*/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [
+            {
+              _id: 'app1',
+              id: 'app1',
+              talent: { fullName: 'Talent Tom' },
+              talentId: { fullName: 'Talent Tom' },
+              appliedRole: 'Lead Actor',
+              role: { _id: 'role1', role_name: 'Lead Actor' },
+              roleName: 'Lead Actor',
+              roleId: 'role1',
+              status: 'review',
+              createdAt: '2026-01-01T00:00:00.000Z'
+            }
+          ]
+        }),
+      });
     });
 
     // Set auth state
@@ -57,84 +149,22 @@ test.describe('Casting Director Flow', () => {
 
   test('Director can create a casting call and view applicants', async ({ page }) => {
     // 1. Navigate to Create Casting Page
-    await page.goto('/director/projects/new');
-    await expect(page.locator('text=Post a New Project')).toBeVisible();
+    await page.goto('/director/create');
+    await expect(page.locator('h1')).toContainText('Post a New Project');
 
-    // 2. Fill basic info (Step 1)
-    await page.fill('input[name="project_title"]', 'New E2E Project');
-    await page.click('button:has-text("Save & Continue")');
+    // 2. Fill basic info using Auto-fill Mock Data
+    await page.click('button:has-text("Auto-fill Mock Data")');
+    await expect(page.locator('input[name="project_title"]')).toHaveValue('The Midnight Heist (Mock)');
 
-    // Wait for step transition
-    await page.waitForTimeout(500);
+    // 3. Step transition: Continue
+    await page.click('button:has-text("Continue")');
 
-    // 3. Fill role info (Step 2)
-    // Add a role
-    await page.click('button:has-text("Add Role")');
-    await page.fill('input[name="role_name"]', 'Lead Actor');
-    
-    // Save Role modal
-    const saveRoleBtn = page.locator('button:has-text("Save Role")');
-    if (await saveRoleBtn.isVisible()) {
-      await saveRoleBtn.click();
-    }
-    
-    // Mock the POST request for creating a project
-    await page.route('**/api/v1/projects', async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 201,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            success: true,
-            data: {
-              _id: 'proj123',
-              project_title: 'New E2E Project'
-            }
-          }),
-        });
-      }
-    });
+    // 4. Verify step 2 reached
+    await expect(page.getByRole('heading', { name: 'Talent Needed' })).toBeVisible();
 
-    // Navigate to applicants page to simulate reviewing after creation.
-    // Mock the project API
-    await page.route('**/api/v1/projects/proj123', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: {
-            _id: 'proj123',
-            project_title: 'New E2E Project',
-            roles: [
-              { _id: 'role1', role_name: 'Lead Actor' }
-            ]
-          }
-        }),
-      });
-    });
-
-    // Mock the applicants API
-    await page.route('**/api/v1/projects/proj123/applicants*', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          data: [
-            {
-              _id: 'app1',
-              talentId: { fullName: 'Talent Tom' },
-              roleId: { role_name: 'Lead Actor' },
-              status: 'pending'
-            }
-          ]
-        }),
-      });
-    });
-
+    // 5. Navigate to applicants page to view applicants for project
     await page.goto('/director/applicants?project=proj123');
-    await expect(page.locator('text=Talent Tom')).toBeVisible();
+    await expect(page.locator('text=Talent Tom')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('text=Lead Actor')).toBeVisible();
   });
 });
