@@ -19,6 +19,13 @@ export const WorkspaceSwitcher: React.FC = () => {
   const { user } = useAuth();
   const { activeWorkspace, collaborations, switchWorkspace } = useWorkspace();
 
+  // Only collaborations that actually assign the user to at least one project
+  const assignedCollaborations = collaborations.filter(
+    (collab) =>
+      collab.accessScope === "all_projects" ||
+      (collab.projectGrants?.length ?? 0) > 0
+  );
+
   const isPersonal = activeWorkspace === "Personal" || !activeWorkspace;
 
   const currentLabel = isPersonal
@@ -54,6 +61,9 @@ export const WorkspaceSwitcher: React.FC = () => {
   };
 
   if (!user) return null;
+
+  // Hide the switcher entirely unless the user is assigned to a project
+  if (assignedCollaborations.length === 0) return null;
 
   return (
     <DropdownMenu>
@@ -116,14 +126,14 @@ export const WorkspaceSwitcher: React.FC = () => {
         </DropdownMenuItem>
 
         {/* Delegated Collaborations List */}
-        {collaborations.length > 0 && (
+        {assignedCollaborations.length > 0 && (
           <>
             <DropdownMenuSeparator className="my-1 bg-border/60" />
             <DropdownMenuLabel className="text-[11px] font-semibold text-muted-foreground uppercase px-2.5 py-1 tracking-wider">
-              Shared Workspaces ({collaborations.length})
+              Shared Workspaces ({assignedCollaborations.length})
             </DropdownMenuLabel>
 
-            {collaborations.map((collab) => {
+            {assignedCollaborations.map((collab) => {
               const isSelected =
                 !isPersonal &&
                 (activeWorkspace.id === collab.id || activeWorkspace.ownerId === collab.ownerId);
