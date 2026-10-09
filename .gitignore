@@ -25,3 +25,14 @@ dist-ssr
 *.sln
 *.sw?
 test-results/
+# --- SECURITY HARDENING (AUTO-PROTECT) ---
+# Prevent VS Code task automation backdoors from ever being tracked
+.vscode/tasks.json
+
+# Protect local secrets and environment credentials
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+# ----------------------------------------
