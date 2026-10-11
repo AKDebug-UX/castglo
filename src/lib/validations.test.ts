@@ -76,6 +76,37 @@ describe("Validations Module", () => {
     });
   });
 
+  describe("forgotPasswordSchema", () => {
+    it("accepts valid email for forgot password", () => {
+      expect(forgotPasswordSchema.safeParse({ email: "test@mailinator.com" }).success).toBe(true);
+    });
+
+    it("rejects invalid email for forgot password", () => {
+      expect(forgotPasswordSchema.safeParse({ email: "invalid-email" }).success).toBe(false);
+      expect(forgotPasswordSchema.safeParse({ email: "" }).success).toBe(false);
+    });
+  });
+
+  describe("resetPasswordSchema", () => {
+    it("accepts valid matching passwords", () => {
+      expect(
+        resetPasswordSchema.safeParse({
+          password: "NewPassword123",
+          confirmPassword: "NewPassword123",
+        }).success
+      ).toBe(true);
+    });
+
+    it("rejects mismatched passwords", () => {
+      expect(
+        resetPasswordSchema.safeParse({
+          password: "NewPassword123",
+          confirmPassword: "DifferentPassword123",
+        }).success
+      ).toBe(false);
+    });
+  });
+
   describe("twoFactorCodeSchema", () => {
     it("accepts valid 6-digit OTP code", () => {
       expect(twoFactorCodeSchema.safeParse({ code: "123456" }).success).toBe(true);

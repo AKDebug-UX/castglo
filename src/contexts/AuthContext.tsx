@@ -188,7 +188,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const forgotPassword = async (email: string): Promise<{ error?: string }> => {
     try {
-      const response = await authAPI.forgotPassword(email);
+      const response = await authAPI.forgotPassword({ email });
       if (response.data.success) return {};
       return { error: getErrorMessage(response.data, "An error occurred") };
     } catch (error: any) {

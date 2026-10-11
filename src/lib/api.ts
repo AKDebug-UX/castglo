@@ -294,7 +294,8 @@ export const authAPI = {
   register: (data) => api.post(API_ENDPOINTS.AUTH.REGISTER, data),
   login: (data) => api.post(API_ENDPOINTS.AUTH.LOGIN, data),
   verifyEmail: (data) => api.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, data),
-  forgotPassword: (data) => api.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, data),
+  forgotPassword: (data: { email: string } | string) =>
+    api.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, typeof data === 'string' ? { email: data } : data),
   resetPassword: (data) => api.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data),
   changePassword: (data) => api.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, data),
   getMe: () => api.get(API_ENDPOINTS.AUTH.ME),
